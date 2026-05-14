@@ -1,0 +1,210 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base styles ─────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+:root {
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 0.75rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --card-radius: 1.75rem;
+  --card-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  --card-border: 1px solid rgba(148, 163, 184, 0.75);
+}
+
+/* ─── Card Container Classes ─────────────────────────────────────── */
+.page-wrapper {
+  background: linear-gradient(135deg, #FF8C00 0%, #FF6B35 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+}
+
+.card-container {
+  max-width: 480px;
+  width: 100%;
+  background: white;
+  border-radius: 2rem;
+  padding: 2.5rem 1.75rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  margin: 0 auto;
+}
+
+/* Mobile responsiveness for card containers */
+@media (max-width: 640px) {
+  .card-container {
+    padding: 1.75rem 1.25rem;
+  }
+  
+  .page-wrapper {
+    padding: 1rem;
+  }
+}
+
+/* ─── Legacy Card Styling ────── */
+.auth-card-container,
+.page-card,
+.compact-card {
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  background: #fff8f3;
+  border-radius: var(--card-radius);
+  border: var(--card-border);
+  box-shadow: var(--card-shadow);
+}
+
+.auth-card-container {
+  padding: 1.5rem;
+}
+
+.page-card {
+  padding: 1.5rem;
+  background: #fff8f3;
+}
+
+.compact-button {
+  padding: 0.85rem 1.2rem;
+  min-height: 48px;
+  font-size: 0.95rem;
+  border-radius: 1.25rem;
+}
+
+.compact-input,
+.compact-select,
+.compact-textarea {
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
+  min-height: 48px;
+  border-radius: 1.25rem;
+}
+
+.compact-heading {
+  margin-bottom: 1rem;
+}
+
+button, a {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Custom scrollbar (subtle) ───────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c7d2fe;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #818cf8;
+}
+
+/* ─── Loading skeleton animation ──────────────────────────────────── */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+/* ─── Fade-in animation ───────────────────────────────────────────── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* ─── Pulse animation for timer warning ───────────────────────────── */
+@keyframes pulse-warning {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.pulse-warning {
+  animation: pulse-warning 0.6s ease-in-out infinite;
+}
+/* ─── Pop-in animation for podium ────────────────────────────────── */
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-pop-in {
+  opacity: 0;
+  animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* --- Progress Glow animation for loading bar ------------------- */
+@keyframes progress-glow {
+  0% {
+    width: 10%;
+    opacity: 0.8;
+  }
+  50% {
+    width: 60%;
+    opacity: 1;
+  }
+  100% {
+    width: 95%;
+    opacity: 0.9;
+  }
+}
+
+.animate-progress-glow {
+  animation: progress-glow 2.5s ease-in-out infinite;
+}
