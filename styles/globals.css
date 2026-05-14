@@ -5,6 +5,7 @@
 /* ─── Base styles ─────────────────────────────────────────────────── */
 * {
   box-sizing: border-box;
+  font-family: 'Inter', sans-serif !important;
 }
 
 html {
@@ -207,4 +208,74 @@ button, a {
 
 .animate-progress-glow {
   animation: progress-glow 2.5s ease-in-out infinite;
+}
+
+/* ─── Typography Schema ───────────────────────────────────────────── */
+@layer utilities {
+  .typo-app-title {
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: #1a1a1a;
+  }
+  .typo-page-heading {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.08em;
+    color: #1a1a1a;
+  }
+  .typo-section-label {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #6b7280;
+  }
+  .typo-question {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.6;
+    letter-spacing: 0;
+    color: #1a1a1a;
+  }
+  .typo-option {
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: 0;
+    color: #6b7280;
+  }
+  .typo-body {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: 0;
+    color: #1a1a1a;
+  }
+  .typo-button {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+  }
+  .typo-small-label {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: 0;
+    color: #6b7280;
+  }
+  .typo-score {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+  .typo-username {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: 0;
+  }
 }

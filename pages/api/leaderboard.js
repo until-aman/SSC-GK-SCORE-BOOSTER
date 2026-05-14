@@ -5,12 +5,22 @@ function computeLeaderboard(rows) {
 
   rows.forEach(row => {
     const [timestamp, email, name, correctStr, incorrectStr, skippedStr,
-           totalStr, scoreStr] = row;
+           totalStr, scoreStr, subject, topic, imageUrl] = row;
     if (!email || !scoreStr) return;
 
     if (!userMap[email]) {
-      userMap[email] = { email, name: name || email,
-                         totalScore: 0, totalQuestionsAttempted: 0, totalCorrect: 0 };
+      userMap[email] = {
+        email,
+        name: name || email,
+        image: imageUrl || null,
+        totalScore: 0,
+        totalQuestionsAttempted: 0,
+        totalCorrect: 0,
+      };
+    }
+
+    if (imageUrl) {
+      userMap[email].image = imageUrl;
     }
 
     userMap[email].totalScore += parseFloat(scoreStr) || 0;

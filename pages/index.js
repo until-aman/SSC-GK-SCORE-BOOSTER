@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
-import TopPerformersSection from '@/components/TopPerformersSection';
+import TopPerformers from '@/components/TopPerformers';
 
 const SUBJECT_META = {
   'Polity': '🏛️',
@@ -32,12 +32,12 @@ export default function Home() {
   const [selectedCount, setSelectedCount] = useState(null);
 
   // Automatically enter if session exists
-  useEffect(() => {
-    // If we're coming back with ?reset=true, don't auto-enter
-    if (status === 'authenticated' && !router.query.reset) {
-      setHasEntered(true);
-    }
-  }, [status, router.query.reset]);
+  // useEffect(() => {
+  //   // If we're coming back with ?reset=true, don't auto-enter
+  //   if (status === 'authenticated' && !router.query.reset) {
+  //     setHasEntered(true);
+  //   }
+  // }, [status, router.query.reset]);
 
   // Fetch all subjects and topics on mount
   useEffect(() => {
@@ -76,7 +76,33 @@ export default function Home() {
     router.push(`/quiz?subject=${encodeURIComponent(selectedSubject)}&topic=${encodeURIComponent(selectedTopic)}&n=${selectedCount}`);
   }
 
-  if (!hasEntered && status !== 'loading') {
+  // Show landing page by default, or during loading to prevent flash
+  if (!hasEntered) {
+    // Show loading state while session is being checked
+    if (status === 'loading') {
+      return (
+        <Layout title="SSC GK Score Booster">
+          <div className="page-wrapper">
+            <div className="relative mx-auto w-full max-w-md px-4 py-10">
+              <div className="absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-orange-200/30 via-transparent to-transparent blur-3xl rounded-full" />
+              <div className="relative rounded-[2rem] bg-white/95 border border-white/80 shadow-[0_35px_80px_rgba(255,124,26,0.18)] backdrop-blur-xl px-8 py-10 text-center overflow-hidden">
+                <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[2.5rem] bg-orange-50 text-5xl shadow-lg shadow-orange-200/70 animate-bounce">
+                  📚
+                </div>
+                <h1 className="text-xl sm:text-2xl font-black text-gray-900 mb-3">Loading SSC GK Score Booster...</h1>
+                <p className="text-sm text-gray-500 mb-8">Preparing your quiz journey!</p>
+                <div className="mx-auto flex h-3 w-32 items-center justify-between gap-2">
+                  {[...Array(4)].map((_, i) => (
+                    <span key={i} className="block h-3 w-3 rounded-full bg-orange-300 animate-pulse" style={{ animationDelay: `${i * 150}ms` }} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </Layout>
+      );
+    }
+
     return (
       <div className="page-wrapper">
         <div className="card-container text-center fade-in">
@@ -110,7 +136,7 @@ export default function Home() {
             </div>
 
             <button
-              onClick={() => setHasEntered(true)}
+              onClick={() => { signOut({ redirect: false }); setHasEntered(true); }}
               className="w-full bg-orange-50 rounded-[1.5rem] py-2.5 font-bold text-orange-600 hover:bg-orange-100 transition active:scale-[0.98]"
             >
               Play as Guest
@@ -165,6 +191,8 @@ export default function Home() {
           </div>
         )}
 
+        <TopPerformers />
+
         <div className="space-y-4">
           <div>
             <h1 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-1">Quiz Setup</h1>
@@ -190,7 +218,7 @@ export default function Home() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 {availableSubjects.map(({ name, icon }) => (
                   <button
                     key={name}
@@ -219,7 +247,7 @@ export default function Home() {
           {selectedSubject && (
             <div className="fade-in">
               <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.35em] mb-3">STEP 2 — TOPIC</h2>
-              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+              <div className="space-y-3 max-h-40 overflow-y-auto pr-1">
                 {availableTopics.map(([topic, count]) => (
                   <button
                     key={topic}
@@ -249,7 +277,7 @@ export default function Home() {
           {selectedTopic && (
             <div className="fade-in">
               <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.35em] mb-3">STEP 3 — HOW MANY?</h2>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-3">
                 {QUESTION_COUNTS.map(n => {
                   const disabled = n > maxAvailable;
                   return (
@@ -286,8 +314,6 @@ export default function Home() {
             {canStart ? '🚀 START QUIZ' : 'COMPLETE ALL STEPS TO START'}
           </button>
         </div>
-
-        <TopPerformersSection />
       </div>
     </Layout>
   );

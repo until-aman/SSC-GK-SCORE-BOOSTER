@@ -51,11 +51,11 @@ export default function TopPerformersSection() {
               {session?.user?.name?.charAt(0)}
             </div>
           )}
-          <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.35em]">Final Scoreboard</h3>
+          <h3 className="text-[8px] font-black text-gray-400 uppercase tracking-[0.35em]">Final Scoreboard</h3>
         </div>
         <button 
           onClick={() => router.push('/result')}
-          className="text-2xl font-bold text-gray-400 hover:text-gray-600 transition"
+          className="w-8 h-8 rounded-full bg-white border border-white flex items-center justify-center text-orange-600 text-lg font-bold shadow-sm transition hover:bg-gray-100"
         >
           ×
         </button>
@@ -68,7 +68,7 @@ export default function TopPerformersSection() {
             className="flex flex-col items-center cursor-pointer group"
             onClick={() => router.push('/leaderboard')}
           >
-            <div className={`w-8 h-8 rounded-full border-2 p-0.5 mb-1 transition-transform group-hover:scale-110 ${
+            <div className={`w-6 h-6 rounded-full border-2 p-0.5 mb-1 transition-transform group-hover:scale-110 ${
               i === 0 ? 'border-yellow-400' : i === 1 ? 'border-gray-300' : i === 2 ? 'border-orange-300' : 'border-gray-100'
             }`}>
               <img 

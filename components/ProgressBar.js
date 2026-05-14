@@ -4,10 +4,10 @@ export default function ProgressBar({ current, total }) {
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-1">
-        <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest">
+        <span className="typo-small-label !text-orange-400 uppercase !tracking-widest">
           Q {current} / {total}
         </span>
-        <span className="text-[10px] text-gray-300 font-bold">
+        <span className="typo-small-label !text-gray-400 !font-bold">
           {Math.round(percentage)}%
         </span>
       </div>

@@ -21,6 +21,7 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString(),
       email: session.user.email,
       name: session.user.name,
+      image: session.user.image || '',
       correctAnswers,
       incorrectAnswers,
       skipped,

@@ -32,9 +32,9 @@ export default function DetailedAnalysis() {
         <div className="flex items-center gap-4 mb-6">
           <button 
             onClick={() => router.push('/result')}
-            className="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-[#FE702C] shadow-sm transition"
+            className="w-10 h-10 rounded-full bg-orange-500 border border-orange-500 flex items-center justify-center text-white shadow-sm transition hover:bg-orange-600"
           >
-            ←
+            ✕
           </button>
           <h1 className="text-xl font-black text-gray-900 tracking-tight uppercase">📊 Detailed Insight</h1>
         </div>

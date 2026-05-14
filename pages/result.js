@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
-import TopPerformersSection from '@/components/TopPerformersSection';
+import TopPerformers from '@/components/TopPerformers';
 
 export default function Result() {
   const { data: session } = useSession();
@@ -13,6 +13,8 @@ export default function Result() {
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [feedback, setFeedback] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [loadingDetailed, setLoadingDetailed] = useState(false);
   const [feedbackDone, setFeedbackDone] = useState(false);
 
   // Load result from sessionStorage
@@ -61,9 +63,15 @@ export default function Result() {
       });
   }, [result]);
 
+  useEffect(() => {
+    if (!result) return;
+    const timer = setTimeout(() => setShowShare(true), 3000);
+    return () => clearTimeout(timer);
+  }, [result]);
+
   // Handle Share WhatsApp
   const handleShareWhatsApp = () => {
-    const message = `I scored ${result.rawScore} marks on SSC GK SCORE BOOSTER! Can you beat my score? ${window.location.origin}`;
+    const message = `🏆 Just climbed the leaderboard with ${result.rawScore} marks on SSC GK Score Booster!\n\nJoin me — play free SSC GK quizzes & see if you can top the chart 👇\n\n🔗 https://ssc-gk-score-booster.vercel.app`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -77,8 +85,9 @@ export default function Result() {
 
   // Handle Copy Link
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.origin);
-    alert('Link copied! Share with friends.');
+    const message = `🏆 Just climbed the leaderboard with ${result.rawScore} marks on SSC GK Score Booster!\n\nJoin me — play free SSC GK quizzes & see if you can top the chart 👇\n\n🔗 https://ssc-gk-score-booster.vercel.app`;
+    navigator.clipboard.writeText(message);
+    alert('Message copied! Share it with friends.');
   };
 
   // Handle Feedback Submission
@@ -118,16 +127,16 @@ export default function Result() {
       <div className="card-container mx-auto fade-in pb-6">
 
         {/* ─── 1. Performance Summary Card ──────────────────────── */}
-        <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-6 mb-5">
+        <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-6 mb-6">
           <h2 className="text-sm font-black text-gray-700 uppercase tracking-[0.35em] mb-4">Performance Summary</h2>
 
           <div className="grid grid-cols-2 gap-3 mb-5">
             <div className="bg-orange-50 rounded-2xl p-4 text-center">
-              <p className="text-[10px] font-black text-orange-400 uppercase mb-1 tracking-widest">Total Score</p>
+              <p className="text-[10px] font-black text-black uppercase mb-1 tracking-widest">Total Score</p>
               <p className="text-3xl font-black text-orange-600 tracking-tighter">{result.rawScore}</p>
             </div>
             <div className="bg-[#E8F7EA] rounded-2xl p-4 text-center">
-              <p className="text-[10px] font-black text-[#01D22C] uppercase mb-1 tracking-widest">Accuracy</p>
+              <p className="text-[10px] font-black text-black uppercase mb-1 tracking-widest">Accuracy</p>
               <p className="text-3xl font-black text-[#01D22C] tracking-tighter">{Math.round(result.accuracy)}%</p>
             </div>
           </div>
@@ -148,7 +157,10 @@ export default function Result() {
           </div>
 
           <button 
-            onClick={() => router.push('/result/detailed')}
+            onClick={() => {
+              setLoadingDetailed(true);
+              setTimeout(() => router.push('/result/detailed'), 5000);
+            }}
             className="w-full mt-4 bg-orange-50 text-orange-700 rounded-2xl py-2.5 px-4 flex items-center justify-between font-bold text-xs hover:bg-orange-100 transition"
           >
             <span>📊 View Detailed Analysis</span>
@@ -156,9 +168,29 @@ export default function Result() {
           </button>
         </div>
 
-        {/* ─── 2. Challenge Your Friends Section ────────────────── */}
-        <div className="mb-8 text-center">
-          <h2 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">CHALLENGE YOUR FRIENDS</h2>
+        <TopPerformers />
+
+        {/* ─── 3. Action Buttons ────────────────────────────────── */}
+        <div className="flex flex-col gap-3 mb-6">
+          <button
+            onClick={() => router.push('/?reset=true')}
+            className="w-full bg-[#FF6A00] text-white rounded-2xl py-2.5 font-bold text-base active:scale-[0.98] transition"
+          >
+            Play Again
+          </button>
+          <button
+            onClick={() => router.push('/leaderboard')}
+            className="w-full bg-[#F1F3F5] text-[#2D3E50] rounded-2xl py-2.5 font-bold text-base active:scale-[0.98] transition flex items-center justify-center gap-2"
+          >
+            View LeaderBoard 🏆
+          </button>
+        </div>
+
+
+
+        {/* ─── Share Slide-Up ────────────────────────────────────── */}
+        <div className={`bg-white rounded-[2rem] shadow-sm border border-gray-100 p-6 transform transition-all duration-500 ease-out ${showShare ? 'mb-6 translate-y-0 opacity-100 max-h-[480px]' : 'mb-0 translate-y-10 opacity-0 max-h-0 overflow-hidden'}`}>
+          <h3 className="text-sm font-black text-gray-700 uppercase tracking-[0.2em] mb-4 text-center">Challenge your friends</h3>
           <div className="flex gap-3">
             <button 
               onClick={handleShareWhatsApp}
@@ -177,26 +209,8 @@ export default function Result() {
           </div>
         </div>
 
-        {/* ─── 3. Action Buttons ────────────────────────────────── */}
-        <div className="flex flex-col gap-3 mb-8">
-          <button
-            onClick={() => router.push('/?reset=true')}
-            className="w-full bg-[#FF6A00] text-white rounded-2xl py-2.5 font-bold text-base shadow-xl active:scale-[0.98] transition"
-          >
-            Play Again
-          </button>
-          <button
-            onClick={() => router.push('/leaderboard')}
-            className="w-full bg-[#F1F3F5] text-[#2D3E50] rounded-2xl py-2.5 font-bold text-base shadow-sm active:scale-[0.98] transition flex items-center justify-center gap-2"
-          >
-            View LeaderBoard 🏆
-          </button>
-        </div>
-
-
-
         {/* ─── 5. Feedback Section ──────────────────────────────── */}
-        <div className="bg-gray-50 rounded-[2.5rem] p-6 border border-gray-100 mb-8">
+        <div className={`bg-gray-50 rounded-[2.5rem] p-6 border border-gray-100 mb-6 transition-all duration-500 ${showShare ? 'mt-6' : ''}`}>
           <h3 className="font-black text-gray-800 mb-1 uppercase text-[10px] tracking-[0.2em]">Help us improve!</h3>
           <p className="text-xs text-gray-500 mb-4 font-medium">How was your experience with this quiz?</p>
 
@@ -226,9 +240,19 @@ export default function Result() {
         </div>
 
         {/* ─── 6. Final Scoreboard Section ──────────────────────── */}
-        <TopPerformersSection />
 
       </div>
+
+      {/* ─── Loading Overlay for Detailed ─────────────────────── */}
+      {loadingDetailed && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 text-center">
+            <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-sm font-bold text-gray-700">Loading your analysis…😊</p>
+          </div>
+        </div>
+      )}
+
     </Layout>
   );
 }

@@ -105,7 +105,7 @@ export default function Timer({ duration = 20, onTimeUp, resetKey }) {
           style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.5s ease' }}
         />
       </svg>
-      <span className={`absolute text-xl font-bold ${textColor}`} style={{ transition: 'color 0.5s ease' }}>
+      <span className={`absolute text-[20px] font-[700] ${textColor}`} style={{ transition: 'color 0.5s ease' }}>
         {timeLeft}
       </span>
     </div>
