@@ -145,6 +145,42 @@ export default function StreakPage() {
           <p className="font-sans font-medium text-sm text-slate-300 text-center py-2">{getMotivation(streakCount)}</p>
         </div>
 
+        {/* Streak Milestone Bonuses table */}
+        <div className="mx-4 mt-5 bg-slate-800 rounded-2xl overflow-hidden border border-slate-700/50">
+          <div className="px-4 py-3 border-b border-slate-700/50">
+            <p className="font-display font-bold text-base text-white">Streak Milestone Bonuses 🔥</p>
+            <p className="font-sans text-xs text-slate-400 mt-0.5">Keep your streak to unlock bonus XP</p>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-700/40">
+                <th className="px-4 py-2.5 text-left font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">Streak</th>
+                <th className="px-4 py-2.5 text-right font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">Bonus XP</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { label: '3-day streak',   xp: '+15 XP',  color: 'text-orange-400',  active: streakCount >= 3  },
+                { label: '1-week streak',   xp: '+30 XP',  color: 'text-orange-400',  active: streakCount >= 7  },
+                { label: '2-week streak',   xp: '+60 XP',  color: 'text-amber-400',   active: streakCount >= 14 },
+                { label: '1-month streak',  xp: '+150 XP', color: 'text-yellow-400',  active: streakCount >= 30 },
+                { label: '3-month streak',  xp: '+500 XP', color: 'text-emerald-400', active: streakCount >= 90 },
+              ].map((row, i, arr) => (
+                <tr key={row.label} className={i < arr.length - 1 ? 'border-b border-slate-700/30' : ''}>
+                  <td className="px-4 py-3">
+                    <span className={`font-sans text-sm ${row.active ? 'text-white' : 'text-slate-500'}`}>{row.label}</span>
+                    {row.active && <span className="ml-2 text-xs bg-orange-500/20 text-orange-400 rounded-full px-2 py-0.5 font-display font-bold">Achieved ✓</span>}
+                  </td>
+                  <td className={`px-4 py-3 text-right font-display font-black text-sm ${row.active ? row.color : 'text-slate-600'}`}>{row.xp}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="px-4 py-3 bg-orange-500/5 border-t border-orange-500/20">
+            <p className="font-sans text-xs text-orange-400">💡 Bonus XP is awarded automatically when you hit a milestone</p>
+          </div>
+        </div>
+
         {/* CTA */}
         <div className="mx-4 mt-4">
           <button
