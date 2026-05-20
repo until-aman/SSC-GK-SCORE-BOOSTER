@@ -44,10 +44,10 @@ export default function LandingPage() {
   return (
     <>
       <Head><title>SSC GK Score Booster</title></Head>
-      <div className="min-h-screen bg-gradient-to-b from-[#0a1628] via-[#0f172a] to-[#0c1a0e] flex flex-col items-center justify-between pt-10 pb-8 px-6">
+      <div className="min-h-screen bg-gradient-to-b from-[#0a1628] via-[#0f172a] to-[#0c1a0e] flex flex-col items-center justify-center gap-12 py-10 px-6">
 
         {/* Top: logo + tagline */}
-        <div className="flex flex-col items-center mt-8">
+        <div className="flex flex-col items-center">
           <div className="w-14 h-14 rounded-3xl bg-orange-500/10 flex items-center justify-center">
             <LightningSVG />
           </div>

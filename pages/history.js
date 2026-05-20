@@ -92,7 +92,11 @@ export default function HistoryPage() {
 
   const level = data?.level || 'Aspirant';
   const totalXP = data?.totalXP || 0;
-  const sessions = data?.sessions || [];
+  const FILTER_FROM = new Date('2026-05-20T00:00:00+05:30').getTime();
+  const sessions = (data?.sessions || []).filter(s => {
+    if (!s.timestamp) return false;
+    return new Date(s.timestamp).getTime() >= FILTER_FROM;
+  });
   const thresh = LEVEL_THRESHOLDS[level] || LEVEL_THRESHOLDS.Aspirant;
   const nextLevel = thresh.next;
   const xpToNext = nextLevel ? thresh.max - totalXP : 0;
@@ -165,6 +169,39 @@ export default function HistoryPage() {
               ))}
             </>
           )}
+        </div>
+
+        {/* How to earn XP table */}
+        <div className="mx-4 mt-5 bg-slate-800 rounded-2xl overflow-hidden border border-slate-700/50">
+          <div className="px-4 py-3 border-b border-slate-700/50">
+            <p className="font-display font-bold text-base text-white">How to earn XP ⚡</p>
+            <p className="font-sans text-xs text-slate-400 mt-0.5">Earn more by playing consistently</p>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-700/40">
+                <th className="px-4 py-2.5 text-left font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">Action</th>
+                <th className="px-4 py-2.5 text-right font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">XP</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { action: 'Complete a quiz (5+ questions)', xp: '+10', color: 'text-emerald-400' },
+                { action: 'Each correct answer', xp: '+2', color: 'text-emerald-400' },
+                { action: 'First quiz of the day 🌅', xp: '+10', color: 'text-orange-400' },
+                { action: 'Wrong answer', xp: '−0', color: 'text-slate-500' },
+                { action: 'Skipped question', xp: '−0', color: 'text-slate-500' },
+              ].map((row, i, arr) => (
+                <tr key={row.action} className={i < arr.length - 1 ? 'border-b border-slate-700/30' : ''}>
+                  <td className="px-4 py-3 font-sans text-sm text-slate-300">{row.action}</td>
+                  <td className={`px-4 py-3 text-right font-display font-black text-sm ${row.color}`}>{row.xp}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="px-4 py-3 bg-emerald-500/5 border-t border-emerald-500/20">
+            <p className="font-sans text-xs text-emerald-400">💡 Max XP per quiz = 10 base + 2×correct + 10 first-of-day bonus</p>
+          </div>
         </div>
 
         {/* CTA */}

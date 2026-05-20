@@ -259,9 +259,9 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => isLoggedIn && router.push('/profile')}
-              className="bg-yellow-500/15 border border-yellow-500/30 rounded-full px-3 py-1.5 flex items-center gap-1.5"
+              className="bg-yellow-500/20 border border-yellow-400/50 rounded-full px-3 py-1.5 flex items-center gap-1.5"
             >
-              <span className="text-[14px] leading-none">🪙</span>
+              <span className="text-[14px] leading-none" style={{ filter: 'drop-shadow(0 0 4px rgba(234,179,8,0.7))' }}>🪙</span>
               <span className={`font-display font-bold text-xs ${isGuest ? 'text-slate-600' : 'text-yellow-400'}`}>
                 {isGuest ? '0' : totalXP}
               </span>
