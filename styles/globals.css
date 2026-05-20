@@ -2,280 +2,205 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Base styles ─────────────────────────────────────────────────── */
-* {
-  box-sizing: border-box;
-  font-family: 'Inter', sans-serif !important;
+/* ── Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@400;500;600&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
 }
 
 html {
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  margin: 0;
-  padding: 0;
-  min-height: 100%;
-}
+.font-display { font-family: 'Nunito', sans-serif; }
 
-:root {
-  --spacing-xs: 0.5rem;
-  --spacing-sm: 0.75rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
-  --card-radius: 1.75rem;
-  --card-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
-  --card-border: 1px solid rgba(148, 163, 184, 0.75);
-}
-
-/* ─── Card Container Classes ─────────────────────────────────────── */
-.page-wrapper {
-  background: linear-gradient(135deg, #FF8C00 0%, #FF6B35 100%);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem 1rem;
-}
-
-.card-container {
-  max-width: 480px;
-  width: 100%;
-  background: white;
-  border-radius: 2rem;
-  padding: 2.5rem 1.75rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  margin: 0 auto;
-}
-
-/* Mobile responsiveness for card containers */
-@media (max-width: 640px) {
-  .card-container {
-    padding: 1.75rem 1.25rem;
-  }
-  
-  .page-wrapper {
-    padding: 1rem;
-  }
-}
-
-/* ─── Legacy Card Styling ────── */
-.auth-card-container,
-.page-card,
-.compact-card {
-  max-width: 480px;
-  width: 100%;
-  margin: 0 auto;
-  background: #fff8f3;
-  border-radius: var(--card-radius);
-  border: var(--card-border);
-  box-shadow: var(--card-shadow);
-}
-
-.auth-card-container {
-  padding: 1.5rem;
-}
-
-.page-card {
-  padding: 1.5rem;
-  background: #fff8f3;
-}
-
-.compact-button {
-  padding: 0.85rem 1.2rem;
-  min-height: 48px;
-  font-size: 0.95rem;
-  border-radius: 1.25rem;
-}
-
-.compact-input,
-.compact-select,
-.compact-textarea {
-  padding: 0.85rem 1rem;
-  font-size: 0.95rem;
-  min-height: 48px;
-  border-radius: 1.25rem;
-}
-
-.compact-heading {
-  margin-bottom: 1rem;
-}
-
-button, a {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ─── Custom scrollbar (subtle) ───────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #c7d2fe;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #818cf8;
-}
-
-/* ─── Loading skeleton animation ──────────────────────────────────── */
+/* ── Animations ── */
 @keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
 }
-
 .skeleton {
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background: linear-gradient(90deg,#1e293b 25%,#263348 50%,#1e293b 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 0.5rem;
 }
 
-/* ─── Fade-in animation ───────────────────────────────────────────── */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes slideUpToast {
+  from { transform: translateY(80px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.xp-toast { animation: slideUpToast 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+@keyframes breatheOrange {
+  0%,100% { box-shadow: 0 0 16px rgba(249,115,22,0.3); }
+  50%     { box-shadow: 0 0 28px rgba(249,115,22,0.6); }
+}
+.btn-breathe-orange { animation: breatheOrange 2.5s ease-in-out infinite; }
+
+@keyframes deplete {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+.toast-progress {
+  height: 2px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 0 0 16px 16px;
+  animation: deplete 4s linear forwards;
 }
 
-.fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
+@keyframes breathe {
+  0%,100% { box-shadow: 0 0 16px rgba(16,185,129,0.3); }
+  50%     { box-shadow: 0 0 28px rgba(16,185,129,0.6); }
 }
+.btn-breathe { animation: breathe 2.5s ease-in-out infinite; }
 
-/* ─── Pulse animation for timer warning ───────────────────────────── */
-@keyframes pulse-warning {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+.fade-in-down { animation: fadeInDown 0.3s ease-out forwards; }
+/* Keep old class name for backward compat */
+.animate-fade-in-down { animation: fadeInDown 0.4s ease-out forwards; }
 
-.pulse-warning {
-  animation: pulse-warning 0.6s ease-in-out infinite;
-}
-/* ─── Pop-in animation for podium ────────────────────────────────── */
 @keyframes popIn {
-  0% {
-    opacity: 0;
-    transform: scale(0.8) translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+  0%   { transform: scale(0.8); opacity: 0; }
+  70%  { transform: scale(1.05); }
+  100% { transform: scale(1);   opacity: 1; }
 }
-
+.pop-in { animation: popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+/* Keep old class name for backward compat */
 .animate-pop-in {
   opacity: 0;
   animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* --- Progress Glow animation for loading bar ------------------- */
-@keyframes progress-glow {
-  0% {
-    width: 10%;
-    opacity: 0.8;
-  }
-  50% {
-    width: 60%;
-    opacity: 1;
-  }
-  100% {
-    width: 95%;
-    opacity: 0.9;
-  }
+/* ── Scrollbar hide ── */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* ── Bottom sheet overlay ── */
+.sheet-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  z-index: 40; backdrop-filter: blur(2px);
+}
+@keyframes sheetUp {
+  from { transform: translateY(100%) translateX(-50%); }
+  to   { transform: translateY(0)    translateX(-50%); }
+}
+.sheet-panel {
+  position: fixed; bottom: 0; left: 50%; z-index: 50;
+  width: 100%; max-width: 430px;
+  transform: translateX(-50%);
+  animation: sheetUp 0.3s cubic-bezier(0.32,0.72,0,1) forwards;
 }
 
-.animate-progress-glow {
-  animation: progress-glow 2.5s ease-in-out infinite;
+/* ── Elevation shadows ── */
+.shadow-card   { box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+.shadow-cta    { box-shadow: 0 0 20px rgba(16,185,129,0.35); }
+.shadow-streak { box-shadow: 0 0 16px rgba(249,115,22,0.4); }
+.shadow-gold   { box-shadow: 0 0 20px rgba(245,158,11,0.5); }
+
+/* ── Custom scrollbar (subtle) ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+button, a {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ─── Typography Schema ───────────────────────────────────────────── */
+/* ── Quiz Bulb ── */
+@keyframes bulbGlow {
+  0%   { box-shadow: 0 0 6px rgba(253,224,71,0.3); }
+  50%  { box-shadow: 0 0 28px rgba(253,224,71,0.9), 0 0 50px rgba(253,224,71,0.3); }
+  100% { box-shadow: 0 0 16px rgba(253,224,71,0.6); }
+}
+.bulb-correct {
+  background: rgba(253,224,71,0.18) !important;
+  border-color: rgba(253,224,71,0.6) !important;
+  animation: bulbGlow 0.7s ease-out forwards;
+}
+@keyframes bulbShake {
+  0%,100% { transform: rotate(0deg); }
+  20%     { transform: rotate(-12deg); }
+  40%     { transform: rotate(12deg); }
+  60%     { transform: rotate(-6deg); }
+  80%     { transform: rotate(6deg); }
+}
+.bulb-wrong {
+  background: rgba(239,68,68,0.15) !important;
+  border-color: rgba(239,68,68,0.5) !important;
+  animation: bulbShake 0.35s ease-out forwards;
+}
+
+/* ── Onboarding slide animations ── */
+@keyframes slideTextIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.slide-text-in { animation: slideTextIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes circlePopIn {
+  0%   { opacity: 0; transform: scale(0.72); }
+  70%  { transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.circle-pop-in { animation: circlePopIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* ── Slide-up sheet animation ── */
+@keyframes slideUpSheet {
+  from { transform: translate(-50%, 100%); opacity: 0; }
+  to   { transform: translate(-50%, 0);   opacity: 1; }
+}
+.animate-slide-up { animation: slideUpSheet 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+/* ── Hide scrollbar utility ── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Pulse animation (backward compat) ── */
+@keyframes pulse-warning {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.05); }
+}
+.pulse-warning { animation: pulse-warning 0.6s ease-in-out infinite; }
+
+/* ── Typography utilities (legacy — some pages reference these) ── */
 @layer utilities {
-  .typo-app-title {
-    font-size: 24px;
-    font-weight: 800;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
-    color: #1a1a1a;
-  }
   .typo-page-heading {
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: 0.08em;
-    color: #1a1a1a;
+    font-size: 20px; font-weight: 700; line-height: 1.2;
+    letter-spacing: 0.08em; color: #1a1a1a;
   }
   .typo-section-label {
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.5;
-    color: #6b7280;
+    font-size: 13px; font-weight: 600; line-height: 1.5; color: #6b7280;
   }
   .typo-question {
-    font-size: 16px;
-    font-weight: 500;
-    line-height: 1.6;
-    letter-spacing: 0;
-    color: #1a1a1a;
+    font-size: 16px; font-weight: 500; line-height: 1.6; color: #1a1a1a;
   }
   .typo-option {
-    font-size: 15px;
-    font-weight: 400;
-    line-height: 1.5;
-    letter-spacing: 0;
-    color: #6b7280;
+    font-size: 15px; font-weight: 400; line-height: 1.5; color: #6b7280;
   }
   .typo-body {
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 1.5;
-    letter-spacing: 0;
-    color: #1a1a1a;
+    font-size: 14px; font-weight: 400; line-height: 1.5; color: #1a1a1a;
   }
   .typo-button {
-    font-size: 15px;
-    font-weight: 600;
-    line-height: 1.5;
-    letter-spacing: 0.02em;
+    font-size: 15px; font-weight: 600; line-height: 1.5; letter-spacing: 0.02em;
   }
   .typo-small-label {
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 1.5;
-    letter-spacing: 0;
-    color: #6b7280;
+    font-size: 12px; font-weight: 400; line-height: 1.5; color: #6b7280;
   }
   .typo-score {
-    font-size: 28px;
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    font-size: 28px; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em;
   }
   .typo-username {
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1.5;
-    letter-spacing: 0;
+    font-size: 14px; font-weight: 600; line-height: 1.5;
   }
 }

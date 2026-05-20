@@ -3,7 +3,6 @@ export default function PodiumCard({ performer, rank, session }) {
 
   const isFirst = rank === 1;
   const isSecond = rank === 2;
-  const isThird = rank === 3;
 
   // Staggered heights for 2-1-3 layout
   const heightClass = isFirst ? 'h-[140px]' : isSecond ? 'h-[110px]' : 'h-[90px]';

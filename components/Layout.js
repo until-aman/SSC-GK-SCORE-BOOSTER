@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 
 export default function Layout({ children, title = 'SSC GK SCORE BOOSTER — AI Prep', hideAuth = false }) {
   const { data: session, status } = useSession();

@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"D:\\\\JOB HUNT\\\\Portfolio\\\\Aman Antil Portfolio\\\\Projects \\(Building with AI\\)\\\\SSC GK SCORE BOOSTER\" /s /b)",
+      "Bash(findstr /i \"\\\\.md$\")",
+      "Bash(findstr /v \"node_modules\")",
+      "PowerShell(cd \"D:\\\\JOB HUNT\\\\Portfolio\\\\Aman Antil Portfolio\\\\Code file\\\\SSC-GK-SCORE-BOOSTER\\\\festive-engelbart-5368c8\"; $env:GOOGLE_SHEET_ID=\"placeholder\"; $env:GOOGLE_SERVICE_ACCOUNT_KEY='{\"type\":\"service_account\",\"project_id\":\"x\",\"private_key_id\":\"x\",\"private_key\":\"-----BEGIN RSA PRIVATE KEY-----\\\\nMIIEowIBAAKCAQEA\\\\n-----END RSA PRIVATE KEY-----\\\\n\",\"client_email\":\"x@x.iam.gserviceaccount.com\",\"client_id\":\"x\",\"auth_uri\":\"\",\"token_uri\":\"\",\"auth_provider_x509_cert_url\":\"\",\"client_x509_cert_url\":\"\"}'; $env:NEXTAUTH_SECRET=\"placeholder\"; $env:NEXTAUTH_URL=\"http://localhost:3000\"; $env:GOOGLE_CLIENT_ID=\"placeholder\"; $env:GOOGLE_CLIENT_SECRET=\"placeholder\"; $env:GEMINI_API_KEY=\"placeholder\"; npx next build 2>&1 | Select-Object -First 80)",
+      "Bash(npx next *)",
+      "Bash(npm install *)",
+      "Bash(node scripts/migrate-sheets.js)",
+      "Bash(npm run *)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(node -e ' *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":3000 :3001 :3002\")",
+      "Bash(taskkill /PID 35000 /F)",
+      "Bash(taskkill /PID 15548 /F)",
+      "Bash(taskkill /PID 17324 /F)",
+      "PowerShell(Stop-Process -Id 35000 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 15548 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 17324 -Force -ErrorAction SilentlyContinue)",
+      "Bash(mkdir -p \"D:\\\\JOB HUNT\\\\Portfolio\\\\Aman Antil Portfolio\\\\Code file\\\\SSC-GK-SCORE-BOOSTER\\\\festive-engelbart-5368c8\\\\.claude\" 2>&1; echo done)",
+      "mcp__Claude_Preview__preview_start",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -State Listen | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Get-Process -Id $_ })",
+      "Bash(findstr \":3001\")",
+      "Bash(taskkill /PID 34468 /F)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}
