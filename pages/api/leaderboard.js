@@ -1,42 +1,39 @@
-import { getLeaderboardData } from '@/lib/sheets';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from './auth/[...nextauth]';
+import {
+  getLeaderboardData,
+  getUserRows,
+  getLeaderboardCacheRow,
+  updateLeaderboardCacheRow,
+} from '@/lib/sheets';
+import { getISTDateString } from '@/lib/streak';
 
-function computeLeaderboard(rows) {
-  const userMap = {};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-  rows.forEach(row => {
-    const [timestamp, email, name, correctStr, incorrectStr, skippedStr,
-           totalStr, scoreStr, subject, topic, imageUrl] = row;
-    if (!email || !scoreStr) return;
+function computeLeaderboardFromRows(scoreRows, publicEmails, imageMap = {}) {
+  const groupByEmail = {};
 
-    if (!userMap[email]) {
-      userMap[email] = {
-        email,
-        name: name || email,
-        image: imageUrl || null,
-        totalScore: 0,
-        totalQuestionsAttempted: 0,
-        totalCorrect: 0,
-        timestamp: timestamp || null, // track latest attempt timestamp
-      };
+  scoreRows.forEach(row => {
+    const email = row[1];
+    if (!email) return;
+    if (!publicEmails.has(email)) return;
+
+    const name = row[2] || email;
+    const rawScore = parseFloat(row[7]) || 0;
+    const totalQuestions = parseInt(row[6]) || 0;
+    const correctAnswers = parseInt(row[3]) || 0;
+
+    if (!groupByEmail[email]) {
+      groupByEmail[email] = { email, name, totalScore: 0, totalQuestionsAttempted: 0, totalCorrect: 0 };
     }
-
-    if (imageUrl) {
-      userMap[email].image = imageUrl;
-    }
-
-    // Keep most recent timestamp
-    if (timestamp && (!userMap[email].timestamp || timestamp > userMap[email].timestamp)) {
-      userMap[email].timestamp = timestamp;
-    }
-
-    userMap[email].totalScore += parseFloat(scoreStr) || 0;
-    userMap[email].totalQuestionsAttempted += parseInt(totalStr) || 0;
-    userMap[email].totalCorrect += parseInt(correctStr) || 0;
+    if (row[2]) groupByEmail[email].name = row[2];
+    groupByEmail[email].totalScore += rawScore;
+    groupByEmail[email].totalQuestionsAttempted += totalQuestions;
+    groupByEmail[email].totalCorrect += correctAnswers;
   });
 
-  const entries = Object.values(userMap).map(u => ({
+  const entries = Object.values(groupByEmail).map(u => ({
     ...u,
-    score: Math.round(u.totalScore * 100) / 100,
     totalScore: Math.round(u.totalScore * 100) / 100,
     overallAccuracy: u.totalQuestionsAttempted > 0
       ? Math.round((u.totalCorrect / u.totalQuestionsAttempted) * 10000) / 100
@@ -49,7 +46,7 @@ function computeLeaderboard(rows) {
     return b.totalQuestionsAttempted - a.totalQuestionsAttempted;
   });
 
-  return entries.map((e, i) => ({ ...e, rank: i + 1 })).slice(0, 100);
+  return entries.map((e, i) => ({ ...e, rank: i + 1, image: imageMap[e.email] || '' })).slice(0, 50);
 }
 
 export default async function handler(req, res) {
@@ -57,12 +54,79 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const scope = req.query.scope === 'all' ? 'all' : 'weekly';
+  const preview = req.query.preview === 'true';
+
   try {
-    const rows = await getLeaderboardData();
-    const leaderboard = computeLeaderboard(rows);
-    return res.status(200).json({ leaderboard });
+    const session = await getServerSession(req, res, authOptions);
+
+    // Check cache — treat any read failure as stale (e.g. tab not yet created)
+    let cacheRow = { cachedAt: '', weeklyJSON: '', allTimeJSON: '' };
+    try { cacheRow = await getLeaderboardCacheRow(); } catch (_) {}
+    const now = Date.now();
+    let weeklyLeaders, allTimeLeaders;
+
+    const cacheStale = !cacheRow.cachedAt ||
+      (now - new Date(cacheRow.cachedAt).getTime()) > CACHE_TTL;
+
+    if (cacheStale) {
+      // Recompute both scopes
+      const allScoreRows = await getLeaderboardData();
+      const allUserRows = await getUserRows();
+
+      const publicEmails = new Set(
+        allUserRows
+          .filter(r => r[9] !== 'FALSE')
+          .map(r => r[0])
+      );
+
+      // Build image map: email → profile photo URL (col L = index 11)
+      const imageMap = {};
+      allUserRows.forEach(r => { if (r[0]) imageMap[r[0]] = r[11] || ''; });
+
+      // Weekly: last 7 days inclusive
+      const weekStart = getISTDateString(new Date(now - 6 * 24 * 60 * 60 * 1000));
+      const weeklyRows = allScoreRows.filter(row => {
+        if (!row[0]) return false;
+        try {
+          return getISTDateString(new Date(row[0])) >= weekStart;
+        } catch { return false; }
+      });
+
+      weeklyLeaders = computeLeaderboardFromRows(weeklyRows, publicEmails, imageMap);
+      allTimeLeaders = computeLeaderboardFromRows(allScoreRows, publicEmails, imageMap);
+
+      try {
+        await updateLeaderboardCacheRow(
+          new Date().toISOString(),
+          JSON.stringify(weeklyLeaders),
+          JSON.stringify(allTimeLeaders)
+        );
+      } catch (_) { /* cache tab missing — skip, still return results */ }
+    } else {
+      try {
+        weeklyLeaders = JSON.parse(cacheRow.weeklyJSON || '[]');
+        allTimeLeaders = JSON.parse(cacheRow.allTimeJSON || '[]');
+      } catch {
+        weeklyLeaders = [];
+        allTimeLeaders = [];
+      }
+    }
+
+    const fullList = scope === 'all' ? allTimeLeaders : weeklyLeaders;
+    const leaders = preview ? fullList.slice(0, 3) : fullList;
+
+    let currentUser = null;
+    if (session) {
+      currentUser = fullList.find(u => u.email === session.user.email) || null;
+    }
+
+    return res.status(200).json({ scope, leaders, currentUser });
   } catch (err) {
-    console.error('Leaderboard API error:', err);
-    return res.status(500).json({ error: 'Failed to read data' });
+    console.error('[leaderboard] Error:', err.message);
+    if (err.code === 429 || (err.response && err.response.status === 429)) {
+      console.error('[Sheets] Rate limit hit');
+    }
+    return res.status(500).json({ error: 'Failed to load leaderboard' });
   }
 }
