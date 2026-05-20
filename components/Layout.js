@@ -1,8 +1,20 @@
 import Head from 'next/head';
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
+import { useState, useEffect } from 'react';
 
 export default function Layout({ children, title = 'SSC GK SCORE BOOSTER — AI Prep', hideAuth = false }) {
   const { data: session, status } = useSession();
+  const [stats, setStats] = useState({ streak: 0, xp: 0, rank: null });
+
+  // Load streak/XP from localStorage (updated by quiz result)
+  useEffect(() => {
+    if (session?.user?.email) {
+      try {
+        const saved = localStorage.getItem(`ssc_stats_${session.user.email}`);
+        if (saved) setStats(JSON.parse(saved));
+      } catch {}
+    }
+  }, [session]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FF8C00] to-[#FF6B35] flex flex-col">
@@ -13,9 +25,32 @@ export default function Layout({ children, title = 'SSC GK SCORE BOOSTER — AI 
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      {/* ─── Global Auth Header (Phase 1.3) ────────────────────── */}
+      {/* ─── Global Navbar ────────────────────────────────────────────── */}
       {!hideAuth && (
-        <div className="hidden sm:flex max-w-lg w-full mx-auto px-4 pt-4 flex justify-end">
+        <div className="w-full max-w-lg mx-auto px-4 pt-4 flex justify-between items-center">
+          {/* Gamification stats — only for signed-in users */}
+          {status === 'authenticated' && session ? (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/30">
+                <span className="text-sm" style={{ animation: 'flamePulse 2s ease-in-out infinite' }}>🔥</span>
+                <span className="text-white text-[11px] font-black">{stats.streak || 0}</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/30">
+                <span className="text-sm">⚡</span>
+                <span className="text-white text-[11px] font-black">{stats.xp || 0} XP</span>
+              </div>
+              {stats.rank && (
+                <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/30">
+                  <span className="text-sm">🏆</span>
+                  <span className="text-white text-[11px] font-black">#{stats.rank}</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div />
+          )}
+
+          {/* Auth section */}
           {status === 'loading' ? (
             <div className="w-20 h-8 skeleton rounded-lg" />
           ) : session ? (
@@ -27,23 +62,25 @@ export default function Layout({ children, title = 'SSC GK SCORE BOOSTER — AI 
                   {session.user.name?.charAt(0)}
                 </div>
               )}
-              <div className="flex flex-col">
-                <span className="typo-username truncate max-w-[80px]">
-                  {session.user.name}
-                </span>
-              </div>
+              <span className="typo-username truncate max-w-[80px]">{session.user.name?.split(' ')[0]}</span>
             </div>
           ) : (
             <button
               onClick={() => signIn('google')}
-              className="bg-white shadow-sm border border-gray-100 rounded-full px-4 py-1.5 typo-button text-gray-600 hover:bg-gray-50 transition active:scale-95 flex items-center gap-2 scale-90 origin-right"
+              className="bg-white shadow-sm border border-gray-100 rounded-full px-4 py-1.5 typo-button text-gray-600 hover:bg-gray-50 transition active:scale-95 flex items-center gap-2"
             >
-              <svg width="12" height="12" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#34A853" d="M10.53 28.59a14.5 14.5 0 010-9.18l-7.98-6.19a24.08 24.08 0 000 21.56l7.98-6.19z"/><path fill="#FBBC05" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
               Sign in
             </button>
           )}
         </div>
       )}
+
+      <style>{`
+        @keyframes flamePulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.2); }
+        }
+      `}</style>
 
       <main className="flex-1 flex flex-col items-center justify-center w-full max-w-lg mx-auto px-4 py-8">
         {children}

@@ -44,9 +44,9 @@ export default function TopPerformers() {
         <h3 className="typo-question !font-bold">Top Performers</h3>
         <button 
           onClick={() => router.push('/leaderboard')}
-          className="typo-button !text-[#FF6A00] hover:!text-[#FF8C00] transition"
+          className="typo-button !text-[#FF6A00] hover:!text-[#FF8C00] transition !text-[11px]"
         >
-          View my rank &rarr;
+          View leaderboard &rarr;
         </button>
       </div>
 

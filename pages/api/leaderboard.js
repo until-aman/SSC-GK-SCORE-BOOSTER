@@ -16,11 +16,17 @@ function computeLeaderboard(rows) {
         totalScore: 0,
         totalQuestionsAttempted: 0,
         totalCorrect: 0,
+        timestamp: timestamp || null, // track latest attempt timestamp
       };
     }
 
     if (imageUrl) {
       userMap[email].image = imageUrl;
+    }
+
+    // Keep most recent timestamp
+    if (timestamp && (!userMap[email].timestamp || timestamp > userMap[email].timestamp)) {
+      userMap[email].timestamp = timestamp;
     }
 
     userMap[email].totalScore += parseFloat(scoreStr) || 0;
@@ -30,17 +36,13 @@ function computeLeaderboard(rows) {
 
   const entries = Object.values(userMap).map(u => ({
     ...u,
-    score: Math.round(u.totalScore * 100) / 100, // Alias for UI
+    score: Math.round(u.totalScore * 100) / 100,
     totalScore: Math.round(u.totalScore * 100) / 100,
     overallAccuracy: u.totalQuestionsAttempted > 0
       ? Math.round((u.totalCorrect / u.totalQuestionsAttempted) * 10000) / 100
       : 0,
   }));
 
-  // Tie-break rules:
-  // 1. Higher totalScore first
-  // 2. If equal: higher overallAccuracy
-  // 3. If still equal: higher totalQuestionsAttempted
   entries.sort((a, b) => {
     if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
     if (b.overallAccuracy !== a.overallAccuracy) return b.overallAccuracy - a.overallAccuracy;

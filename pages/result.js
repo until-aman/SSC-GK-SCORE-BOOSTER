@@ -29,6 +29,37 @@ export default function Result() {
     }
   }, []);
 
+  // Update XP + streak in localStorage
+  useEffect(() => {
+    if (!result || !session?.user?.email) return;
+    try {
+      const key = `ssc_stats_${session.user.email}`;
+      const saved = JSON.parse(localStorage.getItem(key) || '{}');
+      const today = new Date().toDateString();
+      const lastDate = saved.lastQuizDate;
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+      // Calculate new streak
+      let streak = saved.streak || 0;
+      if (lastDate === today) {
+        // Already played today — keep streak
+      } else if (lastDate === yesterday) {
+        streak += 1; // Consecutive day
+      } else {
+        streak = 1; // Reset
+      }
+
+      // XP: +20 per quiz, +40 if 100% accuracy, +10 if streak > 1
+      let xpGained = 20;
+      if (result.accuracy >= 100) xpGained += 40;
+      if (streak > 1) xpGained += 10;
+      const xp = (saved.xp || 0) + xpGained;
+
+      const updated = { ...saved, streak, xp, lastQuizDate: today };
+      localStorage.setItem(key, JSON.stringify(updated));
+    } catch {}
+  }, [result, session]);
+
   // Fetch AI summary
   useEffect(() => {
     if (!result) return;
@@ -93,7 +124,7 @@ export default function Result() {
   // Handle Feedback Submission
   const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
-    if (feedback.trim().length < 10) return;
+    if (feedback.trim().length === 0) return;
     setSubmittingFeedback(true);
     try {
       await fetch('/api/feedback', {
@@ -177,12 +208,6 @@ export default function Result() {
             className="w-full bg-[#FF6A00] text-white rounded-2xl py-2.5 font-bold text-base active:scale-[0.98] transition"
           >
             Play Again
-          </button>
-          <button
-            onClick={() => router.push('/leaderboard')}
-            className="w-full bg-[#F1F3F5] text-[#2D3E50] rounded-2xl py-2.5 font-bold text-base active:scale-[0.98] transition flex items-center justify-center gap-2"
-          >
-            View LeaderBoard 🏆
           </button>
         </div>
 
