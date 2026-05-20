@@ -194,6 +194,27 @@ export default function Dashboard() {
     if (!isLoggedIn && !isGuest) router.replace('/');
   }, [status, isLoggedIn, isGuest, router]);
 
+  // Migrate any locally-saved guest questions to the cloud (runs once on login)
+  async function migrateLocalSavedQuestions() {
+    try {
+      const raw = localStorage.getItem('savedQuestions');
+      if (!raw) return;
+      const questions = JSON.parse(raw);
+      if (!Array.isArray(questions) || questions.length === 0) return;
+      for (const q of questions) {
+        if (!q.questionId || !q.question || !q.correctOption) continue;
+        try {
+          await fetch('/api/saved-questions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(q),
+          });
+        } catch {}
+      }
+      localStorage.removeItem('savedQuestions');
+    } catch {}
+  }
+
   // Fetch top 10 weekly players
   useEffect(() => {
     fetch('/api/leaderboard?scope=weekly')
@@ -202,7 +223,7 @@ export default function Dashboard() {
       .catch(() => {});
   }, []);
 
-  // Fetch profile
+  // Fetch profile + run localStorage → cloud migration for saved questions
   useEffect(() => {
     if (!isLoggedIn) { setProfileLoading(false); return; }
     fetch('/api/user-profile')
@@ -211,6 +232,7 @@ export default function Dashboard() {
         if (data.isNewUser === true) { router.replace('/onboarding'); return; }
         setUserProfile(data);
         setProfileLoading(false);
+        migrateLocalSavedQuestions();
       })
       .catch(() => setProfileLoading(false));
   }, [isLoggedIn, router]);

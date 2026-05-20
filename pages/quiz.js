@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 
@@ -104,8 +105,21 @@ function TimerRing({ timeLeft, duration = 20 }) {
   );
 }
 
+function BookmarkIcon({ filled, size = 20 }) {
+  return filled ? (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#10b981" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/>
+    </svg>
+  ) : (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/>
+    </svg>
+  );
+}
+
 export default function Quiz() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const { subject, topic, count, n, sessionId: qSessionId, mode } = router.query;
   const questionCount = count || n;
   const isSavedMode = mode === 'saved';
@@ -123,11 +137,100 @@ export default function Quiz() {
   const [timeLeft, setTimeLeft]         = useState(20);
   const [sessionId, setSessionId]       = useState('');
   const [bulbState, setBulbState]       = useState('neutral'); // 'neutral' | 'correct' | 'wrong'
+  const [savedIds, setSavedIds]         = useState(new Set());
+  const [showGuestBanner, setShowGuestBanner] = useState(false);
+  const guestBannerShown = useRef(false);
+  const isLoggedIn = status === 'authenticated';
 
   useEffect(() => {
     if (!router.isReady) return;
     if (!isSavedMode && (!subject || !topic || !questionCount)) router.replace('/dashboard');
   }, [router.isReady, subject, topic, questionCount, isSavedMode, router]);
+
+  // Load saved IDs for bookmark state
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (!isLoggedIn) return;
+    fetch('/api/saved-questions/ids')
+      .then(r => r.ok ? r.json() : { savedIds: [] })
+      .then(d => setSavedIds(new Set(d.savedIds || [])))
+      .catch(() => {});
+  }, [status, isLoggedIn]);
+
+  async function handleBookmarkToggle(question) {
+    if (!isLoggedIn) {
+      // Guest: use localStorage
+      if (guestBannerShown.current) return;
+      try {
+        const existing = JSON.parse(localStorage.getItem('savedQuestions') || '[]');
+        const alreadySaved = existing.some(q => q.questionId === question.id);
+        let updated;
+        if (alreadySaved) {
+          updated = existing.filter(q => q.questionId !== question.id);
+          setSavedIds(prev => { const n = new Set(prev); n.delete(question.id); return n; });
+        } else {
+          updated = [...existing, {
+            questionId:    question.id,
+            subject:       question.subject,
+            topic:         question.topic,
+            question:      question.question,
+            optionA:       question.optionA,
+            optionB:       question.optionB,
+            optionC:       question.optionC,
+            optionD:       question.optionD,
+            correctOption: question.correctOption,
+            explanation:   question.explanation || '',
+          }];
+          setSavedIds(prev => new Set([...prev, question.id]));
+          // Show guest banner once per session
+          if (!guestBannerShown.current) {
+            guestBannerShown.current = true;
+            setShowGuestBanner(true);
+            setTimeout(() => setShowGuestBanner(false), 3000);
+          }
+        }
+        localStorage.setItem('savedQuestions', JSON.stringify(updated));
+      } catch {}
+      return;
+    }
+
+    // Logged-in: use API
+    const isSaved = savedIds.has(question.id);
+    if (isSaved) {
+      setSavedIds(prev => { const n = new Set(prev); n.delete(question.id); return n; });
+      try {
+        await fetch('/api/saved-questions', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questionId: question.id }),
+        });
+      } catch {
+        setSavedIds(prev => new Set([...prev, question.id])); // rollback
+      }
+    } else {
+      setSavedIds(prev => new Set([...prev, question.id]));
+      try {
+        await fetch('/api/saved-questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            questionId:    question.id,
+            subject:       question.subject,
+            topic:         question.topic,
+            question:      question.question,
+            optionA:       question.optionA,
+            optionB:       question.optionB,
+            optionC:       question.optionC,
+            optionD:       question.optionD,
+            correctOption: question.correctOption,
+            explanation:   question.explanation || '',
+          }),
+        });
+      } catch {
+        setSavedIds(prev => { const n = new Set(prev); n.delete(question.id); return n; }); // rollback
+      }
+    }
+  }
 
   useEffect(() => {
     setSessionId(qSessionId || crypto.randomUUID());
@@ -276,6 +379,16 @@ export default function Quiz() {
     <div className="h-screen flex flex-col bg-[#0f172a] overflow-hidden">
       <Head><title>Q{currentIndex + 1} — SSC GK Score Booster</title></Head>
 
+      {/* Guest bookmark banner */}
+      {showGuestBanner && (
+        <div className="fixed top-4 left-4 right-4 z-50 bg-slate-800 border border-emerald-500/30 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl max-w-[400px] mx-auto">
+          <span className="text-xl flex-shrink-0">🔖</span>
+          <p className="font-sans font-medium text-sm text-slate-300 leading-snug flex-1">
+            Saved! Sign in to sync across devices.
+          </p>
+        </div>
+      )}
+
       {/* Top bar h-12 */}
       <div className="h-12 px-4 flex items-center justify-between flex-shrink-0">
         <span className="font-sans font-medium text-xs text-slate-400 truncate max-w-[180px]">
@@ -300,8 +413,15 @@ export default function Quiz() {
         <TimerRing timeLeft={timeLeft} duration={20} />
 
         {/* Question card */}
-        <div className="bg-slate-800/60 rounded-2xl px-4 py-3 border border-slate-700/50 mt-4">
-          <p className="font-display font-bold text-sm text-white leading-relaxed whitespace-pre-line">
+        <div className="bg-slate-800/60 rounded-2xl px-4 py-3 border border-slate-700/50 mt-4 relative">
+          <button
+            onClick={() => handleBookmarkToggle(q)}
+            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/60 active:scale-90 transition-transform"
+            aria-label={savedIds.has(q.id) ? 'Remove bookmark' : 'Save question'}
+          >
+            <BookmarkIcon filled={savedIds.has(q.id)} size={16} />
+          </button>
+          <p className="font-display font-bold text-sm text-white leading-relaxed whitespace-pre-line pr-8">
             {q.question}
           </p>
         </div>
