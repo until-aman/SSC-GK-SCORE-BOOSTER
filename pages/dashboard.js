@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
 import BottomNav from '@/components/BottomNav';
+import NotificationBell from '@/components/NotificationBell';
 import { getSubjectStyle, subjectStyles } from '@/lib/subjects';
 import { getISTDateString } from '@/lib/streak';
 
@@ -288,9 +289,7 @@ export default function Dashboard() {
                 {isGuest ? '0' : totalXP}
               </span>
             </button>
-            <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 text-base">
-              🔔
-            </div>
+            <NotificationBell streakCount={userProfile?.streakCount || 0} />
           </div>
         </div>
 
