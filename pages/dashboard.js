@@ -116,13 +116,22 @@ export default function Dashboard() {
   const [userProfile, setUserProfile]   = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [topPlayers, setTopPlayers]     = useState([]);
+  const [subjectScrollPct, setSubjectScrollPct] = useState(0);
   const [seriesScrollPct,  setSeriesScrollPct]  = useState(0);
   const [comingSoonModal,  setComingSoonModal]  = useState(false);
   const [notifyState,      setNotifyState]      = useState({}); // { [seriesId]: 'idle'|'loading'|'done'|'already' }
   const [notifyToast,      setNotifyToast]      = useState(null); // { msg, type }
   const [subjectChecking,  setSubjectChecking]  = useState(null); // subject name being checked
   const [lowQModal,        setLowQModal]        = useState(null); // subject name with low questions
+  const subjectCarouselRef = useRef(null);
   const seriesCarouselRef  = useRef(null);
+
+  const handleSubjectScroll = useCallback(() => {
+    const el = subjectCarouselRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    setSubjectScrollPct(max > 0 ? el.scrollLeft / max : 0);
+  }, []);
 
   const handleSeriesScroll = useCallback(() => {
     const el = seriesCarouselRef.current;
@@ -460,6 +469,8 @@ export default function Dashboard() {
             <p className="font-display font-bold text-base text-white">Discover Subjects</p>
           </div>
           <div
+            ref={subjectCarouselRef}
+            onScroll={handleSubjectScroll}
             className="flex gap-3 overflow-x-auto"
             style={{ paddingLeft: 16, paddingRight: 16, paddingBottom: 4, scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
@@ -487,6 +498,13 @@ export default function Dashboard() {
             })}
           </div>
 
+          {/* White scroll indicator */}
+          <div className="mx-4 mt-5 h-1 bg-slate-700/40 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-white/60 rounded-full transition-all duration-150"
+              style={{ width: `${Math.round(subjectScrollPct * 100)}%`, minWidth: '12%' }}
+            />
+          </div>
         </div>
 
         {/* ── PARMAR SSC SERIES ── */}
@@ -556,10 +574,10 @@ export default function Dashboard() {
             })}
           </div>
 
-          {/* Scroll progress bar */}
-          <div className="mx-4 mt-3 h-1 bg-slate-700/50 rounded-full overflow-hidden">
+          {/* White scroll indicator */}
+          <div className="mx-4 mt-5 h-1 bg-slate-700/40 rounded-full overflow-hidden">
             <div
-              className="h-full bg-violet-500 rounded-full transition-all duration-150"
+              className="h-full bg-white/60 rounded-full transition-all duration-150"
               style={{ width: `${Math.round(seriesScrollPct * 100)}%`, minWidth: '33%' }}
             />
           </div>
