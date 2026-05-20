@@ -119,7 +119,7 @@ function BookmarkIcon({ filled, size = 20 }) {
 
 export default function Quiz() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const { subject, topic, count, n, sessionId: qSessionId, mode } = router.query;
   const questionCount = count || n;
   const isSavedMode = mode === 'saved';
@@ -160,7 +160,6 @@ export default function Quiz() {
   async function handleBookmarkToggle(question) {
     if (!isLoggedIn) {
       // Guest: use localStorage
-      if (guestBannerShown.current) return;
       try {
         const existing = JSON.parse(localStorage.getItem('savedQuestions') || '[]');
         const alreadySaved = existing.some(q => q.questionId === question.id);
@@ -182,7 +181,7 @@ export default function Quiz() {
             explanation:   question.explanation || '',
           }];
           setSavedIds(prev => new Set([...prev, question.id]));
-          // Show guest banner once per session
+          // Show guest sign-in nudge banner once per session
           if (!guestBannerShown.current) {
             guestBannerShown.current = true;
             setShowGuestBanner(true);
