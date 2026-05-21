@@ -28,6 +28,7 @@ export default function HistoryPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [xpBarWidth, setXpBarWidth] = useState(0);
+  const [showAllSessions, setShowAllSessions] = useState(false);
 
   const isGuest = status === 'unauthenticated';
 
@@ -90,7 +91,6 @@ export default function HistoryPage() {
     );
   }
 
-  const [showAllSessions, setShowAllSessions] = useState(false);
   const level = data?.level || 'Aspirant';
   const totalXP = data?.totalXP || 0;
   const FILTER_FROM = new Date('2026-05-20T00:00:00+05:30').getTime();
