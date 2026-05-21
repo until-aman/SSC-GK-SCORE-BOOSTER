@@ -16,7 +16,7 @@ const SLIDES = [
     accentColor: 'text-blue-400',
     tag: 'Step 01',
     title: 'Pick Your Topic',
-    desc: 'Choose any subject — Polity, History, Geography and more.\nHand-curated questions, zero fluff.\nStart in seconds.',
+    desc: 'Choose any subject — Polity, Geography, Ancient History and more.\nHand-curated questions, zero fluff.\nStart in seconds.',
   },
   {
     id: 2,

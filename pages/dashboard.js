@@ -250,7 +250,13 @@ export default function Dashboard() {
         {/* ── PROFILE BAR ── */}
         <div className="px-4 pt-8 pb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Avatar imageUrl={googlePhoto} name={displayName} size={36} />
+            <button
+              onClick={() => isLoggedIn && router.push('/profile')}
+              className="flex-shrink-0 active:scale-90 transition-transform"
+              aria-label="Go to profile"
+            >
+              <Avatar imageUrl={googlePhoto} name={displayName} size={36} />
+            </button>
             {isLoggedIn ? (
               <span className="bg-white/10 rounded-full px-2.5 py-1 font-display font-bold text-xs text-white/70">
                 ⭐ {level}
@@ -263,7 +269,7 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => isLoggedIn && router.push('/profile')}
+              onClick={() => isLoggedIn && router.push('/history')}
               className="bg-yellow-500/20 border border-yellow-400/50 rounded-full px-3 py-1.5 flex items-center gap-1.5"
             >
               <span className="text-[14px] leading-none" style={{ filter: 'drop-shadow(0 0 4px rgba(234,179,8,0.7))' }}>🪙</span>

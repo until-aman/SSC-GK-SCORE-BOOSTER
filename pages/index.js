@@ -63,7 +63,7 @@ export default function LandingPage() {
             <div className="flex justify-around">
               {[
                 { num: '8',      label: 'Subjects' },
-                { num: '1000+',  label: 'Questions' },
+                { num: '4000+',  label: 'Questions' },
                 { num: 'Free',   label: 'Forever' },
               ].map(({ num, label }) => (
                 <div key={label} className="flex flex-col items-center">

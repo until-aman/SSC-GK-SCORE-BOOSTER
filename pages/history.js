@@ -90,6 +90,7 @@ export default function HistoryPage() {
     );
   }
 
+  const [showAllSessions, setShowAllSessions] = useState(false);
   const level = data?.level || 'Aspirant';
   const totalXP = data?.totalXP || 0;
   const FILTER_FROM = new Date('2026-05-20T00:00:00+05:30').getTime();
@@ -164,9 +165,27 @@ export default function HistoryPage() {
                 Recent Sessions
                 <span className="font-normal font-sans text-xs text-slate-500 ml-2">last {sessions.length}</span>
               </p>
-              {sessions.map((s, i) => (
+              {(showAllSessions ? sessions : sessions.slice(0, 3)).map((s, i) => (
                 <SessionRow key={`${s.timestamp}-${i}`} session={s} />
               ))}
+
+              {sessions.length > 3 && (
+                <button
+                  onClick={() => setShowAllSessions(v => !v)}
+                  className="w-full flex items-center justify-center gap-2 py-3 mt-1 rounded-2xl bg-slate-800 border border-slate-700/50 active:scale-[0.98] transition-transform"
+                >
+                  <span className="font-display font-bold text-sm text-emerald-400">
+                    {showAllSessions ? 'Collapse history' : 'View full history'}
+                  </span>
+                  <svg
+                    width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="#10b981" strokeWidth="2.5" strokeLinecap="round"
+                    className={`transition-transform duration-300 ${showAllSessions ? 'rotate-180' : ''}`}
+                  >
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </button>
+              )}
             </>
           )}
         </div>

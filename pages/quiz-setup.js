@@ -5,7 +5,8 @@ import Head from 'next/head';
 import BottomNav from '@/components/BottomNav';
 
 const SUBJECTS = [
-  'Polity', 'Geography', 'Economics', 'History',
+  'Polity', 'Geography', 'Economics',
+  'Ancient History', 'Medieval History', 'Modern History',
   'Physics', 'Chemistry', 'Biology', 'Current Affairs',
 ];
 

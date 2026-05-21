@@ -104,14 +104,28 @@ export default function NotificationBell({ streakCount = 0 }) {
         )}
       </button>
 
-      {/* Bottom sheet */}
+      {/* Centered modal */}
       {showSheet && (
-        <>
-          <div className="sheet-overlay" onClick={() => setShowSheet(false)} />
-          <div className="sheet-panel bg-[#0f172a] border-t border-slate-700/50 rounded-t-3xl px-6 pt-5 pb-10">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-6"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
+          onClick={() => setShowSheet(false)}
+        >
+          <div
+            className="w-full max-w-[390px] bg-[#1e293b] border border-slate-700/60 rounded-3xl px-6 pt-6 pb-8 overflow-y-auto max-h-[85vh] relative"
+            onClick={e => e.stopPropagation()}
+          >
 
-            {/* Handle bar */}
-            <div className="w-10 h-1 bg-slate-700 rounded-full mx-auto mb-5" />
+            {/* Close button */}
+            <button
+              onClick={() => setShowSheet(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/60 active:scale-90 transition-transform"
+              aria-label="Close"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
 
             {/* Title */}
             <h2 className="font-display font-black text-xl text-white mb-1">Daily Reminder</h2>
@@ -233,7 +247,7 @@ export default function NotificationBell({ streakCount = 0 }) {
             )}
 
           </div>
-        </>
+        </div>
       )}
     </>
   );
