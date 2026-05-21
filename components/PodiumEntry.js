@@ -76,9 +76,9 @@ export default function PodiumEntry({ rank, user }) {
           {(user.totalScore || 0).toFixed(1)}
         </span>
       </div>
-      <div className="bg-white/10 rounded-full px-2.5 py-0.5 mt-1 border border-white/10">
-        <span className="font-display font-bold text-[9px] text-white/70 uppercase tracking-wide">
-          {user.level || 'Aspirant'}
+      <div className="bg-white/10 rounded-full px-2.5 py-1 mt-1">
+        <span className="font-display font-bold text-[10px] text-white/70">
+          ⭐ {user.level || 'Aspirant'}
         </span>
       </div>
       <div className={`${cfg.block} mt-2 rounded-t-xl flex items-center justify-center`}>
