@@ -236,8 +236,18 @@ export default function Saved() {
             <span className="text-6xl">🔖</span>
             <p className="font-display font-bold text-lg text-white text-center">No saved questions yet</p>
             <p className="font-sans font-medium text-sm text-slate-400 text-center max-w-[260px] leading-relaxed">
-              Tap the bookmark icon on any question in Detailed Analysis to save it for later practice.
+              You can bookmark questions from two places:
             </p>
+            <div className="flex flex-col gap-2 text-left max-w-[220px]">
+              <div className="flex items-start gap-2.5">
+                <span className="font-display font-black text-xs text-emerald-400 mt-0.5 flex-shrink-0">1.</span>
+                <p className="font-sans text-sm text-slate-300 leading-snug">During a quiz — tap the 🔖 icon on any question card</p>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="font-display font-black text-xs text-emerald-400 mt-0.5 flex-shrink-0">2.</span>
+                <p className="font-sans text-sm text-slate-300 leading-snug">On the Detailed Analysis page after completing a quiz</p>
+              </div>
+            </div>
             <button
               onClick={() => router.push('/dashboard')}
               className="mt-4 bg-emerald-500 text-white rounded-2xl px-6 py-3 font-display font-bold text-sm active:scale-95 transition-transform"
