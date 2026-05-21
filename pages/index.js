@@ -64,7 +64,7 @@ export default function LandingPage() {
               {[
                 { num: '8',      label: 'Subjects' },
                 { num: '4000+',  label: 'Questions' },
-                { num: 'Free',   label: 'Forever' },
+                { num: 'Free',   label: 'to Play' },
               ].map(({ num, label }) => (
                 <div key={label} className="flex flex-col items-center">
                   <span className="font-display font-black text-lg text-emerald-400">{num}</span>
