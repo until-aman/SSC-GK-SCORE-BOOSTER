@@ -1,4 +1,5 @@
 import { SessionProvider } from 'next-auth/react';
+import { Analytics } from '@vercel/analytics/react';
 import '@/styles/globals.css';
 
 export default function App({ Component, pageProps: { session, ...pageProps } }) {
@@ -10,6 +11,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
           <Component {...pageProps} />
+          <Analytics />
         </div>
       </div>
     </SessionProvider>
