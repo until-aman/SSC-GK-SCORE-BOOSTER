@@ -236,7 +236,7 @@ export default function Saved() {
             <span className="text-6xl">🔖</span>
             <p className="font-display font-bold text-lg text-white text-center">No saved questions yet</p>
             <p className="font-sans font-medium text-sm text-slate-400 text-center max-w-[260px] leading-relaxed">
-              Tap the bookmark icon on any question during a quiz to save it for later.
+              Tap the bookmark icon on any question in Detailed Analysis to save it for later practice.
             </p>
             <button
               onClick={() => router.push('/dashboard')}
