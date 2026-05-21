@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import Loader from '@/components/ui/Loader';
 
 function playSound(type) {
   try {
@@ -346,13 +347,9 @@ export default function Quiz() {
   }
 
   if (loading) return (
-    <div className="h-screen flex flex-col bg-[#0f172a] px-4 pt-12">
+    <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] px-4">
       <Head><title>Loading — SSC GK Score Booster</title></Head>
-      <div className="skeleton h-2 rounded-full mb-6" />
-      <div className="skeleton h-20 rounded-3xl mb-4" />
-      <div className="flex flex-col gap-3">
-        {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-14 rounded-2xl" />)}
-      </div>
+      <Loader card size="lg" label="Preparing your quiz… questions loading from sheet" />
     </div>
   );
 

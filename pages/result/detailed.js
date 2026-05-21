@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import Loader from '@/components/ui/Loader';
+import { fetchAIExplain, fetchAITip } from '@/lib/fetchAI';
 
 const OPTION_KEYS = { A: 'optionA', B: 'optionB', C: 'optionC', D: 'optionD' };
 
@@ -81,8 +83,8 @@ function BookmarkIcon({ filled }) {
 
 function QuestionReviewCard({ question, index, userAnswer, subject, topic, preloadedInsight }) {
   const [aiInsight, setAiInsight] = useState(preloadedInsight ?? null);
-  const [loading, setLoading] = useState(preloadedInsight === undefined);
-  const [isSaved, setIsSaved] = useState(false);
+  const [loading, setLoading]     = useState(false);   // never auto-start
+  const [isSaved, setIsSaved]     = useState(false);
   const isCorrect = userAnswer === question.correctOption;
   const isSkipped = !userAnswer || userAnswer === 'SKIPPED';
 
@@ -92,6 +94,13 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, prelo
       setIsSaved(saved.some(q => q.id === question.id));
     } catch {}
   }, [question.id]);
+
+  // If insight was preloaded (e.g. passed from result page), use it
+  useEffect(() => {
+    if (preloadedInsight !== undefined) {
+      setAiInsight(preloadedInsight);
+    }
+  }, [preloadedInsight]);
 
   function toggleSave() {
     try {
@@ -104,33 +113,32 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, prelo
     } catch {}
   }
 
-  useEffect(() => {
-    if (preloadedInsight !== undefined) {
-      setAiInsight(preloadedInsight);
-      setLoading(false);
-      return;
-    }
-    const timer = setTimeout(() => fetchAiInsight(), index * 200);
-    return () => clearTimeout(timer);
-  }, [preloadedInsight]);
-
   async function fetchAiInsight() {
-    if (isCorrect) return;
+    if (isCorrect || loading || aiInsight) return;
     setLoading(true);
-    const endpoint = isSkipped ? '/api/ai/tip' : '/api/ai/explain';
-    const body = isSkipped
-      ? { question: question.question, correctOption: question.correctOption, correctOptionText: question[OPTION_KEYS[question.correctOption]], explanation: question.explanation, subject, topic }
-      : { question: question.question, optionA: question.optionA, optionB: question.optionB, optionC: question.optionC, optionD: question.optionD, correctOption: question.correctOption, userOption: userAnswer, explanation: question.explanation, subject, topic };
-    try {
-      const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setAiInsight(isSkipped ? data.aiTip : (data.aiExplanation || data.fallback));
-    } catch {
-      setAiInsight(question.explanation || 'Review this concept in your study material.');
-    } finally {
-      setLoading(false);
-    }
+    const { text } = isSkipped
+      ? await fetchAITip({
+          question:          question.question,
+          correctOption:     question.correctOption,
+          correctOptionText: question[OPTION_KEYS[question.correctOption]],
+          sheetExplanation:  question.explanation,
+          subject,
+          topic,
+        })
+      : await fetchAIExplain({
+          question:         question.question,
+          optionA:          question.optionA,
+          optionB:          question.optionB,
+          optionC:          question.optionC,
+          optionD:          question.optionD,
+          correctOption:    question.correctOption,
+          userOption:       userAnswer,
+          sheetExplanation: question.explanation,
+          subject,
+          topic,
+        });
+    setAiInsight(text);
+    setLoading(false);
   }
 
   const normalizeText = (text = '') => text.toLowerCase().trim();
@@ -194,22 +202,28 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, prelo
         </div>
       )}
 
-      {/* AI insight (wrong/skipped only) */}
+      {/* AI insight (wrong/skipped only) — lazy loaded on tap */}
       {!isCorrect && (
-        <div className="px-4 py-4 bg-orange-500/8 border border-orange-500/20 rounded-2xl min-h-[60px] flex flex-col justify-center">
-          <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-            <span>🤖 AI Mentor Insight</span>
-            {loading && <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-ping" />}
+        <div className="px-4 py-4 bg-orange-500/8 border border-orange-500/20 rounded-2xl min-h-[52px] flex flex-col justify-center">
+          <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-2">
+            🤖 AI Mentor Insight
           </p>
           {loading ? (
-            <div className="space-y-2">
-              <div className="h-2 bg-orange-500/10 rounded w-full animate-pulse" />
-              <div className="h-2 bg-orange-500/10 rounded w-5/6 animate-pulse" />
-            </div>
-          ) : (
+            <Loader size="sm" label="AI mentor is explaining…" />
+          ) : aiInsight ? (
             <p className="text-[12px] text-orange-200 leading-relaxed italic font-medium">
-              &quot;{aiInsight || 'Reviewing...'}&quot;
+              &quot;{aiInsight}&quot;
             </p>
+          ) : (
+            <button
+              onClick={fetchAiInsight}
+              className="flex items-center gap-2 text-[12px] text-orange-400/70 font-medium active:opacity-60 transition-opacity w-fit"
+            >
+              <span>Tap to get AI explanation</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </button>
           )}
         </div>
       )}

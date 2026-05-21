@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import BottomNav from '@/components/BottomNav';
 import PodiumEntry from '@/components/PodiumEntry';
+import Loader from '@/components/ui/Loader';
 
 const GoogleSVG = () => (
   <svg width="18" height="18" viewBox="0 0 48 48">
@@ -55,7 +56,7 @@ function RankRow({ leader, isSelf }) {
         <p className={`font-display font-bold text-sm ${isSelf ? 'text-violet-300' : 'text-slate-300'}`}>
           {(leader.totalScore || 0).toFixed(1)}
         </p>
-        <p className="font-sans text-xs text-slate-500">pts</p>
+        <p className="font-sans text-xs text-slate-500">XP</p>
       </div>
     </div>
   );
@@ -151,13 +152,8 @@ export default function Leaderboard() {
             style={{ background: 'linear-gradient(180deg, #1e1b4b 0%, #0f172a 100%)' }}
           >
             {loading ? (
-              <div className="flex items-end justify-center gap-4">
-                {[{ bh: 'h-14' }, { bh: 'h-20' }, { bh: 'h-10' }].map(({ bh }, i) => (
-                  <div key={i} className="flex flex-col items-center gap-2">
-                    <div className="skeleton rounded-full" style={{ width: i === 1 ? 64 : 56, height: i === 1 ? 64 : 56 }} />
-                    <div className={`skeleton w-24 rounded-t-xl ${bh}`} />
-                  </div>
-                ))}
+              <div className="py-4">
+                <Loader card size="md" label="Fetching rankings from the scoreboard…" />
               </div>
             ) : error ? (
               <div className="text-center py-8">
@@ -200,7 +196,7 @@ export default function Leaderboard() {
                   <p className="font-sans text-xs text-slate-500">Your rank this period</p>
                 </div>
                 <p className="font-display font-bold text-sm text-violet-300">
-                  {(currentUser.totalScore || 0).toFixed(1)} pts
+                  {(currentUser.totalScore || 0).toFixed(1)} XP
                 </p>
               </div>
             )}

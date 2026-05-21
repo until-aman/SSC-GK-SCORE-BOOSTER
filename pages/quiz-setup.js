@@ -3,6 +3,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import BottomNav from '@/components/BottomNav';
+import Loader from '@/components/ui/Loader';
 
 const SUBJECTS = [
   'Polity', 'Geography', 'Economics',
@@ -94,7 +95,7 @@ export default function QuizSetup() {
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <Loader size="md" label="Setting up your quiz…" />
       </div>
     );
   }
@@ -182,9 +183,8 @@ export default function QuizSetup() {
               Topic
             </label>
             {topicsLoading ? (
-              <div className="bg-slate-800 border border-slate-700 rounded-2xl px-4 py-4 text-slate-400 text-sm flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                Loading topics…
+              <div className="bg-slate-800 border border-slate-700 rounded-2xl px-4 py-2">
+                <Loader size="sm" label="Loading topics…" />
               </div>
             ) : (
               <div className="relative">

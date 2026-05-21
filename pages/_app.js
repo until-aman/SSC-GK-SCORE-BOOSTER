@@ -1,5 +1,6 @@
 import { SessionProvider } from 'next-auth/react';
 import { Analytics } from '@vercel/analytics/react';
+import PageLoader from '@/components/ui/PageLoader';
 import '@/styles/globals.css';
 
 export default function App({ Component, pageProps: { session, ...pageProps } }) {
@@ -10,6 +11,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
           className="w-full max-w-[430px] min-h-screen bg-[#0f172a] relative overflow-x-hidden flex flex-col"
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
+          <PageLoader />
           <Component {...pageProps} />
           <Analytics />
         </div>

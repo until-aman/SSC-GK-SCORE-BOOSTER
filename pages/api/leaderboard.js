@@ -10,43 +10,47 @@ import { getISTDateString } from '@/lib/streak';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-function computeLeaderboardFromRows(scoreRows, publicEmails, imageMap = {}) {
-  const groupByEmail = {};
+// Weekly leaderboard — sum xpEarned (col L = index 11) from score rows
+function computeWeeklyLeaderboard(scoreRows, publicEmails, imageMap = {}, levelMap = {}) {
+  const grouped = {};
 
   scoreRows.forEach(row => {
     const email = row[1];
-    if (!email) return;
-    if (!publicEmails.has(email)) return;
-
-    const name = row[2] || email;
-    const rawScore = parseFloat(row[7]) || 0;
-    const totalQuestions = parseInt(row[6]) || 0;
-    const correctAnswers = parseInt(row[3]) || 0;
-
-    if (!groupByEmail[email]) {
-      groupByEmail[email] = { email, name, totalScore: 0, totalQuestionsAttempted: 0, totalCorrect: 0 };
+    if (!email || !publicEmails.has(email)) return;
+    const xp = parseFloat(row[11]) || 0;
+    if (!grouped[email]) {
+      grouped[email] = { email, name: row[2] || email, totalScore: 0 };
     }
-    if (row[2]) groupByEmail[email].name = row[2];
-    groupByEmail[email].totalScore += rawScore;
-    groupByEmail[email].totalQuestionsAttempted += totalQuestions;
-    groupByEmail[email].totalCorrect += correctAnswers;
+    if (row[2]) grouped[email].name = row[2];
+    grouped[email].totalScore += xp;
   });
 
-  const entries = Object.values(groupByEmail).map(u => ({
-    ...u,
-    totalScore: Math.round(u.totalScore * 100) / 100,
-    overallAccuracy: u.totalQuestionsAttempted > 0
-      ? Math.round((u.totalCorrect / u.totalQuestionsAttempted) * 10000) / 100
-      : 0,
-  }));
+  return Object.values(grouped)
+    .map(u => ({
+      ...u,
+      totalScore: Math.round(u.totalScore),
+      level: levelMap[u.email] || 'Aspirant',
+      image: imageMap[u.email] || '',
+    }))
+    .sort((a, b) => b.totalScore - a.totalScore)
+    .map((e, i) => ({ ...e, rank: i + 1 }))
+    .slice(0, 50);
+}
 
-  entries.sort((a, b) => {
-    if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
-    if (b.overallAccuracy !== a.overallAccuracy) return b.overallAccuracy - a.overallAccuracy;
-    return b.totalQuestionsAttempted - a.totalQuestionsAttempted;
-  });
-
-  return entries.map((e, i) => ({ ...e, rank: i + 1, image: imageMap[e.email] || '' })).slice(0, 50);
+// All-time leaderboard — use totalXP from Users sheet (col F = index 5)
+function computeAllTimeLeaderboard(userRows, publicEmails, imageMap = {}) {
+  return userRows
+    .filter(r => r[0] && publicEmails.has(r[0]))
+    .map(r => ({
+      email:      r[0],
+      name:       r[1] || r[0],
+      totalScore: parseInt(r[5]) || 0,   // totalXP
+      level:      r[6] || 'Aspirant',
+      image:      imageMap[r[0]] || '',
+    }))
+    .sort((a, b) => b.totalScore - a.totalScore)
+    .map((e, i) => ({ ...e, rank: i + 1 }))
+    .slice(0, 50);
 }
 
 export default async function handler(req, res) {
@@ -84,7 +88,11 @@ export default async function handler(req, res) {
       const imageMap = {};
       allUserRows.forEach(r => { if (r[0]) imageMap[r[0]] = r[11] || ''; });
 
-      // Weekly: last 7 days inclusive
+      // Build level map: email → level (col G = index 6)
+      const levelMap = {};
+      allUserRows.forEach(r => { if (r[0]) levelMap[r[0]] = r[6] || 'Aspirant'; });
+
+      // Weekly: last 7 days — ranked by XP earned this week
       const weekStart = getISTDateString(new Date(now - 6 * 24 * 60 * 60 * 1000));
       const weeklyRows = allScoreRows.filter(row => {
         if (!row[0]) return false;
@@ -93,8 +101,8 @@ export default async function handler(req, res) {
         } catch { return false; }
       });
 
-      weeklyLeaders = computeLeaderboardFromRows(weeklyRows, publicEmails, imageMap);
-      allTimeLeaders = computeLeaderboardFromRows(allScoreRows, publicEmails, imageMap);
+      weeklyLeaders  = computeWeeklyLeaderboard(weeklyRows, publicEmails, imageMap, levelMap);
+      allTimeLeaders = computeAllTimeLeaderboard(allUserRows, publicEmails, imageMap);
 
       try {
         await updateLeaderboardCacheRow(

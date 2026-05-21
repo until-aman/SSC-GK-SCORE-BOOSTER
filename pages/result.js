@@ -4,6 +4,8 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import XPToast from '@/components/XPToast';
 import BottomNav from '@/components/BottomNav';
+import Loader from '@/components/ui/Loader';
+import { fetchAISummary } from '@/lib/fetchAI';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -50,7 +52,7 @@ function TopAvatar({ player, index, isSelf }) {
       }`}>
         {(player.name || 'User').split(' ')[0]}
       </p>
-      <p className="text-[10px] text-slate-500 mt-0.5">{(player.totalScore || 0).toFixed(0)} pts</p>
+      <p className="text-[10px] text-slate-500 mt-0.5">{(player.totalScore || 0).toFixed(0)} XP</p>
     </div>
   );
 }
@@ -133,7 +135,7 @@ export default function Result() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router.isReady, result]);
 
-  // AI summary
+  // AI summary — 5s timeout via fetchAISummary
   useEffect(() => {
     if (!result) return;
     if (result.aiData?.summary) {
@@ -141,19 +143,18 @@ export default function Result() {
       setSummaryLoading(false);
       return;
     }
-    fetch('/api/ai/summary', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        subject: result.subject, topic: result.topic,
-        totalQuestions: result.totalQuestions, correctAnswers: result.correct,
-        incorrectAnswers: result.incorrect, skipped: result.skipped,
-        rawScore: result.rawScore, accuracy: result.accuracy,
-      }),
-    })
-      .then(r => r.json())
-      .then(d => { setAiSummary(d.aiSummary || 'Great effort!'); setSummaryLoading(false); })
-      .catch(() => { setAiSummary('Great effort! Review the detailed analysis below.'); setSummaryLoading(false); });
+    fetchAISummary({
+      subject:          result.subject,
+      topic:            result.topic,
+      totalQuestions:   result.totalQuestions,
+      correctAnswers:   result.correct,
+      incorrectAnswers: result.incorrect,
+      skipped:          result.skipped,
+      rawScore:         result.rawScore,
+    }).then(({ text }) => {
+      setAiSummary(text);
+      setSummaryLoading(false);
+    });
   }, [result]);
 
   const isGuest = status === 'unauthenticated';
@@ -291,10 +292,7 @@ export default function Result() {
         {summaryLoading && (
           <div className="bg-slate-800/70 border border-slate-700/50 rounded-2xl p-4">
             <p className="font-sans font-medium text-xs text-emerald-400 uppercase tracking-widest mb-2">🤖 AI Mentor</p>
-            <div className="space-y-2">
-              <div className="h-2.5 bg-slate-700 rounded animate-pulse w-full"/>
-              <div className="h-2.5 bg-slate-700 rounded animate-pulse w-4/5"/>
-            </div>
+            <Loader size="sm" label="Your AI mentor is reviewing your performance…" />
           </div>
         )}
 
@@ -437,12 +435,7 @@ export default function Result() {
       </div>
 
       {loadingDetailed && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 rounded-2xl p-8 text-center">
-            <div className="animate-spin w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"/>
-            <p className="text-sm font-bold text-slate-300">Loading analysis…</p>
-          </div>
-        </div>
+        <Loader fullScreen size="md" label="Loading detailed analysis…" />
       )}
 
       <BottomNav />
