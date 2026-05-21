@@ -8,7 +8,7 @@ import {
 } from '@/lib/sheets';
 import { getISTDateString } from '@/lib/streak';
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 60 * 1000; // 1 minute fallback (cache is also invalidated on every score save)
 
 // Weekly leaderboard — sum xpEarned (col L = index 11) from score rows
 function computeWeeklyLeaderboard(scoreRows, publicEmails, imageMap = {}, levelMap = {}) {

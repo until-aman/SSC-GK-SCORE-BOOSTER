@@ -9,6 +9,7 @@ import {
   parseUserRow,
   appendUserRow,
   updateUserCells,
+  updateLeaderboardCacheRow,
 } from '@/lib/sheets';
 import { getISTDateString, getISTYesterday, computeStreak } from '@/lib/streak';
 import { computeXPEarned, computeLevel } from '@/lib/xp';
@@ -146,6 +147,9 @@ export default async function handler(req, res) {
       totalXP: newTotalXP,
       level: newLevel,
     });
+
+    // Invalidate leaderboard cache so rankings reflect new XP immediately
+    updateLeaderboardCacheRow('', '', '').catch(() => {});
 
     return res.status(200).json({
       ok: true,
