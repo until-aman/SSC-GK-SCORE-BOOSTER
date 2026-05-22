@@ -134,6 +134,10 @@ export default async function handler(req, res) {
     // Milestone bonus amount (for separate column tracking)
     const milestoneBonus = milestoneCrossed ? milestoneCrossed.bonus : 0;
 
+    // Compute totals BEFORE writing to sheet
+    const newTotalXP = user.totalXP + xpEarned;
+    const newLevel = computeLevel(newTotalXP);
+
     // Append score row
     await appendScoreV2({
       timestamp: now.toISOString(),
@@ -152,9 +156,6 @@ export default async function handler(req, res) {
       streakMilestoneBonus: milestoneBonus,
       totalXP: newTotalXP,
     });
-
-    const newTotalXP = user.totalXP + xpEarned;
-    const newLevel = computeLevel(newTotalXP);
 
     // Batch update Users row (cols C-G)
     await updateUserCells(rowIndex, {
