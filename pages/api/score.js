@@ -150,6 +150,7 @@ export default async function handler(req, res) {
       xpEarned,
       isDailyChallenge: 'FALSE',
       streakMilestoneBonus: milestoneBonus,
+      totalXP: newTotalXP,
     });
 
     const newTotalXP = user.totalXP + xpEarned;
