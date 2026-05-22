@@ -75,6 +75,7 @@ export default function Result() {
   const [aiSummary, setAiSummary]             = useState(null);
   const [summaryLoading, setSummaryLoading]   = useState(true);
   const [xpResult, setXPResult]               = useState(null);
+  const [savingXP, setSavingXP]               = useState(false);
   const [showXPToast, setShowXPToast]         = useState(false);
   const [loadingDetailed, setLoadingDetailed] = useState(false);
   const [topPerformers, setTopPerformers]     = useState([]);
@@ -108,6 +109,7 @@ export default function Result() {
     const { correct, incorrect, skipped, total, score, subject, topic, sessionId } = router.query;
     if (!correct && !result) return;
 
+    setSavingXP(true);
     fetch('/api/score', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -125,13 +127,14 @@ export default function Result() {
     })
       .then(r => r.json())
       .then(data => {
+        setSavingXP(false);
         if (data.ok) {
           setXPResult(data);
           setShowXPToast(true);
           setTimeout(() => setShowXPToast(false), 4000);
         }
       })
-      .catch(() => {});
+      .catch(() => { setSavingXP(false); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router.isReady, result]);
 
@@ -270,6 +273,12 @@ export default function Result() {
         </div>
 
         {/* ── XP earned banner (logged-in) ── */}
+        {savingXP && !xpResult && (
+          <div className="bg-gradient-to-r from-emerald-900/60 to-teal-900/60 border border-emerald-500/30 rounded-2xl p-4 flex items-center gap-3">
+            <Loader size="sm" />
+            <span className="font-display font-bold text-sm text-emerald-300 animate-pulse">Saving your XP…</span>
+          </div>
+        )}
         {xpResult && (
           <div className="bg-gradient-to-r from-emerald-900/60 to-teal-900/60 border border-emerald-500/30 rounded-2xl p-4">
             <div className="flex items-center justify-between">

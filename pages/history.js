@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import BackButton from '@/components/BackButton';
 import SessionRow from '@/components/SessionRow';
+import Loader from '@/components/ui/Loader';
 
 const LEVEL_THRESHOLDS = {
   Aspirant: { min: 0,    max: 200,  next: 'Scholar' },
@@ -32,14 +33,19 @@ export default function HistoryPage() {
 
   const isGuest = status === 'unauthenticated';
 
-  useEffect(() => {
-    if (status === 'loading') return;
-    if (isGuest) { setLoading(false); return; }
+  const fetchHistory = useCallback(() => {
+    setLoading(true);
     fetch('/api/score-history')
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
-  }, [status, isGuest]);
+  }, []);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (isGuest) { setLoading(false); return; }
+    fetchHistory();
+  }, [status, isGuest, fetchHistory]);
 
   useEffect(() => {
     if (!data) return;
@@ -56,11 +62,11 @@ export default function HistoryPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-[#0f172a] px-4 pt-10">
-        <div className="skeleton h-9 w-48 rounded-xl mb-4" />
-        <div className="skeleton h-28 rounded-3xl mb-4" />
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="skeleton h-16 rounded-2xl mb-2" />
-        ))}
+        <div className="flex items-center gap-3 mb-6">
+          <BackButton />
+          <h1 className="font-display font-bold text-[20px] text-white">XP History</h1>
+        </div>
+        <Loader card size="md" label="Fetching your XP history…" />
       </div>
     );
   }
@@ -110,7 +116,17 @@ export default function HistoryPage() {
         {/* Header */}
         <div className="px-4 pt-10 pb-4 flex items-center gap-3">
           <BackButton />
-          <h1 className="font-display font-bold text-[20px] text-white">XP History</h1>
+          <h1 className="font-display font-bold text-[20px] text-white flex-1">XP History</h1>
+          <button
+            onClick={fetchHistory}
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-800 border border-slate-700/60 active:scale-90 transition-transform"
+            title="Refresh"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+            </svg>
+          </button>
         </div>
 
         {/* XP Hero card */}
