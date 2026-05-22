@@ -1,4 +1,4 @@
-export default function XPToast({ visible, xpEarned, totalXP, level, streakCount, isFirstQuizOfDay }) {
+export default function XPToast({ visible, xpEarned, totalXP, level, streakCount, isFirstQuizOfDay, streakMilestone }) {
   if (!visible) return null;
   return (
     <div className="fixed bottom-20 left-4 right-4 max-w-[430px] mx-auto z-50 xp-toast">
@@ -10,6 +10,11 @@ export default function XPToast({ visible, xpEarned, totalXP, level, streakCount
         <p className="text-emerald-300 text-sm mt-1">Level: {level} · {totalXP} XP total</p>
         {isFirstQuizOfDay && (
           <p className="text-yellow-300 text-xs mt-0.5">🌅 First quiz bonus included!</p>
+        )}
+        {streakMilestone && (
+          <p className="text-orange-300 text-xs mt-0.5 font-semibold">
+            🏆 {streakMilestone.label} +{streakMilestone.bonus} bonus XP!
+          </p>
         )}
         <div className="toast-progress mt-3 rounded-full" />
       </div>

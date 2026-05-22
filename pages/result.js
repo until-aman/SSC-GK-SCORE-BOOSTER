@@ -207,6 +207,7 @@ export default function Result() {
           level={xpResult.level}
           streakCount={xpResult.streakCount}
           isFirstQuizOfDay={xpResult.isFirstQuizOfDay}
+          streakMilestone={xpResult.streakMilestone}
         />
       )}
 
@@ -278,6 +279,11 @@ export default function Result() {
             <p className="font-sans text-sm text-emerald-300 mt-1">Level: {xpResult.level} · {xpResult.totalXP} XP total</p>
             {xpResult.isFirstQuizOfDay && (
               <p className="font-sans text-xs text-yellow-300 mt-0.5">🌅 First quiz bonus included!</p>
+            )}
+            {xpResult.streakMilestone && (
+              <p className="font-sans text-xs text-orange-300 mt-0.5 font-semibold">
+                🏆 {xpResult.streakMilestone.label} +{xpResult.streakMilestone.bonus} bonus XP!
+              </p>
             )}
           </div>
         )}

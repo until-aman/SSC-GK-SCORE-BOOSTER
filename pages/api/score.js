@@ -12,7 +12,7 @@ import {
   updateLeaderboardCacheRow,
 } from '@/lib/sheets';
 import { getISTDateString, getISTYesterday, computeStreak } from '@/lib/streak';
-import { computeXPEarned, computeLevel } from '@/lib/xp';
+import { computeXPEarned, computeLevel, STREAK_MILESTONES } from '@/lib/xp';
 
 // In-memory rate limit map — resets on cold start
 const rateLimitMap = new Map();
@@ -92,8 +92,44 @@ export default async function handler(req, res) {
     });
     const isFirstQuizOfDay = todayScoresForEmail.length === 0;
 
-    // Compute XP
-    const xpEarned = computeXPEarned({ correctAnswers, totalQuestions, isFirstQuizOfDay });
+    // Read Users tab and find/create user row
+    const userRows = await getUserRows();
+    let userRow = findUserRow(userRows, email);
+    let rowIndex;
+
+    if (!userRow) {
+      const newRow = createDefaultUserRow(email, session.user.name);
+      await appendUserRow(newRow);
+      userRow = newRow;
+      rowIndex = userRows.length + 2;
+    } else {
+      rowIndex = userRows.findIndex(r => r[0] === email) + 2;
+    }
+
+    const user = parseUserRow(userRow);
+
+    // Compute streak FIRST (needed for milestone XP)
+    const streakResult = computeStreak({
+      streakCount:     user.streakCount,
+      lastAttemptDate: user.lastAttemptDate,
+      today,
+      yesterday,
+    });
+
+    // Compute XP — passes old & new streak so milestones are included
+    const xpEarned = computeXPEarned({
+      correctAnswers,
+      totalQuestions,
+      isFirstQuizOfDay,
+      oldStreak: user.streakCount,
+      newStreak: streakResult.streakCount,
+    });
+
+    // Check if a streak milestone was just crossed (for UI celebration)
+    const milestoneCrossed = STREAK_MILESTONES[streakResult.streakCount]
+      && user.streakCount < streakResult.streakCount
+      ? STREAK_MILESTONES[streakResult.streakCount]
+      : null;
 
     // Append score row
     await appendScoreV2({
@@ -110,30 +146,6 @@ export default async function handler(req, res) {
       sessionId,
       xpEarned,
       isDailyChallenge: 'FALSE',
-    });
-
-    // Read Users tab and find/create user row
-    const userRows = await getUserRows();
-    let userRow = findUserRow(userRows, email);
-    let rowIndex;
-
-    if (!userRow) {
-      const newRow = createDefaultUserRow(email, session.user.name);
-      await appendUserRow(newRow);
-      userRow = newRow;
-      rowIndex = userRows.length + 2; // header is row 1, new row appended at end
-    } else {
-      rowIndex = userRows.findIndex(r => r[0] === email) + 2; // +1 for header, +1 for 1-based
-    }
-
-    const user = parseUserRow(userRow);
-
-    // Compute streak
-    const streakResult = computeStreak({
-      streakCount: user.streakCount,
-      lastAttemptDate: user.lastAttemptDate,
-      today,
-      yesterday,
     });
 
     const newTotalXP = user.totalXP + xpEarned;
@@ -158,6 +170,7 @@ export default async function handler(req, res) {
       level: newLevel,
       streakCount: streakResult.streakCount,
       isFirstQuizOfDay,
+      streakMilestone: milestoneCrossed,  // { bonus, label } or null
     });
   } catch (err) {
     console.error('[score] Error:', err.message);
