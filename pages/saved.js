@@ -3,6 +3,7 @@ import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import BottomNav from '@/components/BottomNav';
+import Loader from '@/components/ui/Loader';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 const OPTION_KEYS   = ['optionA', 'optionB', 'optionC', 'optionD'];
@@ -182,17 +183,16 @@ export default function Saved() {
   // Available subject chips (only subjects with at least 1 saved question)
   const presentSubjects = ['All', ...Array.from(new Set(questions.map(q => q.subject).filter(Boolean)))];
 
-  // ── Loading skeleton ──────────────────────────────────────────────────
+  // ── Loading ───────────────────────────────────────────────────────────
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-[#0f172a] pb-24">
-        <div className="px-4 pt-8 pb-3 flex items-center gap-2">
-          <div className="skeleton h-7 w-20 rounded-xl" />
-          <div className="skeleton h-5 w-8 rounded-full" />
+        <div className="px-4 pt-8 pb-3">
+          <h1 className="font-display font-black text-xl text-white">Saved</h1>
         </div>
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="skeleton h-40 rounded-3xl mx-4 mb-3" />
-        ))}
+        <div className="px-4">
+          <Loader card size="md" label="Fetching your saved questions…" />
+        </div>
         <BottomNav />
       </div>
     );
