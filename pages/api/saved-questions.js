@@ -26,6 +26,7 @@ export default async function handler(req, res) {
 
   // ── GET: fetch all saved questions for user ──────────────────────────
   if (req.method === 'GET') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     try {
       const result = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,

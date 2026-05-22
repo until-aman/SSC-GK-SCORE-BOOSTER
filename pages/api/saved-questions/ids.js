@@ -11,6 +11,7 @@ export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.email) return res.status(401).json({ error: 'Unauthorized' });
 
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   try {
     const sheets = await getSheetsClient();
     const result = await sheets.spreadsheets.values.get({
