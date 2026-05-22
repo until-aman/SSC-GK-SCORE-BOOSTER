@@ -18,25 +18,47 @@ export default async function handler(req, res) {
     // Get all score rows
     const allRows = await getLeaderboardData();
 
-    // Filter to this user, sort newest first, take 20
+    // Reverse-map bonus amount → human-readable milestone label
+    const MILESTONE_LABEL_MAP = {
+      15:  '3-Day Streak Bonus',
+      30:  '1-Week Streak Bonus',
+      50:  '2-Week Streak Bonus',
+      100: '1-Month Streak Bonus',
+    };
+
+    // Filter to this user, sort newest first, take 20 quiz rows
     const userRows = allRows
       .filter(row => row[1] === email)
       .sort((a, b) => new Date(b[0]) - new Date(a[0]))
       .slice(0, 20);
 
-    const sessions = userRows.map(row => ({
-      timestamp: row[0] || '',
-      subject: row[8] || '',
-      topic: row[9] || '',
-      correctAnswers: Number(row[3]) || 0,
-      totalQuestions: Number(row[6]) || 0,
-      rawScore: parseFloat(row[7]) || 0,
-      xpEarned: Number(row[11]) || 0,
-      streakMilestoneBonus: Number(row[13]) || 0,
-      accuracy: Number(row[6]) > 0
-        ? Math.round((Number(row[3]) / Number(row[6])) * 1000) / 10
-        : 0,
-    }));
+    // Build sessions list — inject a separate milestone entry after each quiz
+    // that earned a streak milestone bonus
+    const sessions = [];
+    userRows.forEach(row => {
+      const milestoneBonus = Number(row[13]) || 0;
+      sessions.push({
+        type: 'quiz',
+        timestamp: row[0] || '',
+        subject: row[8] || '',
+        topic: row[9] || '',
+        correctAnswers: Number(row[3]) || 0,
+        totalQuestions: Number(row[6]) || 0,
+        rawScore: parseFloat(row[7]) || 0,
+        xpEarned: Number(row[11]) || 0,
+        accuracy: Number(row[6]) > 0
+          ? Math.round((Number(row[3]) / Number(row[6])) * 1000) / 10
+          : 0,
+      });
+      if (milestoneBonus > 0) {
+        sessions.push({
+          type: 'milestone',
+          timestamp: row[0] || '',
+          xpEarned: milestoneBonus,
+          milestoneLabel: MILESTONE_LABEL_MAP[milestoneBonus] || `${milestoneBonus} XP Streak Bonus`,
+        });
+      }
+    });
 
     // Get XP + level from Users tab
     const userRows2 = await getUserRows();
