@@ -32,6 +32,7 @@ export default async function handler(req, res) {
       totalQuestions: Number(row[6]) || 0,
       rawScore: parseFloat(row[7]) || 0,
       xpEarned: Number(row[11]) || 0,
+      streakMilestoneBonus: Number(row[13]) || 0,
       accuracy: Number(row[6]) > 0
         ? Math.round((Number(row[3]) / Number(row[6])) * 1000) / 10
         : 0,

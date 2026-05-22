@@ -37,6 +37,9 @@ export default function SessionRow({ session: s }) {
       <div className="flex flex-col items-end gap-0.5">
         <span className="font-display font-bold text-[15px] text-emerald-400">+{s.xpEarned} XP</span>
         <span className="text-[11px] text-slate-500">{s.correctAnswers}/{s.totalQuestions} correct</span>
+        {s.streakMilestoneBonus > 0 && (
+          <span className="text-[10px] text-orange-400 font-semibold">🏆 +{s.streakMilestoneBonus} streak bonus</span>
+        )}
       </div>
     </div>
   );

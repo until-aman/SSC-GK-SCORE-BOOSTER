@@ -131,6 +131,9 @@ export default async function handler(req, res) {
       ? STREAK_MILESTONES[streakResult.streakCount]
       : null;
 
+    // Milestone bonus amount (for separate column tracking)
+    const milestoneBonus = milestoneCrossed ? milestoneCrossed.bonus : 0;
+
     // Append score row
     await appendScoreV2({
       timestamp: now.toISOString(),
@@ -146,6 +149,7 @@ export default async function handler(req, res) {
       sessionId,
       xpEarned,
       isDailyChallenge: 'FALSE',
+      streakMilestoneBonus: milestoneBonus,
     });
 
     const newTotalXP = user.totalXP + xpEarned;
