@@ -50,7 +50,8 @@ export default async function handler(req, res) {
         }))
         .sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
       return res.status(200).json({ saved: userRows });
-    } catch {
+    } catch (err) {
+      console.error('[saved-questions GET]', err.message);
       return res.status(500).json({ error: 'Failed to fetch saved questions' });
     }
   }
@@ -105,7 +106,8 @@ export default async function handler(req, res) {
         },
       });
       return res.status(200).json({ ok: true });
-    } catch {
+    } catch (err) {
+      console.error('[saved-questions POST]', err.message);
       return res.status(500).json({ error: 'Failed to save question' });
     }
   }
@@ -144,7 +146,8 @@ export default async function handler(req, res) {
         },
       });
       return res.status(200).json({ ok: true });
-    } catch {
+    } catch (err) {
+      console.error('[saved-questions DELETE]', err.message);
       return res.status(500).json({ error: 'Failed to unsave question' });
     }
   }

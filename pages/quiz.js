@@ -210,7 +210,7 @@ export default function Quiz() {
     } else {
       setSavedIds(prev => new Set([...prev, question.id]));
       try {
-        await fetch('/api/saved-questions', {
+        const saveRes = await fetch('/api/saved-questions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -226,6 +226,11 @@ export default function Quiz() {
             explanation:   question.explanation || '',
           }),
         });
+        if (!saveRes.ok) {
+          const err = await saveRes.json().catch(() => ({}));
+          console.error('[bookmark save failed]', saveRes.status, err);
+          setSavedIds(prev => { const n = new Set(prev); n.delete(question.id); return n; }); // rollback
+        }
       } catch {
         setSavedIds(prev => { const n = new Set(prev); n.delete(question.id); return n; }); // rollback
       }
