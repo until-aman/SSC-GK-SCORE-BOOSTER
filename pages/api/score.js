@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
 import {
   appendScoreV2,
-  getLeaderboardData,
   getUserRows,
   findUserRow,
   createDefaultUserRow,
@@ -81,18 +80,8 @@ export default async function handler(req, res) {
     const today = getISTDateString(now);
     const yesterday = getISTYesterday(now);
 
-    // Check if first quiz of day for this email
-    const allScoreRows = await getLeaderboardData();
-    const todayScoresForEmail = allScoreRows.filter(row => {
-      if (!row[1] || row[1] !== email) return false;
-      if (!row[0]) return false;
-      try {
-        return getISTDateString(new Date(row[0])) === today;
-      } catch { return false; }
-    });
-    const isFirstQuizOfDay = todayScoresForEmail.length === 0;
-
     // Read Users tab and find/create user row
+    // NOTE: getUserRows() is now cached (2-min TTL) in sheets.js
     const userRows = await getUserRows();
     let userRow = findUserRow(userRows, email);
     let rowIndex;
@@ -107,6 +96,10 @@ export default async function handler(req, res) {
     }
 
     const user = parseUserRow(userRow);
+
+    // isFirstQuizOfDay: compare Users tab lastAttemptDate with today.
+    // No extra API call needed — data is already in the user row.
+    const isFirstQuizOfDay = !user.lastAttemptDate || user.lastAttemptDate !== today;
 
     // Compute streak FIRST (needed for milestone XP)
     const streakResult = computeStreak({
