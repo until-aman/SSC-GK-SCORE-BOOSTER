@@ -1,41 +1,40 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
-import { getLeaderboardData, getUserRows, findUserRow, parseUserRow } from '@/lib/sheets';
+import { getLeaderboardData, getUserRows, findUserRow, parseUserRow, CACHE_TTL } from '@/lib/sheets';
+
+// Per-user history cache
+const historyCache = new Map();
+
+const MILESTONE_LABEL_MAP = {
+  15:  '3-Day Streak Bonus',
+  30:  '1-Week Streak Bonus',
+  50:  '2-Week Streak Bonus',
+  100: '1-Month Streak Bonus',
+};
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const session = await getServerSession(req, res, authOptions);
-  if (!session) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  if (!session) return res.status(401).json({ error: 'Unauthorized' });
+
+  const email = session.user.email;
+
+  // Check cache (2-min TTL)
+  const cached = historyCache.get(email);
+  if (cached && (Date.now() - cached.ts) < CACHE_TTL.SCORE_HISTORY) {
+    return res.status(200).json(cached.data);
   }
 
   try {
-    const email = session.user.email;
-
-    // Get all score rows
     const allRows = await getLeaderboardData();
-
-    // Reverse-map bonus amount → human-readable milestone label
-    const MILESTONE_LABEL_MAP = {
-      15:  '3-Day Streak Bonus',
-      30:  '1-Week Streak Bonus',
-      50:  '2-Week Streak Bonus',
-      100: '1-Month Streak Bonus',
-    };
-
-    // Filter to this user, sort newest first, take 20 quiz rows
-    const userRows = allRows
+    const userScoreRows = allRows
       .filter(row => row[1] === email)
       .sort((a, b) => new Date(b[0]) - new Date(a[0]))
       .slice(0, 20);
 
-    // Build sessions list — inject a separate milestone entry after each quiz
-    // that earned a streak milestone bonus
     const sessions = [];
-    userRows.forEach(row => {
+    userScoreRows.forEach(row => {
       const milestoneBonus = Number(row[13]) || 0;
       sessions.push({
         type: 'quiz',
@@ -60,16 +59,16 @@ export default async function handler(req, res) {
       }
     });
 
-    // Get XP + level from Users tab
-    const userRows2 = await getUserRows();
-    const userRow = findUserRow(userRows2, email);
+    const allUserRows = await getUserRows();
+    const userRow = findUserRow(allUserRows, email);
     const user = userRow ? parseUserRow(userRow) : { totalXP: 0, level: 'Aspirant' };
 
-    return res.status(200).json({
-      sessions,
-      totalXP: user.totalXP,
-      level: user.level,
-    });
+    const responseData = { sessions, totalXP: user.totalXP, level: user.level };
+
+    // Cache the result
+    historyCache.set(email, { data: responseData, ts: Date.now() });
+
+    return res.status(200).json(responseData);
   } catch (err) {
     console.error('[score-history] Error:', err.message);
     return res.status(500).json({ error: 'Failed to load score history' });
