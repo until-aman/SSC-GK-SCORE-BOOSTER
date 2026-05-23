@@ -373,6 +373,14 @@ export default function Quiz() {
     </div>
   );
 
+  if (quizComplete) return (
+    <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] gap-4">
+      <Head><title>Results — SSC GK Score Booster</title></Head>
+      <div className="w-12 h-12 rounded-full border-4 border-emerald-500/30 border-t-emerald-500 animate-spin" />
+      <p className="font-display font-bold text-lg text-white">Calculating your results…</p>
+    </div>
+  );
+
   const q = questions[currentIndex];
   if (!q) return null;
 
@@ -398,7 +406,7 @@ export default function Quiz() {
         <span className="font-display font-bold text-sm text-white">
           Q {currentIndex + 1}/{questions.length}
         </span>
-        <span className="font-sans font-medium text-xs text-orange-400">⚡+10 XP</span>
+        <span className="font-sans font-medium text-xs text-orange-400">⚡ Earn XP</span>
       </div>
 
       {/* Progress bar h-1 */}

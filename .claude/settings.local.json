@@ -25,7 +25,12 @@
       "Bash(findstr \":3001\")",
       "Bash(taskkill /PID 34468 /F)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(npx eslint *)",
+      "Bash(node scripts/gen-icons.js)"
     ]
   }
 }

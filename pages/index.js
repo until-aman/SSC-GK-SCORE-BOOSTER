@@ -62,7 +62,7 @@ export default function LandingPage() {
           <div className="bg-slate-800/60 rounded-2xl px-4 py-3 mt-8 w-full max-w-[320px]">
             <div className="flex justify-around">
               {[
-                { num: '8',      label: 'Subjects' },
+                { num: '12',     label: 'Subjects' },
                 { num: '4000+',  label: 'Questions' },
                 { num: 'Free',   label: 'to Play' },
               ].map(({ num, label }) => (
