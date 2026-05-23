@@ -10,6 +10,11 @@ import { getISTDateString } from '@/lib/streak';
 
 const CACHE_TTL = 60 * 1000; // 1 minute fallback (cache is also invalidated on every score save)
 
+// In-memory leaderboard cache (30 sec) — sits in front of Sheets-based cache
+// Resets on cold start, which is fine — prevents hammering on warm instances
+let memCache = { data: null, ts: 0 };
+const MEM_CACHE_TTL = 30 * 1000;
+
 // Weekly leaderboard — sum xpEarned (col L = index 11) from score rows
 function computeWeeklyLeaderboard(scoreRows, publicEmails, imageMap = {}, levelMap = {}) {
   const grouped = {};
@@ -58,8 +63,18 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Check in-memory cache first (avoids even the LeaderboardCache tab read)
   const scope = req.query.scope === 'all' ? 'all' : 'weekly';
   const preview = req.query.preview === 'true';
+  const nowMs = Date.now();
+
+  if (memCache.data && (nowMs - memCache.ts) < MEM_CACHE_TTL) {
+    const fullList = scope === 'all' ? memCache.data.allTimeLeaders : memCache.data.weeklyLeaders;
+    const leaders = preview ? fullList.slice(0, 3) : fullList;
+    const session = await getServerSession(req, res, authOptions);
+    const currentUser = session ? fullList.find(u => u.email === session.user.email) || null : null;
+    return res.status(200).json({ scope, leaders, currentUser });
+  }
 
   try {
     const session = await getServerSession(req, res, authOptions);
@@ -120,6 +135,9 @@ export default async function handler(req, res) {
         allTimeLeaders = [];
       }
     }
+
+    // Populate in-memory cache for next 30 seconds
+    memCache = { data: { weeklyLeaders, allTimeLeaders }, ts: Date.now() };
 
     const fullList = scope === 'all' ? allTimeLeaders : weeklyLeaders;
     const leaders = preview ? fullList.slice(0, 3) : fullList;
