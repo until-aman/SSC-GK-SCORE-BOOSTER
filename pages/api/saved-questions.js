@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
 import { getSheetsClient } from '@/lib/sheets';
+import { invalidateSavedIdsCache } from './saved-questions/ids';
 
 const SHEET_NAME = 'SavedQuestions';
 const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
@@ -106,6 +107,7 @@ export default async function handler(req, res) {
           ]],
         },
       });
+      invalidateSavedIdsCache(email);
       return res.status(200).json({ ok: true });
     } catch (err) {
       console.error('[saved-questions POST]', err.message);
@@ -146,6 +148,7 @@ export default async function handler(req, res) {
           }],
         },
       });
+      invalidateSavedIdsCache(email);
       return res.status(200).json({ ok: true });
     } catch (err) {
       console.error('[saved-questions DELETE]', err.message);
