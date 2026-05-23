@@ -162,7 +162,7 @@ export default function Quiz() {
     if (!isLoggedIn) {
       // Guest: use localStorage
       try {
-        const existing = JSON.parse(localStorage.getItem('savedQuestions') || '[]');
+        const existing = JSON.parse(localStorage.getItem('ssc_saved_questions') || '[]');
         const alreadySaved = existing.some(q => q.questionId === question.id);
         let updated;
         if (alreadySaved) {
@@ -189,7 +189,7 @@ export default function Quiz() {
             setTimeout(() => setShowGuestBanner(false), 3000);
           }
         }
-        localStorage.setItem('savedQuestions', JSON.stringify(updated));
+        localStorage.setItem('ssc_saved_questions', JSON.stringify(updated));
       } catch {}
       return;
     }
