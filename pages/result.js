@@ -179,9 +179,21 @@ export default function Result() {
     router.push('/');
   }
 
-  function handleFeedbackSubmit() {
+  async function handleFeedbackSubmit() {
     if (!feedback.trim()) return;
-    // Store locally — extend later to send to API
+    try {
+      await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          feedback: feedback.trim(),
+          subject: result?.subject || '',
+          topic: result?.topic || '',
+        }),
+      });
+    } catch {
+      // silent fail — user still sees confirmation
+    }
     setFeedbackSent(true);
     setFeedback('');
   }
