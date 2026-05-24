@@ -46,13 +46,6 @@ export default function BottomNav() {
   return (
     <>
       <style>{`
-        @keyframes navFloat {
-          0%, 100% { transform: translateY(0px); }
-          50%       { transform: translateY(-2px); }
-        }
-        .nav-pill {
-          animation: navFloat 3s ease-in-out infinite;
-        }
         .nav-item {
           transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s ease;
         }
@@ -70,27 +63,25 @@ export default function BottomNav() {
         bottom: 0,
         left: 0,
         right: 0,
-        background: 'transparent',
         zIndex: 50,
       }}>
         <div style={{
           maxWidth: '430px',
           margin: '0 auto',
-          padding: '6px 20px 13px',
+          padding: '6px 20px 5px',
         }}>
-          <div
-            className="nav-pill"
-            style={{
-              background: 'linear-gradient(135deg, #7C3AED, #06B6D4)',
-              boxShadow: '0 0 20px rgba(124,58,237,0.35)',
-              borderRadius: '60px',
-              padding: '8px 12px',
-              display: 'flex',
-              justifyContent: 'space-around',
-              alignItems: 'center',
-              width: '100%',
-            }}
-          >
+          <div style={{
+            background: 'rgba(17, 28, 46, 0.92)',
+            backdropFilter: 'blur(18px)',
+            WebkitBackdropFilter: 'blur(18px)',
+            border: '1px solid rgba(148, 163, 184, 0.14)',
+            borderRadius: '28px',
+            padding: '8px 12px',
+            display: 'flex',
+            justifyContent: 'space-around',
+            alignItems: 'center',
+            width: '100%',
+          }}>
             {items.map(({ Icon, route, label }) => {
               const active = path === route;
               const isPressed = pressed === route;
@@ -115,17 +106,21 @@ export default function BottomNav() {
                     minWidth: 56,
                     padding: '6px 4px',
                     borderRadius: 16,
-                    background: active ? 'rgba(255,255,255,0.18)' : 'transparent',
-                    boxShadow: active ? '0 0 12px rgba(255,255,255,0.2)' : 'none',
+                    background: active
+                      ? 'linear-gradient(135deg, #7C3AED, #3B82F6)'
+                      : 'transparent',
+                    boxShadow: active
+                      ? '0 8px 24px rgba(124, 58, 237, 0.28)'
+                      : 'none',
                     flexShrink: 0,
                     boxSizing: 'border-box',
                   }}
                 >
-                  <Icon color={active ? '#ffffff' : 'rgba(255,255,255,0.55)'} />
+                  <Icon color={active ? '#ffffff' : '#94A3B8'} />
                   <span style={{
                     fontSize: 10,
                     fontWeight: active ? 700 : 500,
-                    color: active ? '#ffffff' : 'rgba(255,255,255,0.5)',
+                    color: active ? '#ffffff' : '#94A3B8',
                     letterSpacing: '0.02em',
                     lineHeight: 1,
                     fontFamily: 'inherit',

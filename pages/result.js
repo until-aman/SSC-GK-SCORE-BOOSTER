@@ -58,6 +58,40 @@ function TopAvatar({ player, index, isSelf }) {
   );
 }
 
+/* ── Avatar — mirrors dashboard Avatar component exactly ── */
+function ChampionAvatar({ imageUrl, name, size = 36 }) {
+  const [imgError, setImgError] = useState(false);
+  const initial = (name || '?').charAt(0).toUpperCase();
+  if (imageUrl && !imgError) {
+    return (
+      <div
+        className="rounded-full overflow-hidden flex-shrink-0 border-2 border-white/20"
+        style={{ width: size, height: size }}
+      >
+        <img
+          src={imageUrl}
+          alt={name || 'avatar'}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          onError={() => setImgError(true)}
+        />
+      </div>
+    );
+  }
+  return (
+    <div
+      className="rounded-full bg-gradient-to-br from-blue-600 to-emerald-600 flex items-center justify-center flex-shrink-0"
+      style={{ width: size, height: size }}
+    >
+      <span
+        className="font-display font-black text-white"
+        style={{ fontSize: size * 0.42 }}
+      >
+        {initial}
+      </span>
+    </div>
+  );
+}
+
 const GoogleSVG = () => (
   <svg width="18" height="18" viewBox="0 0 48 48">
     <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -87,6 +121,7 @@ export default function Result() {
   const [feedbackSent, setFeedbackSent]       = useState(false);
   const [copied, setCopied]                   = useState(false);
   const [showConfetti, setShowConfetti]       = useState(false);
+  const [champsSlide, setChampsSlide]         = useState(0);
   const scoreSavedRef = useRef(false);
 
 
@@ -98,6 +133,13 @@ export default function Result() {
       .then(d => setTopPerformers((d.leaders || []).slice(0, 5)))
       .catch(() => {});
   }, []);
+
+  // Auto-advance Weekly Champions carousel (mirrors dashboard behaviour)
+  useEffect(() => {
+    if (topPerformers.length < 2) return;
+    const t = setInterval(() => setChampsSlide(s => (s + 1) % Math.min(topPerformers.length, 3)), 3000);
+    return () => clearInterval(t);
+  }, [topPerformers.length]);
 
   // Save score (logged-in only, once)
   useEffect(() => {
@@ -171,7 +213,12 @@ export default function Result() {
     });
   }, [result]);
 
-  const isGuest = status === 'unauthenticated';
+  const isGuest    = status === 'unauthenticated';
+  const isLoggedIn = status === 'authenticated';
+  // Index of the current user in the top-performers list (−1 if not ranked)
+  const userRankIdx = isLoggedIn
+    ? topPerformers.findIndex(p => p.email === session?.user?.email)
+    : -1;
 
   useEffect(() => {
     if (!result || !result.xpEarned || result.xpEarned <= 0) return;
@@ -500,6 +547,145 @@ export default function Result() {
               <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
           </button>
+        </div>
+
+        {/* ── WEEKLY CHAMPIONS CAROUSEL ── */}
+        <div className="p-4" style={{ borderRadius: 22, background: '#111C2E', border: '1px solid rgba(253,186,59,0.22)', boxShadow: '0 0 24px rgba(253,186,59,0.06)' }}>
+
+          <style>{`
+            @keyframes proofFade {
+              from { opacity: 0; transform: translateY(7px); }
+              to   { opacity: 1; transform: translateY(0); }
+            }
+            .champ-slide { animation: proofFade 0.36s cubic-bezier(0.22,1,0.36,1) both; }
+          `}</style>
+
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <p className="font-display font-bold text-base text-white">🔥 Weekly Champions</p>
+            <button
+              onClick={() => router.push('/leaderboard')}
+              className="flex items-center gap-1 text-emerald-400 text-xs font-sans font-medium active:opacity-70"
+            >
+              See all
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 18l6-6-6-6" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+
+          {topPerformers.length === 0 ? (
+            <p className="font-sans text-xs text-slate-500 text-center py-4">
+              No scores yet this week. Be the first! 🚀
+            </p>
+          ) : (
+            <>
+              {/* Full-width auto-advancing card */}
+              {(() => {
+                const idx    = champsSlide % Math.min(topPerformers.length, 3);
+                const player = topPerformers[idx];
+                const isSelf = player.email === session?.user?.email;
+                const cardTheme = [
+                  { bg: 'rgba(255,184,0,0.08)',   border: 'rgba(255,184,0,0.24)'   },
+                  { bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.22)' },
+                  { bg: 'rgba(180,83,9,0.08)',    border: 'rgba(180,83,9,0.20)'    },
+                ][idx];
+                return (
+                  <div
+                    key={idx}
+                    className="champ-slide"
+                    style={{
+                      background: cardTheme.bg,
+                      border: `1px solid ${cardTheme.border}`,
+                      borderRadius: 18,
+                      padding: '14px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 14,
+                    }}
+                  >
+                    {/* Avatar with medal badge overlaid top-left */}
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <ChampionAvatar imageUrl={player.image || null} name={player.name} size={36} />
+                      <span style={{ position: 'absolute', top: -4, left: -4, fontSize: 16, lineHeight: 1 }}>
+                        {RANK_MEDALS[idx]}
+                      </span>
+                    </div>
+
+                    {/* Name + level + XP */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <p className="font-display font-bold truncate"
+                          style={{ fontSize: 15, color: isSelf ? '#10b981' : '#ffffff', margin: 0 }}>
+                          {(player.name || 'User').split(' ')[0]}
+                        </p>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, flexShrink: 0,
+                          color: '#facc15',
+                          background: 'rgba(250,204,21,0.15)',
+                          border: '1px solid rgba(250,204,21,0.3)',
+                          borderRadius: 20, padding: '2px 8px',
+                        }}>
+                          ⭐ {player.level || 'Aspirant'}
+                        </span>
+                        {isSelf && (
+                          <span style={{
+                            fontSize: 10, fontWeight: 700, flexShrink: 0,
+                            background: 'rgba(16,185,129,0.15)', color: '#10b981',
+                            border: '1px solid rgba(16,185,129,0.3)',
+                            borderRadius: 20, padding: '2px 7px',
+                          }}>You</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* XP */}
+                    <p className="font-display font-bold"
+                      style={{ fontSize: 17, color: '#FDBA3B', margin: 0, flexShrink: 0 }}>
+                      {Math.round(player.totalScore || 0).toLocaleString()} XP
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {/* Dot indicators */}
+              {topPerformers.length > 1 && (
+                <div style={{ display: 'flex', gap: 5, justifyContent: 'center', marginTop: 10 }}>
+                  {topPerformers.slice(0, 3).map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setChampsSlide(i)}
+                      aria-label={`Champion ${i + 1}`}
+                      style={{
+                        width: champsSlide % 3 === i ? 18 : 6,
+                        height: 6, borderRadius: 3,
+                        background: champsSlide % 3 === i ? '#f59e0b' : 'rgba(255,255,255,0.18)',
+                        border: 'none', padding: 0, cursor: 'pointer',
+                        transition: 'width 0.3s ease, background 0.3s ease',
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Your rank row */}
+              {isLoggedIn && (
+                <div className="mt-3 pt-3 border-t border-slate-700/40 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-sans text-xs text-slate-400">Your Rank</span>
+                    <span className="font-display font-black text-base text-white">
+                      {userRankIdx !== -1 ? `#${userRankIdx + 1}` : '—'}
+                    </span>
+                  </div>
+                  {/* User just finished a quiz so they're always active today */}
+                  <span className="text-xs font-semibold rounded-full px-3 py-1 bg-emerald-900/50 text-emerald-400 border border-emerald-700/40">
+                    ✓ Active today
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+
         </div>
 
         {/* ── VIEW LEADERBOARD ── */}

@@ -582,6 +582,9 @@ export default function Dashboard() {
         position: 'relative',
         overflow: 'hidden',
         cursor: 'pointer',
+        background: 'linear-gradient(145deg, #17182B, #111827)',
+        border: '1px solid rgba(255, 122, 26, 0.22)',
+        boxShadow: '0 20px 60px rgba(255, 122, 26, 0.08)',
       }}
     >
       <div style={{
@@ -628,7 +631,8 @@ export default function Dashboard() {
         fontWeight: '700',
         fontSize: '14px',
         padding: '13px 0',
-        borderRadius: '14px',
+        borderRadius: '18px',
+        background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)',
       }}>
         Start Quiz Now →
       </div>
@@ -657,7 +661,7 @@ export default function Dashboard() {
         <div className="px-4 pt-8 pb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => isLoggedIn && router.push('/profile')}
+              onClick={() => router.push('/profile')}
               className="flex-shrink-0 active:scale-90 transition-transform"
               aria-label="Go to profile"
             >
@@ -683,7 +687,6 @@ export default function Dashboard() {
                 {isGuest ? '0' : totalXP}
               </span>
             </button>
-            <NotificationBell streakCount={userProfile?.streakCount || 0} />
           </div>
         </div>
 
@@ -721,7 +724,7 @@ export default function Dashboard() {
         {isLoggedIn && !profileLoading && (
           <button
             onClick={() => router.push('/streak')}
-            className="mx-4 bg-slate-800 border border-slate-700/50 rounded-3xl px-4 py-4 w-[calc(100%-2rem)] text-left active:scale-[0.98] transition-transform"
+            className="mx-4 bg-slate-800 border border-slate-700/50 px-4 py-4 w-[calc(100%-2rem)] text-left active:scale-[0.98] transition-transform" style={{ borderRadius: 22 }}
           >
             <div className="flex justify-between">
               {DAY_LABELS.map((day, i) => {
@@ -772,22 +775,16 @@ export default function Dashboard() {
 
         {/* ── GUEST SIGN-IN NUDGE ── */}
         {isGuest && (
-          <div className="mx-4 mt-5 bg-slate-800/80 border border-emerald-500/20 rounded-2xl px-4 py-4 flex items-center gap-4">
+          <div className="mx-4 mt-5 px-4 py-4 flex items-center gap-4" style={{ background: '#111C2E', border: '1px solid rgba(34,211,153,0.22)', boxShadow: '0 0 0 1px rgba(34,211,153,0.04)', borderRadius: 22 }}>
             <div className="flex-1 min-w-0">
               <p className="font-display font-bold text-sm text-white leading-snug">Save your progress</p>
-              <p className="font-sans text-xs text-slate-400 mt-0.5">Sign in to track XP, streaks &amp; rank</p>
+              <p className="font-sans text-xs text-slate-400 mt-0.5">Sign in to save XP, streaks &amp; rank</p>
             </div>
             <button
               onClick={() => { document.cookie = 'userMode=; path=/; max-age=0'; signIn('google', { callbackUrl: '/dashboard' }); }}
-              className="flex-shrink-0 flex items-center gap-2 bg-white text-slate-900 rounded-xl px-3 py-2 font-display font-bold text-xs active:scale-[0.97] transition-transform"
+              className="flex-shrink-0 flex items-center gap-2 rounded-xl px-3 py-2 font-display font-bold text-xs active:scale-[0.97] transition-transform" style={{ background: 'rgba(34,211,153,0.15)', border: '1px solid rgba(34,211,153,0.3)', color: '#34d399' }}
             >
-              <svg width="14" height="14" viewBox="0 0 48 48">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                <path fill="#34A853" d="M10.53 28.59a14.5 14.5 0 010-9.18l-7.98-6.19a24.08 24.08 0 000 21.56l7.98-6.19z"/>
-                <path fill="#FBBC05" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-              </svg>
-              Sign in
+              Sign in →
             </button>
           </div>
         )}
@@ -868,7 +865,7 @@ export default function Dashboard() {
             fontWeight: '700',
             fontSize: '14px',
             padding: '13px 0',
-            borderRadius: '14px',
+            borderRadius: '18px',
           }}>
             Start Quiz Now →
           </div>
@@ -878,7 +875,7 @@ export default function Dashboard() {
 
         {/* ── WEEKLY CHAMPIONS ── */}
         <div className="mt-5 px-4">
-          <div className="bg-slate-800/70 border border-slate-700/50 rounded-3xl p-4">
+          <div className="p-4" style={{ borderRadius: 22, background: '#111C2E', border: '1px solid rgba(253,186,59,0.22)', boxShadow: '0 0 24px rgba(253,186,59,0.06)' }}>
 
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
@@ -906,9 +903,9 @@ export default function Dashboard() {
                   const player = topPlayers[idx];
                   const isSelf = player.email === session?.user?.email;
                   const cardTheme = [
-                    { bg: 'rgba(234,179,8,0.10)',   border: 'rgba(234,179,8,0.28)'   },
+                    { bg: 'rgba(255,184,0,0.08)',   border: 'rgba(255,184,0,0.24)'   },
                     { bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.22)' },
-                    { bg: 'rgba(180,83,9,0.10)',    border: 'rgba(180,83,9,0.25)'    },
+                    { bg: 'rgba(180,83,9,0.08)',    border: 'rgba(180,83,9,0.20)'    },
                   ][idx];
                   return (
                     <div
@@ -964,7 +961,7 @@ export default function Dashboard() {
 
                       {/* XP */}
                       <p className="font-display font-bold"
-                        style={{ fontSize: 17, color: '#f59e0b', margin: 0, flexShrink: 0 }}>
+                        style={{ fontSize: 17, color: '#FDBA3B', margin: 0, flexShrink: 0 }}>
                         {Math.round(player.totalScore || 0).toLocaleString()} XP
                       </p>
                     </div>
@@ -1019,46 +1016,47 @@ export default function Dashboard() {
         <div className="mt-6 mb-4" style={{ padding: '0 20px' }}>
           <p className="font-display font-bold text-base text-white mb-4">Discover Quizzes</p>
 
-          {/* Card 1 — full-width tall */}
+          {/* Card 1 — SSC PYQs */}
           <button
             onClick={() => handleDiscoverClick('PYQ', '/subjects?collection=PYQ')}
-            className="card-lift w-full text-left active:scale-[0.98] bg-gradient-to-br from-violet-600 to-indigo-700"
-            style={{ borderRadius: 22, marginBottom: 16, padding: '24px 22px', position: 'relative' }}
+            className="card-lift w-full text-left active:scale-[0.98]"
+            style={{
+              borderRadius: 22, marginBottom: 16, padding: '24px 22px', position: 'relative',
+              background: '#111C2E',
+              border: '1px solid rgba(148, 163, 184, 0.14)',
+              boxShadow: 'inset 0 2px 0 rgba(124, 58, 237, 0.8)',
+            }}
           >
-            {collectionTotals['PYQ'] === 0 && (
-              <span style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.2)', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '3px 10px' }}>
-                🔔 Notify
-              </span>
-            )}
-            <span className="bg-white/20 text-white font-bold uppercase tracking-wide rounded-full inline-block" style={{ fontSize: 10, padding: '4px 12px', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', padding: '4px 12px', borderRadius: 20, background: 'rgba(124,58,237,0.18)', color: '#c4b5fd', border: '1px solid rgba(124,58,237,0.3)', display: 'inline-block' }}>
               Most Attempted
             </span>
             <p className="font-display font-bold text-white" style={{ fontSize: 22, marginTop: 12 }}>SSC PYQs</p>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.72)', lineHeight: 1.5, marginTop: 6 }}>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, marginTop: 6 }}>
               Previous year questions across all SSC exams. Real exam pattern, real marks.
             </p>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.60)', fontWeight: 600, marginTop: 12 }}>4,800+ Questions</p>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', fontWeight: 600, marginTop: 12 }}>4,800+ Questions</p>
           </button>
 
-          {/* Card 4 — full-width short horizontal */}
+          {/* Card 2 — Parmar SSC */}
           <button
             onClick={() => handleDiscoverClick('Parmar', '/subjects?collection=Parmar')}
-            className="card-lift w-full text-left active:scale-[0.98] bg-gradient-to-br from-amber-500 to-orange-600"
-            style={{ borderRadius: 22, padding: '22px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}
+            className="card-lift w-full text-left active:scale-[0.98]"
+            style={{
+              borderRadius: 22, padding: '22px 22px', position: 'relative',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: '#111C2E',
+              border: '1px solid rgba(139,92,246,0.22)',
+              boxShadow: 'inset 0 2px 0 rgba(139,92,246,0.8)',
+            }}
           >
-            {collectionTotals['Parmar'] === 0 && (
-              <span style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.2)', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '3px 10px' }}>
-                🔔 Notify
-              </span>
-            )}
             <div>
-              <span className="bg-white/20 text-white font-bold uppercase tracking-wide rounded-full inline-block" style={{ fontSize: 10, padding: '4px 12px', letterSpacing: '0.05em' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', padding: '4px 12px', borderRadius: 20, background: 'rgba(139,92,246,0.15)', color: '#c4b5fd', border: '1px solid rgba(139,92,246,0.28)', display: 'inline-block' }}>
                 Parmar Sir
               </span>
               <p className="font-display font-bold text-white" style={{ fontSize: 22, marginTop: 12 }}>Parmar SSC</p>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.60)', fontWeight: 600, marginTop: 8 }}>350+ Questions</p>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', fontWeight: 600, marginTop: 8 }}>350+ Questions</p>
             </div>
-            <LightningSVG size={36} color="rgba(255,255,255,0.6)" />
+            <LightningSVG size={36} color="rgba(139,92,246,0.5)" />
           </button>
         </div>
 
@@ -1072,7 +1070,7 @@ export default function Dashboard() {
           onClick={() => setLowQModal(null)}
         >
           <div
-            className="w-full max-w-[360px] bg-[#1e293b] border border-slate-700/60 rounded-3xl px-6 py-8 text-center"
+            className="w-full max-w-[360px] bg-[#1e293b] border border-slate-700/60 px-6 py-8 text-center" style={{ borderRadius: 22 }}
             onClick={e => e.stopPropagation()}
           >
             <div className="text-5xl mb-5">🚧</div>

@@ -11,52 +11,62 @@ const SLIDES = [
   {
     id: 1,
     emoji: '📚',
-    gradient: 'from-blue-500 to-indigo-600',
-    glow: 'rgba(99,102,241,0.35)',
-    accentColor: 'text-blue-400',
-    tag: 'Step 01',
+    iconGradient: 'linear-gradient(135deg,#3b82f6,#4f46e5)',
+    bgGlow: 'rgba(79,70,229,0.45)',
+    btnGradient: 'linear-gradient(135deg,#3b82f6,#4f46e5)',
+    btnGlow: 'rgba(99,102,241,0.45)',
+    accentColor: '#93c5fd',
+    tag: 'STEP 01',
     title: 'Pick Your Topic',
-    desc: 'Choose any subject — Polity, Geography, Ancient History and more.\nHand-curated questions, zero fluff.\nStart in seconds.',
+    desc: 'Practice Polity, History, Geography, Science and more.',
   },
   {
     id: 2,
     emoji: '⏱️',
-    gradient: 'from-orange-500 to-rose-500',
-    glow: 'rgba(249,115,22,0.35)',
-    accentColor: 'text-orange-400',
-    tag: 'Step 02',
+    iconGradient: 'linear-gradient(135deg,#f97316,#f43f5e)',
+    bgGlow: 'rgba(249,115,22,0.4)',
+    btnGradient: 'linear-gradient(135deg,#f97316,#f43f5e)',
+    btnGlow: 'rgba(249,115,22,0.45)',
+    accentColor: '#fdba74',
+    tag: 'STEP 02',
     title: 'Beat the Clock',
-    desc: '20 seconds per question — just like the real SSC exam.\n+2 correct, −0.5 wrong.\nTrain your speed.',
+    desc: 'Train with SSC-style timed questions.',
   },
   {
     id: 3,
     emoji: '⚡',
-    gradient: 'from-emerald-500 to-teal-500',
-    glow: 'rgba(16,185,129,0.35)',
-    accentColor: 'text-emerald-400',
-    tag: 'Step 03',
-    title: 'Earn XP & Level Up',
-    desc: 'Every correct answer earns XP.\nFirst quiz of the day gets a bonus.\nRise from Aspirant to Legend.',
+    iconGradient: 'linear-gradient(135deg,#10b981,#14b8a6)',
+    bgGlow: 'rgba(16,185,129,0.4)',
+    btnGradient: 'linear-gradient(135deg,#10b981,#0d9488)',
+    btnGlow: 'rgba(16,185,129,0.45)',
+    accentColor: '#6ee7b7',
+    tag: 'STEP 03',
+    title: 'Earn XP',
+    desc: 'Correct answers help you level up from Aspirant to Legend.',
   },
   {
     id: 4,
     emoji: '🏆',
-    gradient: 'from-amber-400 to-orange-500',
-    glow: 'rgba(245,158,11,0.35)',
-    accentColor: 'text-amber-400',
-    tag: 'Step 04',
-    title: 'Climb the Leaderboard',
-    desc: 'See how you rank against thousands of aspirants.\nTop the weekly chart and own the podium.',
+    iconGradient: 'linear-gradient(135deg,#fbbf24,#f97316)',
+    bgGlow: 'rgba(245,158,11,0.4)',
+    btnGradient: 'linear-gradient(135deg,#fbbf24,#f97316)',
+    btnGlow: 'rgba(245,158,11,0.45)',
+    accentColor: '#fde68a',
+    tag: 'STEP 04',
+    title: 'Climb the Rank',
+    desc: 'Compete weekly and see where you stand.',
   },
   {
     id: 5,
     emoji: '🔥',
-    gradient: 'from-violet-500 to-purple-600',
-    glow: 'rgba(139,92,246,0.35)',
-    accentColor: 'text-violet-400',
-    tag: 'Step 05',
-    title: 'Build a Daily Habit',
-    desc: 'One quiz a day keeps exam failures away.\nBuild your streak and watch your accuracy soar.',
+    iconGradient: 'linear-gradient(135deg,#8b5cf6,#9333ea)',
+    bgGlow: 'rgba(139,92,246,0.4)',
+    btnGradient: 'linear-gradient(135deg,#10b981,#059669)',
+    btnGlow: 'rgba(16,185,129,0.45)',
+    accentColor: '#c4b5fd',
+    tag: 'STEP 05',
+    title: 'Build a Habit',
+    desc: 'One quiz a day keeps GK fresh.',
   },
 ];
 
@@ -103,102 +113,172 @@ export default function OnboardingSlides() {
   return (
     <>
       <Head><title>Welcome — SSC GK Score Booster</title></Head>
+      <style suppressHydrationWarning>{`
+        @keyframes obIconPop {
+          0%   { transform: scale(0.72); opacity: 0; }
+          65%  { transform: scale(1.08); opacity: 1; }
+          100% { transform: scale(1);   opacity: 1; }
+        }
+        @keyframes obCardUp {
+          from { opacity: 0; transform: translateY(22px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes obFadeUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .ob-icon  { animation: obIconPop  0.44s cubic-bezier(0.34,1.56,0.64,1) both; }
+        .ob-card  { animation: obCardUp   0.38s cubic-bezier(0.22,1,0.36,1) 0.12s both; }
+        .ob-tag   { animation: obFadeUp   0.3s  cubic-bezier(0.22,1,0.36,1) 0.22s both; }
+        .ob-title { animation: obFadeUp   0.3s  cubic-bezier(0.22,1,0.36,1) 0.30s both; }
+        .ob-desc  { animation: obFadeUp   0.3s  cubic-bezier(0.22,1,0.36,1) 0.36s both; }
+        .ob-btn   { animation: obFadeUp   0.3s  cubic-bezier(0.22,1,0.36,1) 0.42s both; }
+      `}</style>
+
       <div
-        className="flex-1 flex flex-col px-5 pt-6 pb-6 select-none overflow-hidden"
-        style={{ WebkitTapHighlightColor: 'transparent' }}
+        className="relative flex flex-col select-none overflow-hidden"
+        style={{
+          height: '100svh',
+          minHeight: '100dvh',
+          WebkitTapHighlightColor: 'transparent',
+          /* Full-screen dark base */
+          background: '#07111F',
+        }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Skip row */}
-        <div className="flex items-center justify-between mb-5 flex-shrink-0 px-1">
-          <div className="flex gap-2 items-center">
-            {SLIDES.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => goTo(i)}
-                className={`rounded-full transition-all duration-300 ${
-                  i === current
-                    ? 'w-6 h-2 bg-emerald-500'
-                    : 'w-2 h-2 bg-slate-700'
-                }`}
-              />
-            ))}
-          </div>
-          {!isLast && (
-            <button
-              onClick={() => { setOnboardingDone(); router.push('/dashboard'); }}
-              className="font-sans font-medium text-sm text-slate-500 active:text-slate-300 transition-colors"
-            >
-              Skip
-            </button>
-          )}
-        </div>
-
-        {/* Card */}
+        {/* ── Full-screen colored glow — top half only ── */}
         <div
-          className="flex-1 rounded-3xl flex flex-col overflow-hidden border border-slate-700/50"
+          className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'linear-gradient(160deg, #1e293b 0%, #0f1a2e 100%)',
-            boxShadow: `0 0 60px ${slide.glow}`,
-            transition: 'box-shadow 0.5s ease',
+            background: `radial-gradient(ellipse 80% 55% at 50% -5%, ${slide.bgGlow} 0%, transparent 70%)`,
+            transition: 'background 0.5s ease',
           }}
-        >
-          {/* ── TEXT SECTION ── */}
-          <div key={`text-${animKey}`} className="px-8 pt-10 pb-0 slide-text-in">
-            {/* Step tag */}
-            <span className={`text-[10px] font-black uppercase tracking-[0.18em] ${slide.accentColor}`}>
-              {slide.tag}
+        />
+
+        {/* ── Progress bar + Skip ── */}
+        <div className="relative z-10 flex-shrink-0 px-6 pt-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-sans font-semibold text-xs" style={{ color: 'rgba(255,255,255,0.38)' }}>
+              {current + 1}/{SLIDES.length}
             </span>
-
-            {/* Title */}
-            <h1 className="font-display font-black text-[28px] text-white leading-tight mt-3 mb-4">
-              {slide.title}
-            </h1>
-
-            {/* Description */}
-            <p className="font-sans text-sm text-slate-400 leading-relaxed max-w-[280px] whitespace-pre-line">
-              {slide.desc}
-            </p>
+            {!isLast && (
+              <button
+                onClick={() => { setOnboardingDone(); router.push('/dashboard'); }}
+                className="font-sans font-medium text-xs active:opacity-40 transition-opacity"
+                style={{
+                  color: 'rgba(255,255,255,0.38)',
+                  minHeight: 44,
+                  padding: '8px 12px',
+                  margin: '-8px -12px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                Skip
+              </button>
+            )}
           </div>
-
-          {/* ── ILLUSTRATION + BUTTON SECTION ── */}
-          <div className="flex-1 flex items-start justify-center relative min-h-0 pt-10">
-            {/* Glow ring */}
+          <div
+            className="w-full rounded-full overflow-hidden"
+            style={{ height: 3, background: 'rgba(255,255,255,0.1)' }}
+          >
             <div
-              className="absolute rounded-full"
               style={{
-                width: 160,
-                height: 160,
-                background: `radial-gradient(circle, ${slide.glow} 0%, transparent 70%)`,
-                transition: 'background 0.5s ease',
+                height: '100%',
+                width: `${((current + 1) / SLIDES.length) * 100}%`,
+                background: slide.btnGradient,
+                borderRadius: 999,
+                transition: 'width 0.4s cubic-bezier(0.22,1,0.36,1), background 0.4s ease',
               }}
             />
-            {/* Emoji circle — half the original size */}
-            <div
-              key={`circle-${animKey}`}
-              className={`relative w-28 h-28 rounded-full bg-gradient-to-br ${slide.gradient} flex items-center justify-center circle-pop-in`}
-              style={{
-                boxShadow: `0 6px 28px ${slide.glow}, 0 0 0 6px rgba(255,255,255,0.04)`,
-                fontSize: 48,
-              }}
-            >
-              {slide.emoji}
-            </div>
+          </div>
+        </div>
 
-            {/* Button — absolutely pinned to bottom-right of this section */}
+        {/* ── Icon — floats in the colored zone ── */}
+        <div className="relative z-10 flex-1 flex items-center justify-center">
+          <div
+            key={`icon-${animKey}`}
+            className="ob-icon flex items-center justify-center rounded-full"
+            style={{
+              width: 116,
+              height: 116,
+              background: slide.iconGradient,
+              fontSize: 52,
+              boxShadow: `0 12px 48px ${slide.bgGlow}, 0 0 0 10px rgba(255,255,255,0.05)`,
+            }}
+          >
+            {slide.emoji}
+          </div>
+        </div>
+
+        {/* ── Bottom content card (text only) ── */}
+        <div
+          key={`card-${animKey}`}
+          className="ob-card relative z-10 flex-shrink-0 mx-4"
+          style={{
+            background: 'rgba(13,22,38,0.88)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 28,
+            padding: 24,
+            /* leave room for the fixed button below */
+            marginBottom: 'calc(100px + env(safe-area-inset-bottom))',
+          }}
+        >
+          <span
+            key={`tag-${animKey}`}
+            className="ob-tag block font-sans font-black text-[11px] uppercase tracking-[0.2em] mb-2"
+            style={{ color: slide.accentColor }}
+          >
+            {slide.tag}
+          </span>
+
+          <h1
+            key={`title-${animKey}`}
+            className="ob-title font-display font-black text-[26px] leading-tight text-white mb-2"
+          >
+            {slide.title}
+          </h1>
+
+          <p
+            key={`desc-${animKey}`}
+            className="ob-desc font-sans text-sm leading-relaxed"
+            style={{ color: 'rgba(148,163,184,0.85)' }}
+          >
+            {slide.desc}
+          </p>
+        </div>
+
+        {/* ── Fixed bottom CTA ── */}
+        <div
+          className="fixed bottom-0 left-0 right-0 z-20 flex justify-center pointer-events-none"
+        >
+          <div
+            className="w-full max-w-[430px] pointer-events-auto"
+            style={{
+              padding: 'calc(12px + env(safe-area-inset-bottom)) 16px calc(20px + env(safe-area-inset-bottom))',
+            }}
+          >
             <button
+              key={`btn-${animKey}`}
               onClick={() => {
                 if (isLast) { setOnboardingDone(); router.push('/dashboard'); }
                 else goTo(current + 1);
               }}
-              className={`absolute bottom-6 right-6 flex items-center gap-2 rounded-full px-6 py-3 font-display font-bold text-sm transition-transform active:scale-95 shadow-lg ${
-                isLast
-                  ? 'bg-emerald-500 text-white btn-breathe shadow-[0_0_24px_rgba(16,185,129,0.45)]'
-                  : 'bg-slate-700/80 text-white border border-slate-600/50'
-              }`}
+              className={`ob-btn w-full flex items-center justify-center gap-2 font-display font-bold text-base text-white transition-transform active:scale-[0.97] ${isLast ? 'btn-breathe' : ''}`}
+              style={{
+                height: 56,
+                background: slide.btnGradient,
+                borderRadius: 18,
+                boxShadow: `0 6px 22px ${slide.btnGlow}`,
+                transition: 'background 0.4s ease, box-shadow 0.4s ease',
+              }}
             >
               {isLast ? 'Start Practising' : 'Next'}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M9 18l6-6-6-6"/>
               </svg>
             </button>
