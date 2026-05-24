@@ -146,11 +146,11 @@ function SubjectGrid({ subjects, displayCounts, selected, setSelected, startIdx 
             </div>
 
             {/* Name + subtitle + bottom row */}
-            <div style={{ position: 'relative', zIndex: 1, paddingTop: 6 }}>
-              <p className="font-display font-bold" style={{ fontSize: 15, lineHeight: 1.25, color: '#ffffff', marginBottom: 3 }}>
+            <div style={{ position: 'relative', zIndex: 1, paddingTop: 4 }}>
+              <p className="font-display font-bold" style={{ fontSize: 14, lineHeight: 1.25, color: '#ffffff', marginBottom: 2 }}>
                 {subject}
               </p>
-              <p style={{ fontSize: 11, lineHeight: 1.4, color: 'rgba(148,163,184,0.55)', marginBottom: 8, marginTop: 0 }}>
+              <p style={{ fontSize: 10, lineHeight: 1.4, color: 'rgba(148,163,184,0.55)', marginBottom: 6, marginTop: 0 }}>
                 {theme.subtitle || ''}
               </p>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
@@ -259,8 +259,8 @@ export default function SubjectsPage() {
         /* ── Subject card base ── */
         .subject-card {
           position: relative;
-          min-height: 122px;
-          padding: 18px;
+          min-height: 130px;
+          padding: 14px;
           border-radius: 22px;
           background: linear-gradient(
             145deg,
@@ -309,9 +309,9 @@ export default function SubjectsPage() {
 
         /* ── Icon container ── */
         .subject-icon-box {
-          width: 38px;
-          height: 38px;
-          border-radius: 13px;
+          width: 34px;
+          height: 34px;
+          border-radius: 11px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -320,14 +320,23 @@ export default function SubjectsPage() {
           z-index: 1;
           background: color-mix(in srgb, var(--accent) 20%, transparent);
           border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
-          font-size: 20px;
+          font-size: 18px;
           line-height: 1;
           /* Force consistent emoji rendering across platforms */
           font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
         }
 
-        .subj-search::placeholder { color: rgba(148,163,184,0.55); }
+        .subj-search::placeholder { color: #94A3B8; }
         .subj-search:focus { outline: none; }
+
+        /* Search container focus ring */
+        .subj-search-wrap {
+          transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .subj-search-wrap:focus-within {
+          border-color: rgba(124, 58, 237, 0.5) !important;
+          box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.16);
+        }
       `}</style>
 
       <div className="min-h-screen pb-28" style={{ background: '#0f172a' }}>
@@ -361,7 +370,7 @@ export default function SubjectsPage() {
 
         {/* ── SEARCH BAR ── */}
         <div style={{ padding: '0 20px 12px' }}>
-          <div style={{
+          <div className="subj-search-wrap" style={{
             display: 'flex', alignItems: 'center', gap: 10,
             background: '#1E293B',
             border: '1px solid rgba(255,255,255,0.08)',
@@ -408,8 +417,8 @@ export default function SubjectsPage() {
             style={{
               position: 'relative',
               width: '100%',
-              padding: '16px 18px',
-              borderRadius: 22,
+              padding: '12px 16px',
+              borderRadius: 20,
               background: 'linear-gradient(135deg, #7C3AED 0%, #C2410C 100%)',
               border: '1px solid rgba(255,255,255,0.12)',
               overflow: 'hidden',
@@ -429,11 +438,11 @@ export default function SubjectsPage() {
 
             {/* Icon box */}
             <div style={{
-              width: 46, height: 46, borderRadius: 14, flexShrink: 0,
+              width: 40, height: 40, borderRadius: 12, flexShrink: 0,
               background: 'rgba(255,255,255,0.15)',
               border: '1px solid rgba(255,255,255,0.22)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 22, lineHeight: 1,
+              fontSize: 20, lineHeight: 1,
             }}>
               🎯
             </div>
@@ -532,8 +541,8 @@ export default function SubjectsPage() {
         {displayCounts === null && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, padding: '4px 20px 8px' }}>
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="skeleton-card" style={{ minHeight: 122, padding: 16, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div className="skeleton-bone" style={{ width: 38, height: 38, borderRadius: 13 }} />
+              <div key={i} className="skeleton-card" style={{ minHeight: 130, padding: 14, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div className="skeleton-bone" style={{ width: 34, height: 34, borderRadius: 11 }} />
                 <div>
                   <div className="skeleton-bone" style={{ height: 12, width: '62%', marginBottom: 6 }} />
                   <div className="skeleton-bone" style={{ height: 10, width: '38%' }} />
@@ -553,12 +562,12 @@ export default function SubjectsPage() {
           const subjects = sectionSubjects(section.subjects);
           if (subjects.length === 0) return null;
           return (
-            <div key={section.label} style={{ marginBottom: 6 }}>
+            <div key={section.label} style={{ marginBottom: 20 }}>
               {/* Section label */}
               <p style={{
-                fontSize: 10, fontWeight: 700,
-                color: 'rgba(148,163,184,0.45)',
-                textTransform: 'uppercase', letterSpacing: '0.09em',
+                fontSize: 12, fontWeight: 800,
+                color: '#64748B',
+                textTransform: 'uppercase', letterSpacing: '0.08em',
                 margin: '0 20px 8px',
               }}>
                 {section.label}

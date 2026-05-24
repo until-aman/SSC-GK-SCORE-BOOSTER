@@ -10,54 +10,6 @@ import { fetchAISummary } from '@/lib/fetchAI';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
-function TopAvatar({ player, index, isSelf }) {
-  const [imgError, setImgError] = useState(false);
-  const initial = (player.name || '?').charAt(0).toUpperCase();
-  return (
-    <div
-      className={`flex-shrink-0 flex flex-col items-center rounded-2xl px-3 pt-4 pb-3 ${
-        isSelf
-          ? 'bg-emerald-900/40 border border-emerald-500/40'
-          : 'bg-slate-800/80 border border-slate-700/50'
-      }`}
-      style={{ width: 80 }}
-    >
-      <div className="relative mb-2">
-        {player.image && !imgError ? (
-          <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-white/20">
-            <img
-              src={player.image}
-              alt={player.name || 'avatar'}
-              className="w-full h-full object-cover"
-              onError={() => setImgError(true)}
-            />
-          </div>
-        ) : (
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-600 to-emerald-600 flex items-center justify-center">
-            <span className="font-display font-black text-white text-[18px]">{initial}</span>
-          </div>
-        )}
-        <span
-          className="absolute text-[15px] leading-none"
-          style={{ bottom: -5, left: -5 }}
-        >
-          {RANK_MEDALS[index] || (
-            <span className="bg-slate-600 rounded-full w-5 h-5 flex items-center justify-center font-display font-black text-[10px] text-slate-300">
-              {index + 1}
-            </span>
-          )}
-        </span>
-      </div>
-      <p className={`font-semibold text-[11px] text-center leading-tight truncate w-full ${
-        isSelf ? 'text-emerald-300' : 'text-white'
-      }`}>
-        {(player.name || 'User').split(' ')[0]}
-      </p>
-      <p className="text-[10px] text-slate-500 mt-0.5">{(player.totalScore || 0).toFixed(0)} XP</p>
-    </div>
-  );
-}
-
 /* ── Avatar — mirrors dashboard Avatar component exactly ── */
 function ChampionAvatar({ imageUrl, name, size = 36 }) {
   const [imgError, setImgError] = useState(false);
@@ -123,6 +75,7 @@ export default function Result() {
   const [showConfetti, setShowConfetti]       = useState(false);
   const [champsSlide, setChampsSlide]         = useState(0);
   const scoreSavedRef = useRef(false);
+  const landingConfettiShownRef = useRef(false);
 
 
 
@@ -140,6 +93,14 @@ export default function Result() {
     const t = setInterval(() => setChampsSlide(s => (s + 1) % Math.min(topPerformers.length, 3)), 3000);
     return () => clearInterval(t);
   }, [topPerformers.length]);
+
+  useEffect(() => {
+    if (!result || landingConfettiShownRef.current) return;
+    landingConfettiShownRef.current = true;
+    setShowConfetti(true);
+    const t = setTimeout(() => setShowConfetti(false), 3800);
+    return () => clearTimeout(t);
+  }, [result]);
 
   // Save score (logged-in only, once)
   useEffect(() => {
@@ -356,7 +317,7 @@ export default function Result() {
         }}
       />
 
-      <Confetti active={showConfetti} />
+      <Confetti active={showConfetti} intensity="grand" />
 
       {xpResult && (
         <XPToast
@@ -378,6 +339,17 @@ export default function Result() {
             {result.subject} · {result.topic}
           </p>
         </div>
+
+        {result.partialAttempt && (
+          <div className="card-enter card-enter-1 bg-slate-800/70 border border-orange-500/30 rounded-2xl p-4">
+            <p className="font-display font-bold text-base text-white mb-1">
+              You answered {result.answeredCount ?? result.attemptedCount ?? 0} of {result.totalQuestions} questions.
+            </p>
+            <p className="font-sans font-medium text-sm text-slate-400">
+              Here&apos;s your result so far.
+            </p>
+          </div>
+        )}
 
         {/* ── PERFORMANCE SUMMARY ── */}
         <div className="card-enter card-enter-1 bg-slate-800/70 border border-slate-700/50 rounded-3xl p-5">
@@ -481,42 +453,6 @@ export default function Result() {
             </button>
           </div>
         )}
-
-        {/* ── TOPPERS OF THIS WEEK ── */}
-        <div className="card-enter card-enter-2 bg-slate-800/70 border border-slate-700/50 rounded-3xl pt-4 pb-3 overflow-hidden">
-          <div className="px-5 flex items-center justify-between mb-3">
-            <p className="font-display font-bold text-base text-white">Toppers of this week</p>
-            <button
-              onClick={() => router.push('/leaderboard')}
-              className="flex items-center gap-1 font-sans font-medium text-xs text-emerald-400 active:opacity-70"
-            >
-              See all
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 18l6-6-6-6" strokeLinecap="round"/>
-              </svg>
-            </button>
-          </div>
-
-          {topPerformers.length === 0 ? (
-            <div className="px-5 py-3 text-center">
-              <p className="font-sans text-xs text-slate-500">No scores yet this week.</p>
-            </div>
-          ) : (
-            <div
-              className="flex gap-3 overflow-x-auto no-scrollbar"
-              style={{ paddingLeft: 20, paddingRight: 20, paddingBottom: 4 }}
-            >
-              {topPerformers.map((player, i) => (
-                <TopAvatar
-                  key={player.email || i}
-                  player={player}
-                  index={i}
-                  isSelf={player.email === session?.user?.email}
-                />
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* ── CONTINUE PRACTICING CARD ── */}
         <div className="card-enter card-enter-3 bg-slate-800/70 border border-slate-700/50 rounded-2xl p-4">

@@ -164,6 +164,46 @@ function calculateResults(questions, answers) {
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 const OPTION_KEYS   = ['optionA', 'optionB', 'optionC', 'optionD'];
+const ACTIVE_QUIZ_SESSION_KEY = 'ssc_active_quiz_session';
+const QUIZ_SESSION_EXPIRY_MS = 60 * 60 * 1000;
+const QUESTION_DURATION_SECONDS = 20;
+
+function getAttemptedCount(answers = {}) {
+  return Object.keys(answers).length;
+}
+
+function getAnsweredCount(answers = {}) {
+  return Object.values(answers).filter(a => a && a !== 'SKIPPED').length;
+}
+
+function readActiveQuizSession() {
+  if (typeof window === 'undefined') return null;
+  try {
+    return JSON.parse(localStorage.getItem(ACTIVE_QUIZ_SESSION_KEY) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+function writeActiveQuizSession(session) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(ACTIVE_QUIZ_SESSION_KEY, JSON.stringify(session));
+  } catch {}
+}
+
+function clearActiveQuizSession() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(ACTIVE_QUIZ_SESSION_KEY);
+  } catch {}
+}
+
+function touchActiveQuizSession() {
+  const session = readActiveQuizSession();
+  if (!session || session.status !== 'in_progress') return;
+  writeActiveQuizSession({ ...session, lastActivityAt: Date.now() });
+}
 
 function TimerRing({ timeLeft, duration = 20 }) {
   const SIZE   = 52;
@@ -246,8 +286,9 @@ export default function Quiz() {
   const questionCount = count || n;
   const isSavedMode  = mode === 'saved';
   const isDailyMode  = mode === 'daily';
-  const effectiveSubject = isSavedMode ? 'Saved' : isDailyMode ? 'Daily Challenge' : subject;
-  const effectiveTopic   = isSavedMode ? 'Mixed'  : isDailyMode ? 'Mixed GK'        : topic;
+  const [restoredMeta, setRestoredMeta] = useState(null);
+  const effectiveSubject = restoredMeta?.subject || (isSavedMode ? 'Saved' : isDailyMode ? 'Daily Challenge' : subject);
+  const effectiveTopic   = restoredMeta?.topic   || (isSavedMode ? 'Mixed'  : isDailyMode ? 'Mixed GK'        : topic);
 
   const [questions, setQuestions]       = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -258,19 +299,64 @@ export default function Quiz() {
   const [selectedOption, setSelectedOption] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [timeLeft, setTimeLeft]         = useState(20);
+  const [questionStartedAt, setQuestionStartedAt] = useState(Date.now());
   const [sessionId, setSessionId]       = useState('');
   const [bulbState, setBulbState]       = useState('neutral'); // 'neutral' | 'correct' | 'wrong'
   const [savedIds, setSavedIds]         = useState(new Set());
   const [showGuestBanner, setShowGuestBanner] = useState(false);
   const [bookmarkFeedback, setBookmarkFeedback] = useState(null); // questionId being shown feedback
   const [bmAnimKey, setBmAnimKey]       = useState(0);
+  const [showExitModal, setShowExitModal] = useState(false);
+  const [pendingExitUrl, setPendingExitUrl] = useState('/dashboard');
+  const [recoveryPrompt, setRecoveryPrompt] = useState(null);
+  const [recoveryChecked, setRecoveryChecked] = useState(false);
   const guestBannerShown = useRef(false);
+  const allowQuizExitRef = useRef(false);
+  const restoredSessionRef = useRef(false);
+  const activeSessionRef = useRef(null);
   const isLoggedIn = status === 'authenticated';
+  const attemptedCount = getAttemptedCount(answers);
+  const answeredCount = getAnsweredCount(answers);
+  const quizInProgress = questions.length > 0 && !loading && !error && !quizComplete;
 
   useEffect(() => {
     if (!router.isReady) return;
     if (!isSavedMode && mode !== 'daily' && (!subject || !topic || !questionCount)) router.replace('/dashboard');
   }, [router.isReady, subject, topic, questionCount, isSavedMode, router]);
+
+  useEffect(() => {
+    if (!router.isReady || recoveryChecked) return;
+    const session = readActiveQuizSession();
+    const isValidSession =
+      session &&
+      session.status === 'in_progress' &&
+      Array.isArray(session.questions) &&
+      session.questions.length > 0;
+
+    if (!isValidSession) {
+      clearActiveQuizSession();
+      setRecoveryChecked(true);
+      return;
+    }
+
+    const lastActivityAt = Number(session.lastActivityAt || session.startedAt || 0);
+    const expired = !lastActivityAt || Date.now() - lastActivityAt > QUIZ_SESSION_EXPIRY_MS;
+    const sessionAttemptedCount = getAttemptedCount(session.selectedAnswers || {});
+
+    if (expired) {
+      if (sessionAttemptedCount > 0) {
+        setRecoveryPrompt({ type: 'expired', session });
+        setLoading(false);
+      } else {
+        clearActiveQuizSession();
+        setRecoveryChecked(true);
+      }
+      return;
+    }
+
+    setRecoveryPrompt({ type: 'resume', session });
+    setLoading(false);
+  }, [router.isReady, recoveryChecked]);
 
   // Load saved IDs for bookmark state
   useEffect(() => {
@@ -283,6 +369,7 @@ export default function Quiz() {
   }, [status, isLoggedIn]);
 
   async function handleBookmarkToggle(question) {
+    touchActiveQuizSession();
     if (!isLoggedIn) {
       // Guest: use localStorage
       try {
@@ -368,11 +455,13 @@ export default function Quiz() {
   }
 
   useEffect(() => {
+    if (restoredSessionRef.current) return;
     setSessionId(qSessionId || crypto.randomUUID());
   }, [qSessionId]);
 
   useEffect(() => {
     if (!router.isReady) return;
+    if (!recoveryChecked || recoveryPrompt || restoredSessionRef.current) return;
 
     if (mode === 'daily') {
       setLoading(true);
@@ -454,20 +543,66 @@ export default function Quiz() {
     }
 
     fetchWithRetry(3);
-  }, [router.isReady, subject, topic, questionCount, isSavedMode, mode]);
+  }, [router.isReady, subject, topic, questionCount, isSavedMode, mode, recoveryChecked, recoveryPrompt]);
 
   useEffect(() => {
-    if (loading || quizComplete || showFeedback || timeLeft <= 0) return;
+    if (!quizInProgress || recoveryPrompt) return;
+    const now = Date.now();
+    const existing = activeSessionRef.current || readActiveQuizSession();
+    const quizSession = {
+      quizSessionId: existing?.quizSessionId || sessionId || crypto.randomUUID(),
+      subject: effectiveSubject,
+      topic: effectiveTopic,
+      collection,
+      mode: mode || 'standard',
+      selectedQuestionCount: questions.length,
+      totalQuestions: questions.length,
+      questions,
+      currentQuestionIndex: currentIndex,
+      selectedAnswers: answers,
+      startedAt: existing?.startedAt || now,
+      lastActivityAt: now,
+      questionStartedAt,
+      status: 'in_progress',
+    };
+    activeSessionRef.current = quizSession;
+    writeActiveQuizSession(quizSession);
+  }, [
+    answers,
+    collection,
+    currentIndex,
+    effectiveSubject,
+    effectiveTopic,
+    mode,
+    questionStartedAt,
+    questions,
+    quizInProgress,
+    recoveryPrompt,
+    sessionId,
+  ]);
+
+  useEffect(() => {
+    if (loading || quizComplete || showFeedback || showExitModal || recoveryPrompt || timeLeft <= 0) return;
     const t = setTimeout(() => setTimeLeft(p => p - 1), 1000);
     return () => clearTimeout(t);
-  }, [timeLeft, loading, quizComplete, showFeedback]);
+  }, [timeLeft, loading, quizComplete, showFeedback, showExitModal, recoveryPrompt]);
 
-  useEffect(() => { setTimeLeft(20); setBulbState('neutral'); }, [currentIndex]);
+  useEffect(() => {
+    if (recoveryPrompt) return;
+    setTimeLeft(QUESTION_DURATION_SECONDS);
+    setQuestionStartedAt(Date.now());
+    setBulbState('neutral');
+  }, [currentIndex, recoveryPrompt]);
 
-  const finishQuiz = useCallback((finalAnswers) => {
+  const finishQuiz = useCallback((finalAnswers, options = {}) => {
     if (quizComplete) return;
+    allowQuizExitRef.current = true;
+    activeSessionRef.current = null;
+    clearActiveQuizSession();
     setQuizComplete(true);
     const results = calculateResults(questions, finalAnswers);
+    const attemptedCount = Object.keys(finalAnswers || {}).length;
+    const answeredCount = Object.values(finalAnswers || {}).filter(a => a && a !== 'SKIPPED').length;
 
     // ── Write base results immediately and navigate — no AI wait ─────────────
     // The result page already has a fallback to fetch AI summary independently
@@ -477,6 +612,10 @@ export default function Quiz() {
       subject: effectiveSubject, topic: effectiveTopic, questions, answers: finalAnswers,
       correct: results.correct, incorrect: results.incorrect, skipped: results.skipped,
       totalQuestions: results.totalQuestions, rawScore: results.rawScore, accuracy: results.accuracy,
+      partialAttempt: Boolean(options.partial),
+      attemptedCount,
+      answeredCount,
+      collection,
       aiData: null, // result page fetches this on its own; patched below when ready
     }));
 
@@ -514,30 +653,270 @@ export default function Quiz() {
         } catch {}
       })
       .catch(() => {});
-  }, [questions, subject, topic, sessionId, router, quizComplete, effectiveSubject, effectiveTopic]);
+  }, [questions, subject, topic, sessionId, router, quizComplete, effectiveSubject, effectiveTopic, collection]);
+
+  const requestQuizExit = useCallback((targetUrl = '/dashboard') => {
+    if (!quizInProgress || allowQuizExitRef.current) return true;
+    setPendingExitUrl(targetUrl || '/dashboard');
+    setShowExitModal(true);
+    return false;
+  }, [quizInProgress]);
+
+  useEffect(() => {
+    if (!quizInProgress) return;
+    const currentQuizUrl = router.asPath || window.location.pathname;
+
+    const handleBeforeUnload = (event) => {
+      if (allowQuizExitRef.current) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    const handleRouteChangeStart = (url) => {
+      if (allowQuizExitRef.current) return;
+      setPendingExitUrl(url || '/dashboard');
+      setShowExitModal(true);
+      const routeChangeError = new Error('Quiz route change cancelled');
+      routeChangeError.cancelled = true;
+      router.events.emit('routeChangeError', routeChangeError, url, { shallow: false });
+      throw routeChangeError;
+    };
+
+    const handlePopState = () => {
+      if (allowQuizExitRef.current) return;
+      window.history.pushState({ quizGuard: true }, '', currentQuizUrl);
+      requestQuizExit('/dashboard');
+    };
+
+    window.history.pushState({ quizGuard: true }, '', currentQuizUrl);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState, true);
+    router.events.on('routeChangeStart', handleRouteChangeStart);
+    router.beforePopState(({ as }) => requestQuizExit(as || '/dashboard'));
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState, true);
+      router.events.off('routeChangeStart', handleRouteChangeStart);
+      router.beforePopState(() => true);
+    };
+  }, [quizInProgress, router, requestQuizExit]);
+
+  function handleContinueQuiz() {
+    setShowExitModal(false);
+    setPendingExitUrl('/dashboard');
+  }
+
+  function handleEndQuiz() {
+    allowQuizExitRef.current = true;
+    setShowExitModal(false);
+    if (attemptedCount > 0) {
+      finishQuiz(answers, { partial: true });
+      return;
+    }
+    activeSessionRef.current = null;
+    clearActiveQuizSession();
+    router.push(pendingExitUrl || '/dashboard');
+  }
+
+  function showStoredSessionResult(session, options = {}) {
+    const storedQuestions = session.questions || [];
+    const storedAnswers = session.selectedAnswers || {};
+    if (!storedQuestions.length) {
+      clearActiveQuizSession();
+      router.push('/dashboard');
+      return;
+    }
+
+    allowQuizExitRef.current = true;
+    activeSessionRef.current = null;
+    clearActiveQuizSession();
+    setQuizComplete(true);
+
+    const results = calculateResults(storedQuestions, storedAnswers);
+    const storedAttemptedCount = getAttemptedCount(storedAnswers);
+    const storedAnsweredCount = getAnsweredCount(storedAnswers);
+    const storedSubject = session.subject || effectiveSubject || 'Quiz';
+    const storedTopic = session.topic || effectiveTopic || 'Mixed';
+    const storedSessionId = session.quizSessionId || sessionId || crypto.randomUUID();
+
+    sessionStorage.setItem('quizResult', JSON.stringify({
+      subject: storedSubject,
+      topic: storedTopic,
+      questions: storedQuestions,
+      answers: storedAnswers,
+      correct: results.correct,
+      incorrect: results.incorrect,
+      skipped: results.skipped,
+      totalQuestions: results.totalQuestions,
+      rawScore: results.rawScore,
+      accuracy: results.accuracy,
+      partialAttempt: Boolean(options.partial),
+      attemptedCount: storedAttemptedCount,
+      answeredCount: storedAnsweredCount,
+      collection: session.collection || 'general',
+      aiData: null,
+    }));
+
+    router.push(
+      `/result?subject=${encodeURIComponent(storedSubject)}&topic=${encodeURIComponent(storedTopic)}&sessionId=${storedSessionId}&correct=${results.correct}&incorrect=${results.incorrect}&skipped=${results.skipped}&total=${results.totalQuestions}&score=${results.rawScore}`
+    );
+  }
+
+  function startFreshAfterRecovery() {
+    activeSessionRef.current = null;
+    restoredSessionRef.current = false;
+    clearActiveQuizSession();
+    setRecoveryPrompt(null);
+    setRecoveryChecked(true);
+    setLoading(true);
+  }
+
+  function handleResumeStoredQuiz() {
+    const session = recoveryPrompt?.session;
+    if (!session) return;
+
+    const restoredQuestions = session.questions || [];
+    const restoredAnswers = { ...(session.selectedAnswers || {}) };
+    let restoredIndex = Math.min(session.currentQuestionIndex || 0, Math.max(restoredQuestions.length - 1, 0));
+    let restoredQuestionStartedAt = Number(session.questionStartedAt || session.lastActivityAt || Date.now());
+    let restoredTimeLeft = Math.ceil(QUESTION_DURATION_SECONDS - ((Date.now() - restoredQuestionStartedAt) / 1000));
+    const currentQuestion = restoredQuestions[restoredIndex];
+    const storedAnswerForCurrent = currentQuestion ? restoredAnswers[currentQuestion.id] : null;
+
+    if (storedAnswerForCurrent) {
+      if (restoredIndex >= restoredQuestions.length - 1) {
+        showStoredSessionResult({ ...session, selectedAnswers: restoredAnswers });
+        return;
+      }
+      restoredIndex += 1;
+      restoredQuestionStartedAt = Date.now();
+      restoredTimeLeft = QUESTION_DURATION_SECONDS;
+    }
+
+    if (!storedAnswerForCurrent && currentQuestion && restoredTimeLeft <= 0) {
+      restoredAnswers[currentQuestion.id] = 'SKIPPED';
+      if (restoredIndex >= restoredQuestions.length - 1) {
+        showStoredSessionResult({ ...session, selectedAnswers: restoredAnswers });
+        return;
+      }
+      restoredIndex += 1;
+      restoredQuestionStartedAt = Date.now();
+      restoredTimeLeft = QUESTION_DURATION_SECONDS;
+    }
+
+    restoredSessionRef.current = true;
+    const restoredSession = {
+      ...session,
+      selectedAnswers: restoredAnswers,
+      currentQuestionIndex: restoredIndex,
+      questionStartedAt: restoredQuestionStartedAt,
+      lastActivityAt: Date.now(),
+    };
+    activeSessionRef.current = restoredSession;
+    writeActiveQuizSession(restoredSession);
+
+    setRestoredMeta({ subject: session.subject, topic: session.topic });
+    setQuestions(restoredQuestions);
+    setAnswers(restoredAnswers);
+    setCurrentIndex(restoredIndex);
+    setSelectedOption(null);
+    setShowFeedback(false);
+    setBulbState('neutral');
+    setSessionId(session.quizSessionId || crypto.randomUUID());
+    setQuestionStartedAt(restoredQuestionStartedAt);
+    setTimeLeft(Math.max(1, Math.min(QUESTION_DURATION_SECONDS, restoredTimeLeft)));
+    setRecoveryPrompt(null);
+    setRecoveryChecked(true);
+    setLoading(false);
+  }
+
+  function handleEndStoredAttempt() {
+    const session = recoveryPrompt?.session;
+    if (!session) return;
+    const storedAttemptedCount = getAttemptedCount(session.selectedAnswers || {});
+    if (storedAttemptedCount > 0) {
+      showStoredSessionResult(session, { partial: true });
+      return;
+    }
+    startFreshAfterRecovery();
+  }
+
+  function handleDiscardStoredAttempt() {
+    const session = recoveryPrompt?.session;
+    if (!session) return;
+    const storedAttemptedCount = getAttemptedCount(session.selectedAnswers || {});
+    if (storedAttemptedCount > 0) {
+      showStoredSessionResult(session, { partial: true });
+      return;
+    }
+    allowQuizExitRef.current = true;
+    activeSessionRef.current = null;
+    restoredSessionRef.current = false;
+    clearActiveQuizSession();
+    setRecoveryPrompt(null);
+    router.replace('/dashboard');
+  }
+
+  const persistQuizProgress = useCallback((nextAnswers = answers, nextIndex = currentIndex, nextQuestionStartedAt = questionStartedAt) => {
+    if (!questions.length || quizComplete) return;
+    const now = Date.now();
+    const existing = activeSessionRef.current || readActiveQuizSession();
+    const quizSession = {
+      quizSessionId: existing?.quizSessionId || sessionId || crypto.randomUUID(),
+      subject: effectiveSubject,
+      topic: effectiveTopic,
+      collection,
+      mode: mode || 'standard',
+      selectedQuestionCount: questions.length,
+      totalQuestions: questions.length,
+      questions,
+      currentQuestionIndex: nextIndex,
+      selectedAnswers: nextAnswers,
+      startedAt: existing?.startedAt || now,
+      lastActivityAt: now,
+      questionStartedAt: nextQuestionStartedAt,
+      status: 'in_progress',
+    };
+    activeSessionRef.current = quizSession;
+    writeActiveQuizSession(quizSession);
+  }, [
+    answers,
+    collection,
+    currentIndex,
+    effectiveSubject,
+    effectiveTopic,
+    mode,
+    questionStartedAt,
+    questions,
+    quizComplete,
+    sessionId,
+  ]);
 
   const advanceQuestion = useCallback((newAnswers) => {
     const next = currentIndex + 1;
     if (next >= questions.length) { finishQuiz(newAnswers); return; }
+    persistQuizProgress(newAnswers, next, Date.now());
     setCurrentIndex(next);
     setSelectedOption(null);
     setShowFeedback(false);
-  }, [currentIndex, questions.length, finishQuiz]);
+  }, [currentIndex, questions.length, finishQuiz, persistQuizProgress]);
 
   useEffect(() => {
-    if (timeLeft === 0 && !showFeedback && !quizComplete && questions.length > 0) {
+    if (timeLeft === 0 && !showFeedback && !showExitModal && !quizComplete && questions.length > 0) {
       const q = questions[currentIndex];
       if (!q) return;
       const na = { ...answers, [q.id]: 'SKIPPED' };
       setAnswers(na);
       advanceQuestion(na);
     }
-  }, [timeLeft, showFeedback, quizComplete, questions, currentIndex, answers, advanceQuestion]);
+  }, [timeLeft, showFeedback, showExitModal, quizComplete, questions, currentIndex, answers, advanceQuestion]);
 
   function handleOptionSelect(label) {
     if (showFeedback || quizComplete) return;
     const q = questions[currentIndex];
     const na = { ...answers, [q.id]: label };
+    persistQuizProgress(na, currentIndex, questionStartedAt);
     setAnswers(na);
     setSelectedOption(label);
     setShowFeedback(true);
@@ -551,9 +930,90 @@ export default function Quiz() {
     if (showFeedback || quizComplete) return;
     const q = questions[currentIndex];
     const na = { ...answers, [q.id]: 'SKIPPED' };
+    persistQuizProgress(na, currentIndex, questionStartedAt);
     setAnswers(na);
     setBulbState('neutral');
     advanceQuestion(na);
+  }
+
+  if (recoveryPrompt) {
+    const session = recoveryPrompt.session;
+    const sessionAnswers = session.selectedAnswers || {};
+    const sessionAttemptedCount = getAttemptedCount(sessionAnswers);
+    const sessionAnsweredCount = getAnsweredCount(sessionAnswers);
+    const isExpiredPrompt = recoveryPrompt.type === 'expired';
+
+    return (
+      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: '#0F172A' }}>
+        <Head><title>{isExpiredPrompt ? 'Quiz Expired' : 'Resume Quiz'} — SSC GK Score Booster</title></Head>
+        <div
+          className="w-full max-w-[370px] rounded-3xl p-5"
+          style={{
+            background: '#1E293B',
+            border: '1px solid rgba(148,163,184,0.16)',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.42)',
+          }}
+        >
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+            style={{ background: 'rgba(255,122,26,0.14)', color: '#FF7A1A' }}
+          >
+            {isExpiredPrompt ? (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+              </svg>
+            ) : (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v6l4 2" />
+                <path d="M21 12a9 9 0 11-2.64-6.36" />
+                <path d="M21 3v6h-6" />
+              </svg>
+            )}
+          </div>
+
+          <h1 className="font-display font-black text-2xl mb-2" style={{ color: '#F8FAFC' }}>
+            {isExpiredPrompt ? 'Quiz Attempt Expired' : 'Resume Quiz?'}
+          </h1>
+          <p className="text-sm leading-relaxed mb-5" style={{ color: '#CBD5E1' }}>
+            {isExpiredPrompt
+              ? `Your previous quiz was inactive for too long. You answered ${sessionAnsweredCount} questions.`
+              : `You have an unfinished ${session.subject || 'Quiz'} · ${session.topic || 'Mixed'} quiz. You answered ${sessionAnsweredCount} of ${session.totalQuestions || session.questions?.length || 0} questions.`}
+          </p>
+
+          {sessionAttemptedCount > 0 && (
+            <p className="text-xs leading-relaxed rounded-2xl px-3 py-2 mb-4" style={{ color: '#94A3B8', background: '#0F172A', border: '1px solid rgba(148,163,184,0.16)' }}>
+              Progress saved locally: {sessionAttemptedCount} attempted of {session.totalQuestions || session.questions?.length || 0}.
+            </p>
+          )}
+
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={isExpiredPrompt ? handleEndStoredAttempt : handleResumeStoredQuiz}
+              className="w-full rounded-2xl py-3.5 font-display font-bold text-base active:scale-[0.98] transition-transform"
+              style={{
+                background: 'linear-gradient(90deg, #FF7A1A, #FF5A00)',
+                color: '#F8FAFC',
+                boxShadow: '0 16px 36px rgba(255,106,0,0.30)',
+              }}
+            >
+              {isExpiredPrompt ? 'View Partial Result' : 'Resume Quiz'}
+            </button>
+            <button
+              onClick={isExpiredPrompt ? startFreshAfterRecovery : handleDiscardStoredAttempt}
+              className="w-full rounded-2xl py-3.5 font-display font-bold text-base active:scale-[0.98] transition-transform"
+              style={{
+                background: isExpiredPrompt ? 'rgba(148,163,184,0.10)' : 'rgba(239,68,68,0.10)',
+                border: isExpiredPrompt ? '1px solid rgba(148,163,184,0.20)' : '1px solid rgba(248,113,113,0.30)',
+                color: isExpiredPrompt ? '#CBD5E1' : '#FCA5A5',
+              }}
+            >
+              {isExpiredPrompt ? 'Start Fresh' : 'End Attempt'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (loading) return (
@@ -640,6 +1100,74 @@ export default function Quiz() {
           transform: scale(0.97) translateY(0) !important;
         }
       `}</style>
+
+      {showExitModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-5"
+          style={{ background: 'rgba(0,0,0,0.68)', backdropFilter: 'blur(3px)' }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="exit-quiz-title"
+        >
+          <div
+            className="w-full max-w-[360px] rounded-3xl p-5"
+            style={{
+              background: '#1E293B',
+              border: '1px solid rgba(148,163,184,0.16)',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.42)',
+            }}
+          >
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+              style={{ background: 'rgba(255,122,26,0.14)', color: '#FF7A1A' }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 9v4" />
+                <path d="M12 17h.01" />
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+            </div>
+
+            <h2 id="exit-quiz-title" className="font-display font-black text-2xl mb-2" style={{ color: '#F8FAFC' }}>
+              Exit Quiz?
+            </h2>
+            <p className="text-sm leading-relaxed mb-5" style={{ color: '#CBD5E1' }}>
+              You&apos;re in the middle of a quiz. If you leave now, this attempt will end and your progress may not be saved.
+            </p>
+
+            {attemptedCount > 0 && (
+              <p className="text-xs leading-relaxed rounded-2xl px-3 py-2 mb-4" style={{ color: '#94A3B8', background: '#0F172A', border: '1px solid rgba(148,163,184,0.16)' }}>
+                You attempted {attemptedCount} of {questions.length} questions. If you end now, we&apos;ll show your result so far.
+              </p>
+            )}
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleContinueQuiz}
+                className="w-full rounded-2xl py-3.5 font-display font-bold text-base active:scale-[0.98] transition-transform"
+                style={{
+                  background: 'linear-gradient(90deg, #FF7A1A, #FF5A00)',
+                  color: '#F8FAFC',
+                  boxShadow: '0 16px 36px rgba(255,106,0,0.30)',
+                }}
+              >
+                Continue Quiz
+              </button>
+              <button
+                onClick={handleEndQuiz}
+                className="w-full rounded-2xl py-3.5 font-display font-bold text-base active:scale-[0.98] transition-transform"
+                style={{
+                  background: 'rgba(239,68,68,0.10)',
+                  border: '1px solid rgba(248,113,113,0.30)',
+                  color: '#FCA5A5',
+                }}
+              >
+                End Quiz
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Guest bookmark banner */}
       {showGuestBanner && (
