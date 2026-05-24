@@ -288,7 +288,7 @@ export default function LandingPage() {
 
         {/* Hero */}
         <div className="relative z-10 flex flex-col items-center text-center mb-10">
-          <div className="logo-wrap w-14 h-14 rounded-3xl bg-orange-500/10 flex items-center justify-center mb-4">
+          <div className="logo-wrap w-14 h-14 rounded-[22px] bg-orange-500/10 flex items-center justify-center mb-4">
             <LightningSVG />
           </div>
 
@@ -313,7 +313,7 @@ export default function LandingPage() {
           </div>
 
           {/* Stat strip */}
-          <div className="stats-card bg-slate-800/60 rounded-2xl px-4 py-3 mt-6 w-full max-w-[320px]">
+          <div className="stats-card bg-slate-800/60 rounded-[18px] px-4 py-3 mt-6 w-full max-w-[320px]">
             <div className="flex justify-around">
               {[
                 { target: 12,   suffix: '',  label: 'Subjects',  duration: 800,  delay: 400  },
@@ -340,7 +340,7 @@ export default function LandingPage() {
           <button
             onClick={handleGuest}
             aria-label="Start Quiz as Guest"
-            className="guest-cta group w-full border-2 text-white rounded-2xl py-4 font-bold text-base"
+            className="guest-cta group w-full border-2 text-white rounded-[18px] py-4 font-bold text-base"
           >
             <span className="guest-cta-label relative z-10" aria-hidden="true">
               <span className="guest-cta-default">Start Quiz as Guest →</span>
@@ -351,7 +351,7 @@ export default function LandingPage() {
           <div className="flex flex-col gap-1">
             <button
               onClick={handleGoogle}
-              className="google-cta w-full bg-white text-slate-900 rounded-2xl py-3.5 flex items-center justify-center gap-3 font-semibold text-[15px]"
+              className="google-cta w-full bg-white text-slate-900 rounded-[18px] py-3.5 flex items-center justify-center gap-3 font-semibold text-[15px]"
             >
               <GoogleSVG />
               Continue with Google
