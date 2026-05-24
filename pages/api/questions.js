@@ -6,12 +6,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { subject, topic } = req.query;
+    const { subject, topic, collection = 'general' } = req.query;
     if (!subject || !topic) {
-      return res.status(400).json({ error: 'subject and topic query params are required' });
+      return res.status(400).json({ error: 'subject and topic are required' });
     }
 
-    const questions = await getQuestions(subject, topic);
+    const questions = await getQuestions(subject, topic, collection);
     return res.status(200).json({ questions });
   } catch (err) {
     console.error('Questions API error:', err);

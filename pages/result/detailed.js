@@ -10,6 +10,7 @@ export default function DetailedAnalysis() {
   const router = useRouter();
   const [result, setResult] = useState(null);
   const [preloadedInsights, setPreloadedInsights] = useState({});
+  const [filter, setFilter] = useState('All');
 
   useEffect(() => {
     const stored = sessionStorage.getItem('quizResult');
@@ -44,19 +45,72 @@ export default function DetailedAnalysis() {
           </div>
         </div>
 
+        {/* Filter tabs */}
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          padding: '12px 20px 4px',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          {['All', 'Correct', 'Wrong', 'Skipped'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setFilter(tab)}
+              style={{
+                padding: '6px 16px',
+                borderRadius: '30px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: filter === tab ? '700' : '400',
+                background: filter === tab ? '#ffffff' : 'rgba(255,255,255,0.08)',
+                color: filter === tab ? '#1a1a2a' : 'rgba(255,255,255,0.5)',
+                transition: 'all 0.15s',
+                fontFamily: 'inherit',
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
         {/* Question cards */}
         <div className="px-4 pt-4 flex flex-col gap-4">
-          {result.questions.map((q, idx) => (
-            <QuestionReviewCard
-              key={q.id}
-              question={q}
-              index={idx}
-              userAnswer={result.answers[q.id]}
-              subject={result.subject}
-              topic={result.topic}
-              preloadedInsight={preloadedInsights[q.id]}
-            />
-          ))}
+          {(() => {
+            const filteredQuestions = result.questions.filter(q => {
+              const userAnswer = result.answers[q.id];
+              if (filter === 'All') return true;
+              if (filter === 'Correct') return userAnswer === q.correctOption;
+              if (filter === 'Wrong') return userAnswer && userAnswer !== 'SKIPPED' && userAnswer !== q.correctOption;
+              if (filter === 'Skipped') return !userAnswer || userAnswer === 'SKIPPED';
+              return true;
+            });
+            return (
+              <>
+                {filteredQuestions.map((q, idx) => (
+                  <QuestionReviewCard
+                    key={q.id}
+                    question={q}
+                    index={idx}
+                    userAnswer={result.answers[q.id]}
+                    subject={result.subject}
+                    topic={result.topic}
+                    preloadedInsight={preloadedInsights[q.id]}
+                  />
+                ))}
+                {filteredQuestions.length === 0 && (
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '48px 20px',
+                    color: 'rgba(255,255,255,0.35)',
+                    fontSize: '14px',
+                  }}>
+                    No {filter.toLowerCase()} questions in this quiz.
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* Back button */}

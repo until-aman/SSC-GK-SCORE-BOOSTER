@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import BottomNav from '@/components/BottomNav';
+
 import Loader from '@/components/ui/Loader';
 
 const SUBJECTS = [
   'Polity', 'Geography', 'Economics',
   'Ancient History', 'Medieval History', 'Modern History',
   'Physics', 'Chemistry', 'Biology', 'Current Affairs',
+  'Static GK', 'Mixed',
 ];
 
 function isGuestMode() {
@@ -36,39 +37,38 @@ export default function QuizSetup() {
     if (!isGuest && !isLoggedIn) router.replace('/');
   }, [status, isGuest, isLoggedIn, router]);
 
+  // Safety net — Mixed bypasses quiz-setup entirely
+  useEffect(() => {
+    if (!router.isReady) return;
+    if (router.query.subject === 'Mixed') {
+      router.replace(`/quiz?subject=Mixed&topic=Mixed&count=25&collection=${router.query.collection || 'general'}`);
+    }
+  }, [router.isReady, router.query.subject]);
+
+  const collection = router.isReady ? (router.query.collection || 'general') : 'general';
+
   // Pre-select subject from query param (e.g. from subject cards)
   useEffect(() => {
     if (!router.isReady) return;
     const { subject } = router.query;
     if (subject && SUBJECTS.includes(subject)) {
       setSelectedSubject(subject);
-      fetchTopics(subject);
+      fetchTopics(subject, router.query.collection || 'general');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.isReady]);
 
-  async function fetchTopics(subject) {
+  async function fetchTopics(subject, col = 'general') {
     setTopicsLoading(true);
     setTopics([]);
     setSelectedTopic('');
     try {
-      const res = await fetch(`/api/topics?subject=${encodeURIComponent(subject)}`);
+      const res = await fetch(`/api/topics?subject=${encodeURIComponent(subject)}&collection=${encodeURIComponent(col)}`);
       const data = await res.json();
-      if (data.topics) {
-        setTopics(data.topics);
-      } else if (data[subject]) {
-        const parsed = Object.entries(data[subject]).map(([name, count]) => ({ name, count }));
-        setTopics(parsed);
-      } else {
-        const allTopics = Object.entries(data)
-          .filter(([k]) => k !== 'error')
-          .flatMap(([, subjectTopics]) =>
-            typeof subjectTopics === 'object'
-              ? Object.entries(subjectTopics).map(([name, count]) => ({ name, count }))
-              : []
-          );
-        setTopics(allTopics);
-      }
+      // data.topics is { [subject]: { topicName: count } }
+      const topicMap = (data.topics && data.topics[subject]) || data[subject] || {};
+      const parsed = Object.entries(topicMap).map(([name, count]) => ({ name, count }));
+      setTopics(parsed);
     } catch {
       setTopics([]);
     } finally {
@@ -81,15 +81,20 @@ export default function QuizSetup() {
     setSelectedSubject(val);
     setSelectedTopic('');
     setTopics([]);
-    if (val) fetchTopics(val);
+    if (val) fetchTopics(val, collection);
   }
 
   function handleStartQuiz() {
     if (!isReady) return;
     const sessionId = crypto.randomUUID();
-    router.push(
-      `/quiz?subject=${encodeURIComponent(selectedSubject)}&topic=${encodeURIComponent(selectedTopic)}&count=${selectedCount}&sessionId=${sessionId}`
-    );
+    const params = new URLSearchParams({
+      subject: selectedSubject,
+      topic: selectedTopic,
+      count: selectedCount,
+      sessionId,
+    });
+    if (collection !== 'general') params.set('collection', collection);
+    router.push(`/quiz?${params.toString()}`);
   }
 
   if (status === 'loading') {
@@ -245,7 +250,6 @@ export default function QuizSetup() {
         </div>
       </div>
 
-      <BottomNav />
     </>
   );
 }
