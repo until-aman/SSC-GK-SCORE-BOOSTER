@@ -1,4 +1,4 @@
-import { getMixedQuestions, writeDailyChallengeRows } from '@/lib/sheets';
+import { getDailyChallengeEntry, getMixedQuestions, writeDailyChallengeEntry } from '@/lib/sheets';
 
 const CHALLENGE_SIZE = 25;
 const XP_REWARD = 50;
@@ -8,7 +8,6 @@ function getISTDateString() {
     .toISOString().split('T')[0];
 }
 
-// Deterministic seed from date string (e.g. "2026-05-24")
 function seedFromDate(dateStr) {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < dateStr.length; i++) {
@@ -18,7 +17,6 @@ function seedFromDate(dateStr) {
   return h;
 }
 
-// Mulberry32 seeded PRNG — same seed always produces same sequence
 function makePRNG(seed) {
   let s = seed >>> 0;
   return function () {
@@ -38,8 +36,8 @@ function seededShuffle(arr, rand) {
   return a;
 }
 
-// In-memory cache so we only call getMixedQuestions once per day per process
 const dailyCache = {};
+const dailyMetaCache = {};
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
@@ -52,31 +50,52 @@ export default async function handler(req, res) {
       const allQuestions = await getMixedQuestions('PYQ');
       if (!allQuestions.length) return res.status(503).json({ error: 'No questions available' });
 
-      const rand = makePRNG(seedFromDate(today));
-      // Sort by ID first so the input is always in the same order regardless of
-      // how getMixedQuestions shuffled internally — seeded shuffle then gives
-      // the same 25 every time for the same date.
-      const sorted = [...allQuestions].sort((a, b) => String(a.id).localeCompare(String(b.id)));
-      const selected = seededShuffle(sorted, rand).slice(0, CHALLENGE_SIZE);
-      dailyCache[today] = selected;
+      const questionById = new Map(allQuestions.map(q => [String(q.id), q]));
+      const savedChallenge = await getDailyChallengeEntry(today);
 
-      // Write to sheet for audit log — fire-and-forget, does not affect response
-      const createdAt = new Date().toISOString();
-      writeDailyChallengeRows(
-        selected.map((q, i) => [today, challengeId, q.id, i + 1, XP_REWARD, 'Active', createdAt])
-      ).catch(() => {});
+      if (savedChallenge?.questionIds?.length) {
+        const savedQuestions = savedChallenge.questionIds
+          .map(id => questionById.get(String(id)))
+          .filter(Boolean)
+          .slice(0, Math.min(savedChallenge.totalQuestions || CHALLENGE_SIZE, CHALLENGE_SIZE));
+
+        if (savedQuestions.length) {
+          dailyCache[today] = savedQuestions;
+          dailyMetaCache[today] = {
+            challengeId: savedChallenge.challengeId || challengeId,
+            xpReward: savedChallenge.xpReward || XP_REWARD,
+          };
+        }
+      }
+
+      if (!dailyCache[today]) {
+        const rand = makePRNG(seedFromDate(today));
+        const sorted = [...allQuestions].sort((a, b) => String(a.id).localeCompare(String(b.id)));
+        const selected = seededShuffle(sorted, rand).slice(0, CHALLENGE_SIZE);
+        dailyCache[today] = selected;
+        dailyMetaCache[today] = { challengeId, xpReward: XP_REWARD };
+
+        writeDailyChallengeEntry({
+          date: today,
+          challengeId,
+          questionIds: selected.map(q => q.id),
+          totalQuestions: selected.length,
+          xpReward: XP_REWARD,
+          status: 'Active',
+        }).catch(() => {});
+      }
     }
 
-    const questions = dailyCache[today];
+    const questions = dailyCache[today].slice(0, CHALLENGE_SIZE);
+    const meta = dailyMetaCache[today] || { challengeId, xpReward: XP_REWARD };
 
     return res.status(200).json({
-      challengeId,
+      challengeId: meta.challengeId,
       date: today,
       questions,
       totalQuestions: questions.length,
-      xpReward: XP_REWARD,
+      xpReward: meta.xpReward,
     });
-
   } catch (err) {
     console.error('[daily-challenge]', err.message);
     return res.status(500).json({ error: 'Failed to load daily challenge' });

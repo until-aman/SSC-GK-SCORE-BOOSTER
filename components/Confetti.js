@@ -1,30 +1,28 @@
 import { useEffect, useRef } from 'react';
 
 const COLORS = [
-  '#f59e0b', '#10b981', '#3b82f6', '#ec4899',
-  '#8b5cf6', '#ef4444', '#06b6d4', '#fbbf24',
+  '#FF7A1A', '#FF5A00', '#FDBA3B', '#10B981',
+  '#38BDF8', '#A78BFA', '#F472B6', '#F8FAFC',
 ];
 
-function makeParticles(count, w, h) {
+function makeParticles(count, w, h, origin = 'top') {
   return Array.from({ length: count }, () => ({
-    x:        Math.random() * w,
-    y:        -(Math.random() * h * 0.5),   // start above viewport
-    pw:       Math.random() * 10 + 6,
-    ph:       Math.random() * 5 + 3,
+    x:        origin === 'center' ? w / 2 + (Math.random() - 0.5) * 90 : Math.random() * w,
+    y:        origin === 'center' ? h * 0.32 + (Math.random() - 0.5) * 70 : -(Math.random() * h * 0.5),
+    pw:       Math.random() * 11 + 6,
+    ph:       Math.random() * 6 + 4,
     color:    COLORS[Math.floor(Math.random() * COLORS.length)],
     rot:      Math.random() * 360,
-    rotSpeed: (Math.random() - 0.5) * 7,
-    vx:       (Math.random() - 0.5) * 2.5,
-    vy:       Math.random() * 4 + 2.5,
+    rotSpeed: (Math.random() - 0.5) * 9,
+    vx:       origin === 'center' ? (Math.random() - 0.5) * 9 : (Math.random() - 0.5) * 2.8,
+    vy:       origin === 'center' ? -(Math.random() * 8 + 5) : Math.random() * 4 + 2.5,
+    gravity:  Math.random() * 0.12 + 0.10,
+    shape:    Math.random() > 0.72 ? 'circle' : 'rect',
     opacity:  1,
   }));
 }
 
-/**
- * Confetti — renders a canvas burst when `active` flips to true.
- * Auto-fades out after ~2.5 s of particles falling.
- */
-export default function Confetti({ active }) {
+export default function Confetti({ active, intensity = 'normal' }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -35,26 +33,43 @@ export default function Confetti({ active }) {
 
     const W = window.innerWidth;
     const H = window.innerHeight;
-    canvas.width  = W;
+    canvas.width = W;
     canvas.height = H;
 
     const ctx = canvas.getContext('2d');
-    const particles = makeParticles(90, W, H);
+    const particleCount = intensity === 'grand' ? 190 : 90;
+    const particles = [
+      ...makeParticles(Math.round(particleCount * 0.55), W, H, 'center'),
+      ...makeParticles(Math.round(particleCount * 0.45), W, H, 'top'),
+    ];
 
     let animId;
     let frame = 0;
+    let burstRadius = 0;
 
     function draw() {
       ctx.clearRect(0, 0, W, H);
       frame++;
+      burstRadius += 6;
+
+      if (intensity === 'grand' && frame < 38) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, 0.28 - frame * 0.006);
+        ctx.strokeStyle = '#FF7A1A';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(W / 2, H * 0.32, burstRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
 
       let alive = false;
       particles.forEach(p => {
-        p.y   += p.vy;
-        p.x   += p.vx;
+        p.vy += p.gravity;
+        p.y += p.vy;
+        p.x += p.vx;
         p.rot += p.rotSpeed;
-        // Start fading after first second (≈60 frames)
-        if (frame > 60) p.opacity = Math.max(0, p.opacity - 0.013);
+        if (frame > 82) p.opacity = Math.max(0, p.opacity - 0.010);
         if (p.opacity > 0) alive = true;
 
         ctx.save();
@@ -62,25 +77,22 @@ export default function Confetti({ active }) {
         ctx.translate(p.x + p.pw / 2, p.y + p.ph / 2);
         ctx.rotate((p.rot * Math.PI) / 180);
         ctx.fillStyle = p.color;
-        ctx.beginPath();
-        // Alternate between rect and circle for variety
-        if (Math.round(p.pw) % 2 === 0) {
+        if (p.shape === 'rect') {
           ctx.fillRect(-p.pw / 2, -p.ph / 2, p.pw, p.ph);
         } else {
-          ctx.arc(0, 0, p.ph / 2, 0, Math.PI * 2);
+          ctx.beginPath();
+          ctx.arc(0, 0, p.pw / 2, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.restore();
       });
 
-      if (alive) {
-        animId = requestAnimationFrame(draw);
-      }
+      if (alive) animId = requestAnimationFrame(draw);
     }
 
     animId = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animId);
-  }, [active]);
+  }, [active, intensity]);
 
   if (!active) return null;
 

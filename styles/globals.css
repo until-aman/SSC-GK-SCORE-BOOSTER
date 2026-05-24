@@ -38,8 +38,31 @@ html {
 .skeleton {
   background: linear-gradient(90deg,#1e293b 25%,#263348 50%,#1e293b 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 1.4s infinite;
   border-radius: 0.5rem;
+}
+.skeleton.rounded-full {
+  border-radius: 9999px;
+}
+
+.question-mode-card {
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+.question-mode-card:active {
+  transform: scale(0.98);
+}
+.question-mode-card-selected {
+  transform: translateY(-2px);
+}
+.question-mode-card-selected:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
+.start-quiz-arrow {
+  transition: transform 160ms ease;
+}
+.start-quiz-button:active .start-quiz-arrow {
+  transform: translateX(4px);
 }
 
 @keyframes slideUpToast {
