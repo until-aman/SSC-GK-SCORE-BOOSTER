@@ -8,6 +8,11 @@ const avatarConfig = {
 
 const medals = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
+function truncateName(name, maxLength = 10) {
+  const cleanName = String(name || 'Unknown').trim() || 'Unknown';
+  return cleanName.length > maxLength ? `${cleanName.slice(0, maxLength - 1)}…` : cleanName;
+}
+
 function AvatarCircle({ user, cfg }) {
   const [imgError, setImgError] = useState(false);
   const initial = (user.name || '?').charAt(0).toUpperCase();
@@ -69,7 +74,7 @@ export default function PodiumEntry({ rank, user }) {
     <div className="flex flex-col items-center pop-in" style={{ animationDelay: `${rank * 80}ms` }}>
       <AvatarCircle user={user} cfg={cfg} />
       <p className={`text-white font-display font-bold ${cfg.name} text-center mt-1.5 truncate`}>
-        {(user.name || '').split(' ')[0]}
+        {truncateName(user.name)}
       </p>
       <div className="bg-white/15 backdrop-blur rounded-full px-2.5 py-0.5 mt-1">
         <span className={`font-display font-bold text-white ${cfg.score}`}>

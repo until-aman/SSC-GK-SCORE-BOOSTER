@@ -19,9 +19,9 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
 
   return (
     <SessionProvider session={session}>
-      <div className="min-h-screen bg-[#080e1a] flex justify-center">
+      <div className="min-h-screen app-premium-bg flex justify-center">
         <div
-          className="w-full max-w-[430px] min-h-screen bg-[#0f172a] relative overflow-x-clip flex flex-col"
+          className="w-full max-w-[430px] min-h-screen app-premium-bg relative overflow-x-clip flex flex-col"
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
           <PageLoader />

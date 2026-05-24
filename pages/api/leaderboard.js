@@ -153,6 +153,18 @@ export default async function handler(req, res) {
     if (err.code === 429 || (err.response && err.response.status === 429)) {
       console.error('[Sheets] Rate limit hit');
     }
+    try {
+      const session = await getServerSession(req, res, authOptions);
+      const fallbackRow = await getLeaderboardCacheRow();
+      const weeklyLeaders = JSON.parse(fallbackRow.weeklyJSON || '[]');
+      const allTimeLeaders = JSON.parse(fallbackRow.allTimeJSON || '[]');
+      const fullList = scope === 'all' ? allTimeLeaders : weeklyLeaders;
+      if (fullList.length) {
+        const leaders = preview ? fullList.slice(0, 3) : fullList;
+        const currentUser = session ? fullList.find(u => u.email === session.user.email) || null : null;
+        return res.status(200).json({ scope, leaders, currentUser, stale: true });
+      }
+    } catch (_) {}
     return res.status(500).json({ error: 'Failed to load leaderboard' });
   }
 }
