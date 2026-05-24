@@ -10,6 +10,7 @@ import { getISTDateString } from '@/lib/streak';
 
 const SUBJECTS = Object.keys(subjectStyles);
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+const WEEKLY_CHAMPIONS_CACHE_KEY = 'ssc_weekly_champions';
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
 const PARMAR_SERIES = [
@@ -485,11 +486,27 @@ export default function Dashboard() {
     } catch {}
   }
 
-  // Fetch top 20 weekly players
+  // Fetch weekly champion preview. Keep the last good result visible through transient API errors.
   useEffect(() => {
+    try {
+      const cached = localStorage.getItem(WEEKLY_CHAMPIONS_CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length) setTopPlayers(parsed);
+      }
+    } catch {}
+
     fetch('/api/leaderboard?scope=weekly')
-      .then(r => r.json())
-      .then(data => setTopPlayers((data.leaders || []).slice(0, 20)))
+      .then(async r => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || 'Failed to load leaderboard');
+        return (data.leaders || []).slice(0, 20);
+      })
+      .then(leaders => {
+        if (!leaders.length) return;
+        setTopPlayers(leaders);
+        try { localStorage.setItem(WEEKLY_CHAMPIONS_CACHE_KEY, JSON.stringify(leaders)); } catch {}
+      })
       .catch(() => {});
   }, []);
 
@@ -545,6 +562,78 @@ export default function Dashboard() {
   const userRankIdx = isLoggedIn
     ? topPlayers.findIndex(p => p.email === session?.user?.email)
     : -1;
+
+  const dailyChallengeCard = (
+    <div
+      className="daily-challenge-card"
+      onClick={() => {
+        const today = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
+          .toISOString().split('T')[0];
+        const cached = localStorage.getItem(getDCCacheKey());
+        if (cached) {
+          sessionStorage.setItem('dailyChallengeQuestions', cached);
+        }
+        router.push('/quiz?mode=daily');
+      }}
+      style={{
+        margin: '16px 20px 20px',
+        borderRadius: '22px',
+        padding: '22px 22px 20px',
+        position: 'relative',
+        overflow: 'hidden',
+        cursor: 'pointer',
+      }}
+    >
+      <div style={{
+        fontSize: '11px',
+        fontWeight: '700',
+        letterSpacing: '0.6px',
+        textTransform: 'uppercase',
+        color: '#f97316',
+        marginBottom: '8px',
+      }}>
+        🔥 Daily Challenge
+      </div>
+      <div style={{
+        fontFamily: 'var(--font-display, inherit)',
+        fontSize: '20px',
+        fontWeight: '800',
+        color: '#ffffff',
+        lineHeight: '1.2',
+        marginBottom: '10px',
+      }}>
+        Today&apos;s Mixed GK Challenge
+      </div>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '18px' }}>
+        {[['📝', '25 Questions'], ['⏱', '~7 min'], ['🪙', '+50 XP']].map(([icon, label]) => (
+          <span key={label} style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            background: 'rgba(255,255,255,0.08)',
+            color: 'rgba(255,255,255,0.75)',
+            fontSize: '12px',
+            fontWeight: '600',
+            padding: '4px 10px',
+            borderRadius: '20px',
+          }}>{icon} {label}</span>
+        ))}
+      </div>
+      <div className="btn-daily-pulse daily-challenge-cta" style={{
+        display: 'block',
+        width: '100%',
+        textAlign: 'center',
+        color: '#ffffff',
+        fontFamily: 'var(--font-display, inherit)',
+        fontWeight: '700',
+        fontSize: '14px',
+        padding: '13px 0',
+        borderRadius: '14px',
+      }}>
+        Start Quiz Now →
+      </div>
+    </div>
+  );
 
   if (status === 'loading') {
     return (
@@ -624,6 +713,9 @@ export default function Dashboard() {
             Ready for today&apos;s GK challenge?
           </div>
         </div>
+
+        {/* ── DAILY CHALLENGE HERO CARD ── */}
+        {dailyChallengeCard}
 
         {/* ── STREAK HISTORY CARD ── */}
         {isLoggedIn && !profileLoading && (
@@ -709,7 +801,7 @@ export default function Dashboard() {
           playedToday={playedToday}
         />
 
-        {/* ── DAILY CHALLENGE HERO CARD ── */}
+        {/*
         <div
           onClick={() => {
             const today = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
@@ -781,6 +873,8 @@ export default function Dashboard() {
             Start Quiz Now →
           </div>
         </div>
+
+        */}
 
         {/* ── WEEKLY CHAMPIONS ── */}
         <div className="mt-5 px-4">

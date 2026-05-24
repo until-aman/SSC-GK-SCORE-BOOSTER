@@ -15,6 +15,11 @@ const GoogleSVG = () => (
   </svg>
 );
 
+function truncateName(name, maxLength = 14) {
+  const cleanName = String(name || 'Unknown').trim() || 'Unknown';
+  return cleanName.length > maxLength ? `${cleanName.slice(0, maxLength - 1)}…` : cleanName;
+}
+
 function RankAvatar({ leader }) {
   const [imgError, setImgError] = useState(false);
   const initial = (leader.name || '?').charAt(0).toUpperCase();
@@ -47,7 +52,7 @@ function RankRow({ leader, isSelf }) {
       <RankAvatar leader={leader} />
       <div className="flex-1 min-w-0">
         <p className={`font-sans font-semibold text-sm truncate ${isSelf ? 'text-violet-200' : 'text-white'}`}>
-          {(leader.name || 'Unknown').split(' ')[0]}
+          {truncateName(leader.name)}
           {isSelf && <span className="font-sans text-xs text-violet-400 ml-1.5">(you)</span>}
         </p>
         <p className="font-sans text-xs text-slate-500">{leader.level || 'Aspirant'}</p>
@@ -190,7 +195,7 @@ export default function Leaderboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-[13px] text-violet-200 truncate">
-                    {(currentUser.name || '').split(' ')[0]}
+                    {truncateName(currentUser.name)}
                     <span className="font-sans text-xs text-violet-400 ml-1.5">(you)</span>
                   </p>
                   <p className="font-sans text-xs text-slate-500">Your rank this period</p>

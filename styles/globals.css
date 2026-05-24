@@ -7,7 +7,10 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background: #0f172a;
+  background:
+    radial-gradient(circle at top right, rgba(124, 58, 237, 0.16), transparent 30%),
+    radial-gradient(circle at bottom left, rgba(34, 230, 168, 0.10), transparent 28%),
+    #07111F;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 0;
@@ -19,6 +22,13 @@ html {
 }
 
 .font-display { font-family: 'Nunito', sans-serif; }
+
+.app-premium-bg {
+  background:
+    radial-gradient(circle at top right, rgba(124, 58, 237, 0.16), transparent 30%),
+    radial-gradient(circle at bottom left, rgba(34, 230, 168, 0.10), transparent 28%),
+    #07111F;
+}
 
 /* ── Animations ── */
 @keyframes shimmer {
@@ -51,6 +61,22 @@ html {
 .btn-daily-pulse {
   animation: dailyBtnPulse 2.2s ease-in-out infinite;
   will-change: transform, box-shadow;
+}
+
+.daily-challenge-card {
+  background: linear-gradient(145deg, #17182B, #111827);
+  border: 1px solid rgba(255, 122, 26, 0.22);
+  box-shadow: 0 20px 60px rgba(255, 122, 26, 0.08);
+}
+
+.daily-challenge-cta {
+  background: linear-gradient(135deg, #FF8A1F, #FF5A00);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.daily-challenge-cta:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 14px 35px rgba(255, 122, 26, 0.35);
 }
 
 @keyframes deplete {
