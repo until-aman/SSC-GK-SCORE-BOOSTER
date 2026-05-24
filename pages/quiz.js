@@ -1,354 +1,642 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import Layout from '@/components/Layout';
-import Timer from '@/components/Timer';
-import ProgressBar from '@/components/ProgressBar';
+import Head from 'next/head';
+import Loader from '@/components/ui/Loader';
 
-// Fisher-Yates shuffle
-function shuffle(array) {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
+const GK_FACTS = [
+  { label: 'Did you know?',  fact: 'The first Census in India was conducted in 1872.' },
+  { label: 'Quick GK Bite', fact: 'The Planning Commission was replaced by NITI Aayog in 2015.' },
+  { label: 'Memory Trick',  fact: 'Article 32 is called the heart and soul of the Constitution.' },
+  { label: 'SSC Tip',       fact: 'Static GK improves fastest with repeated revision, not one-time reading.' },
+  { label: 'Quick Fact',    fact: 'The Battle of Plassey was fought in 1757.' },
+  { label: 'Polity Bite',   fact: 'The President of India is the constitutional head of the Union.' },
+  { label: 'History Hack',  fact: 'The Revolt of 1857 is also called the First War of Independence.' },
+  { label: 'Geography',     fact: 'The Tropic of Cancer passes through 8 Indian states.' },
+  { label: 'Economy',       fact: 'India became the 5th largest economy in the world in 2022.' },
+  { label: 'Science',       fact: 'Vitamin C deficiency causes Scurvy.' },
+];
+
+function DailyChallengeLoader() {
+  const [factIndex, setFactIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFactIndex(i => (i + 1) % GK_FACTS.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fact = GK_FACTS[factIndex];
+
+  return (
+    <div style={{
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '0 28px',
+      background: '#0f172a',
+      gap: '24px',
+      width: '100%',
+    }}>
+      <div style={{
+        width: '48px', height: '48px',
+        border: '3px solid rgba(255,255,255,0.1)',
+        borderTop: '3px solid #f97316',
+        borderRadius: '50%',
+        animation: 'spin 0.8s linear infinite',
+      }} />
+      <div style={{ textAlign: 'center' }}>
+        <div style={{
+          fontFamily: 'var(--font-display, inherit)',
+          fontSize: '18px',
+          fontWeight: '800',
+          color: '#ffffff',
+          marginBottom: '6px',
+        }}>
+          Preparing your Daily Challenge...
+        </div>
+        <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)' }}>
+          Mixing today&apos;s 25 GK questions for you
+        </div>
+      </div>
+      <div style={{
+        background: '#1a1a2a',
+        borderRadius: '18px',
+        padding: '18px 20px',
+        width: '100%',
+        border: '1px solid rgba(255,255,255,0.08)',
+      }}>
+        <div style={{
+          fontSize: '10px',
+          fontWeight: '700',
+          letterSpacing: '0.6px',
+          textTransform: 'uppercase',
+          color: '#f97316',
+          marginBottom: '8px',
+        }}>
+          {fact.label}
+        </div>
+        <div style={{
+          fontSize: '14px',
+          color: '#ffffff',
+          lineHeight: '1.55',
+          fontWeight: '500',
+        }}>
+          {fact.fact}
+        </div>
+      </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+function playSound(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (type === 'correct') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(700, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1050, ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.25);
+    } else {
+      const bufferSize = Math.floor(ctx.sampleRate * 0.12);
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize) * 0.4;
+      }
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.07, ctx.currentTime);
+      source.connect(gain); gain.connect(ctx.destination);
+      source.start();
+    }
+  } catch {}
+}
+
+function QuizBulb({ state }) {
+  return (
+    <div
+      className={`fixed bottom-6 right-4 w-11 h-11 rounded-full flex items-center justify-center border z-30 ${
+        state === 'correct' ? 'bulb-correct' :
+        state === 'wrong'   ? 'bulb-wrong'   :
+        'bg-slate-800/80 border-slate-700'
+      }`}
+    >
+      <span className="text-xl leading-none select-none" style={{ filter: state === 'wrong' ? 'grayscale(0.6) brightness(0.7)' : state === 'correct' ? 'brightness(1.3)' : 'brightness(0.6)' }}>
+        💡
+      </span>
+    </div>
+  );
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return arr;
+  return a;
 }
 
-// Sample n questions
-function sampleQuestions(pool, n) {
-  return shuffle(pool).slice(0, Math.min(n, pool.length));
-}
-
-// Calculate results
 function calculateResults(questions, answers) {
   let correct = 0, incorrect = 0, skipped = 0;
   questions.forEach(q => {
-    const userAnswer = answers[q.id];
-    if (!userAnswer || userAnswer === 'SKIPPED') {
-      skipped++;
-    } else if (userAnswer === q.correctOption) {
-      correct++;
-    } else {
-      incorrect++;
-    }
+    const a = answers[q.id];
+    if (!a || a === 'SKIPPED') skipped++;
+    else if (a === q.correctOption) correct++;
+    else incorrect++;
   });
-  const totalQuestions = questions.length;
+  const total = questions.length;
   const rawScore = correct * 2 - incorrect * 0.5;
-  const accuracy = totalQuestions > 0 ? (correct / totalQuestions) * 100 : 0;
-  return { correct, incorrect, skipped, totalQuestions, rawScore, accuracy };
+  const accuracy = total > 0 ? (correct / total) * 100 : 0;
+  return { correct, incorrect, skipped, totalQuestions: total, rawScore, accuracy };
 }
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
-const OPTION_KEYS = ['optionA', 'optionB', 'optionC', 'optionD'];
+const OPTION_KEYS   = ['optionA', 'optionB', 'optionC', 'optionD'];
+
+function TimerRing({ timeLeft, duration = 20 }) {
+  const RADIUS = 28;
+  const CIRC = 2 * Math.PI * RADIUS;
+  const offset = CIRC * (1 - timeLeft / duration);
+  const isWarning = timeLeft <= 7;
+
+  return (
+    <div className="relative w-20 h-20 mx-auto mt-4 flex-shrink-0">
+      <svg className="w-20 h-20 -rotate-90" viewBox="0 0 72 72">
+        <circle cx="36" cy="36" r={RADIUS} fill="none" stroke="#1e293b" strokeWidth="5"/>
+        <circle
+          cx="36" cy="36" r={RADIUS}
+          fill="none"
+          stroke={isWarning ? '#f97316' : '#10b981'}
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeDasharray={CIRC}
+          strokeDashoffset={offset}
+          style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className={`font-display font-black text-xl ${isWarning ? 'text-orange-400' : 'text-white'}`}>
+          {timeLeft}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function BookmarkIcon({ filled, size = 20 }) {
+  return filled ? (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#10b981" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/>
+    </svg>
+  ) : (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/>
+    </svg>
+  );
+}
 
 export default function Quiz() {
-  const { data: session } = useSession();
   const router = useRouter();
-  const { subject, topic, n } = router.query;
+  const { status } = useSession();
+  const { subject, topic, count, n, sessionId: qSessionId, mode, collection = 'general' } = router.query;
+  const questionCount = count || n;
+  const isSavedMode  = mode === 'saved';
+  const isDailyMode  = mode === 'daily';
+  const effectiveSubject = isSavedMode ? 'Saved' : isDailyMode ? 'Daily Challenge' : subject;
+  const effectiveTopic   = isSavedMode ? 'Mixed'  : isDailyMode ? 'Mixed GK'        : topic;
 
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestions]       = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers]           = useState({});
   const [quizComplete, setQuizComplete] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [timeLeft, setTimeLeft]         = useState(20);
+  const [sessionId, setSessionId]       = useState('');
+  const [bulbState, setBulbState]       = useState('neutral'); // 'neutral' | 'correct' | 'wrong'
+  const [savedIds, setSavedIds]         = useState(new Set());
+  const [showGuestBanner, setShowGuestBanner] = useState(false);
+  const guestBannerShown = useRef(false);
+  const isLoggedIn = status === 'authenticated';
 
-  // Fetch questions
   useEffect(() => {
-    if (!subject || !topic || !n) return;
+    if (!router.isReady) return;
+    if (!isSavedMode && mode !== 'daily' && (!subject || !topic || !questionCount)) router.replace('/dashboard');
+  }, [router.isReady, subject, topic, questionCount, isSavedMode, router]);
+
+  // Load saved IDs for bookmark state
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (!isLoggedIn) return;
+    fetch('/api/saved-questions/ids')
+      .then(r => r.ok ? r.json() : { savedIds: [] })
+      .then(d => setSavedIds(new Set(d.savedIds || [])))
+      .catch(() => {});
+  }, [status, isLoggedIn]);
+
+  async function handleBookmarkToggle(question) {
+    if (!isLoggedIn) {
+      // Guest: use localStorage
+      try {
+        const existing = JSON.parse(localStorage.getItem('ssc_saved_questions') || '[]');
+        const alreadySaved = existing.some(q => q.questionId === question.id);
+        let updated;
+        if (alreadySaved) {
+          updated = existing.filter(q => q.questionId !== question.id);
+          setSavedIds(prev => { const n = new Set(prev); n.delete(question.id); return n; });
+        } else {
+          updated = [...existing, {
+            questionId:    question.id,
+            subject:       question.subject,
+            topic:         question.topic,
+            question:      question.question,
+            optionA:       question.optionA,
+            optionB:       question.optionB,
+            optionC:       question.optionC,
+            optionD:       question.optionD,
+            correctOption: question.correctOption,
+            explanation:   question.explanation || '',
+          }];
+          setSavedIds(prev => new Set([...prev, question.id]));
+          // Show guest sign-in nudge banner once per session
+          if (!guestBannerShown.current) {
+            guestBannerShown.current = true;
+            setShowGuestBanner(true);
+            setTimeout(() => setShowGuestBanner(false), 3000);
+          }
+        }
+        localStorage.setItem('ssc_saved_questions', JSON.stringify(updated));
+      } catch {}
+      return;
+    }
+
+    // Logged-in: use API
+    const isSaved = savedIds.has(question.id);
+    if (isSaved) {
+      setSavedIds(prev => { const n = new Set(prev); n.delete(question.id); return n; });
+      try {
+        await fetch('/api/saved-questions', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questionId: question.id }),
+        });
+      } catch {
+        setSavedIds(prev => new Set([...prev, question.id])); // rollback
+      }
+    } else {
+      setSavedIds(prev => new Set([...prev, question.id]));
+      try {
+        const saveRes = await fetch('/api/saved-questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            questionId:    question.id,
+            subject:       question.subject,
+            topic:         question.topic,
+            question:      question.question,
+            optionA:       question.optionA,
+            optionB:       question.optionB,
+            optionC:       question.optionC,
+            optionD:       question.optionD,
+            correctOption: question.correctOption,
+            explanation:   question.explanation || '',
+          }),
+        });
+        if (!saveRes.ok) {
+          const err = await saveRes.json().catch(() => ({}));
+          console.error('[bookmark save failed]', saveRes.status, err);
+          setSavedIds(prev => { const n = new Set(prev); n.delete(question.id); return n; }); // rollback
+        }
+      } catch {
+        setSavedIds(prev => { const n = new Set(prev); n.delete(question.id); return n; }); // rollback
+      }
+    }
+  }
+
+  useEffect(() => {
+    setSessionId(qSessionId || crypto.randomUUID());
+  }, [qSessionId]);
+
+  useEffect(() => {
+    if (!router.isReady) return;
+
+    if (mode === 'daily') {
+      setLoading(true);
+      (async () => {
+        try {
+          const today = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
+            .toISOString().split('T')[0];
+          const cacheKey = `dc_${today}`;
+          const cached = localStorage.getItem(cacheKey);
+
+          if (cached) {
+            const data = JSON.parse(cached);
+            if (data.questions?.length) {
+              setQuestions(data.questions.slice(0, 25));
+              setLoading(false);
+              return;
+            }
+          }
+
+          const res = await fetch('/api/daily-challenge');
+          const data = await res.json();
+
+          if (!data.questions?.length) {
+            setError('no-questions');
+            setLoading(false);
+            return;
+          }
+
+          localStorage.setItem(cacheKey, JSON.stringify(data));
+          setQuestions(data.questions.slice(0, 25));
+          setLoading(false);
+        } catch {
+          setError('fetch-failed');
+          setLoading(false);
+        }
+      })();
+      return;
+    }
+
+    if (isSavedMode) {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem('ssc_saved_quiz_questions') || '[]');
+        if (!saved.length) { setError('no-questions'); setLoading(false); return; }
+        setQuestions(shuffle(saved));
+        setLoading(false);
+      } catch { setError('fetch-failed'); setLoading(false); }
+      return;
+    }
+    if (!subject || !topic || !questionCount) return;
     setLoading(true);
-    setError(null);
-    fetch(`/api/questions?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}`)
-      .then(res => res.json())
-      .then(data => {
-        if (!data.questions || data.questions.length === 0) {
-          setError('no-questions');
+
+    const url = `/api/questions?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}&collection=${encodeURIComponent(collection)}`;
+
+    async function fetchWithRetry(attemptsLeft) {
+      try {
+        const r = await fetch(url);
+        const data = await r.json();
+        if (data.questions?.length) {
+          const pool = shuffle(data.questions).slice(0, parseInt(questionCount));
+          setQuestions(pool);
           setLoading(false);
           return;
         }
-        const sampled = sampleQuestions(data.questions, parseInt(n));
-        setQuestions(sampled);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError('fetch-failed');
-        setLoading(false);
-      });
-  }, [subject, topic, n]);
+        // Empty response — retry if attempts remain (cache may still be warming)
+        if (attemptsLeft > 0) {
+          setTimeout(() => fetchWithRetry(attemptsLeft - 1), 3000);
+        } else {
+          setError('no-questions');
+          setLoading(false);
+        }
+      } catch {
+        if (attemptsLeft > 0) {
+          setTimeout(() => fetchWithRetry(attemptsLeft - 1), 3000);
+        } else {
+          setError('fetch-failed');
+          setLoading(false);
+        }
+      }
+    }
 
-  // Complete quiz
+    fetchWithRetry(3);
+  }, [router.isReady, subject, topic, questionCount, isSavedMode, mode]);
+
+  useEffect(() => {
+    if (loading || quizComplete || showFeedback || timeLeft <= 0) return;
+    const t = setTimeout(() => setTimeLeft(p => p - 1), 1000);
+    return () => clearTimeout(t);
+  }, [timeLeft, loading, quizComplete, showFeedback]);
+
+  useEffect(() => { setTimeLeft(20); setBulbState('neutral'); }, [currentIndex]);
+
   const finishQuiz = useCallback(async (finalAnswers) => {
     if (quizComplete) return;
     setQuizComplete(true);
     const results = calculateResults(questions, finalAnswers);
 
-    async function prefetchAiData() {
-      const summaryPromise = fetch('/api/ai/summary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subject,
-          topic,
-          totalQuestions: results.totalQuestions,
-          correctAnswers: results.correct,
-          incorrectAnswers: results.incorrect,
-          skipped: results.skipped,
-          rawScore: results.rawScore,
-          accuracy: results.accuracy,
-        }),
-      })
-        .then((res) => (res.ok ? res.json() : Promise.reject()))
-        .then((data) => data.aiSummary || null)
-        .catch(() => null);
+    const summaryPromise = fetch('/api/ai/summary', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject: effectiveSubject, topic: effectiveTopic, totalQuestions: results.totalQuestions, correctAnswers: results.correct, incorrectAnswers: results.incorrect, skipped: results.skipped, rawScore: results.rawScore, accuracy: results.accuracy }),
+    }).then(r => r.ok ? r.json() : null).then(d => d?.aiSummary || null).catch(() => null);
 
-      const insightPromises = questions.map((q) => {
-        const userAnswer = finalAnswers[q.id];
-        if (!userAnswer || userAnswer === 'SKIPPED') {
-          return fetch('/api/ai/tip', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              question: q.question,
-              correctOption: q.correctOption,
-              correctOptionText: q[OPTION_KEYS[q.correctOption]],
-              explanation: q.explanation,
-              subject,
-              topic,
-            }),
-          })
-            .then((res) => (res.ok ? res.json() : Promise.reject()))
-            .then((data) => ({ id: q.id, text: data.aiTip || null }))
-            .catch(() => ({ id: q.id, text: null }));
-        }
+    const insightPromises = questions.map(q => {
+      const ua = finalAnswers[q.id];
+      if (!ua || ua === 'SKIPPED') {
+        return fetch('/api/ai/tip', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: q.question, correctOption: q.correctOption, correctOptionText: q[OPTION_KEYS[OPTION_LABELS.indexOf(q.correctOption)]], explanation: q.explanation, subject, topic }) })
+          .then(r => r.ok ? r.json() : null).then(d => ({ id: q.id, text: d?.aiTip || null })).catch(() => ({ id: q.id, text: null }));
+      }
+      if (ua === q.correctOption) return Promise.resolve({ id: q.id, text: null });
+      return fetch('/api/ai/explain', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q.question, optionA: q.optionA, optionB: q.optionB, optionC: q.optionC, optionD: q.optionD, correctOption: q.correctOption, userOption: ua, explanation: q.explanation, subject, topic }) })
+        .then(r => r.ok ? r.json() : null).then(d => ({ id: q.id, text: d?.aiExplanation || null })).catch(() => ({ id: q.id, text: null }));
+    });
 
-        if (userAnswer === q.correctOption) {
-          return Promise.resolve({ id: q.id, text: null });
-        }
-
-        return fetch('/api/ai/explain', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            question: q.question,
-            optionA: q.optionA,
-            optionB: q.optionB,
-            optionC: q.optionC,
-            optionD: q.optionD,
-            correctOption: q.correctOption,
-            userOption: userAnswer,
-            explanation: q.explanation,
-            subject,
-            topic,
-          }),
-        })
-          .then((res) => (res.ok ? res.json() : Promise.reject()))
-          .then((data) => ({ id: q.id, text: data.aiExplanation || null }))
-          .catch(() => ({ id: q.id, text: null }));
-      });
-
-      const [summary, insights] = await Promise.all([summaryPromise, Promise.all(insightPromises)]);
-      return {
-        summary,
-        insights: Object.fromEntries(insights.map((item) => [item.id, item.text])),
-      };
-    }
-
-    const aiData = await prefetchAiData();
-
-    if (session) {
-      fetch('/api/score', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          correctAnswers: results.correct,
-          incorrectAnswers: results.incorrect,
-          skipped: results.skipped,
-          totalQuestions: results.totalQuestions,
-          rawScore: results.rawScore,
-          subject,
-          topic,
-        }),
-      }).catch(() => {});
-    }
+    const [summary, insights] = await Promise.all([summaryPromise, Promise.all(insightPromises)]);
+    const aiData = { summary, insights: Object.fromEntries(insights.map(i => [i.id, i.text])) };
 
     sessionStorage.setItem('quizResult', JSON.stringify({
-      subject,
-      topic,
-      questions,
-      answers: finalAnswers,
-      correct: results.correct,
-      incorrect: results.incorrect,
-      skipped: results.skipped,
-      totalQuestions: results.totalQuestions,
-      rawScore: results.rawScore,
-      accuracy: results.accuracy,
+      subject: effectiveSubject, topic: effectiveTopic, questions, answers: finalAnswers,
+      correct: results.correct, incorrect: results.incorrect, skipped: results.skipped,
+      totalQuestions: results.totalQuestions, rawScore: results.rawScore, accuracy: results.accuracy,
       aiData,
     }));
-    router.push('/result');
-  }, [questions, session, subject, topic, router, quizComplete]);
 
-  // Advance
+    router.push(
+      `/result?subject=${encodeURIComponent(effectiveSubject)}&topic=${encodeURIComponent(effectiveTopic)}&sessionId=${sessionId}&correct=${results.correct}&incorrect=${results.incorrect}&skipped=${results.skipped}&total=${results.totalQuestions}&score=${results.rawScore}`
+    );
+  }, [questions, subject, topic, sessionId, router, quizComplete]);
+
   const advanceQuestion = useCallback((newAnswers) => {
-    const nextIndex = currentIndex + 1;
-    if (nextIndex >= questions.length) {
-      finishQuiz(newAnswers);
-    } else {
-      setCurrentIndex(nextIndex);
-      setSelectedOption(null);
-      setShowFeedback(false);
-    }
+    const next = currentIndex + 1;
+    if (next >= questions.length) { finishQuiz(newAnswers); return; }
+    setCurrentIndex(next);
+    setSelectedOption(null);
+    setShowFeedback(false);
   }, [currentIndex, questions.length, finishQuiz]);
 
-  // Handle option select
-  function handleOptionSelect(optionLabel) {
+  useEffect(() => {
+    if (timeLeft === 0 && !showFeedback && !quizComplete && questions.length > 0) {
+      const q = questions[currentIndex];
+      if (!q) return;
+      const na = { ...answers, [q.id]: 'SKIPPED' };
+      setAnswers(na);
+      advanceQuestion(na);
+    }
+  }, [timeLeft, showFeedback, quizComplete, questions, currentIndex, answers, advanceQuestion]);
+
+  function handleOptionSelect(label) {
     if (showFeedback || quizComplete) return;
     const q = questions[currentIndex];
-    const newAnswers = { ...answers, [q.id]: optionLabel };
-    setAnswers(newAnswers);
-    setSelectedOption(optionLabel);
+    const na = { ...answers, [q.id]: label };
+    setAnswers(na);
+    setSelectedOption(label);
     setShowFeedback(true);
-    setTimeout(() => {
-      advanceQuestion(newAnswers);
-    }, 600);
+    const correct = label === q.correctOption;
+    setBulbState(correct ? 'correct' : 'wrong');
+    playSound(correct ? 'correct' : 'wrong');
+    setTimeout(() => advanceQuestion(na), 600);
   }
 
-  // Handle skip
   function handleSkip() {
     if (showFeedback || quizComplete) return;
     const q = questions[currentIndex];
-    const newAnswers = { ...answers, [q.id]: 'SKIPPED' };
-    setAnswers(newAnswers);
-    advanceQuestion(newAnswers);
+    const na = { ...answers, [q.id]: 'SKIPPED' };
+    setAnswers(na);
+    setBulbState('neutral');
+    advanceQuestion(na);
   }
 
-  // Handle timer expiry
-  const handleTimeUp = useCallback(() => {
-    if (showFeedback || quizComplete) return;
-    const q = questions[currentIndex];
-    if (!q) return;
-    const newAnswers = { ...answers, [q.id]: 'SKIPPED' };
-    setAnswers(newAnswers);
-    advanceQuestion(newAnswers);
-  }, [showFeedback, quizComplete, questions, currentIndex, answers, advanceQuestion]);
+  if (loading) return (
+    <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] px-4">
+      <Head><title>Loading — SSC GK Score Booster</title></Head>
+      {mode === 'daily' ? (
+        <DailyChallengeLoader />
+      ) : (
+        <Loader card size="lg" label="Preparing your quiz… questions loading from sheet" />
+      )}
+    </div>
+  );
 
-  if (loading) {
-    return (
-      <Layout title="Loading Your Challenge..." hideAuth={true}>
-        <div className="card-container mx-auto fade-in text-center py-12">
-          {/* Mascot Icon */}
-          <div className="mx-auto mb-8 w-24 h-24 rounded-3xl overflow-hidden bg-gray-50 shadow-sm flex items-center justify-center">
-             <img src="/images/logo.png" alt="Mascot" className="w-20 h-20 object-contain" />
-          </div>
+  if (error) return (
+    <div className="h-screen flex flex-col items-center justify-center px-6 bg-[#0f172a]">
+      <Head><title>Error — SSC GK Score Booster</title></Head>
+      <p className="text-white font-display font-bold text-lg mb-4 text-center">
+        {error === 'no-questions' ? 'No questions found for this topic.' : 'Could not load questions.'}
+      </p>
+      <button
+        onClick={() => error === 'fetch-failed' ? window.location.reload() : router.push('/dashboard')}
+        className="bg-emerald-500 text-white rounded-2xl py-3 px-6 font-bold"
+      >
+        {error === 'fetch-failed' ? 'Retry' : 'Go Back'}
+      </button>
+    </div>
+  );
 
-          <h1 className="text-2xl font-black text-gray-900 mb-2 leading-tight">
-            Loading Your GK<br />Challenge...
-          </h1>
-          
-          <p className="text-gray-500 text-sm font-medium mb-6 flex items-center justify-center gap-2">
-            Fetching questions for your SSC prep 📚
-          </p>
+  if (quizComplete) return (
+    <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] gap-4">
+      <Head><title>Results — SSC GK Score Booster</title></Head>
+      <div className="w-12 h-12 rounded-full border-4 border-emerald-500/30 border-t-emerald-500 animate-spin" />
+      <p className="font-display font-bold text-lg text-white">Calculating your results…</p>
+    </div>
+  );
 
-          <div className="mb-8">
-            <span className="text-xs font-black text-[#FF6A00] uppercase tracking-widest bg-orange-50 px-4 py-2 rounded-full">
-              {subject} • {topic}
-            </span>
-          </div>
-
-          {/* Animated Progress Bar */}
-          <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden mb-8 shadow-inner">
-            <div className="h-full bg-gradient-to-r from-[#FF8C00] to-[#FF6B35] animate-progress-glow rounded-full" style={{ width: '60%' }}></div>
-          </div>
-
-          <p className="text-gray-400 text-xs font-medium italic animate-pulse">
-            Preparing your score booster session...
-          </p>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (error) {
-    return (
-      <Layout title="Quiz Error" hideAuth={true}>
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
-          <div className="text-4xl mb-4">😔</div>
-          <p className="text-xs font-bold text-gray-500 uppercase mb-6 leading-relaxed">
-            {error === 'no-questions' ? 'No questions available for this topic.' : 'Could not load questions.'}
-          </p>
-          <button
-            onClick={() => error === 'fetch-failed' ? window.location.reload() : router.push('/')}
-            className="w-full bg-[#FF7C1A] text-white rounded-2xl py-4 font-black text-xs transition"
-          >
-            {error === 'fetch-failed' ? 'RETRY' : 'GO BACK'}
-          </button>
-        </div>
-      </Layout>
-    );
-  }
-
-  const currentQuestion = questions[currentIndex];
-  if (!currentQuestion) return null;
+  const q = questions[currentIndex];
+  if (!q) return null;
 
   return (
-    <Layout title={`Q${currentIndex + 1} — SSC GK SCORE BOOSTER`} hideAuth={true}>
-      <div className="card-container mx-auto fade-in">
-        <div className="flex flex-col gap-4 mb-6">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <ProgressBar current={currentIndex + 1} total={questions.length} />
-            </div>
-            <Timer duration={20} onTimeUp={handleTimeUp} resetKey={currentIndex} />
-          </div>
+    <div className="h-screen flex flex-col bg-[#0f172a] overflow-hidden">
+      <Head><title>Q{currentIndex + 1} — SSC GK Score Booster</title></Head>
 
-          <div className="flex flex-wrap gap-2 items-center justify-center sm:justify-start">
-            <span className="text-[10px] font-black bg-orange-50 text-orange-600 rounded-full px-3 py-1 uppercase tracking-widest">{subject}</span>
-            <span className="text-[10px] font-black bg-gray-50 text-gray-500 rounded-full px-3 py-1 uppercase tracking-widest">{topic}</span>
-          </div>
+      {/* Guest bookmark banner */}
+      {showGuestBanner && (
+        <div className="fixed top-4 left-4 right-4 z-50 bg-slate-800 border border-emerald-500/30 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl max-w-[400px] mx-auto">
+          <span className="text-xl flex-shrink-0">🔖</span>
+          <p className="font-sans font-medium text-sm text-slate-300 leading-snug flex-1">
+            Saved! Sign in to sync across devices.
+          </p>
+        </div>
+      )}
+
+      {/* Top bar h-12 */}
+      <div className="h-12 px-4 flex items-center justify-between flex-shrink-0">
+        <span className="font-sans font-medium text-xs text-slate-400 truncate max-w-[180px]">
+          {subject} · {topic}
+        </span>
+        <span className="font-display font-bold text-sm text-white">
+          Q {currentIndex + 1}/{questions.length}
+        </span>
+        <span className="font-sans font-medium text-xs text-orange-400">⚡ Earn XP</span>
+      </div>
+
+      {/* Progress bar h-1 */}
+      <div className="h-1 bg-slate-800 flex-shrink-0">
+        <div
+          className="h-full bg-emerald-500 transition-all duration-300"
+          style={{ width: `${(currentIndex / questions.length) * 100}%` }}
+        />
+      </div>
+
+      {/* Scrollable question area */}
+      <div className="flex-1 overflow-y-auto px-4 pb-4">
+        <TimerRing timeLeft={timeLeft} duration={20} />
+
+        {/* Question card */}
+        <div className="bg-slate-800/60 rounded-2xl px-4 py-3 border border-slate-700/50 mt-4 relative">
+          <button
+            onClick={() => handleBookmarkToggle(q)}
+            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/60 active:scale-90 transition-transform"
+            aria-label={savedIds.has(q.id) ? 'Remove bookmark' : 'Save question'}
+          >
+            <BookmarkIcon filled={savedIds.has(q.id)} size={16} />
+          </button>
+          <p className="font-display font-bold text-sm text-white leading-relaxed whitespace-pre-line pr-8">
+            {q.question}
+          </p>
         </div>
 
-        <div className="bg-gray-50 rounded-[2rem] border border-gray-100 p-4 mb-4 fade-in min-h-[100px] flex items-center" key={currentIndex}>
-          <p className="text-sm font-bold text-gray-800 leading-snug">{currentQuestion.question}</p>
-        </div>
-
-        <div className="space-y-2 mb-4">
+        {/* Options */}
+        <div className="flex flex-col gap-2 mt-3">
           {OPTION_LABELS.map((label, idx) => {
-            const optionText = currentQuestion[OPTION_KEYS[idx]];
+            const optText   = q[OPTION_KEYS[idx]];
             const isSelected = selectedOption === label;
-            const isCorrect = label === currentQuestion.correctOption;
-            let optionClasses = 'w-full text-left border rounded-3xl p-3 flex gap-3 items-start transition-all duration-200';
+            const isCorrect  = label === q.correctOption;
+
+            let rowCls   = 'rounded-2xl px-4 py-3.5 flex items-center gap-3 transition-all duration-100 active:scale-[0.98]';
+            let badgeCls = 'w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 font-display font-bold text-xs';
+
             if (showFeedback) {
-              if (isCorrect) optionClasses += ' border-emerald-500 bg-emerald-50 text-emerald-800 font-bold';
-              else if (isSelected && !isCorrect) optionClasses += ' border-red-400 bg-red-50 text-red-700 font-bold';
-              else optionClasses += ' border-gray-50 bg-gray-25 text-gray-300';
+              if (isCorrect) {
+                rowCls   += ' bg-emerald-500/15 border border-emerald-500';
+                badgeCls += ' bg-emerald-500 text-white';
+              } else if (isSelected) {
+                rowCls   += ' bg-red-500/15 border border-red-500';
+                badgeCls += ' bg-red-500 text-white';
+              } else {
+                rowCls   += ' bg-slate-800 border border-slate-700 opacity-40';
+                badgeCls += ' bg-slate-700 text-slate-300';
+              }
             } else {
-              optionClasses += ' border-gray-100 bg-white hover:border-orange-300 active:scale-[0.98] text-gray-600 font-medium';
+              rowCls   += ' bg-slate-800 border border-slate-700';
+              badgeCls += ' bg-slate-700 text-slate-300';
             }
+
             return (
-              <button key={label} onClick={() => handleOptionSelect(label)} disabled={showFeedback} className={optionClasses}>
-                <span className={`flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${
-                  showFeedback && isCorrect ? 'bg-emerald-500 text-white' : showFeedback && isSelected && !isCorrect ? 'bg-red-400 text-white' : 'bg-orange-50 text-orange-400'
-                }`}>
-                  {label}
-                </span>
-                <span className="text-sm pt-0.5">{optionText}</span>
+              <button key={label} onClick={() => handleOptionSelect(label)} disabled={showFeedback} className={rowCls}>
+                <span className={badgeCls}>{label}</span>
+                <span className="font-sans font-medium text-sm text-white flex-1 text-left">{optText}</span>
               </button>
             );
           })}
         </div>
 
+        {/* Skip */}
         <button
           onClick={handleSkip}
           disabled={showFeedback}
-          className={`w-full bg-white border border-gray-100 text-gray-400 rounded-3xl py-3 text-xs font-black uppercase tracking-widest transition ${
-            showFeedback ? 'opacity-30' : 'hover:bg-gray-50 hover:text-gray-600'
-          }`}
+          className={`block w-full text-center py-3 mt-2 font-sans font-medium text-sm text-slate-500 ${showFeedback ? 'opacity-30 pointer-events-none' : ''}`}
         >
-          Skip Question →
+          Skip question →
         </button>
       </div>
-    </Layout>
+
+      {/* Bulb indicator */}
+      <QuizBulb state={bulbState} />
+    </div>
   );
 }

@@ -1,27 +1,144 @@
-import { appendScore } from '@/lib/sheets';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
+import {
+  appendScoreV2,
+  getUserRows,
+  findUserRow,
+  createDefaultUserRow,
+  parseUserRow,
+  appendUserRow,
+  updateUserCells,
+  updateLeaderboardCacheRow,
+} from '@/lib/sheets';
+import { getISTDateString, getISTYesterday, computeStreak } from '@/lib/streak';
+import { computeXPEarned, computeLevel, STREAK_MILESTONES } from '@/lib/xp';
+
+// In-memory rate limit map — resets on cold start
+const rateLimitMap = new Map();
+
+function checkRateLimit(email) {
+  const now = Date.now();
+  const window = 60 * 1000;
+  const entry = rateLimitMap.get(email);
+  if (!entry || now - entry.windowStart > window) {
+    rateLimitMap.set(email, { count: 1, windowStart: now });
+    return true;
+  }
+  if (entry.count >= 10) return false;
+  entry.count += 1;
+  return true;
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const session = await getServerSession(req, res, authOptions);
-  
-  // Scoring is only for logged-in users according to logic in quiz.js
   if (!session) {
-    return res.status(401).json({ message: 'Unauthorized' });
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { correctAnswers, incorrectAnswers, skipped, totalQuestions, rawScore, subject, topic } = req.body;
+  const email = session.user.email;
+
+  if (!checkRateLimit(email)) {
+    return res.status(429).json({ error: 'Too many requests' });
+  }
+
+  const {
+    correctAnswers,
+    incorrectAnswers,
+    skipped,
+    totalQuestions,
+    rawScore,
+    subject,
+    topic,
+    sessionId,
+  } = req.body;
+
+  // Validate
+  const nonNegNums = [correctAnswers, incorrectAnswers, skipped, totalQuestions];
+  if (nonNegNums.some(v => typeof v !== 'number' || v < 0)) {
+    return res.status(400).json({ error: 'Invalid score fields: must be non-negative numbers' });
+  }
+  if (typeof rawScore !== 'number') {
+    return res.status(400).json({ error: 'Invalid score fields: rawScore must be a number' });
+  }
+  const sumCheck = correctAnswers + incorrectAnswers + skipped;
+  if (Math.abs(sumCheck - totalQuestions) > 0.001) {
+    return res.status(400).json({ error: 'correctAnswers + incorrectAnswers + skipped must equal totalQuestions' });
+  }
+  if (!subject || typeof subject !== 'string') {
+    return res.status(400).json({ error: 'subject is required' });
+  }
+  if (!topic || typeof topic !== 'string') {
+    return res.status(400).json({ error: 'topic is required' });
+  }
+  if (!sessionId || typeof sessionId !== 'string') {
+    return res.status(400).json({ error: 'sessionId is required' });
+  }
 
   try {
-    await appendScore({
-      timestamp: new Date().toISOString(),
-      email: session.user.email,
+    const now = new Date();
+    const today = getISTDateString(now);
+    const yesterday = getISTYesterday(now);
+
+    // Read Users tab and find/create user row
+    // NOTE: getUserRows() is now cached (2-min TTL) in sheets.js
+    const userRows = await getUserRows();
+    let userRow = findUserRow(userRows, email);
+    let rowIndex;
+
+    if (!userRow) {
+      const newRow = createDefaultUserRow(email, session.user.name);
+      await appendUserRow(newRow);
+      userRow = newRow;
+      rowIndex = userRows.length + 2;
+    } else {
+      rowIndex = userRows.findIndex(r => r[0] === email) + 2;
+    }
+
+    const user = parseUserRow(userRow);
+
+    // isFirstQuizOfDay: compare Users tab lastAttemptDate with today.
+    // No extra API call needed — data is already in the user row.
+    const isFirstQuizOfDay = !user.lastAttemptDate || user.lastAttemptDate !== today;
+
+    // Compute streak FIRST (needed for milestone XP)
+    const streakResult = computeStreak({
+      streakCount:     user.streakCount,
+      lastAttemptDate: user.lastAttemptDate,
+      today,
+      yesterday,
+    });
+
+    // Compute XP — passes old & new streak so milestones are included
+    const xpEarned = computeXPEarned({
+      correctAnswers,
+      totalQuestions,
+      isFirstQuizOfDay,
+      oldStreak: user.streakCount,
+      newStreak: streakResult.streakCount,
+    });
+
+    // Check if a streak milestone was just crossed (for UI celebration)
+    const milestoneCrossed = STREAK_MILESTONES[streakResult.streakCount]
+      && user.streakCount < streakResult.streakCount
+      ? STREAK_MILESTONES[streakResult.streakCount]
+      : null;
+
+    // Milestone bonus amount (for separate column tracking)
+    const milestoneBonus = milestoneCrossed ? milestoneCrossed.bonus : 0;
+
+    // Compute totals BEFORE writing to sheet
+    const newTotalXP = user.totalXP + xpEarned;
+    const newLevel = computeLevel(newTotalXP);
+
+    // Append score row
+    await appendScoreV2({
+      timestamp: now.toISOString(),
+      email,
       name: session.user.name,
-      image: session.user.image || '',
       correctAnswers,
       incorrectAnswers,
       skipped,
@@ -29,10 +146,39 @@ export default async function handler(req, res) {
       rawScore,
       subject,
       topic,
+      sessionId,
+      xpEarned,
+      isDailyChallenge: 'FALSE',
+      streakMilestoneBonus: milestoneBonus,
+      totalXP: newTotalXP,
     });
-    return res.status(200).json({ success: true });
-  } catch (error) {
-    console.error('Error saving score:', error);
-    return res.status(500).json({ message: 'Error saving score' });
+
+    // Batch update Users row (cols C-G)
+    await updateUserCells(rowIndex, {
+      streakCount: streakResult.streakCount,
+      lastAttemptDate: today,
+      streakShieldUsed: false,
+      totalXP: newTotalXP,
+      level: newLevel,
+    });
+
+    // Invalidate leaderboard cache so rankings reflect new XP immediately
+    updateLeaderboardCacheRow('', '', '').catch(() => {});
+
+    return res.status(200).json({
+      ok: true,
+      xpEarned,
+      totalXP: newTotalXP,
+      level: newLevel,
+      streakCount: streakResult.streakCount,
+      isFirstQuizOfDay,
+      streakMilestone: milestoneCrossed,  // { bonus, label } or null
+    });
+  } catch (err) {
+    console.error('[score] Error:', err.message);
+    if (err.code === 429 || (err.response && err.response.status === 429)) {
+      console.error('[Sheets] Rate limit hit');
+    }
+    return res.status(500).json({ error: 'Failed to save score' });
   }
 }
