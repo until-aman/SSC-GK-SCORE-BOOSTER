@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import BottomNav from '@/components/BottomNav';
+
 import Loader from '@/components/ui/Loader';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
@@ -128,7 +128,7 @@ export default function Saved() {
     } else {
       // Guest: read from localStorage
       try {
-        const raw = localStorage.getItem('savedQuestions');
+        const raw = localStorage.getItem('ssc_saved_questions');
         const parsed = raw ? JSON.parse(raw) : [];
         setQuestions(parsed);
       } catch { setQuestions([]); }
@@ -152,7 +152,7 @@ export default function Saved() {
     } else {
       const updated = questions.filter(q => q.questionId !== questionId);
       setQuestions(updated);
-      try { localStorage.setItem('savedQuestions', JSON.stringify(updated)); } catch {}
+      try { localStorage.setItem('ssc_saved_questions', JSON.stringify(updated)); } catch {}
     }
   }, [isLoggedIn, questions]);
 
@@ -193,7 +193,6 @@ export default function Saved() {
         <div className="px-4">
           <Loader card size="md" label="Fetching your saved questions…" />
         </div>
-        <BottomNav />
       </div>
     );
   }
@@ -312,7 +311,6 @@ export default function Saved() {
         )}
       </div>
 
-      <BottomNav />
     </>
   );
 }

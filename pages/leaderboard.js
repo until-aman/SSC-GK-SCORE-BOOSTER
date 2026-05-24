@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import BottomNav from '@/components/BottomNav';
+
 import PodiumEntry from '@/components/PodiumEntry';
 import Loader from '@/components/ui/Loader';
 
@@ -250,7 +250,6 @@ export default function Leaderboard() {
         </div>
       </div>
 
-      <BottomNav />
 
       {/* Challenge Your Friends sheet */}
     </>

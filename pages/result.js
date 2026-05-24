@@ -3,7 +3,8 @@ import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import XPToast from '@/components/XPToast';
-import BottomNav from '@/components/BottomNav';
+import Confetti from '@/components/Confetti';
+
 import Loader from '@/components/ui/Loader';
 import { fetchAISummary } from '@/lib/fetchAI';
 
@@ -71,7 +72,10 @@ export default function Result() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const [result, setResult]                   = useState(null);
+  const [result, setResult]                   = useState(() => {
+    if (typeof window === 'undefined') return null;
+    try { return JSON.parse(sessionStorage.getItem('quizResult') || 'null'); } catch { return null; }
+  });
   const [aiSummary, setAiSummary]             = useState(null);
   const [summaryLoading, setSummaryLoading]   = useState(true);
   const [xpResult, setXPResult]               = useState(null);
@@ -82,14 +86,10 @@ export default function Result() {
   const [feedback, setFeedback]               = useState('');
   const [feedbackSent, setFeedbackSent]       = useState(false);
   const [copied, setCopied]                   = useState(false);
+  const [showConfetti, setShowConfetti]       = useState(false);
   const scoreSavedRef = useRef(false);
 
-  // Load result from sessionStorage
-  useEffect(() => {
-    const stored = sessionStorage.getItem('quizResult');
-    if (!stored) return;
-    try { setResult(JSON.parse(stored)); } catch {}
-  }, []);
+
 
   // Fetch top performers
   useEffect(() => {
@@ -132,6 +132,17 @@ export default function Result() {
           setXPResult(data);
           setShowXPToast(true);
           setTimeout(() => setShowXPToast(false), 4000);
+          // Confetti on milestones: perfect score, high accuracy, streak milestone, or first quiz of day
+          const acc = Number(router.query.correct || 0) / Number(router.query.total || 1) * 100;
+          if (
+            data.streakMilestone ||
+            data.isFirstQuizOfDay ||
+            Number(router.query.correct) === Number(router.query.total) ||
+            acc >= 80
+          ) {
+            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(false), 3500);
+          }
         }
       })
       .catch(() => { setSavingXP(false); });
@@ -162,6 +173,81 @@ export default function Result() {
 
   const isGuest = status === 'unauthenticated';
 
+  useEffect(() => {
+    if (!result || !result.xpEarned || result.xpEarned <= 0) return;
+
+    const canvas = document.getElementById('confetti-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const COLORS = ['#f97316', '#7B6FD8', '#0D9488', '#E11D48', '#D97706', '#ffffff', '#16a34a'];
+    const TOTAL = 120;
+
+    const pieces = Array.from({ length: TOTAL }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height - canvas.height,
+      w: Math.random() * 10 + 6,
+      h: Math.random() * 6 + 4,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      rotation: Math.random() * 360,
+      speed: Math.random() * 3 + 2,
+      drift: Math.random() * 2 - 1,
+      spin: Math.random() * 4 - 2,
+    }));
+
+    let frame;
+    const DURATION = 3000;
+    const start = performance.now();
+
+    function draw(now) {
+      const elapsed = now - start;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      pieces.forEach(p => {
+        p.y += p.speed;
+        p.x += p.drift;
+        p.rotation += p.spin;
+
+        ctx.save();
+        ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = elapsed < DURATION ? 1 : Math.max(0, 1 - (elapsed - DURATION) / 800);
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+
+      if (elapsed < DURATION + 800) {
+        frame = requestAnimationFrame(draw);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    const timeout = setTimeout(() => {
+      frame = requestAnimationFrame(draw);
+    }, 600);
+
+    return () => {
+      clearTimeout(timeout);
+      cancelAnimationFrame(frame);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+  }, [result]);
+
+  function handleContinue() {
+    const subject = result?.subject || router.query.subject;
+    const collection = result?.collection || router.query.collection || 'general';
+    if (subject === 'Mixed') {
+      router.push(`/quiz?subject=Mixed&topic=Mixed&count=25&collection=${collection}`);
+      return;
+    }
+    router.push('/dashboard');
+  }
+
   function handleShareWhatsApp() {
     const msg = `🏆 Just climbed the leaderboard with ${result.rawScore} marks on SSC GK Score Booster!\n\nJoin me — play free SSC GK quizzes & see if you can top the chart 👇\n\n🔗 https://ssc-gk-score-booster-v2.vercel.app`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
@@ -173,10 +259,6 @@ export default function Result() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }).catch(() => {});
-  }
-
-  function handlePlayAgain() {
-    router.push('/');
   }
 
   async function handleFeedbackSubmit() {
@@ -211,8 +293,23 @@ export default function Result() {
   const accuracy = (result.accuracy || 0).toFixed(1);
 
   return (
-    <div className="min-h-screen bg-[#0f172a] pb-24">
+    <div className="min-h-screen bg-[#0f172a] pb-28">
       <Head><title>Result — SSC GK Score Booster</title></Head>
+
+      <canvas
+        id="confetti-canvas"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 999,
+        }}
+      />
+
+      <Confetti active={showConfetti} />
 
       {xpResult && (
         <XPToast
@@ -236,7 +333,7 @@ export default function Result() {
         </div>
 
         {/* ── PERFORMANCE SUMMARY ── */}
-        <div className="bg-slate-800/70 border border-slate-700/50 rounded-3xl p-5">
+        <div className="card-enter card-enter-1 bg-slate-800/70 border border-slate-700/50 rounded-3xl p-5">
           <p className="font-sans font-medium text-xs text-slate-500 uppercase tracking-widest mb-4">
             Performance Summary
           </p>
@@ -246,7 +343,7 @@ export default function Result() {
             {/* Total Score */}
             <div className="flex-1 bg-slate-900/60 rounded-2xl p-4 flex flex-col items-center gap-1 border border-slate-700/40">
               <p className="font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">Total Score</p>
-              <p className="font-display font-black text-3xl text-orange-400 leading-none">
+              <p className="score-pop font-display font-black text-3xl text-orange-400 leading-none">
                 {result.rawScore % 1 === 0 ? result.rawScore : result.rawScore.toFixed(1)}
               </p>
               <p className="font-sans text-xs text-slate-600">marks</p>
@@ -254,7 +351,7 @@ export default function Result() {
             {/* Accuracy */}
             <div className="flex-1 bg-slate-900/60 rounded-2xl p-4 flex flex-col items-center gap-1 border border-slate-700/40">
               <p className="font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">Accuracy</p>
-              <p className="font-display font-black text-3xl text-emerald-400 leading-none">
+              <p className="score-pop font-display font-black text-3xl text-emerald-400 leading-none" style={{ animationDelay: '0.35s' }}>
                 {accuracy}
               </p>
               <p className="font-sans text-xs text-slate-600">percent</p>
@@ -292,7 +389,7 @@ export default function Result() {
           </div>
         )}
         {xpResult && (
-          <div className="bg-gradient-to-r from-emerald-900/60 to-teal-900/60 border border-emerald-500/30 rounded-2xl p-4">
+          <div className="xp-burst bg-gradient-to-r from-emerald-900/60 to-teal-900/60 border border-emerald-500/30 rounded-2xl p-4">
             <div className="flex items-center justify-between">
               <span className="font-display font-bold text-base text-white">⚡ +{xpResult.xpEarned} XP earned</span>
               <span className="font-sans font-medium text-xs text-orange-400">🔥 {xpResult.streakCount} day streak</span>
@@ -323,10 +420,25 @@ export default function Result() {
           </div>
         )}
 
-        {/* ── TOP THIS WEEK ── */}
-        <div className="bg-slate-800/70 border border-slate-700/50 rounded-3xl pt-4 pb-3 overflow-hidden">
+        {/* ── Guest save banner ── */}
+        {isGuest && (
+          <div className="bg-slate-800 border border-emerald-500/20 rounded-2xl p-4 flex flex-col items-center gap-3 text-center">
+            <span className="text-2xl">🔒</span>
+            <p className="font-sans font-medium text-sm text-slate-300">Login to save your score, XP & streak</p>
+            <button
+              onClick={() => { document.cookie = 'userMode=; path=/; max-age=0'; signIn('google', { callbackUrl: '/dashboard' }); }}
+              className="bg-white text-slate-900 rounded-xl py-2.5 px-5 flex items-center gap-2 font-semibold text-sm"
+            >
+              <GoogleSVG />
+              Sign in with Google
+            </button>
+          </div>
+        )}
+
+        {/* ── TOPPERS OF THIS WEEK ── */}
+        <div className="card-enter card-enter-2 bg-slate-800/70 border border-slate-700/50 rounded-3xl pt-4 pb-3 overflow-hidden">
           <div className="px-5 flex items-center justify-between mb-3">
-            <p className="font-display font-bold text-base text-white">Top this week</p>
+            <p className="font-display font-bold text-base text-white">Toppers of this week</p>
             <button
               onClick={() => router.push('/leaderboard')}
               className="flex items-center gap-1 font-sans font-medium text-xs text-emerald-400 active:opacity-70"
@@ -359,13 +471,36 @@ export default function Result() {
           )}
         </div>
 
-        {/* ── PLAY AGAIN ── */}
-        <button
-          onClick={handlePlayAgain}
-          className="w-full py-4 rounded-2xl bg-orange-500 text-white font-display font-bold text-base shadow-[0_0_20px_rgba(249,115,22,0.35)] active:scale-[0.98] transition-transform"
-        >
-          ▶ Play Again
-        </button>
+        {/* ── CONTINUE PRACTICING CARD ── */}
+        <div className="card-enter card-enter-3 bg-slate-800/70 border border-slate-700/50 rounded-2xl p-4">
+          <p className="font-sans font-medium text-xs text-emerald-400 uppercase tracking-widest mb-1">
+            Keep Going
+          </p>
+          <p className="font-sans font-medium text-sm text-slate-400 mb-4">
+            🎯 You solved <span className="text-white font-semibold">{result.totalQuestions} questions</span>
+            {xpResult?.streakCount > 0 && (
+              <span className="text-orange-400"> · 🔥 {xpResult.streakCount} day streak</span>
+            )}
+          </p>
+          <button
+            onClick={handleContinue}
+            className="w-full font-display font-bold text-base flex items-center justify-center gap-2 active:scale-[0.97] btn-breathe"
+            style={{
+              padding: '14px 0',
+              borderRadius: 16,
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              color: '#fff',
+              boxShadow: '0 0 24px rgba(16,185,129,0.38)',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            Continue your streak
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
 
         {/* ── VIEW LEADERBOARD ── */}
         <button
@@ -444,20 +579,6 @@ export default function Result() {
           )}
         </div>
 
-        {/* ── Guest save banner ── */}
-        {isGuest && (
-          <div className="bg-slate-800 border border-emerald-500/20 rounded-2xl p-4 flex flex-col items-center gap-3 text-center">
-            <span className="text-2xl">🔒</span>
-            <p className="font-sans font-medium text-sm text-slate-300">Login to save your score, XP & streak</p>
-            <button
-              onClick={() => { document.cookie = 'userMode=; path=/; max-age=0'; signIn('google', { callbackUrl: '/dashboard' }); }}
-              className="bg-white text-slate-900 rounded-xl py-2.5 px-5 flex items-center gap-2 font-semibold text-sm"
-            >
-              <GoogleSVG />
-              Sign in with Google
-            </button>
-          </div>
-        )}
 
       </div>
 
@@ -465,7 +586,7 @@ export default function Result() {
         <Loader fullScreen size="md" label="Loading detailed analysis…" />
       )}
 
-      <BottomNav />
+
     </div>
   );
 }

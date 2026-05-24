@@ -6,7 +6,6 @@ const ROUTE_LABELS = {
   '/':              'Going home…',
   '/dashboard':     'Loading dashboard…',
   '/quiz':          'Setting up your quiz…',
-  '/result':        'Loading your results…',
   '/result/detailed': 'Loading detailed analysis…',
   '/leaderboard':   'Fetching the leaderboard…',
   '/quiz-setup':    'Setting up your quiz…',

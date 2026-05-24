@@ -57,9 +57,12 @@ export default async function handler(req, res) {
   } = req.body;
 
   // Validate
-  const nums = [correctAnswers, incorrectAnswers, skipped, totalQuestions, rawScore];
-  if (nums.some(v => typeof v !== 'number' || v < 0)) {
+  const nonNegNums = [correctAnswers, incorrectAnswers, skipped, totalQuestions];
+  if (nonNegNums.some(v => typeof v !== 'number' || v < 0)) {
     return res.status(400).json({ error: 'Invalid score fields: must be non-negative numbers' });
+  }
+  if (typeof rawScore !== 'number') {
+    return res.status(400).json({ error: 'Invalid score fields: rawScore must be a number' });
   }
   const sumCheck = correctAnswers + incorrectAnswers + skipped;
   if (Math.abs(sumCheck - totalQuestions) > 0.001) {

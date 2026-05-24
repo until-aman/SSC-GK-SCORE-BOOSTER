@@ -4,6 +4,95 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Loader from '@/components/ui/Loader';
 
+const GK_FACTS = [
+  { label: 'Did you know?',  fact: 'The first Census in India was conducted in 1872.' },
+  { label: 'Quick GK Bite', fact: 'The Planning Commission was replaced by NITI Aayog in 2015.' },
+  { label: 'Memory Trick',  fact: 'Article 32 is called the heart and soul of the Constitution.' },
+  { label: 'SSC Tip',       fact: 'Static GK improves fastest with repeated revision, not one-time reading.' },
+  { label: 'Quick Fact',    fact: 'The Battle of Plassey was fought in 1757.' },
+  { label: 'Polity Bite',   fact: 'The President of India is the constitutional head of the Union.' },
+  { label: 'History Hack',  fact: 'The Revolt of 1857 is also called the First War of Independence.' },
+  { label: 'Geography',     fact: 'The Tropic of Cancer passes through 8 Indian states.' },
+  { label: 'Economy',       fact: 'India became the 5th largest economy in the world in 2022.' },
+  { label: 'Science',       fact: 'Vitamin C deficiency causes Scurvy.' },
+];
+
+function DailyChallengeLoader() {
+  const [factIndex, setFactIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFactIndex(i => (i + 1) % GK_FACTS.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fact = GK_FACTS[factIndex];
+
+  return (
+    <div style={{
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '0 28px',
+      background: '#0f172a',
+      gap: '24px',
+      width: '100%',
+    }}>
+      <div style={{
+        width: '48px', height: '48px',
+        border: '3px solid rgba(255,255,255,0.1)',
+        borderTop: '3px solid #f97316',
+        borderRadius: '50%',
+        animation: 'spin 0.8s linear infinite',
+      }} />
+      <div style={{ textAlign: 'center' }}>
+        <div style={{
+          fontFamily: 'var(--font-display, inherit)',
+          fontSize: '18px',
+          fontWeight: '800',
+          color: '#ffffff',
+          marginBottom: '6px',
+        }}>
+          Preparing your Daily Challenge...
+        </div>
+        <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)' }}>
+          Mixing today&apos;s 25 GK questions for you
+        </div>
+      </div>
+      <div style={{
+        background: '#1a1a2a',
+        borderRadius: '18px',
+        padding: '18px 20px',
+        width: '100%',
+        border: '1px solid rgba(255,255,255,0.08)',
+      }}>
+        <div style={{
+          fontSize: '10px',
+          fontWeight: '700',
+          letterSpacing: '0.6px',
+          textTransform: 'uppercase',
+          color: '#f97316',
+          marginBottom: '8px',
+        }}>
+          {fact.label}
+        </div>
+        <div style={{
+          fontSize: '14px',
+          color: '#ffffff',
+          lineHeight: '1.55',
+          fontWeight: '500',
+        }}>
+          {fact.fact}
+        </div>
+      </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
 function playSound(type) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -121,11 +210,12 @@ function BookmarkIcon({ filled, size = 20 }) {
 export default function Quiz() {
   const router = useRouter();
   const { status } = useSession();
-  const { subject, topic, count, n, sessionId: qSessionId, mode } = router.query;
+  const { subject, topic, count, n, sessionId: qSessionId, mode, collection = 'general' } = router.query;
   const questionCount = count || n;
-  const isSavedMode = mode === 'saved';
-  const effectiveSubject = isSavedMode ? 'Saved' : subject;
-  const effectiveTopic   = isSavedMode ? 'Mixed' : topic;
+  const isSavedMode  = mode === 'saved';
+  const isDailyMode  = mode === 'daily';
+  const effectiveSubject = isSavedMode ? 'Saved' : isDailyMode ? 'Daily Challenge' : subject;
+  const effectiveTopic   = isSavedMode ? 'Mixed'  : isDailyMode ? 'Mixed GK'        : topic;
 
   const [questions, setQuestions]       = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -145,7 +235,7 @@ export default function Quiz() {
 
   useEffect(() => {
     if (!router.isReady) return;
-    if (!isSavedMode && (!subject || !topic || !questionCount)) router.replace('/dashboard');
+    if (!isSavedMode && mode !== 'daily' && (!subject || !topic || !questionCount)) router.replace('/dashboard');
   }, [router.isReady, subject, topic, questionCount, isSavedMode, router]);
 
   // Load saved IDs for bookmark state
@@ -243,6 +333,45 @@ export default function Quiz() {
 
   useEffect(() => {
     if (!router.isReady) return;
+
+    if (mode === 'daily') {
+      setLoading(true);
+      (async () => {
+        try {
+          const today = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
+            .toISOString().split('T')[0];
+          const cacheKey = `dc_${today}`;
+          const cached = localStorage.getItem(cacheKey);
+
+          if (cached) {
+            const data = JSON.parse(cached);
+            if (data.questions?.length) {
+              setQuestions(data.questions.slice(0, 25));
+              setLoading(false);
+              return;
+            }
+          }
+
+          const res = await fetch('/api/daily-challenge');
+          const data = await res.json();
+
+          if (!data.questions?.length) {
+            setError('no-questions');
+            setLoading(false);
+            return;
+          }
+
+          localStorage.setItem(cacheKey, JSON.stringify(data));
+          setQuestions(data.questions.slice(0, 25));
+          setLoading(false);
+        } catch {
+          setError('fetch-failed');
+          setLoading(false);
+        }
+      })();
+      return;
+    }
+
     if (isSavedMode) {
       try {
         const saved = JSON.parse(sessionStorage.getItem('ssc_saved_quiz_questions') || '[]');
@@ -254,16 +383,38 @@ export default function Quiz() {
     }
     if (!subject || !topic || !questionCount) return;
     setLoading(true);
-    fetch(`/api/questions?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}`)
-      .then(r => r.json())
-      .then(data => {
-        if (!data.questions?.length) { setError('no-questions'); setLoading(false); return; }
-        const pool = shuffle(data.questions).slice(0, parseInt(questionCount));
-        setQuestions(pool);
-        setLoading(false);
-      })
-      .catch(() => { setError('fetch-failed'); setLoading(false); });
-  }, [router.isReady, subject, topic, questionCount, isSavedMode]);
+
+    const url = `/api/questions?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}&collection=${encodeURIComponent(collection)}`;
+
+    async function fetchWithRetry(attemptsLeft) {
+      try {
+        const r = await fetch(url);
+        const data = await r.json();
+        if (data.questions?.length) {
+          const pool = shuffle(data.questions).slice(0, parseInt(questionCount));
+          setQuestions(pool);
+          setLoading(false);
+          return;
+        }
+        // Empty response — retry if attempts remain (cache may still be warming)
+        if (attemptsLeft > 0) {
+          setTimeout(() => fetchWithRetry(attemptsLeft - 1), 3000);
+        } else {
+          setError('no-questions');
+          setLoading(false);
+        }
+      } catch {
+        if (attemptsLeft > 0) {
+          setTimeout(() => fetchWithRetry(attemptsLeft - 1), 3000);
+        } else {
+          setError('fetch-failed');
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchWithRetry(3);
+  }, [router.isReady, subject, topic, questionCount, isSavedMode, mode]);
 
   useEffect(() => {
     if (loading || quizComplete || showFeedback || timeLeft <= 0) return;
@@ -354,7 +505,11 @@ export default function Quiz() {
   if (loading) return (
     <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] px-4">
       <Head><title>Loading — SSC GK Score Booster</title></Head>
-      <Loader card size="lg" label="Preparing your quiz… questions loading from sheet" />
+      {mode === 'daily' ? (
+        <DailyChallengeLoader />
+      ) : (
+        <Loader card size="lg" label="Preparing your quiz… questions loading from sheet" />
+      )}
     </div>
   );
 

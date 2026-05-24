@@ -3,7 +3,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
-import BottomNav from '@/components/BottomNav';
+
 
 function isGuestMode() {
   if (typeof document === 'undefined') return false;
@@ -235,7 +235,6 @@ export default function Profile() {
         </div>
       </div>
 
-      <BottomNav />
     </>
   );
 }
