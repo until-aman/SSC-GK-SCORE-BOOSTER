@@ -1018,9 +1018,12 @@ export default function Dashboard() {
           }}>
 
             {/* Header */}
-            <div className="flex items-center justify-between mb-3">
-              <p className="font-display font-bold text-base text-white">🔥 Weekly Champions</p>
-              <div className="flex items-center gap-3">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <p className="font-display" style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>🔥 Weekly Champions</p>
+                <p className="font-sans" style={{ fontSize: 13, color: '#94A3B8', marginTop: 3 }}>Top performers this week</p>
+              </div>
+              <div className="flex items-center gap-3" style={{ paddingTop: 4 }}>
                 {(bootstrapRefreshing || weeklyUpdating) && (
                   <span className="font-sans text-xs text-slate-500">Updating...</span>
                 )}
@@ -1034,7 +1037,8 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={() => router.push('/leaderboard')}
-                  className="flex items-center gap-1 text-emerald-400 text-xs font-sans font-medium active:opacity-70"
+                  className="flex items-center gap-1 font-sans font-medium active:opacity-70"
+                  style={{ fontSize: 13, color: '#34D399' }}
                 >
                   View your rank
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

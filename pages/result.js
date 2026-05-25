@@ -719,14 +719,31 @@ export default function Result() {
           boxShadow: '0 12px 35px rgba(245, 158, 11, 0.08)',
           padding: 18,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#F8FAFC' }}>Weekly Champions</p>
-            <button
-              onClick={() => loadWeeklyLeaderboard({ forceRefresh: true })}
-              disabled={leaderboardRefreshing}
-              style={{ fontSize: 16, color: '#64748B', background: 'none', border: 'none', cursor: 'pointer', opacity: leaderboardRefreshing ? 0.4 : 0.7, lineHeight: 1 }}
-              aria-label="Refresh leaderboard"
-            >↻</button>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+            <div>
+              <p style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>🔥 Weekly Champions</p>
+              <p style={{ fontSize: 13, color: '#94A3B8', marginTop: 3 }}>Top performers this week</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4 }}>
+              {leaderboardRefreshing && (
+                <span style={{ fontSize: 12, color: '#64748B' }}>Updating...</span>
+              )}
+              <button
+                onClick={() => loadWeeklyLeaderboard({ forceRefresh: true })}
+                disabled={leaderboardRefreshing}
+                style={{ fontSize: 14, color: '#64748B', background: 'none', border: 'none', cursor: 'pointer', opacity: leaderboardRefreshing ? 0.4 : 0.7, lineHeight: 1 }}
+                aria-label="Refresh leaderboard"
+              >↻</button>
+              <button
+                onClick={() => router.push('/leaderboard')}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600, color: '#34D399', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                View your rank
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 18l6-6-6-6" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </div>
           </div>
 
           {topPerformers.length === 0 ? (
