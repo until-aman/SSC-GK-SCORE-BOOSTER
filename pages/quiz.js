@@ -816,10 +816,7 @@ export default function Quiz() {
     const attemptedCount = Object.keys(finalAnswers || {}).length;
     const answeredCount = Object.values(finalAnswers || {}).filter(a => a && a !== 'SKIPPED').length;
 
-    // ── Write base results immediately and navigate — no AI wait ─────────────
-    // The result page already has a fallback to fetch AI summary independently
-    // (see result.js summaryLoading path). Navigating now removes the blocking
-    // "Calculating…" screen that previously lasted 3–8 s waiting for AI calls.
+    // Write base results immediately and navigate without waiting for AI.
     sessionStorage.setItem('quizResult', JSON.stringify({
       subject: effectiveSubject, topic: effectiveTopic, questions, answers: finalAnswers,
       correct: results.correct, incorrect: results.incorrect, skipped: results.skipped,
@@ -828,44 +825,13 @@ export default function Quiz() {
       attemptedCount,
       answeredCount,
       collection,
-      aiData: null, // result page fetches this on its own; patched below when ready
+      aiData: null,
     }));
 
     router.push(
       `/result?subject=${encodeURIComponent(effectiveSubject)}&topic=${encodeURIComponent(effectiveTopic)}&sessionId=${sessionId}&correct=${results.correct}&incorrect=${results.incorrect}&skipped=${results.skipped}&total=${results.totalQuestions}&score=${results.rawScore}`
     );
-
-    // ── Fire AI calls in the background ──────────────────────────────────────
-    // When they complete, patch sessionStorage so the detailed-analysis page
-    // can use per-question explanations without fetching again.
-    const summaryPromise = fetch('/api/ai/summary', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subject: effectiveSubject, topic: effectiveTopic, totalQuestions: results.totalQuestions, correctAnswers: results.correct, incorrectAnswers: results.incorrect, skipped: results.skipped, rawScore: results.rawScore, accuracy: results.accuracy }),
-    }).then(r => r.ok ? r.json() : null).then(d => d?.aiSummary || null).catch(() => null);
-
-    const insightPromises = questions.map(q => {
-      const ua = finalAnswers[q.id];
-      if (!ua || ua === 'SKIPPED') {
-        return fetch('/api/ai/tip', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: q.question, correctOption: q.correctOption, correctOptionText: q[OPTION_KEYS[OPTION_LABELS.indexOf(q.correctOption)]], explanation: q.explanation, subject, topic }) })
-          .then(r => r.ok ? r.json() : null).then(d => ({ id: q.id, text: d?.aiTip || null })).catch(() => ({ id: q.id, text: null }));
-      }
-      if (ua === q.correctOption) return Promise.resolve({ id: q.id, text: null });
-      return fetch('/api/ai/explain', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q.question, optionA: q.optionA, optionB: q.optionB, optionC: q.optionC, optionD: q.optionD, correctOption: q.correctOption, userOption: ua, explanation: q.explanation, subject, topic }) })
-        .then(r => r.ok ? r.json() : null).then(d => ({ id: q.id, text: d?.aiExplanation || null })).catch(() => ({ id: q.id, text: null }));
-    });
-
-    Promise.all([summaryPromise, Promise.all(insightPromises)])
-      .then(([summary, insights]) => {
-        try {
-          const stored = JSON.parse(sessionStorage.getItem('quizResult') || '{}');
-          stored.aiData = { summary, insights: Object.fromEntries(insights.map(i => [i.id, i.text])) };
-          sessionStorage.setItem('quizResult', JSON.stringify(stored));
-        } catch {}
-      })
-      .catch(() => {});
-  }, [questions, subject, topic, sessionId, router, quizComplete, effectiveSubject, effectiveTopic, collection]);
+  }, [questions, sessionId, router, quizComplete, effectiveSubject, effectiveTopic, collection]);
 
   const requestQuizExit = useCallback((targetUrl = '/dashboard') => {
     if (!quizInProgress || allowQuizExitRef.current) return true;
