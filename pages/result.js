@@ -7,6 +7,8 @@ import Confetti from '@/components/Confetti';
 
 import Loader from '@/components/ui/Loader';
 import { fetchAISummary } from '@/lib/fetchAI';
+import { patchCache, readCache, writeCache } from '@/lib/clientCache';
+import { CACHE_KEYS } from '@/lib/cachePolicy';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -52,6 +54,32 @@ const GoogleSVG = () => (
     <path fill="#FBBC05" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
   </svg>
 );
+
+function patchProfileCaches(profileSnapshot) {
+  if (!profileSnapshot) return;
+  try {
+    writeCache(CACHE_KEYS.USER_PROFILE, profileSnapshot);
+    patchCache(CACHE_KEYS.DASHBOARD_BOOTSTRAP, data => ({
+      ...(data || {}),
+      profile: profileSnapshot,
+    }));
+  } catch {}
+}
+
+function patchGuestProfileCache() {
+  try {
+    const today = new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const existing = readCache(CACHE_KEYS.GUEST_PROFILE);
+    const next = {
+      ...(existing?.data || {}),
+      name: existing?.data?.name || 'Guest',
+      playedToday: true,
+      lastAttemptDate: today,
+    };
+    if (existing) patchCache(CACHE_KEYS.GUEST_PROFILE, () => next);
+    else writeCache(CACHE_KEYS.GUEST_PROFILE, next);
+  } catch {}
+}
 
 
 export default function Result() {
@@ -134,6 +162,7 @@ export default function Result() {
         setSavingXP(false);
         if (data.ok) {
           setXPResult(data);
+          patchProfileCaches(data.profileSnapshot);
           setShowXPToast(true);
           setTimeout(() => setShowXPToast(false), 4000);
           // Confetti on milestones: perfect score, high accuracy, streak milestone, or first quiz of day
@@ -152,6 +181,11 @@ export default function Result() {
       .catch(() => { setSavingXP(false); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router.isReady, result]);
+
+  useEffect(() => {
+    if (!result || status !== 'unauthenticated') return;
+    patchGuestProfileCache();
+  }, [result, status]);
 
   // AI summary — 5s timeout via fetchAISummary
   useEffect(() => {
