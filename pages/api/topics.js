@@ -6,20 +6,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { subject, collection = 'general' } = req.query;
+    const { subject, collection = 'general', includeCounts } = req.query;
+    const wantCounts = includeCounts === 'true' || !subject;
 
     // Fetch topics for the requested subject (or all subjects)
     const topics = await getTopicsBySubject(subject || undefined, collection);
 
-    // Count valid questions per subject — uses existing cache via getTopicsBySubject
+    // Only compute per-subject counts when explicitly requested or no subject filter.
+    // Subject-specific requests skip this loop to avoid N redundant sheet reads.
     const subjectCounts = {};
-    for (const subj of VALID_SUBJECTS) {
-      try {
-        const subjectTopics = await getTopicsBySubject(subj, collection);
-        const topicMap = subjectTopics[subj] || {};
-        subjectCounts[subj] = Object.values(topicMap).reduce((sum, n) => sum + n, 0);
-      } catch (_) {
-        subjectCounts[subj] = 0;
+    if (wantCounts) {
+      for (const subj of VALID_SUBJECTS) {
+        try {
+          const subjectTopics = await getTopicsBySubject(subj, collection);
+          const topicMap = subjectTopics[subj] || {};
+          subjectCounts[subj] = Object.values(topicMap).reduce((sum, n) => sum + n, 0);
+        } catch (_) {
+          subjectCounts[subj] = 0;
+        }
       }
     }
 
