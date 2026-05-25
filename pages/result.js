@@ -453,25 +453,6 @@ export default function Result() {
 
       <div style={{ maxWidth: 430, margin: '0 auto', padding: '24px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-        {/* ── HEADER ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 6 }}>
-          <button
-            onClick={() => router.back()}
-            style={{ width: 36, height: 36, borderRadius: '50%', background: '#172235', border: '1px solid #2A3A52', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
-            aria-label="Go back"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F8FAFC" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 5l-7 7 7 7"/>
-            </svg>
-          </button>
-          <div>
-            <p style={{ fontSize: 22, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.1, marginBottom: 2 }}>Result</p>
-            <p style={{ fontSize: 14, color: '#93A4BC' }}>
-              {result.isDailyChallenge ? 'Daily Challenge' : (result.collection || 'Practice')} · {result.subject || 'Mixed GK'}
-            </p>
-          </div>
-        </div>
-
         {/* ── 1. RESULT SUMMARY CARD ── */}
         {(() => {
           const acc = result.accuracy ?? 0;
