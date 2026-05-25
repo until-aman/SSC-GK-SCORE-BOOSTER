@@ -7,8 +7,8 @@ import Confetti from '@/components/Confetti';
 
 import Loader from '@/components/ui/Loader';
 import { fetchAISummary } from '@/lib/fetchAI';
-import { patchCache, readCache, writeCache } from '@/lib/clientCache';
-import { CACHE_KEYS } from '@/lib/cachePolicy';
+import { fetchWithClientCache, patchCache, readCache, writeCache } from '@/lib/clientCache';
+import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -81,6 +81,14 @@ function patchGuestProfileCache() {
   } catch {}
 }
 
+function getWeeklyPlayers(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.weeklyTop)) return data.weeklyTop;
+  if (Array.isArray(data?.leaders)) return data.leaders;
+  if (Array.isArray(data?.leaderboard?.weeklyTop)) return data.leaderboard.weeklyTop;
+  return [];
+}
+
 
 export default function Result() {
   const { data: session, status } = useSession();
@@ -103,18 +111,50 @@ export default function Result() {
   const [showFeedbackSheet, setShowFeedbackSheet] = useState(false);
   const [showConfetti, setShowConfetti]       = useState(false);
   const [champsSlide, setChampsSlide]         = useState(0);
+  const [leaderboardRefreshing, setLeaderboardRefreshing] = useState(false);
+  const [leaderboardMsg, setLeaderboardMsg]   = useState('');
   const scoreSavedRef = useRef(false);
   const landingConfettiShownRef = useRef(false);
+  const leaderboardRefreshedAfterScoreRef = useRef(false);
 
 
 
-  // Fetch top performers
+  async function loadWeeklyLeaderboard({ forceRefresh = false, background = false } = {}) {
+    if (!background) setLeaderboardRefreshing(forceRefresh);
+    try {
+      const result = await fetchWithClientCache({
+        key: CACHE_KEYS.WEEKLY_LEADERBOARD,
+        url: '/api/leaderboard?scope=weekly',
+        maxAgeMs: CACHE_TTL.THIRTY_MINUTES,
+        forceRefresh,
+        onCache(entry) {
+          const players = getWeeklyPlayers(entry.data);
+          if (players.length > 0) setTopPerformers(players.slice(0, 5));
+        },
+        onFresh(data) {
+          const players = getWeeklyPlayers(data);
+          if (players.length > 0) setTopPerformers(players.slice(0, 5));
+        },
+      });
+      const players = getWeeklyPlayers(result.data);
+      if (players.length > 0) setTopPerformers(players.slice(0, 5));
+      setLeaderboardMsg(result.stale ? 'Showing saved leaderboard.' : '');
+    } catch {
+      const cached = readCache(CACHE_KEYS.WEEKLY_LEADERBOARD, CACHE_TTL.THIRTY_MINUTES);
+      const players = getWeeklyPlayers(cached?.data);
+      if (players.length > 0) {
+        setTopPerformers(players.slice(0, 5));
+        setLeaderboardMsg('Showing saved leaderboard.');
+      }
+    } finally {
+      if (!background) setLeaderboardRefreshing(false);
+    }
+  }
+
+  // Fetch top performers from cache first; API only when cache is absent/stale.
   useEffect(() => {
-    fetch('/api/leaderboard?scope=weekly')
-      .then(r => r.json())
-      .then(d => setTopPerformers((d.leaders || []).slice(0, 5)))
-      .catch(() => {});
-  }, []);
+    loadWeeklyLeaderboard();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-advance Weekly Champions carousel (mirrors dashboard behaviour)
   useEffect(() => {
@@ -163,6 +203,10 @@ export default function Result() {
         if (data.ok) {
           setXPResult(data);
           patchProfileCaches(data.profileSnapshot);
+          if (!leaderboardRefreshedAfterScoreRef.current) {
+            leaderboardRefreshedAfterScoreRef.current = true;
+            loadWeeklyLeaderboard({ forceRefresh: true, background: true });
+          }
           setShowXPToast(true);
           setTimeout(() => setShowXPToast(false), 4000);
           // Confetti on milestones: perfect score, high accuracy, streak milestone, or first quiz of day
@@ -726,6 +770,19 @@ export default function Result() {
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <p className="font-display font-bold text-base text-white">🔥 Weekly Champions</p>
+            <div className="flex items-center gap-3">
+              {leaderboardRefreshing && (
+                <span className="font-sans text-xs text-slate-500">Updating...</span>
+              )}
+              <button
+                onClick={() => loadWeeklyLeaderboard({ forceRefresh: true })}
+                disabled={leaderboardRefreshing}
+                className="font-sans text-xs text-slate-400 active:opacity-70 disabled:opacity-40"
+                aria-label="Refresh leaderboard"
+              >
+                ↻
+              </button>
+            </div>
           </div>
 
           {topPerformers.length === 0 ? (
@@ -814,6 +871,12 @@ export default function Result() {
                     />
                   ))}
                 </div>
+              )}
+
+              {leaderboardMsg && (
+                <p className="font-sans text-[11px] text-center mt-2" style={{ color: '#f59e0b' }}>
+                  {leaderboardMsg}
+                </p>
               )}
 
               {/* Your rank row */}
