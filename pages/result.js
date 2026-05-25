@@ -117,6 +117,7 @@ export default function Result() {
   const [showFeedbackSheet, setShowFeedbackSheet] = useState(false);
   const [showConfetti, setShowConfetti]       = useState(false);
   const [champsSlide, setChampsSlide]         = useState(0);
+  const [champsPaused, setChampsPaused]       = useState(false);
   const [leaderboardRefreshing, setLeaderboardRefreshing] = useState(false);
   const [leaderboardMsg, setLeaderboardMsg]   = useState('');
   const [weeklyUpdatedAt, setWeeklyUpdatedAt] = useState(null);
@@ -170,10 +171,10 @@ export default function Result() {
 
   // Auto-advance Weekly Champions carousel (mirrors dashboard behaviour)
   useEffect(() => {
-    if (topPerformers.length < 2) return;
-    const t = setInterval(() => setChampsSlide(s => (s + 1) % Math.min(topPerformers.length, 3)), 3000);
+    if (topPerformers.length < 2 || champsPaused) return;
+    const t = setInterval(() => setChampsSlide(s => (s + 1) % Math.min(topPerformers.length, 3)), 4000);
     return () => clearInterval(t);
-  }, [topPerformers.length]);
+  }, [topPerformers.length, champsPaused]);
 
   useEffect(() => {
     if (!result || landingConfettiShownRef.current) return;
@@ -738,9 +739,12 @@ export default function Result() {
           cursor: 'pointer',
           transition: 'transform 150ms ease',
         }}
-          onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; }}
-          onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-          onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+          onPointerDown={e => { setChampsPaused(true); e.currentTarget.style.transform = 'scale(0.98)'; }}
+          onPointerUp={e => { setChampsPaused(false); e.currentTarget.style.transform = 'scale(1)'; }}
+          onPointerLeave={e => { setChampsPaused(false); e.currentTarget.style.transform = 'scale(1)'; }}
+          onTouchStart={() => setChampsPaused(true)}
+          onTouchEnd={() => setChampsPaused(false)}
+          onTouchCancel={() => setChampsPaused(false)}
         >
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
             <div>

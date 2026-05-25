@@ -383,6 +383,7 @@ export default function Dashboard() {
   const [notifyLoading,    setNotifyLoading]    = useState(false);
   const [collectionTotals, setCollectionTotals] = useState({});   // { [collection]: totalCount }
   const [champsSlide, setChampsSlide] = useState(0);
+  const [champsPaused, setChampsPaused] = useState(false);
   const [bootstrapRefreshing, setBootstrapRefreshing] = useState(false);
   const [bootstrapMsg, setBootstrapMsg] = useState(null);
   const [leaderboardMsg, setLeaderboardMsg] = useState(null);
@@ -654,10 +655,10 @@ export default function Dashboard() {
 
   // Auto-advance Weekly Champions carousel
   useEffect(() => {
-    if (topPlayers.length < 2) return;
-    const t = setInterval(() => setChampsSlide(s => (s + 1) % Math.min(topPlayers.length, 3)), 3000);
+    if (topPlayers.length < 2 || champsPaused) return;
+    const t = setInterval(() => setChampsSlide(s => (s + 1) % Math.min(topPlayers.length, 3)), 4000);
     return () => clearInterval(t);
-  }, [topPlayers.length]);
+  }, [topPlayers.length, champsPaused]);
 
   // Fetch profile + run localStorage → cloud migration for saved questions
   useEffect(() => {
@@ -1031,9 +1032,12 @@ export default function Dashboard() {
             cursor: 'pointer',
             transition: 'transform 150ms ease',
           }}
-            onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; }}
-            onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-            onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+            onPointerDown={e => { setChampsPaused(true); e.currentTarget.style.transform = 'scale(0.98)'; }}
+            onPointerUp={e => { setChampsPaused(false); e.currentTarget.style.transform = 'scale(1)'; }}
+            onPointerLeave={e => { setChampsPaused(false); e.currentTarget.style.transform = 'scale(1)'; }}
+            onTouchStart={() => setChampsPaused(true)}
+            onTouchEnd={() => setChampsPaused(false)}
+            onTouchCancel={() => setChampsPaused(false)}
           >
 
             {/* Header */}
