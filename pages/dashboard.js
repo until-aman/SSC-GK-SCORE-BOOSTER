@@ -13,6 +13,7 @@ import {
   fetchWithClientCache,
   formatLastUpdated,
   writeCache,
+  clearAllAppCache,
 } from '@/lib/clientCache';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 
@@ -439,6 +440,11 @@ export default function Dashboard() {
     setNotifyLoading(false);
   }
 
+  function handleClearAppCache() {
+    const removed = clearAllAppCache();
+    setBootstrapMsg(`Cleared ${removed} app cache ${removed === 1 ? 'entry' : 'entries'}.`);
+  }
+
   async function handleNotifyInterest() {
     if (notifyLoading || notified) return;
     setNotifyLoading(true);
@@ -797,6 +803,15 @@ export default function Dashboard() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                type="button"
+                onClick={handleClearAppCache}
+                className="rounded-full border border-rose-400/30 bg-rose-500/10 px-2.5 py-1 font-sans text-[10px] font-semibold text-rose-200"
+              >
+                Clear App Cache
+              </button>
+            )}
             <button
               onClick={() => isLoggedIn && router.push('/history')}
               className="bg-yellow-500/20 border border-yellow-400/50 rounded-full px-3 py-1.5 flex items-center gap-1.5"
