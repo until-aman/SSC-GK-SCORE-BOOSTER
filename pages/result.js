@@ -585,8 +585,30 @@ export default function Result() {
         <div
           className="pyq-in"
           onClick={() => router.push('/subjects?collection=ssc_pyq')}
-          style={{ background: '#172235', border: '1px solid #2A3A52', borderRadius: 24, padding: 20, cursor: 'pointer' }}
+          style={{
+            position: 'relative',
+            overflow: 'hidden',
+            background: '#172235',
+            border: '1px solid #2A3A52',
+            borderRadius: 24,
+            padding: 20,
+            cursor: 'pointer',
+          }}
         >
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: '82%',
+              height: '100%',
+              borderTop: '2px solid rgba(249,115,22,0.72)',
+              borderRight: '2px solid rgba(249,115,22,0.72)',
+              borderTopRightRadius: 24,
+              pointerEvents: 'none',
+            }}
+          />
           <div style={{ display: 'inline-flex', alignItems: 'center', marginBottom: 14, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: 999, padding: '3px 12px' }}>
             <span style={{ fontSize: 10, fontWeight: 700, color: '#FDBA74', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most Useful Next Step</span>
           </div>
