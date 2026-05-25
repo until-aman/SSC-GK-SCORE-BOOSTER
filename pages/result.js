@@ -111,6 +111,8 @@ export default function Result() {
   const [topPerformers, setTopPerformers]     = useState([]);
   const [feedback, setFeedback]               = useState('');
   const [feedbackSent, setFeedbackSent]       = useState(false);
+  const [showFeedbackToast, setShowFeedbackToast] = useState(false);
+  const [feedbackType, setFeedbackType]       = useState('');
   const [copied, setCopied]                   = useState(false);
   const [showFeedbackSheet, setShowFeedbackSheet] = useState(false);
   const [showConfetti, setShowConfetti]       = useState(false);
@@ -170,9 +172,11 @@ export default function Result() {
   useEffect(() => {
     if (!result || landingConfettiShownRef.current) return;
     landingConfettiShownRef.current = true;
-    setShowConfetti(true);
-    const t = setTimeout(() => setShowConfetti(false), 3800);
-    return () => clearTimeout(t);
+    if ((result.accuracy ?? 0) >= 85) {
+      setShowConfetti(true);
+      const t = setTimeout(() => setShowConfetti(false), 3800);
+      return () => clearTimeout(t);
+    }
   }, [result]);
 
   // Save score (logged-in only, once)
@@ -213,14 +217,7 @@ export default function Result() {
           }
           setShowXPToast(true);
           setTimeout(() => setShowXPToast(false), 4000);
-          // Confetti on milestones: perfect score, high accuracy, streak milestone, or first quiz of day
-          const acc = Number(router.query.correct || 0) / Number(router.query.total || 1) * 100;
-          if (
-            data.streakMilestone ||
-            data.isFirstQuizOfDay ||
-            Number(router.query.correct) === Number(router.query.total) ||
-            acc >= 80
-          ) {
+          if (data.accuracy >= 85) {
             setShowConfetti(true);
             setTimeout(() => setShowConfetti(false), 3500);
           }
@@ -382,13 +379,17 @@ export default function Result() {
   }
 
   async function handleFeedbackSubmit() {
-    if (!feedback.trim()) return;
+    const hasInput = feedbackType || feedback.trim();
+    if (!hasInput) return;
+    const fullFeedback = feedbackType && feedback.trim()
+      ? `[${feedbackType}] ${feedback.trim()}`
+      : feedbackType || feedback.trim();
     try {
       await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          feedback: feedback.trim(),
+          feedback: fullFeedback,
           subject: result?.subject || '',
           topic: result?.topic || '',
         }),
@@ -398,35 +399,28 @@ export default function Result() {
     }
     setFeedbackSent(true);
     setFeedback('');
+    setFeedbackType('');
+    setShowFeedbackToast(true);
+    setTimeout(() => setShowFeedbackToast(false), 3000);
   }
 
   if (!result) return (
-    <div className="min-h-screen bg-[#0f172a] px-4 pt-8 flex flex-col gap-4">
+    <div suppressHydrationWarning style={{ minHeight: '100vh', background: 'linear-gradient(160deg, #06111F 0%, #10172A 100%)', padding: '32px 16px 0' }}>
       <Head><title>Result — SSC GK Score Booster</title></Head>
-      <div className="skeleton h-6 w-48 rounded-lg mx-auto" />
-      <div className="skeleton h-56 rounded-3xl" />
-      <div className="skeleton h-20 rounded-3xl" />
+      <div className="skeleton h-6 w-48 rounded-lg mx-auto mb-4" />
+      <div className="skeleton h-56 rounded-3xl mb-4" />
+      <div className="skeleton h-20 rounded-3xl mb-4" />
       <div className="skeleton h-40 rounded-3xl" />
     </div>
   );
 
-  const accuracy = (result.accuracy || 0).toFixed(1);
-
   return (
-    <div className="min-h-screen bg-[#0f172a] pb-28">
+    <div suppressHydrationWarning style={{ minHeight: '100vh', background: 'linear-gradient(160deg, #06111F 0%, #10172A 100%)', paddingBottom: 112 }}>
       <Head><title>Result — SSC GK Score Booster</title></Head>
 
       <canvas
         id="confetti-canvas"
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none',
-          zIndex: 999,
-        }}
+        style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 999 }}
       />
 
       <Confetti active={showConfetti} intensity="grand" />
@@ -443,231 +437,272 @@ export default function Result() {
         />
       )}
 
-      <div className="max-w-[430px] mx-auto px-4 pt-8 flex flex-col gap-4">
+      <style>{`
+        @keyframes cardIn  { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes stripIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes proofFade { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+        .card-in     { animation: cardIn  350ms cubic-bezier(0.22,1,0.36,1) both; }
+        .xp-strip-in { animation: stripIn 300ms cubic-bezier(0.22,1,0.36,1) 100ms both; }
+        .pyq-in      { animation: stripIn 300ms cubic-bezier(0.22,1,0.36,1) 160ms both; }
+        .mentor-in   { animation: stripIn 300ms cubic-bezier(0.22,1,0.36,1) 220ms both; }
+        .champs-in   { animation: stripIn 300ms cubic-bezier(0.22,1,0.36,1) 280ms both; }
+        .champ-slide { animation: proofFade 0.30s ease both; }
+        .btn-primary { transition: transform 140ms ease, box-shadow 140ms ease; }
+        .btn-primary:hover { transform: translateY(-1px); }
+      `}</style>
 
-        {/* ── TOP HERO SECTION ── */}
+      <div style={{ maxWidth: 430, margin: '0 auto', padding: '24px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        {/* ── HEADER ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 6 }}>
+          <button
+            onClick={() => router.back()}
+            style={{ width: 36, height: 36, borderRadius: '50%', background: '#172235', border: '1px solid #2A3A52', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+            aria-label="Go back"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F8FAFC" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5M12 5l-7 7 7 7"/>
+            </svg>
+          </button>
+          <div>
+            <p style={{ fontSize: 22, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.1, marginBottom: 2 }}>Result</p>
+            <p style={{ fontSize: 14, color: '#93A4BC' }}>
+              {result.isDailyChallenge ? 'Daily Challenge' : (result.collection || 'Practice')} · {result.subject || 'Mixed GK'}
+            </p>
+          </div>
+        </div>
+
+        {/* ── 1. RESULT SUMMARY CARD ── */}
         {(() => {
-          const acc   = result.accuracy ?? 0;
-          const score = result.rawScore % 1 === 0 ? result.rawScore : result.rawScore.toFixed(1);
-          let headline, color;
-          if (acc >= 70) {
-            headline = 'Excellent Work 🔥';
-            color    = '#10B981';
-          } else if (acc >= 40) {
-            headline = 'Good Attempt 👍';
-            color    = '#F59E0B';
+          const acc = result.accuracy ?? 0;
+          const rawScore = result.rawScore ?? 0;
+          const score = rawScore % 1 === 0 ? rawScore : Number(rawScore).toFixed(1);
+          const answeredCount = (result.correct || 0) + (result.incorrect || 0);
+          const scoreNum = Number(rawScore);
+          const scoreColor = scoreNum < 0 ? '#FBBF24' : scoreNum === 0 ? '#F8FAFC' : '#F97316';
+
+          let statusLabel, statusBg, statusBorder, statusColor;
+          if (acc <= 30) {
+            statusLabel = 'Needs Revision';
+            statusBg = 'rgba(251,191,36,0.10)'; statusBorder = 'rgba(251,191,36,0.30)'; statusColor = '#FBBF24';
+          } else if (acc <= 50) {
+            statusLabel = 'Keep Practicing';
+            statusBg = 'rgba(96,165,250,0.10)'; statusBorder = 'rgba(96,165,250,0.30)'; statusColor = '#60A5FA';
+          } else if (acc <= 70) {
+            statusLabel = 'Good Attempt';
+            statusBg = 'rgba(52,211,153,0.10)'; statusBorder = 'rgba(52,211,153,0.30)'; statusColor = '#34D399';
+          } else if (acc <= 85) {
+            statusLabel = 'Strong Score';
+            statusBg = 'rgba(52,211,153,0.14)'; statusBorder = 'rgba(52,211,153,0.35)'; statusColor = '#6EE7B7';
           } else {
-            headline = 'Needs Revision 💪';
-            color    = '#F97316';
+            statusLabel = 'Excellent';
+            statusBg = 'rgba(251,191,36,0.12)'; statusBorder = 'rgba(251,191,36,0.35)'; statusColor = '#FCD34D';
           }
+
+          const cardLabel = result.isDailyChallenge ? 'Daily Challenge Result'
+            : `${result.subject || 'Quiz'} Result`;
+
           return (
-            <div className="card-enter card-enter-1 bg-slate-800/70 border border-slate-700/50 rounded-3xl p-5 flex flex-col gap-4">
-
-              {/* Title + headline */}
-              <div className="text-center">
-                <p className="font-sans font-medium text-xs text-slate-500 uppercase tracking-widest mb-2">
-                  {result.subject} {result.topic !== result.subject ? `· ${result.topic}` : ''} Result
-                </p>
-                <p className="font-display font-black" style={{ fontSize: 24, color, lineHeight: 1.2, marginBottom: 4 }}>
-                  {headline}
-                </p>
-                <p className="font-sans text-sm" style={{ color: 'rgba(148,163,184,0.70)' }}>
-                  {score} marks · {Math.round(acc)}% accuracy
-                </p>
+            <div className="card-in" style={{ background: '#172235', border: '1px solid #2A3A52', borderRadius: 28, padding: '18px 20px', boxShadow: '0 16px 40px rgba(0,0,0,0.22)' }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: '#7EA0C4', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, textAlign: 'center' }}>
+                {cardLabel}
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
+                <span style={{ background: statusBg, border: `1px solid ${statusBorder}`, color: statusColor, borderRadius: 999, padding: '4px 16px', fontSize: 13, fontWeight: 700 }}>
+                  {statusLabel}
+                </span>
               </div>
+              <p style={{ textAlign: 'center', fontSize: 12, color: '#93A4BC', marginBottom: 14 }}>
+                You answered {answeredCount} of {result.totalQuestions || 0} questions
+              </p>
 
-              {/* Score + Accuracy boxes */}
-              <div className="flex gap-3">
-                <div className="flex-1 bg-slate-900/60 rounded-2xl p-4 flex flex-col items-center gap-1 border border-slate-700/40">
-                  <p className="score-pop font-display font-black text-3xl text-orange-400 leading-none">
-                    {score}
-                  </p>
-                  <p className="font-sans text-xs text-slate-500" style={{ marginTop: 2 }}>Marks</p>
+              {/* Score + Accuracy tiles */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                <div style={{ flex: 1, background: '#111B2D', border: '1px solid #243247', borderRadius: 16, padding: '12px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: 26, fontWeight: 900, color: scoreColor, lineHeight: 1 }}>{score}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: '#7EA0C4', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Score</span>
                 </div>
-                <div className="flex-1 bg-slate-900/60 rounded-2xl p-4 flex flex-col items-center gap-1 border border-slate-700/40">
-                  <p className="score-pop font-display font-black text-3xl text-emerald-400 leading-none" style={{ animationDelay: '0.35s' }}>
-                    {Math.round(acc)}%
-                  </p>
-                  <p className="font-sans text-xs text-slate-500" style={{ marginTop: 2 }}>Accuracy</p>
+                <div style={{ flex: 1, background: '#111B2D', border: '1px solid #243247', borderRadius: 16, padding: '12px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: 26, fontWeight: 900, color: '#F8FAFC', lineHeight: 1 }}>{Math.round(acc)}%</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: '#7EA0C4', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Accuracy</span>
                 </div>
               </div>
 
               {/* Correct / Wrong / Skipped */}
-              <div className="flex justify-around py-3 border-t border-slate-700/40 border-b border-slate-700/40">
+              <div style={{ display: 'flex', justifyContent: 'space-around', paddingTop: 10, paddingBottom: 10, borderTop: '1px solid #26364D', borderBottom: '1px solid #26364D', marginBottom: 16 }}>
                 {[
-                  { val: result.correct,   label: 'Correct', color: '#10B981' },
+                  { val: result.correct,   label: 'Correct', color: '#34D399' },
                   { val: result.incorrect, label: 'Wrong',   color: '#F87171' },
                   { val: result.skipped,   label: 'Skipped', color: '#94A3B8' },
                 ].map(({ val, label, color: c }) => (
-                  <div key={label} className="flex flex-col items-center gap-0.5">
-                    <span className="font-display font-black text-2xl leading-none" style={{ color: c }}>{val}</span>
-                    <span className="font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">{label}</span>
+                  <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                    <span style={{ fontSize: 22, fontWeight: 900, color: c, lineHeight: 1 }}>{val}</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: '#7EA0C4', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
                   </div>
                 ))}
               </div>
 
-              {/* Review Mistakes CTA — Orange 3D primary */}
+              {/* CTAs */}
               <button
                 onClick={() => { setLoadingDetailed(true); setTimeout(() => router.push('/result/detailed'), 100); }}
-                className="w-full font-display font-bold text-base flex items-center justify-center"
                 style={{
-                  height: 64, borderRadius: 22, cursor: 'pointer',
-                  background: 'linear-gradient(180deg, #FF8A1F 0%, #FF5A00 100%)',
-                  color: '#ffffff', fontSize: 16, fontWeight: 800,
-                  border: '1px solid rgba(255,205,160,0.35)',
-                  boxShadow: '0 8px 0 #B73E00, 0 18px 38px rgba(255,106,0,0.34)',
-                  transform: 'translateY(0)',
-                  transition: 'transform 140ms ease, box-shadow 140ms ease',
+                  width: '100%', height: 50, borderRadius: 16, cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                  color: '#FFFFFF', fontSize: 14, fontWeight: 700, border: 'none',
+                  boxShadow: '0 10px 24px rgba(249,115,22,0.25)',
+                  marginBottom: 10,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transform: 'translateY(0)', transition: 'transform 140ms ease, box-shadow 140ms ease',
                 }}
-                onPointerDown={e => {
-                  e.currentTarget.style.transform = 'translateY(5px)';
-                  e.currentTarget.style.boxShadow = '0 3px 0 #B73E00, 0 8px 18px rgba(255,106,0,0.24)';
-                }}
-                onPointerUp={e => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 8px 0 #B73E00, 0 18px 38px rgba(255,106,0,0.34)';
-                }}
-                onPointerLeave={e => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 8px 0 #B73E00, 0 18px 38px rgba(255,106,0,0.34)';
-                }}
+                onPointerEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 16px 32px rgba(249,115,22,0.38)'; }}
+                onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(249,115,22,0.20)'; }}
+                onPointerUp={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 24px rgba(249,115,22,0.25)'; }}
+                onPointerLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 24px rgba(249,115,22,0.25)'; }}
               >
                 {loadingDetailed ? 'Loading…' : 'Review Mistakes →'}
               </button>
 
-              {/* Try Again — Dark elevated secondary */}
               <button
                 onClick={handleContinue}
-                className="w-full font-display font-bold text-sm flex items-center justify-center"
                 style={{
-                  height: 52, borderRadius: 16, cursor: 'pointer',
-                  background: '#1E293B', color: '#94A3B8',
-                  border: '1px solid rgba(148,163,184,0.16)',
-                  boxShadow: '0 4px 0 #0F172A, 0 8px 16px rgba(0,0,0,0.30)',
-                  transform: 'translateY(0)',
-                  transition: 'transform 140ms ease, box-shadow 140ms ease',
+                  width: '100%', height: 46, borderRadius: 14, cursor: 'pointer',
+                  background: '#1E2B40', color: '#F8FAFC',
+                  border: '1px solid #334155', fontSize: 14, fontWeight: 600,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transform: 'scale(1)', transition: 'transform 140ms ease, background 140ms ease',
                 }}
-                onPointerDown={e => {
-                  e.currentTarget.style.transform = 'translateY(3px)';
-                  e.currentTarget.style.boxShadow = '0 1px 0 #0F172A, 0 3px 8px rgba(0,0,0,0.20)';
-                }}
-                onPointerUp={e => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 0 #0F172A, 0 8px 16px rgba(0,0,0,0.30)';
-                }}
-                onPointerLeave={e => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 0 #0F172A, 0 8px 16px rgba(0,0,0,0.30)';
-                }}
+                onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.background = '#243247'; }}
+                onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#1E2B40'; }}
+                onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#1E2B40'; }}
               >
-                Try Again
+                Practice Again
               </button>
-
-              {result.partialAttempt && (
-                <p className="text-center font-sans text-xs text-slate-500">
-                  You answered {result.answeredCount ?? result.attemptedCount ?? 0} of {result.totalQuestions} questions.
-                </p>
-              )}
             </div>
           );
         })()}
 
-        {/* ── XP earned banner (logged-in) ── */}
+        {/* ── 2. XP + STREAK STRIP ── */}
         {savingXP && !xpResult && (
-          <div className="bg-gradient-to-r from-emerald-900/60 to-teal-900/60 border border-emerald-500/30 rounded-2xl p-4 flex items-center gap-3">
+          <div style={{ background: '#13283A', border: '1px solid rgba(52,211,153,0.22)', borderRadius: 20, padding: 16, display: 'flex', alignItems: 'center', gap: 10, borderLeft: '4px solid #34D399' }}>
             <Loader size="sm" />
-            <span className="font-display font-bold text-sm text-emerald-300 animate-pulse">Saving your XP…</span>
+            <span style={{ fontSize: 13, color: '#34D399', fontWeight: 600 }}>Saving your XP…</span>
           </div>
         )}
         {xpResult && (
-          <div className="xp-burst bg-gradient-to-r from-emerald-900/60 to-teal-900/60 border border-emerald-500/30 rounded-2xl p-4">
-            <div className="flex items-center justify-between">
-              <span className="font-display font-bold text-base text-white">⚡ +{xpResult.xpEarned} XP earned</span>
-              <span className="font-sans font-medium text-xs text-orange-400">🔥 {xpResult.streakCount} day streak</span>
+          <div className="xp-strip-in" style={{ background: '#13283A', border: '1px solid rgba(52,211,153,0.22)', borderRadius: 20, padding: 16, borderLeft: '4px solid #34D399' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC' }}>+{xpResult.xpEarned} XP earned</span>
+              {xpResult.streakCount > 0 && (
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#FDBA74' }}>🔥 {xpResult.streakCount} day streak</span>
+              )}
             </div>
-            <p className="font-sans text-sm text-emerald-300 mt-1">Level: {xpResult.level} · {xpResult.totalXP} XP total</p>
-            {xpResult.isFirstQuizOfDay && (
-              <p className="font-sans text-xs text-yellow-300 mt-0.5">🌅 First quiz bonus included!</p>
-            )}
-            {xpResult.streakMilestone && (
-              <p className="font-sans text-xs text-orange-300 mt-0.5 font-semibold">
-                🏆 {xpResult.streakMilestone.label} +{xpResult.streakMilestone.bonus} bonus XP!
-              </p>
-            )}
+            <p style={{ fontSize: 12, color: '#93A4BC' }}>
+              Level: {xpResult.level} · {xpResult.totalXP} XP total
+            </p>
           </div>
         )}
 
-        {/* ── AI Mentor ── */}
+        {/* ── 3. SSC PYQ PRACTICE CARD ── */}
+        <div
+          className="pyq-in"
+          onClick={() => router.push('/subjects?collection=ssc_pyq')}
+          style={{ background: '#172235', border: '1px solid #2A3A52', borderRadius: 24, padding: 20, cursor: 'pointer' }}
+        >
+          <div style={{ display: 'inline-flex', alignItems: 'center', marginBottom: 14, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: 999, padding: '3px 12px' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#FDBA74', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most Useful Next Step</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 20 }}>📚</span>
+            </div>
+            <div>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC', marginBottom: 4 }}>SSC PYQ Practice</p>
+              <p style={{ fontSize: 12, color: '#93A4BC', lineHeight: 1.55 }}>
+                Practice previous year SSC questions by subject.<br />
+                Choose Polity, History, Science, Geography and more.
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+            {['7,000+ Questions', 'Exam-level Practice', 'Subject-wise'].map(tag => (
+              <span key={tag} style={{ fontSize: 10, fontWeight: 600, color: '#7EA0C4', background: 'rgba(126,160,196,0.10)', border: '1px solid rgba(126,160,196,0.20)', borderRadius: 999, padding: '3px 10px' }}>
+                {tag}
+              </span>
+            ))}
+          </div>
+          <button
+            onClick={() => router.push('/subjects?collection=ssc_pyq')}
+            style={{
+              width: '100%', height: 56, borderRadius: 18, cursor: 'pointer',
+              background: 'linear-gradient(135deg, #F97316, #EA580C)',
+              color: '#FFFFFF', fontSize: 15, fontWeight: 700, border: 'none',
+              boxShadow: '0 10px 24px rgba(249,115,22,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transform: 'translateY(0)', transition: 'transform 140ms ease, box-shadow 140ms ease',
+            }}
+            onPointerEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 16px 32px rgba(249,115,22,0.38)'; }}
+            onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(249,115,22,0.20)'; }}
+            onPointerUp={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 24px rgba(249,115,22,0.25)'; }}
+            onPointerLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 24px rgba(249,115,22,0.25)'; }}
+          >
+            Start PYQ Practice →
+          </button>
+        </div>
+
+        {/* ── 4. AI MENTOR ── */}
         {(() => {
           const acc = result.accuracy ?? 0;
-          const tip = acc < 50
-            ? 'Accuracy is low right now. Review your wrong answers first — that will improve your score faster than attempting more random quizzes.'
+          const wrongCount = result.incorrect || 0;
+          const tip = acc <= 30
+            ? `Accuracy is low right now. Start with your ${wrongCount} wrong answer${wrongCount !== 1 ? 's' : ''} — that will improve your score faster than attempting random quizzes.`
+            : acc <= 50
+            ? 'Keep practicing. Focus on topics where you made mistakes before attempting new ones.'
             : acc <= 70
             ? 'Good base. Your next goal should be reducing negative marks by improving accuracy.'
             : 'Strong attempt. Now practice mixed quizzes daily to improve speed and consistency.';
           return (
-            <div className="bg-slate-800/70 border border-slate-700/50 rounded-2xl p-4">
-              <p className="font-sans font-medium text-xs text-emerald-400 uppercase tracking-widest mb-2">🤖 AI Mentor</p>
-              <p className="font-sans font-medium text-sm text-slate-300 leading-relaxed">{tip}</p>
+            <div className="mentor-in" style={{ background: '#172235', border: '1px solid #2A3A52', borderRadius: 24, padding: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+                </svg>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#34D399', textTransform: 'uppercase', letterSpacing: '0.08em' }}>AI Mentor</p>
+              </div>
+              <p style={{ fontSize: 13, color: '#93A4BC', lineHeight: 1.65, marginBottom: 14 }}>{tip}</p>
               {aiAnalysis?.summary ? (
-                <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-3">
-                  <p className="font-sans text-sm text-emerald-100 leading-relaxed">{aiAnalysis.summary}</p>
+                <div style={{ borderRadius: 12, border: '1px solid rgba(52,211,153,0.20)', background: 'rgba(52,211,153,0.07)', padding: '12px 14px' }}>
+                  <p style={{ fontSize: 13, color: '#A7F3D0', lineHeight: 1.65 }}>{aiAnalysis.summary}</p>
                 </div>
               ) : (
                 <button
                   type="button"
                   onClick={handleGenerateAIAnalysis}
                   disabled={aiLoading}
-                  className="mt-3 font-display font-bold text-xs text-slate-900 disabled:opacity-70"
                   style={{
-                    minHeight: 36,
-                    padding: '8px 12px',
-                    borderRadius: 12,
-                    background: '#34D399',
-                    border: '1px solid rgba(167,243,208,0.50)',
+                    background: 'none', border: 'none', padding: 0,
                     cursor: aiLoading ? 'default' : 'pointer',
+                    color: '#34D399', fontSize: 13, fontWeight: 600,
+                    opacity: aiLoading ? 0.5 : 1,
                   }}
                 >
-                  {aiLoading ? 'Generating analysis...' : 'Generate AI Analysis'}
+                  {aiLoading ? 'Generating analysis...' : 'Generate Analysis →'}
                 </button>
               )}
-              {aiError && (
-                <p className="mt-2 font-sans text-xs text-rose-300">{aiError}</p>
-              )}
+              {aiError && <p style={{ marginTop: 8, fontSize: 12, color: '#F87171' }}>{aiError}</p>}
             </div>
           );
         })()}
 
-        {/* ── Guest save nudge (compact) ── */}
+        {/* ── 5. GUEST SIGN-IN NUDGE ── */}
         {isGuest && (
-          <div className="bg-slate-800/70 border border-slate-700/50 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+          <div style={{ background: '#172235', border: '1px solid #2A3A52', borderRadius: 18, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div>
-              <p className="font-display font-bold text-sm text-white leading-snug">Save your progress</p>
-              <p className="font-sans text-xs text-slate-500 mt-0.5">Login to save score, XP, streak &amp; rank.</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#F8FAFC', marginBottom: 2 }}>Save your progress</p>
+              <p style={{ fontSize: 11, color: '#64748B' }}>Login to save score, XP, streak &amp; rank.</p>
             </div>
             <button
               onClick={() => { document.cookie = 'userMode=; path=/; max-age=0'; signIn('google', { callbackUrl: '/dashboard' }); }}
-              className="flex-shrink-0 flex items-center gap-1.5 font-semibold text-xs"
-              style={{
-                padding: '8px 14px', borderRadius: 12, cursor: 'pointer',
-                background: '#FFFFFF', color: '#0F172A',
-                border: '1px solid rgba(255,255,255,0.30)',
-                boxShadow: '0 4px 0 #CBD5E1, 0 8px 20px rgba(0,0,0,0.20)',
-                transform: 'translateY(0)',
-                transition: 'transform 120ms ease, box-shadow 120ms ease',
-              }}
-              onPointerDown={e => {
-                e.currentTarget.style.transform = 'translateY(3px)';
-                e.currentTarget.style.boxShadow = '0 1px 0 #CBD5E1, 0 3px 8px rgba(0,0,0,0.15)';
-              }}
-              onPointerUp={e => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 0 #CBD5E1, 0 8px 20px rgba(0,0,0,0.20)';
-              }}
-              onPointerLeave={e => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 0 #CBD5E1, 0 8px 20px rgba(0,0,0,0.20)';
-              }}
+              style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 12, cursor: 'pointer', background: '#FFFFFF', color: '#0F172A', border: 'none', fontSize: 12, fontWeight: 600 }}
             >
               <GoogleSVG />
               Sign in
@@ -675,332 +710,127 @@ export default function Result() {
           </div>
         )}
 
-        {/* ── CONTINUE PRACTICING CARD ── */}
-        <div className="card-enter card-enter-3 bg-slate-800/70 border border-slate-700/50 rounded-2xl p-4">
-          <p className="font-sans font-medium text-xs text-slate-500 uppercase tracking-widest mb-1">
-            Keep Going
-          </p>
-          <p className="font-sans font-medium text-sm text-slate-400 mb-4">
-            Practice another quiz to continue your streak.
-            {xpResult?.streakCount > 0 && (
-              <span className="text-orange-400"> 🔥 {xpResult.streakCount} day streak</span>
-            )}
-          </p>
-          <button
-            onClick={handleContinue}
-            className="w-full font-display font-extrabold text-base flex items-center justify-center gap-2"
-            style={{
-              height: 60,
-              borderRadius: 22,
-              background: 'linear-gradient(180deg, #7C3AED 0%, #5B21B6 100%)',
-              color: '#FFFFFF',
-              fontSize: 16,
-              fontWeight: 800,
-              border: '1px solid rgba(196,181,253,0.35)',
-              boxShadow: '0 8px 0 #3B1678, 0 18px 36px rgba(124,58,237,0.32)',
-              cursor: 'pointer',
-              transform: 'translateY(0)',
-              transition: 'transform 140ms ease, box-shadow 140ms ease',
-            }}
-            onPointerDown={e => {
-              e.currentTarget.style.transform = 'translateY(5px)';
-              e.currentTarget.style.boxShadow = '0 3px 0 #3B1678, 0 8px 18px rgba(124,58,237,0.24)';
-            }}
-            onPointerUp={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 0 #3B1678, 0 18px 36px rgba(124,58,237,0.32)';
-            }}
-            onPointerLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 0 #3B1678, 0 18px 36px rgba(124,58,237,0.32)';
-            }}
-          >
-            ⚡ Practice Again →
-          </button>
+        {/* ── 6. WEEKLY CHAMPIONS ── */}
+        <div className="champs-in" style={{ background: '#172235', border: '1px solid rgba(251,191,36,0.20)', borderRadius: 24, padding: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#F8FAFC' }}>Weekly Champions</p>
+            <button
+              onClick={() => loadWeeklyLeaderboard({ forceRefresh: true })}
+              disabled={leaderboardRefreshing}
+              style={{ fontSize: 16, color: '#64748B', background: 'none', border: 'none', cursor: 'pointer', opacity: leaderboardRefreshing ? 0.4 : 0.7, lineHeight: 1 }}
+              aria-label="Refresh leaderboard"
+            >↻</button>
+          </div>
+
+          {topPerformers.length === 0 ? (
+            <p style={{ fontSize: 12, color: '#64748B', textAlign: 'center', padding: '8px 0' }}>
+              No scores yet this week. Be the first! 🚀
+            </p>
+          ) : (() => {
+            const top = topPerformers[0];
+            const isSelfTop = top.email === session?.user?.email;
+            return (
+              <div className="champ-slide">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isLoggedIn ? 12 : 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 16 }}>🥇</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: isSelfTop ? '#34D399' : '#F8FAFC' }}>
+                      {(top.name || 'User').split(' ')[0]}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#FBBF24' }}>
+                    {Math.round(top.totalScore || 0).toLocaleString()} XP
+                  </span>
+                </div>
+                {isLoggedIn && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTop: '1px solid #26364D' }}>
+                    <span style={{ fontSize: 12, color: '#93A4BC' }}>
+                      Your Rank {userRankIdx !== -1 ? `#${userRankIdx + 1}` : '—'}
+                    </span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#34D399', background: 'rgba(52,211,153,0.10)', border: '1px solid rgba(52,211,153,0.25)', borderRadius: 999, padding: '2px 10px' }}>
+                      Active today
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {leaderboardMsg && (
+            <p style={{ fontSize: 11, textAlign: 'center', marginTop: 8, color: '#FBBF24' }}>{leaderboardMsg}</p>
+          )}
+
+          <div style={{ marginTop: 14, textAlign: 'center' }}>
+            <button
+              onClick={() => router.push('/leaderboard')}
+              style={{ fontSize: 13, fontWeight: 600, color: '#FDBA74', background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              View leaderboard →
+            </button>
+          </div>
         </div>
 
-        {/* ── CHALLENGE YOUR FRIENDS ── */}
-        <div className="bg-slate-800/70 border border-slate-700/50 rounded-3xl p-5">
-          <p className="font-sans font-medium text-xs text-slate-500 uppercase tracking-widest mb-1">
-            Challenge Friends
-          </p>
-          <p className="font-sans font-medium text-sm text-slate-400 mb-4">Share your score and invite friends to beat it.</p>
-          <div className="flex gap-3">
-            {/* Share on WhatsApp — Green 3D */}
+        {/* ── 7. SHARE RESULT ── */}
+        <div style={{ background: '#172235', border: '1px solid #2A3A52', borderRadius: 20, padding: '16px 18px' }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#F8FAFC', marginBottom: 2 }}>Share your result</p>
+          <p style={{ fontSize: 12, color: '#64748B', marginBottom: 14 }}>Challenge friends to beat your score.</p>
+          <div style={{ display: 'flex', gap: 10 }}>
             <button
               onClick={handleShareWhatsApp}
-              className="flex-1 font-display font-bold text-sm flex items-center justify-center gap-2"
               style={{
-                height: 52, borderRadius: 18, cursor: 'pointer',
-                background: 'linear-gradient(180deg, #22C55E 0%, #16A34A 100%)',
-                color: '#ffffff',
-                border: '1px solid rgba(134,239,172,0.35)',
-                boxShadow: '0 6px 0 #0F7A35, 0 14px 28px rgba(34,197,94,0.28)',
-                transform: 'translateY(0)',
-                transition: 'transform 140ms ease, box-shadow 140ms ease',
+                flex: 1, height: 44, borderRadius: 12, cursor: 'pointer',
+                background: '#16A34A', color: '#ffffff', border: 'none',
+                fontSize: 13, fontWeight: 600,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                transform: 'scale(1)', transition: 'background 140ms ease, transform 140ms ease',
               }}
-              onPointerDown={e => {
-                e.currentTarget.style.transform = 'translateY(4px)';
-                e.currentTarget.style.boxShadow = '0 2px 0 #0F7A35, 0 8px 16px rgba(34,197,94,0.22)';
-              }}
-              onPointerUp={e => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 6px 0 #0F7A35, 0 14px 28px rgba(34,197,94,0.28)';
-              }}
-              onPointerLeave={e => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 6px 0 #0F7A35, 0 14px 28px rgba(34,197,94,0.28)';
-              }}
+              onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.background = '#22C55E'; }}
+              onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#16A34A'; }}
+              onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#16A34A'; }}
             >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="#ffffff">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="#ffffff">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
               </svg>
               Share on WhatsApp
             </button>
-
-            {/* Copy Result — Raised slate */}
             <button
               onClick={handleCopy}
-              className="flex-1 font-display font-bold text-sm flex items-center justify-center gap-2"
               style={{
-                height: 52, borderRadius: 18, cursor: 'pointer',
-                background: copied
-                  ? 'linear-gradient(180deg, #059669 0%, #047857 100%)'
-                  : 'linear-gradient(180deg, #475569 0%, #334155 100%)',
-                color: '#E2E8F0',
-                border: '1px solid rgba(203,213,225,0.18)',
-                boxShadow: copied
-                  ? '0 5px 0 #065F46, 0 12px 24px rgba(5,150,105,0.28)'
-                  : '0 5px 0 #1E293B, 0 12px 24px rgba(15,23,42,0.32)',
-                transform: 'translateY(0)',
-                transition: 'transform 140ms ease, box-shadow 140ms ease, background 200ms ease',
+                flex: 1, height: 44, borderRadius: 12, cursor: 'pointer',
+                background: copied ? 'rgba(52,211,153,0.12)' : '#1E2B40',
+                color: copied ? '#34D399' : '#F8FAFC',
+                border: `1px solid ${copied ? 'rgba(52,211,153,0.30)' : '#334155'}`,
+                fontSize: 13, fontWeight: 600,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                transform: 'scale(1)', transition: 'background 200ms ease, transform 140ms ease',
               }}
-              onPointerDown={e => {
-                e.currentTarget.style.transform = 'translateY(3px)';
-                e.currentTarget.style.boxShadow = copied
-                  ? '0 2px 0 #065F46, 0 6px 14px rgba(5,150,105,0.20)'
-                  : '0 2px 0 #1E293B, 0 6px 14px rgba(15,23,42,0.24)';
-              }}
-              onPointerUp={e => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = copied
-                  ? '0 5px 0 #065F46, 0 12px 24px rgba(5,150,105,0.28)'
-                  : '0 5px 0 #1E293B, 0 12px 24px rgba(15,23,42,0.32)';
-              }}
-              onPointerLeave={e => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = copied
-                  ? '0 5px 0 #065F46, 0 12px 24px rgba(5,150,105,0.28)'
-                  : '0 5px 0 #1E293B, 0 12px 24px rgba(15,23,42,0.32)';
-              }}
+              onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+              onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+              onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
             >
               {copied ? (
-                <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E2E8F0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  Copied ✓
-                </>
+                <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Copied ✓</>
               ) : (
-                <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                  </svg>
-                  Copy Result
-                </>
+                <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#93A4BC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy Result</>
               )}
             </button>
           </div>
-        </div>
-
-        {/* ── WEEKLY CHAMPIONS + VIEW LEADERBOARD ── */}
-        <div className="p-4" style={{ borderRadius: 22, background: '#111C2E', border: '1px solid rgba(253,186,59,0.22)', boxShadow: '0 0 24px rgba(253,186,59,0.06)' }}>
-
-          <style>{`
-            @keyframes proofFade {
-              from { opacity: 0; transform: translateY(7px); }
-              to   { opacity: 1; transform: translateY(0); }
-            }
-            .champ-slide { animation: proofFade 0.36s cubic-bezier(0.22,1,0.36,1) both; }
-          `}</style>
-
-          {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <p className="font-display font-bold text-base text-white">🔥 Weekly Champions</p>
-            <div className="flex items-center gap-3">
-              {leaderboardRefreshing && (
-                <span className="font-sans text-xs text-slate-500">Updating...</span>
-              )}
-              <button
-                onClick={() => loadWeeklyLeaderboard({ forceRefresh: true })}
-                disabled={leaderboardRefreshing}
-                className="font-sans text-xs text-slate-400 active:opacity-70 disabled:opacity-40"
-                aria-label="Refresh leaderboard"
-              >
-                ↻
-              </button>
-            </div>
-          </div>
-
-          {topPerformers.length === 0 ? (
-            <p className="font-sans text-xs text-slate-500 text-center py-4">
-              No scores yet this week. Be the first! 🚀
-            </p>
-          ) : (
-            <>
-              {/* Full-width auto-advancing card */}
-              {(() => {
-                const idx    = champsSlide % Math.min(topPerformers.length, 3);
-                const player = topPerformers[idx];
-                const isSelf = player.email === session?.user?.email;
-                const cardTheme = [
-                  { bg: 'rgba(255,184,0,0.08)',   border: 'rgba(255,184,0,0.24)'   },
-                  { bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.22)' },
-                  { bg: 'rgba(180,83,9,0.08)',    border: 'rgba(180,83,9,0.20)'    },
-                ][idx];
-                return (
-                  <div
-                    key={idx}
-                    className="champ-slide"
-                    style={{
-                      background: cardTheme.bg,
-                      border: `1px solid ${cardTheme.border}`,
-                      borderRadius: 18,
-                      padding: '14px 16px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 14,
-                    }}
-                  >
-                    <div style={{ position: 'relative', flexShrink: 0 }}>
-                      <ChampionAvatar imageUrl={player.image || null} name={player.name} size={36} />
-                      <span style={{ position: 'absolute', top: -4, left: -4, fontSize: 16, lineHeight: 1 }}>
-                        {RANK_MEDALS[idx]}
-                      </span>
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                        <p className="font-display font-bold truncate"
-                          style={{ fontSize: 15, color: isSelf ? '#10b981' : '#ffffff', margin: 0 }}>
-                          {(player.name || 'User').split(' ')[0]}
-                        </p>
-                        <span style={{
-                          fontSize: 10, fontWeight: 700, flexShrink: 0,
-                          color: '#facc15', background: 'rgba(250,204,21,0.15)',
-                          border: '1px solid rgba(250,204,21,0.3)',
-                          borderRadius: 20, padding: '2px 8px',
-                        }}>
-                          ⭐ {player.level || 'Aspirant'}
-                        </span>
-                        {isSelf && (
-                          <span style={{
-                            fontSize: 10, fontWeight: 700, flexShrink: 0,
-                            background: 'rgba(16,185,129,0.15)', color: '#10b981',
-                            border: '1px solid rgba(16,185,129,0.3)',
-                            borderRadius: 20, padding: '2px 7px',
-                          }}>You</span>
-                        )}
-                      </div>
-                    </div>
-                    <p className="font-display font-bold"
-                      style={{ fontSize: 17, color: '#FDBA3B', margin: 0, flexShrink: 0 }}>
-                      {Math.round(player.totalScore || 0).toLocaleString()} XP
-                    </p>
-                  </div>
-                );
-              })()}
-
-              {/* Dot indicators */}
-              {topPerformers.length > 1 && (
-                <div style={{ display: 'flex', gap: 5, justifyContent: 'center', marginTop: 10 }}>
-                  {topPerformers.slice(0, 3).map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setChampsSlide(i)}
-                      aria-label={`Champion ${i + 1}`}
-                      style={{
-                        width: champsSlide % 3 === i ? 18 : 6,
-                        height: 6, borderRadius: 3,
-                        background: champsSlide % 3 === i ? '#f59e0b' : 'rgba(255,255,255,0.18)',
-                        border: 'none', padding: 0, cursor: 'pointer',
-                        transition: 'width 0.3s ease, background 0.3s ease',
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {leaderboardMsg && (
-                <p className="font-sans text-[11px] text-center mt-2" style={{ color: '#f59e0b' }}>
-                  {leaderboardMsg}
-                </p>
-              )}
-
-              {/* Your rank row */}
-              {isLoggedIn && (
-                <div className="mt-3 pt-3 border-t border-slate-700/40 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-sans text-xs text-slate-400">Your Rank</span>
-                    <span className="font-display font-black text-base text-white">
-                      {userRankIdx !== -1 ? `#${userRankIdx + 1}` : '—'}
-                    </span>
-                  </div>
-                  <span className="text-xs font-semibold rounded-full px-3 py-1 bg-emerald-900/50 text-emerald-400 border border-emerald-700/40">
-                    ✓ Active today
-                  </span>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* View Full Leaderboard — Gold/amber 3D */}
-          <button
-            onClick={() => router.push('/leaderboard')}
-            className="w-full mt-4 font-display font-bold text-sm flex items-center justify-center gap-2"
-            style={{
-              height: 52, borderRadius: 18, cursor: 'pointer',
-              background: 'linear-gradient(180deg, #FBBF24 0%, #D97706 100%)',
-              color: '#111827',
-              fontWeight: 900,
-              border: '1px solid rgba(253,230,138,0.40)',
-              boxShadow: '0 6px 0 #92400E, 0 14px 28px rgba(245,158,11,0.28)',
-              transform: 'translateY(0)',
-              transition: 'transform 140ms ease, box-shadow 140ms ease',
-            }}
-            onPointerDown={e => {
-              e.currentTarget.style.transform = 'translateY(4px)';
-              e.currentTarget.style.boxShadow = '0 2px 0 #92400E, 0 8px 16px rgba(245,158,11,0.22)';
-            }}
-            onPointerUp={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 6px 0 #92400E, 0 14px 28px rgba(245,158,11,0.28)';
-            }}
-            onPointerLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 6px 0 #92400E, 0 14px 28px rgba(245,158,11,0.28)';
-            }}
-          >
-            🏆 View Full Leaderboard →
-          </button>
-
         </div>
 
         {/* ── FEEDBACK LINK ── */}
-        <div className="text-center pb-2">
+        <div style={{ textAlign: 'center', paddingTop: 8, paddingBottom: 8 }}>
           {feedbackSent ? (
-            <p className="font-sans text-xs text-emerald-400">🙏 Thanks for your feedback!</p>
+            <p style={{ fontSize: 12, color: '#34D399' }}>🙏 Thanks for your feedback!</p>
           ) : (
             <button
               onClick={() => setShowFeedbackSheet(true)}
-              className="font-sans text-xs text-slate-500 active:opacity-60 transition-opacity"
+              style={{ fontSize: 12, color: '#64748B', background: 'none', border: 'none', cursor: 'pointer' }}
             >
-              Had an issue with this quiz?{' '}
-              <span style={{ color: '#94A3B8', textDecoration: 'underline', textUnderlineOffset: 3 }}>Send feedback</span>
+              Help us improve your quiz experience.{' '}
+              <span style={{ color: '#93A4BC', textDecoration: 'underline', textUnderlineOffset: 3 }}>Share feedback</span>
             </button>
           )}
         </div>
-
 
       </div>
 
@@ -1008,11 +838,43 @@ export default function Result() {
         <Loader fullScreen size="md" label="Loading detailed analysis…" />
       )}
 
+      {/* ── FEEDBACK SUCCESS TOAST ── */}
+      {showFeedbackToast && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.55)',
+          animation: 'backdropIn 0.2s ease both',
+        }}>
+          <div style={{
+            background: '#172235', border: '1px solid rgba(52,211,153,0.30)',
+            borderRadius: 24, padding: '28px 32px',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+            boxShadow: '0 24px 48px rgba(0,0,0,0.40)',
+            animation: 'toastPop 0.28s cubic-bezier(0.34,1.56,0.64,1) both',
+            maxWidth: 300, width: '80%',
+          }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: '50%',
+              background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.30)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <p style={{ fontSize: 16, fontWeight: 700, color: '#F8FAFC', textAlign: 'center' }}>Thanks for your feedback!</p>
+            <p style={{ fontSize: 13, color: '#93A4BC', textAlign: 'center', lineHeight: 1.5 }}>We'll use it to improve your quiz experience.</p>
+          </div>
+          <style>{`@keyframes toastPop { from { opacity:0; transform:scale(0.88); } to { opacity:1; transform:scale(1); } }`}</style>
+        </div>
+      )}
+
       {/* ── FEEDBACK BOTTOM SHEET ── */}
       {showFeedbackSheet && (
         <>
           <style>{`
-            @keyframes sheetUp   { from { transform: translateY(100%); } to { transform: translateY(0); } }
+            @keyframes modalIn   { from { opacity:0; transform:translate(-50%,-50%) scale(0.94); } to { opacity:1; transform:translate(-50%,-50%) scale(1); } }
             @keyframes backdropIn{ from { opacity: 0; } to { opacity: 1; } }
           `}</style>
 
@@ -1027,30 +889,25 @@ export default function Result() {
             }}
           />
 
-          {/* Sheet — anchored to bottom, max-width 480px centred on wider screens */}
+          {/* Modal — centered on screen */}
           <div
             style={{
               position: 'fixed',
-              bottom: 0, left: '50%', transform: 'translateX(-50%)',
-              width: '100%', maxWidth: 480,
+              top: '50%', left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: 'calc(100% - 32px)', maxWidth: 420,
               zIndex: 50,
               background: '#1E293B',
-              borderRadius: '22px 22px 0 0',
-              boxShadow: '0 -8px 48px rgba(0,0,0,0.50)',
-              animation: 'sheetUp 0.30s cubic-bezier(0.22,1,0.36,1)',
-              /* Respect iOS home indicator */
-              paddingBottom: 'calc(20px + env(safe-area-inset-bottom))',
+              borderRadius: 24,
+              boxShadow: '0 24px 64px rgba(0,0,0,0.55)',
+              animation: 'modalIn 0.25s cubic-bezier(0.22,1,0.36,1)',
+              padding: '24px 20px',
             }}
           >
-            {/* Drag handle */}
-            <div style={{ paddingTop: 14, paddingBottom: 4, display: 'flex', justifyContent: 'center' }}>
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(148,163,184,0.25)' }} />
-            </div>
-
-            <div style={{ padding: '12px 20px 0' }}>
+            <div style={{ padding: 0 }}>
               {/* Header row */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <p className="font-display font-black" style={{ fontSize: 18, color: '#F8FAFC' }}>Help us improve</p>
+                <p className="font-display font-black" style={{ fontSize: 18, color: '#F8FAFC' }}>Share feedback</p>
                 <button
                   onClick={() => setShowFeedbackSheet(false)}
                   style={{
@@ -1067,15 +924,39 @@ export default function Result() {
                 </button>
               </div>
 
-              <p className="font-sans" style={{ fontSize: 13, color: '#64748B', marginBottom: 16, lineHeight: 1.5 }}>
-                Report an issue or share a suggestion about this quiz.
+              <p className="font-sans" style={{ fontSize: 13, color: '#64748B', marginBottom: 12, lineHeight: 1.5 }}>
+                Tell us what went wrong or what we can improve.
               </p>
+
+              {/* Type chips */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                {['Wrong answer', 'Typo', 'Poor explanation', 'App issue', 'Suggestion'].map(type => {
+                  const active = feedbackType === type;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setFeedbackType(active ? '' : type)}
+                      style={{
+                        padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
+                        cursor: 'pointer', fontFamily: 'inherit',
+                        background: active ? 'rgba(249,115,22,0.15)' : 'rgba(148,163,184,0.08)',
+                        border: active ? '1px solid rgba(249,115,22,0.50)' : '1px solid rgba(148,163,184,0.18)',
+                        color: active ? '#FDBA74' : '#64748B',
+                        transition: 'background 120ms ease, border-color 120ms ease, color 120ms ease',
+                      }}
+                    >
+                      {type}
+                    </button>
+                  );
+                })}
+              </div>
 
               {/* Textarea — 16px font prevents iOS auto-zoom */}
               <textarea
                 value={feedback}
                 onChange={e => setFeedback(e.target.value)}
-                placeholder="What went wrong, or what could be better?"
+                placeholder={"Describe the issue briefly...\n\nExample: Option B seems correct, but app marked C."}
                 autoFocus
                 rows={4}
                 style={{
@@ -1113,15 +994,15 @@ export default function Result() {
                 </button>
                 <button
                   onClick={async () => { await handleFeedbackSubmit(); setShowFeedbackSheet(false); }}
-                  disabled={!feedback.trim()}
+                  disabled={!feedbackType && !feedback.trim()}
                   style={{
                     flex: 1, minHeight: 52, borderRadius: 16,
-                    background: feedback.trim() ? 'linear-gradient(90deg, #FF7A1A, #FF5A00)' : 'rgba(148,163,184,0.08)',
+                    background: (feedbackType || feedback.trim()) ? 'linear-gradient(90deg, #FF7A1A, #FF5A00)' : 'rgba(148,163,184,0.08)',
                     border: 'none',
-                    color: feedback.trim() ? '#fff' : '#475569',
+                    color: (feedbackType || feedback.trim()) ? '#fff' : '#475569',
                     fontFamily: 'inherit', fontWeight: 700, fontSize: 15,
-                    boxShadow: feedback.trim() ? '0 8px 24px rgba(255,106,0,0.25)' : 'none',
-                    cursor: feedback.trim() ? 'pointer' : 'not-allowed',
+                    boxShadow: (feedbackType || feedback.trim()) ? '0 8px 24px rgba(255,106,0,0.25)' : 'none',
+                    cursor: (feedbackType || feedback.trim()) ? 'pointer' : 'not-allowed',
                     transition: 'background 0.15s, box-shadow 0.15s',
                   }}
                 >
