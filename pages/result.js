@@ -6,7 +6,8 @@ import XPToast from '@/components/XPToast';
 import Confetti from '@/components/Confetti';
 
 import Loader from '@/components/ui/Loader';
-import { fetchAISummary } from '@/lib/fetchAI';
+import { fetchWithClientCache, patchCache, readCache, writeCache } from '@/lib/clientCache';
+import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -53,6 +54,44 @@ const GoogleSVG = () => (
   </svg>
 );
 
+function patchProfileCaches(profileSnapshot) {
+  if (!profileSnapshot) return;
+  try {
+    writeCache(CACHE_KEYS.USER_PROFILE, profileSnapshot);
+    patchCache(CACHE_KEYS.DASHBOARD_BOOTSTRAP, data => ({
+      ...(data || {}),
+      profile: profileSnapshot,
+    }));
+  } catch {}
+}
+
+function patchGuestProfileCache() {
+  try {
+    const today = new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const existing = readCache(CACHE_KEYS.GUEST_PROFILE);
+    const next = {
+      ...(existing?.data || {}),
+      name: existing?.data?.name || 'Guest',
+      playedToday: true,
+      lastAttemptDate: today,
+    };
+    if (existing) patchCache(CACHE_KEYS.GUEST_PROFILE, () => next);
+    else writeCache(CACHE_KEYS.GUEST_PROFILE, next);
+  } catch {}
+}
+
+function getWeeklyPlayers(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.weeklyTop)) return data.weeklyTop;
+  if (Array.isArray(data?.leaders)) return data.leaders;
+  if (Array.isArray(data?.leaderboard?.weeklyTop)) return data.leaderboard.weeklyTop;
+  return [];
+}
+
+function getAIResultKey(sessionId) {
+  return `ai_result:${sessionId || 'latest'}`;
+}
+
 
 export default function Result() {
   const { data: session, status } = useSession();
@@ -62,8 +101,9 @@ export default function Result() {
     if (typeof window === 'undefined') return null;
     try { return JSON.parse(sessionStorage.getItem('quizResult') || 'null'); } catch { return null; }
   });
-  const [aiSummary, setAiSummary]             = useState(null);
-  const [summaryLoading, setSummaryLoading]   = useState(true);
+  const [aiAnalysis, setAiAnalysis]           = useState(null);
+  const [aiLoading, setAiLoading]             = useState(false);
+  const [aiError, setAiError]                 = useState('');
   const [xpResult, setXPResult]               = useState(null);
   const [savingXP, setSavingXP]               = useState(false);
   const [showXPToast, setShowXPToast]         = useState(false);
@@ -75,18 +115,50 @@ export default function Result() {
   const [showFeedbackSheet, setShowFeedbackSheet] = useState(false);
   const [showConfetti, setShowConfetti]       = useState(false);
   const [champsSlide, setChampsSlide]         = useState(0);
+  const [leaderboardRefreshing, setLeaderboardRefreshing] = useState(false);
+  const [leaderboardMsg, setLeaderboardMsg]   = useState('');
   const scoreSavedRef = useRef(false);
   const landingConfettiShownRef = useRef(false);
+  const leaderboardRefreshedAfterScoreRef = useRef(false);
 
 
 
-  // Fetch top performers
+  async function loadWeeklyLeaderboard({ forceRefresh = false, background = false } = {}) {
+    if (!background) setLeaderboardRefreshing(forceRefresh);
+    try {
+      const result = await fetchWithClientCache({
+        key: CACHE_KEYS.WEEKLY_LEADERBOARD,
+        url: '/api/leaderboard?scope=weekly',
+        maxAgeMs: CACHE_TTL.THIRTY_MINUTES,
+        forceRefresh,
+        onCache(entry) {
+          const players = getWeeklyPlayers(entry.data);
+          if (players.length > 0) setTopPerformers(players.slice(0, 5));
+        },
+        onFresh(data) {
+          const players = getWeeklyPlayers(data);
+          if (players.length > 0) setTopPerformers(players.slice(0, 5));
+        },
+      });
+      const players = getWeeklyPlayers(result.data);
+      if (players.length > 0) setTopPerformers(players.slice(0, 5));
+      setLeaderboardMsg(result.stale ? 'Showing saved leaderboard.' : '');
+    } catch {
+      const cached = readCache(CACHE_KEYS.WEEKLY_LEADERBOARD, CACHE_TTL.THIRTY_MINUTES);
+      const players = getWeeklyPlayers(cached?.data);
+      if (players.length > 0) {
+        setTopPerformers(players.slice(0, 5));
+        setLeaderboardMsg('Showing saved leaderboard.');
+      }
+    } finally {
+      if (!background) setLeaderboardRefreshing(false);
+    }
+  }
+
+  // Fetch top performers from cache first; API only when cache is absent/stale.
   useEffect(() => {
-    fetch('/api/leaderboard?scope=weekly')
-      .then(r => r.json())
-      .then(d => setTopPerformers((d.leaders || []).slice(0, 5)))
-      .catch(() => {});
-  }, []);
+    loadWeeklyLeaderboard();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-advance Weekly Champions carousel (mirrors dashboard behaviour)
   useEffect(() => {
@@ -134,6 +206,11 @@ export default function Result() {
         setSavingXP(false);
         if (data.ok) {
           setXPResult(data);
+          patchProfileCaches(data.profileSnapshot);
+          if (!leaderboardRefreshedAfterScoreRef.current) {
+            leaderboardRefreshedAfterScoreRef.current = true;
+            loadWeeklyLeaderboard({ forceRefresh: true, background: true });
+          }
           setShowXPToast(true);
           setTimeout(() => setShowXPToast(false), 4000);
           // Confetti on milestones: perfect score, high accuracy, streak milestone, or first quiz of day
@@ -153,27 +230,61 @@ export default function Result() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router.isReady, result]);
 
-  // AI summary — 5s timeout via fetchAISummary
   useEffect(() => {
-    if (!result) return;
-    if (result.aiData?.summary) {
-      setAiSummary(result.aiData.summary);
-      setSummaryLoading(false);
-      return;
+    if (!result || status !== 'unauthenticated') return;
+    patchGuestProfileCache();
+  }, [result, status]);
+
+  useEffect(() => {
+    if (!result || !router.isReady) return;
+    const key = getAIResultKey(router.query.sessionId || result.sessionId);
+    try {
+      const cached = sessionStorage.getItem(key);
+      if (cached) setAiAnalysis(JSON.parse(cached));
+    } catch {}
+  }, [result, router.isReady, router.query.sessionId]);
+
+  async function handleGenerateAIAnalysis() {
+    if (!result || aiLoading) return;
+    const key = getAIResultKey(router.query.sessionId || result.sessionId);
+    try {
+      const cached = sessionStorage.getItem(key);
+      if (cached) {
+        setAiAnalysis(JSON.parse(cached));
+        setAiError('');
+        return;
+      }
+    } catch {}
+
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const res = await fetch('/api/ai/result-insights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject:          result.subject,
+          topic:            result.topic,
+          totalQuestions:   result.totalQuestions,
+          correctAnswers:   result.correct,
+          incorrectAnswers: result.incorrect,
+          skipped:          result.skipped,
+          rawScore:         result.rawScore,
+          accuracy:         result.accuracy,
+        }),
+      });
+      if (!res.ok) throw new Error('AI request failed');
+      const data = await res.json();
+      const analysis = { summary: data.aiSummary || data.summary || '' };
+      if (!analysis.summary) throw new Error('Empty AI response');
+      sessionStorage.setItem(key, JSON.stringify(analysis));
+      setAiAnalysis(analysis);
+    } catch {
+      setAiError("Couldn’t generate AI analysis. Try again.");
+    } finally {
+      setAiLoading(false);
     }
-    fetchAISummary({
-      subject:          result.subject,
-      topic:            result.topic,
-      totalQuestions:   result.totalQuestions,
-      correctAnswers:   result.correct,
-      incorrectAnswers: result.incorrect,
-      skipped:          result.skipped,
-      rawScore:         result.rawScore,
-    }).then(({ text }) => {
-      setAiSummary(text);
-      setSummaryLoading(false);
-    });
-  }, [result]);
+  }
 
   const isGuest    = status === 'unauthenticated';
   const isLoggedIn = status === 'authenticated';
@@ -498,6 +609,31 @@ export default function Result() {
             <div className="bg-slate-800/70 border border-slate-700/50 rounded-2xl p-4">
               <p className="font-sans font-medium text-xs text-emerald-400 uppercase tracking-widest mb-2">🤖 AI Mentor</p>
               <p className="font-sans font-medium text-sm text-slate-300 leading-relaxed">{tip}</p>
+              {aiAnalysis?.summary ? (
+                <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-3">
+                  <p className="font-sans text-sm text-emerald-100 leading-relaxed">{aiAnalysis.summary}</p>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleGenerateAIAnalysis}
+                  disabled={aiLoading}
+                  className="mt-3 font-display font-bold text-xs text-slate-900 disabled:opacity-70"
+                  style={{
+                    minHeight: 36,
+                    padding: '8px 12px',
+                    borderRadius: 12,
+                    background: '#34D399',
+                    border: '1px solid rgba(167,243,208,0.50)',
+                    cursor: aiLoading ? 'default' : 'pointer',
+                  }}
+                >
+                  {aiLoading ? 'Generating analysis...' : 'Generate AI Analysis'}
+                </button>
+              )}
+              {aiError && (
+                <p className="mt-2 font-sans text-xs text-rose-300">{aiError}</p>
+              )}
             </div>
           );
         })()}
@@ -692,6 +828,19 @@ export default function Result() {
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <p className="font-display font-bold text-base text-white">🔥 Weekly Champions</p>
+            <div className="flex items-center gap-3">
+              {leaderboardRefreshing && (
+                <span className="font-sans text-xs text-slate-500">Updating...</span>
+              )}
+              <button
+                onClick={() => loadWeeklyLeaderboard({ forceRefresh: true })}
+                disabled={leaderboardRefreshing}
+                className="font-sans text-xs text-slate-400 active:opacity-70 disabled:opacity-40"
+                aria-label="Refresh leaderboard"
+              >
+                ↻
+              </button>
+            </div>
           </div>
 
           {topPerformers.length === 0 ? (
@@ -780,6 +929,12 @@ export default function Result() {
                     />
                   ))}
                 </div>
+              )}
+
+              {leaderboardMsg && (
+                <p className="font-sans text-[11px] text-center mt-2" style={{ color: '#f59e0b' }}>
+                  {leaderboardMsg}
+                </p>
               )}
 
               {/* Your rank row */}

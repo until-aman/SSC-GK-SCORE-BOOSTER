@@ -165,14 +165,31 @@ export default async function handler(req, res) {
     // Invalidate leaderboard cache so rankings reflect new XP immediately
     updateLeaderboardCacheRow('', '', '').catch(() => {});
 
+    let profileSnapshot = null;
+    try {
+      profileSnapshot = {
+        name:            user.name || session.user.name || '',
+        email,
+        totalXP:         newTotalXP,
+        level:           newLevel,
+        streakCount:     streakResult.streakCount,
+        lastAttemptDate: today,
+        playedToday:     true,
+      };
+    } catch (snapshotErr) {
+      console.warn('[score] Could not build profile snapshot:', snapshotErr.message);
+    }
+
     return res.status(200).json({
       ok: true,
       xpEarned,
       totalXP: newTotalXP,
       level: newLevel,
       streakCount: streakResult.streakCount,
+      lastAttemptDate: today,
       isFirstQuizOfDay,
       streakMilestone: milestoneCrossed,  // { bonus, label } or null
+      profileSnapshot,
     });
   } catch (err) {
     console.error('[score] Error:', err.message);

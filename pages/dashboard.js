@@ -12,6 +12,8 @@ import {
   readCache,
   fetchWithClientCache,
   formatLastUpdated,
+  writeCache,
+  clearAllAppCache,
 } from '@/lib/clientCache';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 
@@ -51,6 +53,14 @@ const SESSION_REFRESH_KEY = 'dashboard_refreshed_this_session';
 function isGuestMode() {
   if (typeof document === 'undefined') return false;
   return document.cookie.split(';').some(c => c.trim().startsWith('userMode=guest'));
+}
+
+function getWeeklyPlayers(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.weeklyTop)) return data.weeklyTop;
+  if (Array.isArray(data?.leaders)) return data.leaders;
+  if (Array.isArray(data?.leaderboard?.weeklyTop)) return data.leaderboard.weeklyTop;
+  return [];
 }
 
 function getStreakDays(streakCount, lastAttemptDate) {
@@ -375,6 +385,7 @@ export default function Dashboard() {
   const [champsSlide, setChampsSlide] = useState(0);
   const [bootstrapRefreshing, setBootstrapRefreshing] = useState(false);
   const [bootstrapMsg, setBootstrapMsg] = useState(null);
+  const [leaderboardMsg, setLeaderboardMsg] = useState(null);
 
   async function handleNotify(e, series) {
     e.stopPropagation();
@@ -427,6 +438,11 @@ export default function Dashboard() {
     setModal(null);
     setNotified(false);
     setNotifyLoading(false);
+  }
+
+  function handleClearAppCache() {
+    const removed = clearAllAppCache();
+    setBootstrapMsg(`Cleared ${removed} app cache ${removed === 1 ? 'entry' : 'entries'}.`);
   }
 
   async function handleNotifyInterest() {
@@ -507,10 +523,14 @@ export default function Dashboard() {
       setUserProfile(data.profile);
       setProfileLoading(false);
     }
-    if (Array.isArray(data.leaderboard?.weeklyTop) && data.leaderboard.weeklyTop.length > 0) {
-      setTopPlayers(data.leaderboard.weeklyTop);
+    const weeklyPlayers = getWeeklyPlayers(data);
+    if (weeklyPlayers.length > 0) {
+      setTopPlayers(weeklyPlayers);
+      writeCache(CACHE_KEYS.WEEKLY_LEADERBOARD, weeklyPlayers);
+      setHasWeeklyCache(true);
       setWeeklyLoading(false);
       setWeeklyUpdating(false);
+      setLeaderboardMsg(null);
     }
     const cols = data.collections || {};
     const newTotals = {};
@@ -519,6 +539,53 @@ export default function Dashboard() {
     });
     if (Object.keys(newTotals).length > 0) setCollectionTotals(prev => ({ ...prev, ...newTotals }));
     if (timestamp) setWeeklyUpdatedAt(timestamp);
+  }
+
+  async function loadWeeklyLeaderboard({ forceRefresh = false } = {}) {
+    setWeeklyUpdating(forceRefresh);
+    try {
+      const result = await fetchWithClientCache({
+        key: CACHE_KEYS.WEEKLY_LEADERBOARD,
+        url: '/api/leaderboard?scope=weekly',
+        maxAgeMs: CACHE_TTL.THIRTY_MINUTES,
+        forceRefresh,
+        onCache(entry) {
+          const players = getWeeklyPlayers(entry.data);
+          if (players.length > 0) {
+            setTopPlayers(players);
+            setHasWeeklyCache(true);
+            setWeeklyLoading(false);
+          }
+        },
+        onFresh(data) {
+          const players = getWeeklyPlayers(data);
+          if (players.length > 0) {
+            setTopPlayers(players);
+            setHasWeeklyCache(true);
+          }
+        },
+      });
+      const players = getWeeklyPlayers(result.data);
+      if (players.length > 0) setTopPlayers(players);
+      setWeeklyUpdatedAt(result.timestamp || Date.now());
+      setLeaderboardMsg(result.stale ? 'Showing saved leaderboard.' : null);
+    } catch {
+      const cached = readCache(CACHE_KEYS.WEEKLY_LEADERBOARD, CACHE_TTL.THIRTY_MINUTES);
+      const players = getWeeklyPlayers(cached?.data);
+      if (players.length > 0) {
+        setTopPlayers(players);
+        setHasWeeklyCache(true);
+        setLeaderboardMsg('Showing saved leaderboard.');
+      }
+    } finally {
+      setWeeklyLoading(false);
+      setWeeklyUpdating(false);
+    }
+  }
+
+  function handleLeaderboardRefresh() {
+    if (weeklyUpdating) return;
+    loadWeeklyLeaderboard({ forceRefresh: true });
   }
 
   async function handleBootstrapRefresh() {
@@ -554,8 +621,10 @@ export default function Dashboard() {
     } else {
       if (!isLoggedIn) setProfileLoading(false);
     }
+    const cachedHasLeaderboard = getWeeklyPlayers(cached?.data).length > 0;
     const alreadyRefreshed = !!sessionStorage.getItem(SESSION_REFRESH_KEY);
     if (cached?.isFresh || alreadyRefreshed) {
+      if (!cachedHasLeaderboard) loadWeeklyLeaderboard();
       setWeeklyLoading(false);
       return;
     }
@@ -571,9 +640,11 @@ export default function Dashboard() {
       },
     }).then(result => {
       if (result.stale) setBootstrapMsg('Showing saved data. Tap refresh for latest.');
+      if (getWeeklyPlayers(result.data).length === 0) loadWeeklyLeaderboard();
       setWeeklyLoading(false);
     }).catch(() => {
       if (cached) setBootstrapMsg("Couldn't refresh right now. Showing saved data.");
+      if (!cachedHasLeaderboard) loadWeeklyLeaderboard();
       setWeeklyLoading(false);
     });
   }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -732,6 +803,15 @@ export default function Dashboard() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                type="button"
+                onClick={handleClearAppCache}
+                className="rounded-full border border-rose-400/30 bg-rose-500/10 px-2.5 py-1 font-sans text-[10px] font-semibold text-rose-200"
+              >
+                Clear App Cache
+              </button>
+            )}
             <button
               onClick={() => isLoggedIn && router.push('/history')}
               className="bg-yellow-500/20 border border-yellow-400/50 rounded-full px-3 py-1.5 flex items-center gap-1.5"
@@ -935,12 +1015,12 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-3">
               <p className="font-display font-bold text-base text-white">🔥 Weekly Champions</p>
               <div className="flex items-center gap-3">
-                {bootstrapRefreshing && (
+                {(bootstrapRefreshing || weeklyUpdating) && (
                   <span className="font-sans text-xs text-slate-500">Updating...</span>
                 )}
                 <button
-                  onClick={handleBootstrapRefresh}
-                  disabled={bootstrapRefreshing}
+                  onClick={handleLeaderboardRefresh}
+                  disabled={weeklyUpdating}
                   className="font-sans text-xs text-slate-400 active:opacity-70 disabled:opacity-40"
                   aria-label="Refresh leaderboard"
                 >
@@ -1059,9 +1139,9 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {(bootstrapMsg || weeklyUpdatedAt) && (
-                  <p className="font-sans text-[11px] text-center mt-2" style={{ color: bootstrapMsg ? '#f59e0b' : 'rgb(100 116 139)' }}>
-                    {bootstrapMsg || `Last updated: ${formatLastUpdated(weeklyUpdatedAt)}`}
+                {(leaderboardMsg || bootstrapMsg || weeklyUpdatedAt) && (
+                  <p className="font-sans text-[11px] text-center mt-2" style={{ color: (leaderboardMsg || bootstrapMsg) ? '#f59e0b' : 'rgb(100 116 139)' }}>
+                    {leaderboardMsg || bootstrapMsg || `Last updated: ${formatLastUpdated(weeklyUpdatedAt)}`}
                   </p>
                 )}
 
