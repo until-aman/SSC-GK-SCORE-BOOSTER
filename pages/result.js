@@ -453,6 +453,11 @@ export default function Result() {
         .champ-slide { animation: proofFade 0.30s ease both; }
         .btn-primary { transition: transform 140ms ease, box-shadow 140ms ease; }
         .btn-primary:hover { transform: translateY(-1px); }
+        @keyframes btnPulse {
+          0%, 100% { box-shadow: 0 8px 22px rgba(174,80,15,0.30); }
+          50%       { box-shadow: 0 12px 32px rgba(174,80,15,0.58), 0 0 0 5px rgba(174,80,15,0.10); }
+        }
+        .btn-pulse { animation: btnPulse 2.2s ease-in-out infinite; }
       `}</style>
 
       <div style={{ maxWidth: 430, margin: '0 auto', padding: '24px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -497,10 +502,6 @@ export default function Result() {
                   {statusLabel}
                 </span>
               </div>
-              <p style={{ textAlign: 'center', fontSize: 12, color: '#93A4BC', marginBottom: 14 }}>
-                You answered {answeredCount} of {result.totalQuestions || 0} questions
-              </p>
-
               {/* Score + Accuracy tiles */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                 <div style={{ flex: 1, background: '#111B2D', border: '1px solid #243247', borderRadius: 16, padding: '12px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
@@ -528,21 +529,24 @@ export default function Result() {
               </div>
 
               {/* CTAs */}
+              <p style={{ textAlign: 'center', fontSize: 12, color: '#93A4BC', marginBottom: 10 }}>
+                You answered {answeredCount} of {result.totalQuestions || 0} questions
+              </p>
               <button
+                className="btn-pulse"
                 onClick={() => { setLoadingDetailed(true); setTimeout(() => router.push('/result/detailed'), 100); }}
                 style={{
                   width: '100%', height: 50, borderRadius: 16, cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                  background: 'linear-gradient(135deg, #AE500F, #A43E08)',
                   color: '#FFFFFF', fontSize: 14, fontWeight: 700, border: 'none',
-                  boxShadow: '0 10px 24px rgba(249,115,22,0.25)',
                   marginBottom: 10,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transform: 'translateY(0)', transition: 'transform 140ms ease, box-shadow 140ms ease',
                 }}
-                onPointerEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 16px 32px rgba(249,115,22,0.38)'; }}
-                onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(249,115,22,0.20)'; }}
-                onPointerUp={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 24px rgba(249,115,22,0.25)'; }}
-                onPointerLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 24px rgba(249,115,22,0.25)'; }}
+                onPointerEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 16px 32px rgba(174,80,15,0.45)'; }}
+                onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(174,80,15,0.15)'; }}
+                onPointerUp={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
+                onPointerLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
               >
                 {loadingDetailed ? 'Loading…' : 'Review Mistakes →'}
               </button>
@@ -638,19 +642,19 @@ export default function Result() {
             ))}
           </div>
           <button
+            className="btn-pulse"
             onClick={() => router.push('/subjects?collection=ssc_pyq')}
             style={{
               width: '100%', height: 56, borderRadius: 18, cursor: 'pointer',
-              background: 'linear-gradient(135deg, #F97316, #EA580C)',
+              background: 'linear-gradient(135deg, #AE500F, #A43E08)',
               color: '#FFFFFF', fontSize: 15, fontWeight: 700, border: 'none',
-              boxShadow: '0 10px 24px rgba(249,115,22,0.25)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transform: 'translateY(0)', transition: 'transform 140ms ease, box-shadow 140ms ease',
             }}
-            onPointerEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 16px 32px rgba(249,115,22,0.38)'; }}
-            onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(249,115,22,0.20)'; }}
-            onPointerUp={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 24px rgba(249,115,22,0.25)'; }}
-            onPointerLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 24px rgba(249,115,22,0.25)'; }}
+            onPointerEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 16px 32px rgba(174,80,15,0.45)'; }}
+            onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(174,80,15,0.15)'; }}
+            onPointerUp={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
+            onPointerLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
           >
             Start PYQ Practice →
           </button>
@@ -668,7 +672,7 @@ export default function Result() {
             ? 'Good base. Your next goal should be reducing negative marks by improving accuracy.'
             : 'Strong attempt. Now practice mixed quizzes daily to improve speed and consistency.';
           return (
-            <div className="mentor-in" style={{ background: '#172235', border: '1px solid #2A3A52', borderRadius: 24, padding: 20 }}>
+            <div className="mentor-in" style={{ background: '#172235', border: '1px solid #2A3A52', borderRadius: 24, padding: 20, borderLeft: '4px solid #34D399' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
@@ -723,14 +727,14 @@ export default function Result() {
             }
           }}
           style={{
-          background: 'linear-gradient(145deg, #111827 0%, #0f1f2e 100%)',
-          border: '1px solid rgba(245, 158, 11, 0.35)',
-          borderRadius: 24,
-          boxShadow: '0 12px 35px rgba(245, 158, 11, 0.08)',
-          padding: 18,
-          cursor: 'pointer',
-          transition: 'transform 150ms ease',
-        }}
+            background: 'linear-gradient(145deg, #111827 0%, #0f1f2e 100%)',
+            border: '1px solid rgba(245, 158, 11, 0.35)',
+            borderRadius: 24,
+            boxShadow: '0 12px 35px rgba(245, 158, 11, 0.08)',
+            padding: 18,
+            cursor: 'pointer',
+            transition: 'transform 150ms ease',
+          }}
           onPointerDown={e => { setChampsPaused(true); e.currentTarget.style.transform = 'scale(0.98)'; }}
           onPointerUp={e => { setChampsPaused(false); e.currentTarget.style.transform = 'scale(1)'; }}
           onPointerLeave={e => { setChampsPaused(false); e.currentTarget.style.transform = 'scale(1)'; }}
@@ -738,20 +742,22 @@ export default function Result() {
           onTouchEnd={() => setChampsPaused(false)}
           onTouchCancel={() => setChampsPaused(false)}
         >
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+          {/* Header */}
+          <div className="flex items-start justify-between gap-3 mb-3">
             <div>
-              <p style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 7 }}>
+              <p className="font-display" style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 7 }}>
                 <span style={{ fontSize: 16, lineHeight: 1 }}>🔥</span>
                 Weekly Champions
               </p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4 }}>
+            <div className="flex items-center gap-3" style={{ paddingTop: 4 }}>
               <button
                 onClick={e => {
                   e.stopPropagation();
                   router.push('/leaderboard');
                 }}
-                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600, color: '#34D399', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                className="flex items-center gap-1 font-sans font-medium active:opacity-70"
+                style={{ fontSize: 13, color: '#34D399', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
               >
                 View your rank
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -761,78 +767,128 @@ export default function Result() {
             </div>
           </div>
 
-          {topPerformers.length === 0 ? (
-            <p style={{ fontSize: 12, color: '#64748B', textAlign: 'center', padding: '8px 0' }}>
+          {leaderboardRefreshing && topPerformers.length === 0 ? (
+            <div className="py-4">
+              <Loader card size="sm" label="Loading weekly champions..." />
+            </div>
+          ) : topPerformers.length === 0 ? (
+            <p className="font-sans text-xs text-slate-500 text-center py-4">
               Showing last saved leaderboard
             </p>
-          ) : (() => {
-            const top = topPerformers[0];
-            const isSelfTop = top.email === session?.user?.email;
-            return (
-              <div className="champ-slide">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isLoggedIn ? 12 : 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 16 }}>🥇</span>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: isSelfTop ? '#34D399' : '#F8FAFC' }}>
-                      {(top.name || 'User').split(' ')[0]}
+          ) : (
+            <>
+              {/* Full-width auto-advancing card */}
+              {(() => {
+                const idx = champsSlide % Math.min(topPerformers.length, 3);
+                const player = topPerformers[idx];
+                const isSelf = player.email === session?.user?.email;
+                const cardTheme = [
+                  { bg: 'rgba(255,184,0,0.08)',   border: 'rgba(255,184,0,0.24)'   },
+                  { bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.22)' },
+                  { bg: 'rgba(180,83,9,0.08)',    border: 'rgba(180,83,9,0.20)'    },
+                ][idx];
+                return (
+                  <div
+                    key={idx}
+                    className="champ-slide"
+                    style={{
+                      background: cardTheme.bg,
+                      border: `1px solid ${cardTheme.border}`,
+                      borderRadius: 18,
+                      padding: '14px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 14,
+                    }}
+                  >
+                    {/* Avatar with medal badge overlaid top-left */}
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <ChampionAvatar imageUrl={player.image || null} name={player.name} size={36} />
+                      <span style={{ position: 'absolute', top: -4, left: -4, fontSize: 16, lineHeight: 1 }}>
+                        {RANK_MEDALS[idx]}
+                      </span>
+                    </div>
+
+                    {/* Name + level + XP */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <p className="font-display font-bold truncate"
+                          style={{ fontSize: 15, color: isSelf ? '#10b981' : '#ffffff', margin: 0 }}>
+                          {(player.name || 'User').split(' ')[0]}
+                        </p>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, flexShrink: 0,
+                          color: '#facc15',
+                          background: 'rgba(250,204,21,0.15)',
+                          border: '1px solid rgba(250,204,21,0.3)',
+                          borderRadius: 20, padding: '2px 8px',
+                        }}>
+                          ⭐ {player.level || 'Aspirant'}
+                        </span>
+                        {isSelf && (
+                          <span style={{
+                            fontSize: 10, fontWeight: 700, flexShrink: 0,
+                            background: 'rgba(16,185,129,0.15)', color: '#10b981',
+                            border: '1px solid rgba(16,185,129,0.3)',
+                            borderRadius: 20, padding: '2px 7px',
+                          }}>You</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* XP */}
+                    <p className="font-display font-bold"
+                      style={{ fontSize: 17, color: '#FDBA3B', margin: 0, flexShrink: 0 }}>
+                      {Math.round(player.totalScore || 0).toLocaleString()} XP
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {(leaderboardMsg || leaderboardRefreshing || weeklyUpdatedAt) && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      loadWeeklyLeaderboard({ forceRefresh: true });
+                    }}
+                    disabled={leaderboardRefreshing}
+                    className="font-sans active:opacity-70 disabled:opacity-70"
+                    style={{
+                      fontSize: 12,
+                      color: '#64748B',
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      cursor: leaderboardRefreshing ? 'default' : 'pointer',
+                    }}
+                  >
+                    {leaderboardRefreshing
+                      ? '↻ Refreshing...'
+                      : leaderboardMsg
+                        ? `${leaderboardMsg} • Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`
+                        : `↻ Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`}
+                  </button>
+                </div>
+              )}
+
+              {/* Your rank row */}
+              {isLoggedIn && (
+                <div className="mt-3 pt-3 border-t border-slate-700/40 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-sans text-xs text-slate-400">Your Rank</span>
+                    <span className="font-display font-black text-base text-white">
+                      {userRankIdx !== -1 ? `#${userRankIdx + 1}` : '—'}
                     </span>
                   </div>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#FBBF24' }}>
-                    {Math.round(top.totalScore || 0).toLocaleString()} XP
+                  <span className="text-xs font-semibold rounded-full px-3 py-1 bg-emerald-900/50 text-emerald-400 border border-emerald-700/40">
+                    ✓ Active today
                   </span>
                 </div>
-                {isLoggedIn && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTop: '1px solid #26364D' }}>
-                    <span style={{ fontSize: 12, color: '#93A4BC' }}>
-                      Your Rank {userRankIdx !== -1 ? `#${userRankIdx + 1}` : '—'}
-                    </span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#34D399', background: 'rgba(52,211,153,0.10)', border: '1px solid rgba(52,211,153,0.25)', borderRadius: 999, padding: '2px 10px' }}>
-                      Active today
-                    </span>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-
-          {(leaderboardMsg || leaderboardRefreshing || weeklyUpdatedAt) && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-              <button
-                type="button"
-                onClick={e => {
-                  e.stopPropagation();
-                  loadWeeklyLeaderboard({ forceRefresh: true });
-                }}
-                disabled={leaderboardRefreshing}
-                style={{
-                  fontSize: 12,
-                  color: '#64748B',
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  cursor: leaderboardRefreshing ? 'default' : 'pointer',
-                }}
-              >
-                {leaderboardRefreshing
-                  ? '↻ Refreshing...'
-                  : leaderboardMsg
-                    ? `${leaderboardMsg} • Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`
-                    : `↻ Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`}
-              </button>
-            </div>
+              )}
+            </>
           )}
-
-          <div style={{ marginTop: 14, textAlign: 'center' }}>
-            <button
-              onClick={e => {
-                e.stopPropagation();
-                router.push('/leaderboard');
-              }}
-              style={{ fontSize: 13, fontWeight: 600, color: '#FDBA74', background: 'none', border: 'none', cursor: 'pointer' }}
-            >
-              View leaderboard →
-            </button>
-          </div>
         </div>
 
         {/* ── 7. SHARE RESULT ── */}
@@ -843,17 +899,17 @@ export default function Result() {
             <button
               onClick={handleShareWhatsApp}
               style={{
-                flex: 1, height: 44, borderRadius: 12, cursor: 'pointer',
-                background: '#16A34A', color: '#ffffff', border: 'none',
-                fontSize: 13, fontWeight: 600,
+                flex: 1.5, height: 48, borderRadius: 12, cursor: 'pointer',
+                background: '#34D399', color: '#0F172A', border: 'none',
+                fontSize: 14, fontWeight: 700,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                 transform: 'scale(1)', transition: 'background 140ms ease, transform 140ms ease',
               }}
-              onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.background = '#22C55E'; }}
-              onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#16A34A'; }}
-              onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#16A34A'; }}
+              onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.background = '#6EE7B7'; }}
+              onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#34D399'; }}
+              onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#34D399'; }}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="#ffffff">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="#0F172A">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
               </svg>
               Share on WhatsApp
@@ -861,11 +917,11 @@ export default function Result() {
             <button
               onClick={handleCopy}
               style={{
-                flex: 1, height: 44, borderRadius: 12, cursor: 'pointer',
+                flex: 0.8, height: 40, borderRadius: 12, cursor: 'pointer',
                 background: copied ? 'rgba(52,211,153,0.12)' : '#1E2B40',
                 color: copied ? '#34D399' : '#F8FAFC',
                 border: `1px solid ${copied ? 'rgba(52,211,153,0.30)' : '#334155'}`,
-                fontSize: 13, fontWeight: 600,
+                fontSize: 12, fontWeight: 600,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                 transform: 'scale(1)', transition: 'background 200ms ease, transform 140ms ease',
               }}
