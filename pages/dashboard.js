@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
 
+import GoogleSignInCard from '@/components/GoogleSignInCard';
 import NotificationBell from '@/components/NotificationBell';
 import Loader from '@/components/ui/Loader';
 import { getSubjectStyle, subjectStyles } from '@/lib/subjects';
@@ -912,18 +913,13 @@ export default function Dashboard() {
 
         {/* ── GUEST SIGN-IN NUDGE ── */}
         {isGuest && (
-          <div className="mx-4 mt-5 px-4 py-4 flex items-center gap-4" style={{ background: '#111C2E', border: '1px solid rgba(34,211,153,0.22)', boxShadow: '0 0 0 1px rgba(34,211,153,0.04)', borderRadius: 22 }}>
-            <div className="flex-1 min-w-0">
-              <p className="font-display font-bold text-sm text-white leading-snug">Save your progress</p>
-              <p className="font-sans text-xs text-slate-400 mt-0.5">Sign in to save XP, streaks &amp; rank</p>
-            </div>
-            <button
-              onClick={() => { document.cookie = 'userMode=; path=/; max-age=0'; signIn('google', { callbackUrl: '/dashboard' }); }}
-              className="flex-shrink-0 flex items-center gap-2 rounded-xl px-3 py-2 font-display font-bold text-xs active:scale-[0.97] transition-transform" style={{ background: 'rgba(34,211,153,0.15)', border: '1px solid rgba(34,211,153,0.3)', color: '#34d399' }}
-            >
-              Sign in →
-            </button>
-          </div>
+          <GoogleSignInCard
+            className="mx-4 mt-5"
+            title="Save your progress"
+            subtitle="Login to save score, XP, streak & rank."
+            buttonText="Sign in"
+            callbackUrl="/dashboard"
+          />
         )}
 
         {/* ── SOCIAL PROOF CAROUSEL ── */}

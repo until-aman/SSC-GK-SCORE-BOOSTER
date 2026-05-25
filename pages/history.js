@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import BackButton from '@/components/BackButton';
+import GoogleSignInCard from '@/components/GoogleSignInCard';
 import SessionRow from '@/components/SessionRow';
 import Loader from '@/components/ui/Loader';
 
@@ -14,14 +15,6 @@ const LEVEL_THRESHOLDS = {
   Legend:   { min: 3000, max: 3000, next: null },
 };
 
-const GoogleSVG = () => (
-  <svg width="18" height="18" viewBox="0 0 48 48">
-    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-    <path fill="#34A853" d="M10.53 28.59a14.5 14.5 0 010-9.18l-7.98-6.19a24.08 24.08 0 000 21.56l7.98-6.19z"/>
-    <path fill="#FBBC05" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-  </svg>
-);
 
 export default function HistoryPage() {
   const { data: session, status } = useSession();
@@ -80,18 +73,13 @@ export default function HistoryPage() {
             <BackButton />
             <h1 className="font-display font-black text-xl text-white">XP History</h1>
           </div>
-          <div className="mx-4 mt-8 bg-slate-800 border border-emerald-500/20 rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
-            <span className="text-4xl">📊</span>
-            <p className="font-display font-bold text-lg text-white">Track Your Progress</p>
-            <p className="font-sans font-medium text-sm text-slate-400 leading-relaxed">Login to save your XP, track streaks, and see your full quiz history.</p>
-            <button
-              onClick={() => { document.cookie = 'userMode=; path=/; max-age=0'; signIn('google', { callbackUrl: '/dashboard' }); }}
-              className="bg-white text-slate-900 rounded-xl py-3 px-6 flex items-center gap-2 font-semibold text-sm active:scale-[0.98] transition-transform"
-            >
-              <GoogleSVG />
-              Sign in with Google
-            </button>
-          </div>
+          <GoogleSignInCard
+            className="mx-4 mt-8"
+            title="Track Your Progress"
+            subtitle="Login to save your XP, track streaks, and see your full quiz history."
+            buttonText="Sign in"
+            callbackUrl="/dashboard"
+          />
         </div>
       </>
     );
