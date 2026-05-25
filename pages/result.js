@@ -679,14 +679,11 @@ export default function Result() {
                   onClick={handleGenerateAIAnalysis}
                   disabled={aiLoading}
                   style={{
-                    height: 44, borderRadius: 14, cursor: aiLoading ? 'default' : 'pointer',
-                    background: 'transparent', border: '1px solid rgba(52,211,153,0.45)',
+                    background: 'none', border: 'none', padding: 0,
+                    cursor: aiLoading ? 'default' : 'pointer',
                     color: '#34D399', fontSize: 13, fontWeight: 600,
-                    padding: '0 18px', display: 'inline-flex', alignItems: 'center',
-                    opacity: aiLoading ? 0.6 : 1, transition: 'background 140ms ease',
+                    opacity: aiLoading ? 0.5 : 1,
                   }}
-                  onPointerEnter={e => { if (!aiLoading) e.currentTarget.style.background = 'rgba(52,211,153,0.08)'; }}
-                  onPointerLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                 >
                   {aiLoading ? 'Generating analysis...' : 'Generate Analysis →'}
                 </button>
@@ -959,7 +956,7 @@ export default function Result() {
               <textarea
                 value={feedback}
                 onChange={e => setFeedback(e.target.value)}
-                placeholder="What went wrong, or what could be better?"
+                placeholder={"Describe the issue briefly...\n\nExample: Option B seems correct, but app marked C."}
                 autoFocus
                 rows={4}
                 style={{
