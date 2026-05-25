@@ -4,6 +4,8 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 
 import Loader from '@/components/ui/Loader';
+import { readCache, writeCache } from '@/lib/clientCache';
+import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 
 const SUBJECTS = [
   'Polity', 'Geography', 'Economics',
@@ -82,6 +84,17 @@ export default function QuizSetup() {
     setTopicsLoading(true);
     setTopics([]);
     setSelectedTopic('');
+
+    // Check localStorage cache first (24h TTL — topic lists rarely change)
+    const cacheKey = CACHE_KEYS.TOPICS(col, subject);
+    const cached = readCache(cacheKey, CACHE_TTL.ONE_DAY);
+    if (cached?.isFresh && cached.data?.[subject]) {
+      const topicMap = cached.data[subject];
+      setTopics(Object.entries(topicMap).map(([name, count]) => ({ name, count })));
+      setTopicsLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/topics?subject=${encodeURIComponent(subject)}&collection=${encodeURIComponent(col)}`);
       const data = await res.json();
@@ -89,6 +102,10 @@ export default function QuizSetup() {
       const topicMap = (data.topics && data.topics[subject]) || data[subject] || {};
       const parsed = Object.entries(topicMap).map(([name, count]) => ({ name, count }));
       setTopics(parsed);
+      // Cache the topics object for this subject
+      if (Object.keys(topicMap).length > 0) {
+        writeCache(cacheKey, data.topics || { [subject]: topicMap });
+      }
     } catch {
       setTopics([]);
     } finally {

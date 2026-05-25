@@ -3,6 +3,8 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Loader from '@/components/ui/Loader';
+import { readCache, writeCache } from '@/lib/clientCache';
+import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 
 const GK_FACTS = [
   // GK Facts
@@ -650,6 +652,16 @@ export default function Quiz() {
     if (!subject || !topic || !questionCount) return;
     setLoading(true);
 
+    // Check question pool cache first (24h TTL — pool is shuffled locally on hit)
+    const poolCacheKey = CACHE_KEYS.QUESTIONS(collection, subject, topic);
+    const poolCached = readCache(poolCacheKey, CACHE_TTL.ONE_DAY);
+    if (poolCached?.isFresh && Array.isArray(poolCached.data) && poolCached.data.length >= parseInt(questionCount)) {
+      const pool = shuffle(poolCached.data).slice(0, parseInt(questionCount));
+      setQuestions(pool);
+      setLoading(false);
+      return;
+    }
+
     const url = `/api/questions?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}&collection=${encodeURIComponent(collection)}`;
 
     async function fetchWithRetry(attemptsLeft) {
@@ -657,6 +669,7 @@ export default function Quiz() {
         const r = await fetch(url);
         const data = await r.json();
         if (data.questions?.length) {
+          writeCache(poolCacheKey, data.questions); // cache full pool; shuffle on each use
           const pool = shuffle(data.questions).slice(0, parseInt(questionCount));
           setQuestions(pool);
           setLoading(false);
@@ -760,32 +773,21 @@ export default function Quiz() {
       `/result?subject=${encodeURIComponent(effectiveSubject)}&topic=${encodeURIComponent(effectiveTopic)}&sessionId=${sessionId}&correct=${results.correct}&incorrect=${results.incorrect}&skipped=${results.skipped}&total=${results.totalQuestions}&score=${results.rawScore}`
     );
 
-    // ── Fire AI calls in the background ──────────────────────────────────────
-    // When they complete, patch sessionStorage so the detailed-analysis page
-    // can use per-question explanations without fetching again.
-    const summaryPromise = fetch('/api/ai/summary', {
+    // ── Pre-fetch AI summary in the background ───────────────────────────────
+    // Only the summary is pre-fetched; per-question AI explanations are
+    // user-triggered on the detailed result page to avoid N parallel AI calls.
+    fetch('/api/ai/summary', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ subject: effectiveSubject, topic: effectiveTopic, totalQuestions: results.totalQuestions, correctAnswers: results.correct, incorrectAnswers: results.incorrect, skipped: results.skipped, rawScore: results.rawScore, accuracy: results.accuracy }),
-    }).then(r => r.ok ? r.json() : null).then(d => d?.aiSummary || null).catch(() => null);
-
-    const insightPromises = questions.map(q => {
-      const ua = finalAnswers[q.id];
-      if (!ua || ua === 'SKIPPED') {
-        return fetch('/api/ai/tip', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: q.question, correctOption: q.correctOption, correctOptionText: q[OPTION_KEYS[OPTION_LABELS.indexOf(q.correctOption)]], explanation: q.explanation, subject, topic }) })
-          .then(r => r.ok ? r.json() : null).then(d => ({ id: q.id, text: d?.aiTip || null })).catch(() => ({ id: q.id, text: null }));
-      }
-      if (ua === q.correctOption) return Promise.resolve({ id: q.id, text: null });
-      return fetch('/api/ai/explain', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q.question, optionA: q.optionA, optionB: q.optionB, optionC: q.optionC, optionD: q.optionD, correctOption: q.correctOption, userOption: ua, explanation: q.explanation, subject, topic }) })
-        .then(r => r.ok ? r.json() : null).then(d => ({ id: q.id, text: d?.aiExplanation || null })).catch(() => ({ id: q.id, text: null }));
-    });
-
-    Promise.all([summaryPromise, Promise.all(insightPromises)])
-      .then(([summary, insights]) => {
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        const summary = d?.aiSummary || null;
+        if (!summary) return;
         try {
           const stored = JSON.parse(sessionStorage.getItem('quizResult') || '{}');
-          stored.aiData = { summary, insights: Object.fromEntries(insights.map(i => [i.id, i.text])) };
+          if (!stored.aiData) stored.aiData = {};
+          stored.aiData.summary = summary;
           sessionStorage.setItem('quizResult', JSON.stringify(stored));
         } catch {}
       })

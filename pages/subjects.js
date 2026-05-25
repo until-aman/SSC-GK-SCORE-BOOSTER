@@ -78,11 +78,19 @@ const FALLBACK_SUBJECT_COUNTS = Object.fromEntries(
    instant data even after a hard refresh. v3 prefix busts stale entries.
 ──────────────────────────────────────────────────────────────────────────── */
 const CACHE_PREFIX = 'ssc_subjects_v3_';
+const SUBJECTS_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 function readSubjectCache(collection) {
   try {
     const raw = localStorage.getItem(CACHE_PREFIX + collection);
-    return raw ? JSON.parse(raw) : undefined;
+    if (!raw) return undefined;
+    const entry = JSON.parse(raw);
+    // Support both old format (plain object) and new format ({ data, cachedAt })
+    if (entry && typeof entry.cachedAt === 'number') {
+      if (Date.now() - entry.cachedAt > SUBJECTS_CACHE_TTL) return undefined; // expired
+      return entry.data;
+    }
+    return entry; // old format — return as-is (no TTL check for legacy entries)
   } catch {
     return undefined;
   }
@@ -90,7 +98,7 @@ function readSubjectCache(collection) {
 
 function writeSubjectCache(collection, counts) {
   try {
-    localStorage.setItem(CACHE_PREFIX + collection, JSON.stringify(counts));
+    localStorage.setItem(CACHE_PREFIX + collection, JSON.stringify({ data: counts, cachedAt: Date.now() }));
   } catch {}
 }
 

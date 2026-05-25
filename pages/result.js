@@ -7,6 +7,8 @@ import Confetti from '@/components/Confetti';
 
 import Loader from '@/components/ui/Loader';
 import { fetchAISummary } from '@/lib/fetchAI';
+import { readCache, writeCache, patchCache } from '@/lib/clientCache';
+import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -80,11 +82,27 @@ export default function Result() {
 
 
 
-  // Fetch top performers
+  // Fetch top performers — check caches before hitting the API
   useEffect(() => {
+    // 1. Bootstrap cache (freshest source — populated by dashboard)
+    const bootstrap = readCache(CACHE_KEYS.DASHBOARD_BOOTSTRAP, CACHE_TTL.ONE_DAY);
+    if (bootstrap?.isFresh && bootstrap.data?.leaderboard?.weeklyTop?.length) {
+      setTopPerformers(bootstrap.data.leaderboard.weeklyTop.slice(0, 5));
+      return;
+    }
+    // 2. Dedicated leaderboard cache (30-min TTL)
+    const lbCached = readCache(CACHE_KEYS.WEEKLY_LEADERBOARD, CACHE_TTL.THIRTY_MINUTES);
+    if (lbCached?.isFresh && lbCached.data?.leaders?.length) {
+      setTopPerformers(lbCached.data.leaders.slice(0, 5));
+      return;
+    }
+    // 3. Fall back to API and cache the result
     fetch('/api/leaderboard?scope=weekly')
       .then(r => r.json())
-      .then(d => setTopPerformers((d.leaders || []).slice(0, 5)))
+      .then(d => {
+        setTopPerformers((d.leaders || []).slice(0, 5));
+        if (d.leaders?.length) writeCache(CACHE_KEYS.WEEKLY_LEADERBOARD, d);
+      })
       .catch(() => {});
   }, []);
 
@@ -136,6 +154,26 @@ export default function Result() {
           setXPResult(data);
           setShowXPToast(true);
           setTimeout(() => setShowXPToast(false), 4000);
+
+          // Patch dashboard bootstrap cache so XP/level/streak show correctly on next visit
+          patchCache(CACHE_KEYS.DASHBOARD_BOOTSTRAP, existing => {
+            if (!existing?.profile) return existing;
+            const todayIST = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
+              .toISOString().split('T')[0];
+            return {
+              ...existing,
+              profile: {
+                ...existing.profile,
+                totalXP:         data.totalXP         ?? existing.profile.totalXP,
+                level:           data.level           ?? existing.profile.level,
+                streakCount:     data.streakCount     ?? existing.profile.streakCount,
+                lastAttemptDate: todayIST,
+              },
+            };
+          });
+          // Clear session refresh flag so dashboard picks up fresh data next visit
+          try { sessionStorage.removeItem('dashboard_refreshed_this_session'); } catch {}
+
           // Confetti on milestones: perfect score, high accuracy, streak milestone, or first quiz of day
           const acc = Number(router.query.correct || 0) / Number(router.query.total || 1) * 100;
           if (
@@ -172,6 +210,15 @@ export default function Result() {
     }).then(({ text }) => {
       setAiSummary(text);
       setSummaryLoading(false);
+      // Persist to sessionStorage so re-visits don't re-fetch
+      if (text) {
+        try {
+          const stored = JSON.parse(sessionStorage.getItem('quizResult') || '{}');
+          if (!stored.aiData) stored.aiData = {};
+          stored.aiData.summary = text;
+          sessionStorage.setItem('quizResult', JSON.stringify(stored));
+        } catch {}
+      }
     });
   }, [result]);
 
