@@ -564,7 +564,7 @@ export default function Dashboard() {
 
   // Prefetch collection totals for bell badge display
   useEffect(() => {
-    const collections = ['PYQ', 'general', 'CGL2025', 'Parmar'];
+    const collections = ['PYQ', 'Parmar'];
     collections.forEach(col => {
       fetch(`/api/topics?collection=${encodeURIComponent(col)}`)
         .then(r => r.json())
