@@ -10,10 +10,8 @@ import {
   getLeaderboardCacheRow,
 } from '@/lib/sheets';
 
-// Collections included in this response, in stable order.
-// CGL2025 is listed for API shape consistency; it returns zero counts
-// because it was removed from COLLECTION_PREFIX.
-const BOOTSTRAP_COLLECTIONS = ['general', 'PYQ', 'CGL2025', 'Parmar'];
+// Only collections that have active question data in the sheet.
+const BOOTSTRAP_COLLECTIONS = ['PYQ', 'Parmar'];
 
 // ─── Section helpers ─────────────────────────────────────────────────────────
 
@@ -42,7 +40,7 @@ async function fetchLeaderboard() {
   let weeklyTop = [];
   try {
     const parsed = JSON.parse(cacheRow.weeklyJSON || '[]');
-    weeklyTop = Array.isArray(parsed) ? parsed.slice(0, 10) : [];
+    weeklyTop = Array.isArray(parsed) ? parsed.slice(0, 20) : [];
   } catch { /* malformed JSON — return empty list */ }
   return { weeklyTop };
 }
@@ -120,6 +118,9 @@ export default async function handler(req, res) {
       }
     })
   );
+
+  // Prevent browser from aggressively caching — localStorage handles client-side caching.
+  res.setHeader('Cache-Control', 'no-store');
 
   return res.status(200).json({
     success: true,
