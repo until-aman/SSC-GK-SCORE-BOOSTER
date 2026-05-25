@@ -4,6 +4,8 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 
 import Loader from '@/components/ui/Loader';
+import { fetchWithClientCache, readCache } from '@/lib/clientCache';
+import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 
 const SUBJECTS = [
   'Polity', 'Geography', 'Economics',
@@ -29,6 +31,31 @@ function isGuestMode() {
   return document.cookie.split(';').some(c => c.trim().startsWith('userMode=guest'));
 }
 
+function parseTopicsFromResponse(data, subject) {
+  const topicMap = (data?.topics && data.topics[subject]) || data?.[subject] || {};
+  return Object.entries(topicMap).map(([name, count]) => ({ name, count }));
+}
+
+function getBootstrapTopics(subject, collection) {
+  const cached = readCache(CACHE_KEYS.DASHBOARD_BOOTSTRAP, CACHE_TTL.ONE_DAY);
+  if (!cached?.isFresh) return null;
+
+  const data = cached.data || {};
+  const candidates = [
+    data.topics?.[subject],
+    data.topicsBySubject?.[subject],
+    data.collections?.[collection]?.topics?.[subject],
+    data.collections?.[collection]?.topicsBySubject?.[subject],
+  ];
+
+  for (const topicMap of candidates) {
+    if (topicMap && typeof topicMap === 'object' && Object.keys(topicMap).length > 0) {
+      return Object.entries(topicMap).map(([name, count]) => ({ name, count }));
+    }
+  }
+  return null;
+}
+
 export default function QuizSetup() {
   const { status } = useSession();
   const router = useRouter();
@@ -37,6 +64,7 @@ export default function QuizSetup() {
   const [selectedTopic, setSelectedTopic] = useState('');
   const [topics, setTopics] = useState([]);
   const [topicsLoading, setTopicsLoading] = useState(false);
+  const [topicsMessage, setTopicsMessage] = useState('');
   const [selectedCount, setSelectedCount] = useState(10);
   const [focusedField, setFocusedField] = useState('');
 
@@ -78,19 +106,60 @@ export default function QuizSetup() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.isReady]);
 
-  async function fetchTopics(subject, col = 'general') {
-    setTopicsLoading(true);
-    setTopics([]);
+  async function fetchTopics(subject, col = 'general', { forceRefresh = false } = {}) {
+    const bootstrapTopics = !forceRefresh ? getBootstrapTopics(subject, col) : null;
+
+    setTopicsMessage('');
     setSelectedTopic('');
+
+    if (bootstrapTopics?.length) {
+      setTopics(bootstrapTopics);
+      setTopicsLoading(false);
+      return;
+    }
+
+    const cacheKey = CACHE_KEYS.TOPICS(col, subject);
+    const url = `/api/topics?subject=${encodeURIComponent(subject)}&collection=${encodeURIComponent(col)}&includeCounts=false`;
+    const cached = readCache(cacheKey, CACHE_TTL.ONE_DAY);
+    const cachedTopics = cached ? parseTopicsFromResponse(cached.data, subject) : [];
+
+    if (!forceRefresh && cached?.isFresh && cachedTopics.length > 0) {
+      setTopics(cachedTopics);
+      setTopicsLoading(false);
+      return;
+    }
+
+    if (cachedTopics.length > 0) {
+      setTopics(cachedTopics);
+      setTopicsLoading(false);
+    } else {
+      setTopics([]);
+      setTopicsLoading(true);
+    }
+
     try {
-      const res = await fetch(`/api/topics?subject=${encodeURIComponent(subject)}&collection=${encodeURIComponent(col)}`);
-      const data = await res.json();
-      // data.topics is { [subject]: { topicName: count } }
-      const topicMap = (data.topics && data.topics[subject]) || data[subject] || {};
-      const parsed = Object.entries(topicMap).map(([name, count]) => ({ name, count }));
+      const result = await fetchWithClientCache({
+        key: cacheKey,
+        url,
+        maxAgeMs: CACHE_TTL.ONE_DAY,
+        forceRefresh,
+        onCache(entry) {
+          const cachedTopics = parseTopicsFromResponse(entry.data, subject);
+          if (cachedTopics.length > 0) {
+            setTopics(cachedTopics);
+            setTopicsLoading(false);
+          }
+        },
+      });
+
+      const parsed = parseTopicsFromResponse(result.data, subject);
       setTopics(parsed);
+      if (result.stale) {
+        setTopicsMessage('Showing saved topics. Refresh when internet is stable.');
+      }
     } catch {
       setTopics([]);
+      setTopicsMessage('Unable to load topics. Please try again.');
     } finally {
       setTopicsLoading(false);
     }
@@ -101,7 +170,13 @@ export default function QuizSetup() {
     setSelectedSubject(val);
     setSelectedTopic('');
     setTopics([]);
+    setTopicsMessage('');
     if (val) fetchTopics(val, collection);
+  }
+
+  function handleRefreshTopics() {
+    if (!selectedSubject || topicsLoading) return;
+    fetchTopics(selectedSubject, collection, { forceRefresh: true });
   }
 
   function handleStartQuiz() {
@@ -219,9 +294,22 @@ export default function QuizSetup() {
 
           {/* Topic */}
           <div>
-            <label className="text-xs font-medium uppercase tracking-wide mb-2 block" style={{ color: COLORS.muted }}>
-              Topic
-            </label>
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <label className="text-xs font-medium uppercase tracking-wide block" style={{ color: COLORS.muted }}>
+                Topic
+              </label>
+              {selectedSubject && (
+                <button
+                  type="button"
+                  onClick={handleRefreshTopics}
+                  disabled={topicsLoading}
+                  className="text-xs font-semibold disabled:opacity-50"
+                  style={{ color: COLORS.selected }}
+                >
+                  Refresh topics
+                </button>
+              )}
+            </div>
             {topicsLoading ? (
               <div className="border rounded-2xl px-4 py-4" style={{ background: COLORS.card, borderColor: COLORS.border }}>
                 <p className="text-sm font-semibold" style={{ color: COLORS.primary }}>
@@ -269,6 +357,11 @@ export default function QuizSetup() {
             {selectedTopic && topics.length > 0 && (
               <p className="text-xs mt-1.5 ml-1" style={{ color: COLORS.muted }}>
                 {topics.find(t => t.name === selectedTopic)?.count || 0} questions available
+              </p>
+            )}
+            {topicsMessage && (
+              <p className="text-xs mt-1.5 ml-1" style={{ color: COLORS.muted }}>
+                {topicsMessage}
               </p>
             )}
           </div>
