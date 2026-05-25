@@ -718,13 +718,30 @@ export default function Result() {
         )}
 
         {/* ── 6. WEEKLY CHAMPIONS ── */}
-        <div className="champs-in" style={{
+        <div
+          className="champs-in"
+          role="button"
+          tabIndex={0}
+          onClick={() => router.push('/leaderboard')}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              router.push('/leaderboard');
+            }
+          }}
+          style={{
           background: 'linear-gradient(145deg, #111827 0%, #0f1f2e 100%)',
           border: '1px solid rgba(245, 158, 11, 0.35)',
           borderRadius: 24,
           boxShadow: '0 12px 35px rgba(245, 158, 11, 0.08)',
           padding: 18,
-        }}>
+          cursor: 'pointer',
+          transition: 'transform 150ms ease',
+        }}
+          onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+          onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+          onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+        >
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
             <div>
               <p style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>🔥 Weekly Champions</p>
@@ -732,7 +749,10 @@ export default function Result() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4 }}>
               <button
-                onClick={() => router.push('/leaderboard')}
+                onClick={e => {
+                  e.stopPropagation();
+                  router.push('/leaderboard');
+                }}
                 style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600, color: '#34D399', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
               >
                 View your rank
@@ -781,7 +801,10 @@ export default function Result() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
               <button
                 type="button"
-                onClick={() => loadWeeklyLeaderboard({ forceRefresh: true })}
+                onClick={e => {
+                  e.stopPropagation();
+                  loadWeeklyLeaderboard({ forceRefresh: true });
+                }}
                 disabled={leaderboardRefreshing}
                 style={{
                   fontSize: 12,
@@ -803,7 +826,10 @@ export default function Result() {
 
           <div style={{ marginTop: 14, textAlign: 'center' }}>
             <button
-              onClick={() => router.push('/leaderboard')}
+              onClick={e => {
+                e.stopPropagation();
+                router.push('/leaderboard');
+              }}
               style={{ fontSize: 13, fontWeight: 600, color: '#FDBA74', background: 'none', border: 'none', cursor: 'pointer' }}
             >
               View leaderboard →

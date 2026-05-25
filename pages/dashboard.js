@@ -1011,13 +1011,30 @@ export default function Dashboard() {
 
         {/* ── WEEKLY CHAMPIONS ── */}
         <div className="mt-5 px-4">
-          <div className="p-4" style={{
+          <div
+            className="p-4"
+            role="button"
+            tabIndex={0}
+            onClick={() => router.push('/leaderboard')}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                router.push('/leaderboard');
+              }
+            }}
+            style={{
             background: 'linear-gradient(145deg, #111827 0%, #0f1f2e 100%)',
             border: '1px solid rgba(245, 158, 11, 0.35)',
             borderRadius: 24,
             boxShadow: '0 12px 35px rgba(245, 158, 11, 0.08)',
             padding: 18,
-          }}>
+            cursor: 'pointer',
+            transition: 'transform 150ms ease',
+          }}
+            onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+            onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+            onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+          >
 
             {/* Header */}
             <div className="flex items-start justify-between gap-3 mb-3">
@@ -1027,7 +1044,10 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center gap-3" style={{ paddingTop: 4 }}>
                 <button
-                  onClick={() => router.push('/leaderboard')}
+                  onClick={e => {
+                    e.stopPropagation();
+                    router.push('/leaderboard');
+                  }}
                   className="flex items-center gap-1 font-sans font-medium active:opacity-70"
                   style={{ fontSize: 13, color: '#34D399' }}
                 >
@@ -1124,7 +1144,10 @@ export default function Dashboard() {
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
                     <button
                       type="button"
-                      onClick={handleLeaderboardRefresh}
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleLeaderboardRefresh();
+                      }}
                       disabled={weeklyUpdating || bootstrapRefreshing}
                       className="font-sans active:opacity-70 disabled:opacity-70"
                       style={{
