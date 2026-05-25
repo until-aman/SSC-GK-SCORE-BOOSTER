@@ -21,6 +21,8 @@ export default async function handler(req, res) {
       email: session?.user?.email,
       feedbackPill,
       feedbackMessage,
+      subject: req.body.subject || '',
+      topic: req.body.topic || '',
     });
 
     return res.status(200).json({ success: true });

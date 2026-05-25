@@ -569,9 +569,14 @@ export default function Dashboard() {
         },
       });
       const players = getWeeklyPlayers(result.data);
-      if (players.length > 0) setTopPlayers(players);
+      if (players.length > 0) {
+        setTopPlayers(players);
+      } else {
+        setLeaderboardMsg('Showing last saved leaderboard');
+      }
       setWeeklyUpdatedAt(result.timestamp || Date.now());
-      setLeaderboardMsg(result.stale ? 'Showing last saved leaderboard' : null);
+      if (result.stale) setLeaderboardMsg('Showing last saved leaderboard');
+      else if (players.length > 0) setLeaderboardMsg(null);
     } catch {
       const cached = readCache(CACHE_KEYS.WEEKLY_LEADERBOARD, CACHE_TTL.THIRTY_MINUTES);
       const players = getWeeklyPlayers(cached?.data);
@@ -579,8 +584,9 @@ export default function Dashboard() {
         setTopPlayers(players);
         setHasWeeklyCache(true);
         setWeeklyUpdatedAt(cached.timestamp);
-        setLeaderboardMsg('Showing last saved leaderboard');
       }
+      if (cached?.timestamp) setWeeklyUpdatedAt(cached.timestamp);
+      setLeaderboardMsg('Showing last saved leaderboard');
     } finally {
       setWeeklyLoading(false);
       setWeeklyUpdating(false);
@@ -1039,8 +1045,10 @@ export default function Dashboard() {
             {/* Header */}
             <div className="flex items-start justify-between gap-3 mb-3">
               <div>
-                <p className="font-display" style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>🔥 Weekly Champions</p>
-                <p className="font-sans" style={{ fontSize: 13, color: '#94A3B8', marginTop: 3 }}>Top performers this week</p>
+                <p className="font-display" style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ fontSize: 16, lineHeight: 1 }}>🔥</span>
+                  Weekly Champions
+                </p>
               </div>
               <div className="flex items-center gap-3" style={{ paddingTop: 4 }}>
                 <button
@@ -1065,7 +1073,7 @@ export default function Dashboard() {
               </div>
             ) : topPlayers.length === 0 ? (
               <p className="font-sans text-xs text-slate-500 text-center py-4">
-                No scores yet this week. Be the first! 🚀
+                Showing last saved leaderboard
               </p>
             ) : (
               <>

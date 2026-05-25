@@ -141,17 +141,23 @@ export default function Result() {
         },
       });
       const players = getWeeklyPlayers(result.data);
-      if (players.length > 0) setTopPerformers(players.slice(0, 5));
+      if (players.length > 0) {
+        setTopPerformers(players.slice(0, 5));
+      } else {
+        setLeaderboardMsg('Showing last saved leaderboard');
+      }
       setWeeklyUpdatedAt(result.timestamp || Date.now());
-      setLeaderboardMsg(result.stale ? 'Showing last saved leaderboard' : '');
+      if (result.stale) setLeaderboardMsg('Showing last saved leaderboard');
+      else if (players.length > 0) setLeaderboardMsg('');
     } catch {
       const cached = readCache(CACHE_KEYS.WEEKLY_LEADERBOARD, CACHE_TTL.THIRTY_MINUTES);
       const players = getWeeklyPlayers(cached?.data);
       if (players.length > 0) {
         setTopPerformers(players.slice(0, 5));
         setWeeklyUpdatedAt(cached.timestamp);
-        setLeaderboardMsg('Showing last saved leaderboard');
       }
+      if (cached?.timestamp) setWeeklyUpdatedAt(cached.timestamp);
+      setLeaderboardMsg('Showing last saved leaderboard');
     } finally {
       if (!background) setLeaderboardRefreshing(false);
     }
@@ -734,8 +740,10 @@ export default function Result() {
         >
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
             <div>
-              <p style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>🔥 Weekly Champions</p>
-              <p style={{ fontSize: 13, color: '#94A3B8', marginTop: 3 }}>Top performers this week</p>
+              <p style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ fontSize: 16, lineHeight: 1 }}>🔥</span>
+                Weekly Champions
+              </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4 }}>
               <button
@@ -755,7 +763,7 @@ export default function Result() {
 
           {topPerformers.length === 0 ? (
             <p style={{ fontSize: 12, color: '#64748B', textAlign: 'center', padding: '8px 0' }}>
-              No scores yet this week. Be the first! 🚀
+              Showing last saved leaderboard
             </p>
           ) : (() => {
             const top = topPerformers[0];
