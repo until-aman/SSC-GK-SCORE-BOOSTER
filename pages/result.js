@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import XPToast from '@/components/XPToast';
 import Confetti from '@/components/Confetti';
 
+import GoogleSignInCard from '@/components/GoogleSignInCard';
 import Loader from '@/components/ui/Loader';
-import { fetchWithClientCache, patchCache, readCache, writeCache } from '@/lib/clientCache';
+import { fetchWithClientCache, formatLastUpdated, patchCache, readCache, writeCache } from '@/lib/clientCache';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
@@ -45,14 +46,6 @@ function ChampionAvatar({ imageUrl, name, size = 36 }) {
   );
 }
 
-const GoogleSVG = () => (
-  <svg width="18" height="18" viewBox="0 0 48 48">
-    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-    <path fill="#34A853" d="M10.53 28.59a14.5 14.5 0 010-9.18l-7.98-6.19a24.08 24.08 0 000 21.56l7.98-6.19z"/>
-    <path fill="#FBBC05" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-  </svg>
-);
 
 function patchProfileCaches(profileSnapshot) {
   if (!profileSnapshot) return;
@@ -117,8 +110,10 @@ export default function Result() {
   const [showFeedbackSheet, setShowFeedbackSheet] = useState(false);
   const [showConfetti, setShowConfetti]       = useState(false);
   const [champsSlide, setChampsSlide]         = useState(0);
+  const [champsPaused, setChampsPaused]       = useState(false);
   const [leaderboardRefreshing, setLeaderboardRefreshing] = useState(false);
   const [leaderboardMsg, setLeaderboardMsg]   = useState('');
+  const [weeklyUpdatedAt, setWeeklyUpdatedAt] = useState(null);
   const scoreSavedRef = useRef(false);
   const landingConfettiShownRef = useRef(false);
   const leaderboardRefreshedAfterScoreRef = useRef(false);
@@ -135,7 +130,10 @@ export default function Result() {
         forceRefresh,
         onCache(entry) {
           const players = getWeeklyPlayers(entry.data);
-          if (players.length > 0) setTopPerformers(players.slice(0, 5));
+          if (players.length > 0) {
+            setTopPerformers(players.slice(0, 5));
+            setWeeklyUpdatedAt(entry.timestamp);
+          }
         },
         onFresh(data) {
           const players = getWeeklyPlayers(data);
@@ -143,15 +141,23 @@ export default function Result() {
         },
       });
       const players = getWeeklyPlayers(result.data);
-      if (players.length > 0) setTopPerformers(players.slice(0, 5));
-      setLeaderboardMsg(result.stale ? 'Showing saved leaderboard.' : '');
+      if (players.length > 0) {
+        setTopPerformers(players.slice(0, 5));
+      } else {
+        setLeaderboardMsg('Showing last saved leaderboard');
+      }
+      setWeeklyUpdatedAt(result.timestamp || Date.now());
+      if (result.stale) setLeaderboardMsg('Showing last saved leaderboard');
+      else if (players.length > 0) setLeaderboardMsg('');
     } catch {
       const cached = readCache(CACHE_KEYS.WEEKLY_LEADERBOARD, CACHE_TTL.THIRTY_MINUTES);
       const players = getWeeklyPlayers(cached?.data);
       if (players.length > 0) {
         setTopPerformers(players.slice(0, 5));
-        setLeaderboardMsg('Showing saved leaderboard.');
+        setWeeklyUpdatedAt(cached.timestamp);
       }
+      if (cached?.timestamp) setWeeklyUpdatedAt(cached.timestamp);
+      setLeaderboardMsg('Showing last saved leaderboard');
     } finally {
       if (!background) setLeaderboardRefreshing(false);
     }
@@ -164,10 +170,10 @@ export default function Result() {
 
   // Auto-advance Weekly Champions carousel (mirrors dashboard behaviour)
   useEffect(() => {
-    if (topPerformers.length < 2) return;
-    const t = setInterval(() => setChampsSlide(s => (s + 1) % Math.min(topPerformers.length, 3)), 3000);
+    if (topPerformers.length < 2 || champsPaused) return;
+    const t = setInterval(() => setChampsSlide(s => (s + 1) % Math.min(topPerformers.length, 3)), 4000);
     return () => clearInterval(t);
-  }, [topPerformers.length]);
+  }, [topPerformers.length, champsPaused]);
 
   useEffect(() => {
     if (!result || landingConfettiShownRef.current) return;
@@ -379,17 +385,15 @@ export default function Result() {
   }
 
   async function handleFeedbackSubmit() {
-    const hasInput = feedbackType || feedback.trim();
-    if (!hasInput) return;
-    const fullFeedback = feedbackType && feedback.trim()
-      ? `[${feedbackType}] ${feedback.trim()}`
-      : feedbackType || feedback.trim();
+    const feedbackMessage = feedback.trim();
+    if (feedbackMessage.length < 7) return;
     try {
       await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          feedback: fullFeedback,
+          Feedback_pill: feedbackType,
+          Feedback_message: feedbackMessage,
           subject: result?.subject || '',
           topic: result?.topic || '',
         }),
@@ -452,25 +456,6 @@ export default function Result() {
       `}</style>
 
       <div style={{ maxWidth: 430, margin: '0 auto', padding: '24px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-        {/* ── HEADER ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 6 }}>
-          <button
-            onClick={() => router.back()}
-            style={{ width: 36, height: 36, borderRadius: '50%', background: '#172235', border: '1px solid #2A3A52', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
-            aria-label="Go back"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F8FAFC" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 5l-7 7 7 7"/>
-            </svg>
-          </button>
-          <div>
-            <p style={{ fontSize: 22, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.1, marginBottom: 2 }}>Result</p>
-            <p style={{ fontSize: 14, color: '#93A4BC' }}>
-              {result.isDailyChallenge ? 'Daily Challenge' : (result.collection || 'Practice')} · {result.subject || 'Mixed GK'}
-            </p>
-          </div>
-        </div>
 
         {/* ── 1. RESULT SUMMARY CARD ── */}
         {(() => {
@@ -606,23 +591,45 @@ export default function Result() {
         <div
           className="pyq-in"
           onClick={() => router.push('/subjects?collection=ssc_pyq')}
-          style={{ background: '#172235', border: '1px solid #2A3A52', borderRadius: 24, padding: 20, cursor: 'pointer' }}
+          style={{
+            position: 'relative',
+            overflow: 'hidden',
+            background: '#172235',
+            border: '1px solid #2A3A52',
+            borderRadius: 24,
+            padding: 20,
+            cursor: 'pointer',
+          }}
         >
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: '82%',
+              height: '100%',
+              borderTop: '2px solid rgba(249,115,22,0.72)',
+              borderRight: '2px solid rgba(249,115,22,0.72)',
+              borderTopRightRadius: 24,
+              pointerEvents: 'none',
+            }}
+          />
           <div style={{ display: 'inline-flex', alignItems: 'center', marginBottom: 14, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: 999, padding: '3px 12px' }}>
             <span style={{ fontSize: 10, fontWeight: 700, color: '#FDBA74', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most Useful Next Step</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: 20 }}>📚</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 16 }}>📚</span>
             </div>
             <div>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC', marginBottom: 4 }}>SSC PYQ Practice</p>
-              <p style={{ fontSize: 12, color: '#93A4BC', lineHeight: 1.55 }}>
-                Practice previous year SSC questions by subject.<br />
-                Choose Polity, History, Science, Geography and more.
-              </p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC' }}>SSC PYQ Practice</p>
             </div>
           </div>
+          <p style={{ fontSize: 12, color: '#93A4BC', lineHeight: 1.55, marginBottom: 14 }}>
+            Practice previous year SSC questions by subject.<br />
+            Choose Polity, History, Science, Geography and more.
+          </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
             {['7,000+ Questions', 'Exam-level Practice', 'Subject-wise'].map(tag => (
               <span key={tag} style={{ fontSize: 10, fontWeight: 600, color: '#7EA0C4', background: 'rgba(126,160,196,0.10)', border: '1px solid rgba(126,160,196,0.20)', borderRadius: 999, padding: '3px 10px' }}>
@@ -695,36 +702,68 @@ export default function Result() {
 
         {/* ── 5. GUEST SIGN-IN NUDGE ── */}
         {isGuest && (
-          <div style={{ background: '#172235', border: '1px solid #2A3A52', borderRadius: 18, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#F8FAFC', marginBottom: 2 }}>Save your progress</p>
-              <p style={{ fontSize: 11, color: '#64748B' }}>Login to save score, XP, streak &amp; rank.</p>
-            </div>
-            <button
-              onClick={() => { document.cookie = 'userMode=; path=/; max-age=0'; signIn('google', { callbackUrl: '/dashboard' }); }}
-              style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 12, cursor: 'pointer', background: '#FFFFFF', color: '#0F172A', border: 'none', fontSize: 12, fontWeight: 600 }}
-            >
-              <GoogleSVG />
-              Sign in
-            </button>
-          </div>
+          <GoogleSignInCard
+            title="Save your progress"
+            subtitle="Login to save score, XP, streak & rank."
+            buttonText="Sign in"
+            callbackUrl="/dashboard"
+          />
         )}
 
         {/* ── 6. WEEKLY CHAMPIONS ── */}
-        <div className="champs-in" style={{ background: '#172235', border: '1px solid rgba(251,191,36,0.20)', borderRadius: 24, padding: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#F8FAFC' }}>Weekly Champions</p>
-            <button
-              onClick={() => loadWeeklyLeaderboard({ forceRefresh: true })}
-              disabled={leaderboardRefreshing}
-              style={{ fontSize: 16, color: '#64748B', background: 'none', border: 'none', cursor: 'pointer', opacity: leaderboardRefreshing ? 0.4 : 0.7, lineHeight: 1 }}
-              aria-label="Refresh leaderboard"
-            >↻</button>
+        <div
+          className="champs-in"
+          role="button"
+          tabIndex={0}
+          onClick={() => router.push('/leaderboard')}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              router.push('/leaderboard');
+            }
+          }}
+          style={{
+          background: 'linear-gradient(145deg, #111827 0%, #0f1f2e 100%)',
+          border: '1px solid rgba(245, 158, 11, 0.35)',
+          borderRadius: 24,
+          boxShadow: '0 12px 35px rgba(245, 158, 11, 0.08)',
+          padding: 18,
+          cursor: 'pointer',
+          transition: 'transform 150ms ease',
+        }}
+          onPointerDown={e => { setChampsPaused(true); e.currentTarget.style.transform = 'scale(0.98)'; }}
+          onPointerUp={e => { setChampsPaused(false); e.currentTarget.style.transform = 'scale(1)'; }}
+          onPointerLeave={e => { setChampsPaused(false); e.currentTarget.style.transform = 'scale(1)'; }}
+          onTouchStart={() => setChampsPaused(true)}
+          onTouchEnd={() => setChampsPaused(false)}
+          onTouchCancel={() => setChampsPaused(false)}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+            <div>
+              <p style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ fontSize: 16, lineHeight: 1 }}>🔥</span>
+                Weekly Champions
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4 }}>
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  router.push('/leaderboard');
+                }}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600, color: '#34D399', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                View your rank
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 18l6-6-6-6" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </div>
           </div>
 
           {topPerformers.length === 0 ? (
             <p style={{ fontSize: 12, color: '#64748B', textAlign: 'center', padding: '8px 0' }}>
-              No scores yet this week. Be the first! 🚀
+              Showing last saved leaderboard
             </p>
           ) : (() => {
             const top = topPerformers[0];
@@ -756,13 +795,39 @@ export default function Result() {
             );
           })()}
 
-          {leaderboardMsg && (
-            <p style={{ fontSize: 11, textAlign: 'center', marginTop: 8, color: '#FBBF24' }}>{leaderboardMsg}</p>
+          {(leaderboardMsg || leaderboardRefreshing || weeklyUpdatedAt) && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+              <button
+                type="button"
+                onClick={e => {
+                  e.stopPropagation();
+                  loadWeeklyLeaderboard({ forceRefresh: true });
+                }}
+                disabled={leaderboardRefreshing}
+                style={{
+                  fontSize: 12,
+                  color: '#64748B',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: leaderboardRefreshing ? 'default' : 'pointer',
+                }}
+              >
+                {leaderboardRefreshing
+                  ? '↻ Refreshing...'
+                  : leaderboardMsg
+                    ? `${leaderboardMsg} • Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`
+                    : `↻ Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`}
+              </button>
+            </div>
           )}
 
           <div style={{ marginTop: 14, textAlign: 'center' }}>
             <button
-              onClick={() => router.push('/leaderboard')}
+              onClick={e => {
+                e.stopPropagation();
+                router.push('/leaderboard');
+              }}
               style={{ fontSize: 13, fontWeight: 600, color: '#FDBA74', background: 'none', border: 'none', cursor: 'pointer' }}
             >
               View leaderboard →
@@ -976,6 +1041,9 @@ export default function Result() {
                 onFocus={e => { e.target.style.borderColor = 'rgba(148,163,184,0.40)'; }}
                 onBlur={e => { e.target.style.borderColor = 'rgba(148,163,184,0.18)'; }}
               />
+              <p style={{ fontSize: 11, color: '#64748B', marginTop: -8, marginBottom: 14 }}>
+                Minimum 7 characters
+              </p>
 
               {/* Buttons — full-width on mobile */}
               <div style={{ display: 'flex', gap: 10 }}>
@@ -994,15 +1062,15 @@ export default function Result() {
                 </button>
                 <button
                   onClick={async () => { await handleFeedbackSubmit(); setShowFeedbackSheet(false); }}
-                  disabled={!feedbackType && !feedback.trim()}
+                  disabled={feedback.trim().length < 7}
                   style={{
                     flex: 1, minHeight: 52, borderRadius: 16,
-                    background: (feedbackType || feedback.trim()) ? 'linear-gradient(90deg, #FF7A1A, #FF5A00)' : 'rgba(148,163,184,0.08)',
+                    background: feedback.trim().length >= 7 ? 'linear-gradient(90deg, #FF7A1A, #FF5A00)' : 'rgba(148,163,184,0.08)',
                     border: 'none',
-                    color: (feedbackType || feedback.trim()) ? '#fff' : '#475569',
+                    color: feedback.trim().length >= 7 ? '#fff' : '#475569',
                     fontFamily: 'inherit', fontWeight: 700, fontSize: 15,
-                    boxShadow: (feedbackType || feedback.trim()) ? '0 8px 24px rgba(255,106,0,0.25)' : 'none',
-                    cursor: (feedbackType || feedback.trim()) ? 'pointer' : 'not-allowed',
+                    boxShadow: feedback.trim().length >= 7 ? '0 8px 24px rgba(255,106,0,0.25)' : 'none',
+                    cursor: feedback.trim().length >= 7 ? 'pointer' : 'not-allowed',
                     transition: 'background 0.15s, box-shadow 0.15s',
                   }}
                 >

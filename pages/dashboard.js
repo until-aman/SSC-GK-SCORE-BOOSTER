@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
 
+import GoogleSignInCard from '@/components/GoogleSignInCard';
 import NotificationBell from '@/components/NotificationBell';
 import Loader from '@/components/ui/Loader';
 import { getSubjectStyle, subjectStyles } from '@/lib/subjects';
@@ -383,6 +384,7 @@ export default function Dashboard() {
   const [notifyLoading,    setNotifyLoading]    = useState(false);
   const [collectionTotals, setCollectionTotals] = useState({});   // { [collection]: totalCount }
   const [champsSlide, setChampsSlide] = useState(0);
+  const [champsPaused, setChampsPaused] = useState(false);
   const [bootstrapRefreshing, setBootstrapRefreshing] = useState(false);
   const [bootstrapMsg, setBootstrapMsg] = useState(null);
   const [leaderboardMsg, setLeaderboardMsg] = useState(null);
@@ -554,6 +556,7 @@ export default function Dashboard() {
           if (players.length > 0) {
             setTopPlayers(players);
             setHasWeeklyCache(true);
+            setWeeklyUpdatedAt(entry.timestamp);
             setWeeklyLoading(false);
           }
         },
@@ -566,17 +569,24 @@ export default function Dashboard() {
         },
       });
       const players = getWeeklyPlayers(result.data);
-      if (players.length > 0) setTopPlayers(players);
+      if (players.length > 0) {
+        setTopPlayers(players);
+      } else {
+        setLeaderboardMsg('Showing last saved leaderboard');
+      }
       setWeeklyUpdatedAt(result.timestamp || Date.now());
-      setLeaderboardMsg(result.stale ? 'Showing saved leaderboard.' : null);
+      if (result.stale) setLeaderboardMsg('Showing last saved leaderboard');
+      else if (players.length > 0) setLeaderboardMsg(null);
     } catch {
       const cached = readCache(CACHE_KEYS.WEEKLY_LEADERBOARD, CACHE_TTL.THIRTY_MINUTES);
       const players = getWeeklyPlayers(cached?.data);
       if (players.length > 0) {
         setTopPlayers(players);
         setHasWeeklyCache(true);
-        setLeaderboardMsg('Showing saved leaderboard.');
+        setWeeklyUpdatedAt(cached.timestamp);
       }
+      if (cached?.timestamp) setWeeklyUpdatedAt(cached.timestamp);
+      setLeaderboardMsg('Showing last saved leaderboard');
     } finally {
       setWeeklyLoading(false);
       setWeeklyUpdating(false);
@@ -652,10 +662,10 @@ export default function Dashboard() {
 
   // Auto-advance Weekly Champions carousel
   useEffect(() => {
-    if (topPlayers.length < 2) return;
-    const t = setInterval(() => setChampsSlide(s => (s + 1) % Math.min(topPlayers.length, 3)), 3000);
+    if (topPlayers.length < 2 || champsPaused) return;
+    const t = setInterval(() => setChampsSlide(s => (s + 1) % Math.min(topPlayers.length, 3)), 4000);
     return () => clearInterval(t);
-  }, [topPlayers.length]);
+  }, [topPlayers.length, champsPaused]);
 
   // Fetch profile + run localStorage → cloud migration for saved questions
   useEffect(() => {
@@ -909,18 +919,13 @@ export default function Dashboard() {
 
         {/* ── GUEST SIGN-IN NUDGE ── */}
         {isGuest && (
-          <div className="mx-4 mt-5 px-4 py-4 flex items-center gap-4" style={{ background: '#111C2E', border: '1px solid rgba(34,211,153,0.22)', boxShadow: '0 0 0 1px rgba(34,211,153,0.04)', borderRadius: 22 }}>
-            <div className="flex-1 min-w-0">
-              <p className="font-display font-bold text-sm text-white leading-snug">Save your progress</p>
-              <p className="font-sans text-xs text-slate-400 mt-0.5">Sign in to save XP, streaks &amp; rank</p>
-            </div>
-            <button
-              onClick={() => { document.cookie = 'userMode=; path=/; max-age=0'; signIn('google', { callbackUrl: '/dashboard' }); }}
-              className="flex-shrink-0 flex items-center gap-2 rounded-xl px-3 py-2 font-display font-bold text-xs active:scale-[0.97] transition-transform" style={{ background: 'rgba(34,211,153,0.15)', border: '1px solid rgba(34,211,153,0.3)', color: '#34d399' }}
-            >
-              Sign in →
-            </button>
-          </div>
+          <GoogleSignInCard
+            className="mx-4 mt-5"
+            title="Save your progress"
+            subtitle="Login to save score, XP, streak & rank."
+            buttonText="Sign in"
+            callbackUrl="/dashboard"
+          />
         )}
 
         {/* ── SOCIAL PROOF CAROUSEL ── */}
@@ -1009,26 +1014,50 @@ export default function Dashboard() {
 
         {/* ── WEEKLY CHAMPIONS ── */}
         <div className="mt-5 px-4">
-          <div className="p-4" style={{ borderRadius: 22, background: '#111C2E', border: '1px solid rgba(253,186,59,0.22)', boxShadow: '0 0 24px rgba(253,186,59,0.06)' }}>
+          <div
+            className="p-4"
+            role="button"
+            tabIndex={0}
+            onClick={() => router.push('/leaderboard')}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                router.push('/leaderboard');
+              }
+            }}
+            style={{
+            background: 'linear-gradient(145deg, #111827 0%, #0f1f2e 100%)',
+            border: '1px solid rgba(245, 158, 11, 0.35)',
+            borderRadius: 24,
+            boxShadow: '0 12px 35px rgba(245, 158, 11, 0.08)',
+            padding: 18,
+            cursor: 'pointer',
+            transition: 'transform 150ms ease',
+          }}
+            onPointerDown={e => { setChampsPaused(true); e.currentTarget.style.transform = 'scale(0.98)'; }}
+            onPointerUp={e => { setChampsPaused(false); e.currentTarget.style.transform = 'scale(1)'; }}
+            onPointerLeave={e => { setChampsPaused(false); e.currentTarget.style.transform = 'scale(1)'; }}
+            onTouchStart={() => setChampsPaused(true)}
+            onTouchEnd={() => setChampsPaused(false)}
+            onTouchCancel={() => setChampsPaused(false)}
+          >
 
             {/* Header */}
-            <div className="flex items-center justify-between mb-3">
-              <p className="font-display font-bold text-base text-white">🔥 Weekly Champions</p>
-              <div className="flex items-center gap-3">
-                {(bootstrapRefreshing || weeklyUpdating) && (
-                  <span className="font-sans text-xs text-slate-500">Updating...</span>
-                )}
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <p className="font-display" style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ fontSize: 16, lineHeight: 1 }}>🔥</span>
+                  Weekly Champions
+                </p>
+              </div>
+              <div className="flex items-center gap-3" style={{ paddingTop: 4 }}>
                 <button
-                  onClick={handleLeaderboardRefresh}
-                  disabled={weeklyUpdating}
-                  className="font-sans text-xs text-slate-400 active:opacity-70 disabled:opacity-40"
-                  aria-label="Refresh leaderboard"
-                >
-                  ↻
-                </button>
-                <button
-                  onClick={() => router.push('/leaderboard')}
-                  className="flex items-center gap-1 text-emerald-400 text-xs font-sans font-medium active:opacity-70"
+                  onClick={e => {
+                    e.stopPropagation();
+                    router.push('/leaderboard');
+                  }}
+                  className="flex items-center gap-1 font-sans font-medium active:opacity-70"
+                  style={{ fontSize: 13, color: '#34D399' }}
                 >
                   View your rank
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1044,7 +1073,7 @@ export default function Dashboard() {
               </div>
             ) : topPlayers.length === 0 ? (
               <p className="font-sans text-xs text-slate-500 text-center py-4">
-                No scores yet this week. Be the first! 🚀
+                Showing last saved leaderboard
               </p>
             ) : (
               <>
@@ -1119,30 +1148,32 @@ export default function Dashboard() {
                   );
                 })()}
 
-                {/* Dot indicators */}
-                {topPlayers.length > 1 && (
-                  <div style={{ display: 'flex', gap: 5, justifyContent: 'center', marginTop: 10 }}>
-                    {topPlayers.slice(0, 3).map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setChampsSlide(i)}
-                        aria-label={`Champion ${i + 1}`}
-                        style={{
-                          width: champsSlide % 3 === i ? 18 : 6,
-                          height: 6, borderRadius: 3,
-                          background: champsSlide % 3 === i ? '#f59e0b' : 'rgba(255,255,255,0.18)',
-                          border: 'none', padding: 0, cursor: 'pointer',
-                          transition: 'width 0.3s ease, background 0.3s ease',
-                        }}
-                      />
-                    ))}
+                {(leaderboardMsg || weeklyUpdating || bootstrapRefreshing || weeklyUpdatedAt) && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+                    <button
+                      type="button"
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleLeaderboardRefresh();
+                      }}
+                      disabled={weeklyUpdating || bootstrapRefreshing}
+                      className="font-sans active:opacity-70 disabled:opacity-70"
+                      style={{
+                        fontSize: 12,
+                        color: '#64748B',
+                        background: 'none',
+                        border: 'none',
+                        padding: 0,
+                        cursor: weeklyUpdating || bootstrapRefreshing ? 'default' : 'pointer',
+                      }}
+                    >
+                      {weeklyUpdating || bootstrapRefreshing
+                        ? '↻ Refreshing...'
+                        : leaderboardMsg
+                          ? `${leaderboardMsg} • Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`
+                          : `↻ Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`}
+                    </button>
                   </div>
-                )}
-
-                {(leaderboardMsg || bootstrapMsg || weeklyUpdatedAt) && (
-                  <p className="font-sans text-[11px] text-center mt-2" style={{ color: (leaderboardMsg || bootstrapMsg) ? '#f59e0b' : 'rgb(100 116 139)' }}>
-                    {leaderboardMsg || bootstrapMsg || `Last updated: ${formatLastUpdated(weeklyUpdatedAt)}`}
-                  </p>
                 )}
 
                 {/* Your rank row */}
