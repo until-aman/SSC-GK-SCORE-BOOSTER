@@ -3,6 +3,8 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Loader from '@/components/ui/Loader';
+import { fetchWithClientCache, readCache } from '@/lib/clientCache';
+import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 
 const GK_FACTS = [
   // GK Facts
@@ -52,11 +54,11 @@ function getLoadingTitle(subject, mode) {
   return `Building your ${cap} challenge…`;
 }
 
-function GKFactCarousel({ subject, mode, accentColor = '#10B981' }) {
+function GKFactCarousel({ subject, mode, accentColor = '#10B981', statusText }) {
   const [factIndex, setFactIndex] = useState(() => Math.floor(Math.random() * GK_FACTS.length));
   const [progress, setProgress] = useState(0);
   const [stageIdx, setStageIdx] = useState(0);
-  const [subtext, setSubtext] = useState('Preparing questions, timer and XP');
+  const [subtext, setSubtext] = useState(statusText || 'Preparing questions, timer and XP');
 
   useEffect(() => {
     const iv = setInterval(() => setFactIndex(i => (i + 1) % GK_FACTS.length), 2500);
@@ -222,12 +224,26 @@ function GKFactCarousel({ subject, mode, accentColor = '#10B981' }) {
   );
 }
 
-function DailyChallengeLoader() {
-  return <GKFactCarousel mode="daily" subject="Daily" accentColor="#f97316" />;
+function DailyChallengeLoader({ statusText }) {
+  return <GKFactCarousel mode="daily" subject="Daily" accentColor="#f97316" statusText={statusText} />;
 }
 
-function QuizLoader({ subject }) {
-  return <GKFactCarousel subject={subject} mode="standard" accentColor="#10B981" />;
+function QuizLoader({ subject, statusText }) {
+  return <GKFactCarousel subject={subject} mode="standard" accentColor="#10B981" statusText={statusText} />;
+}
+
+function getISTDateString() {
+  return new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split('T')[0];
+}
+
+function getQuestionPool(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.questions)) return data.questions;
+  return [];
+}
+
+function pickQuestions(pool, count) {
+  return shuffle(pool).slice(0, parseInt(count, 10));
 }
 
 function playSound(type) {
@@ -433,6 +449,8 @@ export default function Quiz() {
   const [quizComplete, setQuizComplete] = useState(false);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
+  const [loadingCopy, setLoadingCopy]   = useState('Fetching fresh questions...');
+  const [cacheWarning, setCacheWarning] = useState('');
   const [selectedOption, setSelectedOption] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [timeLeft, setTimeLeft]         = useState(20);
@@ -459,7 +477,7 @@ export default function Quiz() {
   useEffect(() => {
     if (!router.isReady) return;
     if (!isSavedMode && mode !== 'daily' && (!subject || !topic || !questionCount)) router.replace('/dashboard');
-  }, [router.isReady, subject, topic, questionCount, isSavedMode, router]);
+  }, [router.isReady, subject, topic, questionCount, isSavedMode, mode, router]);
 
   useEffect(() => {
     if (!router.isReady || recoveryChecked) return;
@@ -602,35 +620,69 @@ export default function Quiz() {
 
     if (mode === 'daily') {
       setLoading(true);
+      setError(null);
+      setLoadingCopy('Fetching fresh questions...');
+      setCacheWarning('');
       (async () => {
         try {
-          const today = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
-            .toISOString().split('T')[0];
-          const cacheKey = `dc_${today}`;
-          const cached = localStorage.getItem(cacheKey);
+          const today = getISTDateString();
+          const cacheKey = CACHE_KEYS.DAILY_CHALLENGE(today);
+          const cached = readCache(cacheKey, CACHE_TTL.ONE_DAY);
+          const cachedPool = cached ? getQuestionPool(cached.data) : [];
 
-          if (cached) {
-            const data = JSON.parse(cached);
-            if (data.questions?.length) {
-              setQuestions(data.questions.slice(0, 25));
+          if (cached?.isFresh && cachedPool.length) {
+            setLoadingCopy('Loading saved question pool...');
+            setQuestions(cachedPool.slice(0, 25));
+            setLoading(false);
+            return;
+          }
+
+          const result = await fetchWithClientCache({
+            key: cacheKey,
+            url: '/api/daily-challenge',
+            maxAgeMs: CACHE_TTL.ONE_DAY,
+            onCache(entry) {
+              const pool = getQuestionPool(entry.data);
+              if (pool.length) {
+                setLoadingCopy('Loading saved question pool...');
+                setQuestions(pool.slice(0, 25));
+              }
+            },
+          });
+
+          const pool = getQuestionPool(result.data);
+          if (pool.length) {
+            setQuestions(pool.slice(0, 25));
+            if (result.stale) setCacheWarning('Showing saved questions. Refresh when internet is stable.');
+            setLoading(false);
+            return;
+          }
+
+          // Backward compatibility for the old daily challenge key.
+          const legacyCached = localStorage.getItem(`dc_${today}`);
+          if (legacyCached) {
+            const data = JSON.parse(legacyCached);
+            const legacyPool = getQuestionPool(data);
+            if (legacyPool.length) {
+              setQuestions(legacyPool.slice(0, 25));
               setLoading(false);
               return;
             }
           }
 
-          const res = await fetch('/api/daily-challenge');
-          const data = await res.json();
-
-          if (!data.questions?.length) {
-            setError('no-questions');
-            setLoading(false);
-            return;
-          }
-
-          localStorage.setItem(cacheKey, JSON.stringify(data));
-          setQuestions(data.questions.slice(0, 25));
+          setError('no-questions');
           setLoading(false);
         } catch {
+          try {
+            const legacyCached = localStorage.getItem(`dc_${getISTDateString()}`);
+            const legacyPool = getQuestionPool(JSON.parse(legacyCached || 'null'));
+            if (legacyPool.length) {
+              setQuestions(legacyPool.slice(0, 25));
+              setCacheWarning('Showing saved questions. Refresh when internet is stable.');
+              setLoading(false);
+              return;
+            }
+          } catch {}
           setError('fetch-failed');
           setLoading(false);
         }
@@ -649,16 +701,39 @@ export default function Quiz() {
     }
     if (!subject || !topic || !questionCount) return;
     setLoading(true);
+    setError(null);
+    setLoadingCopy('Fetching fresh questions...');
+    setCacheWarning('');
 
     const url = `/api/questions?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}&collection=${encodeURIComponent(collection)}`;
+    const cacheKey = CACHE_KEYS.QUESTIONS(collection, subject, topic);
+    const cached = readCache(cacheKey, CACHE_TTL.ONE_DAY);
+    const cachedPool = cached ? getQuestionPool(cached.data) : [];
+
+    if (cached?.isFresh && cachedPool.length) {
+      setLoadingCopy('Loading saved question pool...');
+      setQuestions(pickQuestions(cachedPool, questionCount));
+      setLoading(false);
+      return;
+    }
+
+    if (cachedPool.length) {
+      setLoadingCopy('Loading saved question pool...');
+      setQuestions(pickQuestions(cachedPool, questionCount));
+    }
 
     async function fetchWithRetry(attemptsLeft) {
       try {
-        const r = await fetch(url);
-        const data = await r.json();
-        if (data.questions?.length) {
-          const pool = shuffle(data.questions).slice(0, parseInt(questionCount));
-          setQuestions(pool);
+        const result = await fetchWithClientCache({
+          key: cacheKey,
+          url,
+          maxAgeMs: CACHE_TTL.ONE_DAY,
+          forceRefresh: true,
+        });
+        const pool = getQuestionPool(result.data);
+        if (pool.length) {
+          setQuestions(pickQuestions(pool, questionCount));
+          if (result.stale) setCacheWarning('Showing saved questions. Refresh when internet is stable.');
           setLoading(false);
           return;
         }
@@ -680,7 +755,7 @@ export default function Quiz() {
     }
 
     fetchWithRetry(3);
-  }, [router.isReady, subject, topic, questionCount, isSavedMode, mode, recoveryChecked, recoveryPrompt]);
+  }, [router.isReady, subject, topic, questionCount, collection, isSavedMode, mode, recoveryChecked, recoveryPrompt]);
 
   useEffect(() => {
     if (!quizInProgress || recoveryPrompt) return;
@@ -1157,10 +1232,14 @@ export default function Quiz() {
     <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] px-4">
       <Head><title>Loading — SSC GK Score Booster</title></Head>
       {mode === 'daily' ? (
-        <DailyChallengeLoader />
+        <DailyChallengeLoader statusText={loadingCopy} />
       ) : (
-        <QuizLoader subject={subject} />
+        <QuizLoader subject={subject} statusText={loadingCopy} />
       )}
+      <p className="sr-only" aria-live="polite">{loadingCopy}</p>
+      <p className="fixed bottom-8 left-0 right-0 text-center text-xs font-medium text-slate-500">
+        {loadingCopy}
+      </p>
     </div>
   );
 
@@ -1369,6 +1448,11 @@ export default function Quiz() {
           </span>
           <span className="font-sans font-medium text-xs text-orange-400">⚡ Earn XP</span>
         </div>
+        {cacheWarning && (
+          <p className="text-xs pb-2" style={{ color: '#fbbf24' }}>
+            {cacheWarning}
+          </p>
+        )}
 
         {/* Row 2: progress bar + completed count */}
         <div className="flex items-center gap-2 pb-3">
