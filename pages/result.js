@@ -590,18 +590,18 @@ export default function Result() {
           <div style={{ display: 'inline-flex', alignItems: 'center', marginBottom: 14, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: 999, padding: '3px 12px' }}>
             <span style={{ fontSize: 10, fontWeight: 700, color: '#FDBA74', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most Useful Next Step</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: 20 }}>📚</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 16 }}>📚</span>
             </div>
             <div>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC', marginBottom: 4 }}>SSC PYQ Practice</p>
-              <p style={{ fontSize: 12, color: '#93A4BC', lineHeight: 1.55 }}>
-                Practice previous year SSC questions by subject.<br />
-                Choose Polity, History, Science, Geography and more.
-              </p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC' }}>SSC PYQ Practice</p>
             </div>
           </div>
+          <p style={{ fontSize: 12, color: '#93A4BC', lineHeight: 1.55, marginBottom: 14 }}>
+            Practice previous year SSC questions by subject.<br />
+            Choose Polity, History, Science, Geography and more.
+          </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
             {['7,000+ Questions', 'Exam-level Practice', 'Subject-wise'].map(tag => (
               <span key={tag} style={{ fontSize: 10, fontWeight: 600, color: '#7EA0C4', background: 'rgba(126,160,196,0.10)', border: '1px solid rgba(126,160,196,0.20)', borderRadius: 999, padding: '3px 10px' }}>
