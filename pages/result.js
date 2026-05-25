@@ -379,17 +379,15 @@ export default function Result() {
   }
 
   async function handleFeedbackSubmit() {
-    const hasInput = feedbackType || feedback.trim();
-    if (!hasInput) return;
-    const fullFeedback = feedbackType && feedback.trim()
-      ? `[${feedbackType}] ${feedback.trim()}`
-      : feedbackType || feedback.trim();
+    const feedbackMessage = feedback.trim();
+    if (feedbackMessage.length < 7) return;
     try {
       await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          feedback: fullFeedback,
+          Feedback_pill: feedbackType,
+          Feedback_message: feedbackMessage,
           subject: result?.subject || '',
           topic: result?.topic || '',
         }),
@@ -957,6 +955,9 @@ export default function Result() {
                 onFocus={e => { e.target.style.borderColor = 'rgba(148,163,184,0.40)'; }}
                 onBlur={e => { e.target.style.borderColor = 'rgba(148,163,184,0.18)'; }}
               />
+              <p style={{ fontSize: 11, color: '#64748B', marginTop: -8, marginBottom: 14 }}>
+                Minimum 7 characters
+              </p>
 
               {/* Buttons — full-width on mobile */}
               <div style={{ display: 'flex', gap: 10 }}>
@@ -975,15 +976,15 @@ export default function Result() {
                 </button>
                 <button
                   onClick={async () => { await handleFeedbackSubmit(); setShowFeedbackSheet(false); }}
-                  disabled={!feedbackType && !feedback.trim()}
+                  disabled={feedback.trim().length < 7}
                   style={{
                     flex: 1, minHeight: 52, borderRadius: 16,
-                    background: (feedbackType || feedback.trim()) ? 'linear-gradient(90deg, #FF7A1A, #FF5A00)' : 'rgba(148,163,184,0.08)',
+                    background: feedback.trim().length >= 7 ? 'linear-gradient(90deg, #FF7A1A, #FF5A00)' : 'rgba(148,163,184,0.08)',
                     border: 'none',
-                    color: (feedbackType || feedback.trim()) ? '#fff' : '#475569',
+                    color: feedback.trim().length >= 7 ? '#fff' : '#475569',
                     fontFamily: 'inherit', fontWeight: 700, fontSize: 15,
-                    boxShadow: (feedbackType || feedback.trim()) ? '0 8px 24px rgba(255,106,0,0.25)' : 'none',
-                    cursor: (feedbackType || feedback.trim()) ? 'pointer' : 'not-allowed',
+                    boxShadow: feedback.trim().length >= 7 ? '0 8px 24px rgba(255,106,0,0.25)' : 'none',
+                    cursor: feedback.trim().length >= 7 ? 'pointer' : 'not-allowed',
                     transition: 'background 0.15s, box-shadow 0.15s',
                   }}
                 >
