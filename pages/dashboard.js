@@ -9,14 +9,11 @@ import Loader from '@/components/ui/Loader';
 import { getSubjectStyle, subjectStyles } from '@/lib/subjects';
 import { getISTDateString } from '@/lib/streak';
 import {
-  buildLeaderboardCache,
-  claimLeaderboardRefresh,
+  readCache,
+  fetchWithClientCache,
   formatLastUpdated,
-  isLeaderboardCacheFresh,
-  readLeaderboardCache,
-  toDisplayLeader,
-  writeLeaderboardCache,
-} from '@/lib/leaderboardCache';
+} from '@/lib/clientCache';
+import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 
 const SUBJECTS = Object.keys(subjectStyles);
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -48,6 +45,8 @@ const PARMAR_SERIES = [
     tag: 'Parmar Special',
   },
 ];
+
+const SESSION_REFRESH_KEY = 'dashboard_refreshed_this_session';
 
 function isGuestMode() {
   if (typeof document === 'undefined') return false;
@@ -374,6 +373,8 @@ export default function Dashboard() {
   const [notifyLoading,    setNotifyLoading]    = useState(false);
   const [collectionTotals, setCollectionTotals] = useState({});   // { [collection]: totalCount }
   const [champsSlide, setChampsSlide] = useState(0);
+  const [bootstrapRefreshing, setBootstrapRefreshing] = useState(false);
+  const [bootstrapMsg, setBootstrapMsg] = useState(null);
 
   async function handleNotify(e, series) {
     e.stopPropagation();
@@ -500,59 +501,82 @@ export default function Dashboard() {
     } catch {}
   }
 
-  // Fetch weekly champion preview. Keep the last good result visible through transient API errors.
-  useEffect(() => {
-    let usedCache = false;
-    let cacheFresh = false;
-    try {
-      const cached = readLeaderboardCache();
-      if (cached?.weekKey && cached.top10?.length) {
-        usedCache = true;
-        cacheFresh = isLeaderboardCacheFresh(cached);
-        setTopPlayers(cached.top10.map(toDisplayLeader));
-        setWeeklyUserRank(cached.userRank ? toDisplayLeader(cached.userRank) : null);
-        setWeeklyUpdatedAt(cached.lastFetchedAt);
-        setHasWeeklyCache(true);
-      }
-    } catch {}
-
-    if (cacheFresh) {
-      setWeeklyLoading(false);
-      return;
+  function applyBootstrapData(data, timestamp) {
+    if (!data) return;
+    if (data.profile) {
+      setUserProfile(data.profile);
+      setProfileLoading(false);
     }
-
-    if (!claimLeaderboardRefresh()) {
+    if (Array.isArray(data.leaderboard?.weeklyTop) && data.leaderboard.weeklyTop.length > 0) {
+      setTopPlayers(data.leaderboard.weeklyTop);
       setWeeklyLoading(false);
       setWeeklyUpdating(false);
+    }
+    const cols = data.collections || {};
+    const newTotals = {};
+    ['PYQ', 'Parmar'].forEach(col => {
+      if (typeof cols[col]?.totalQuestions === 'number') newTotals[col] = cols[col].totalQuestions;
+    });
+    if (Object.keys(newTotals).length > 0) setCollectionTotals(prev => ({ ...prev, ...newTotals }));
+    if (timestamp) setWeeklyUpdatedAt(timestamp);
+  }
+
+  async function handleBootstrapRefresh() {
+    if (bootstrapRefreshing) return;
+    setBootstrapRefreshing(true);
+    try {
+      const result = await fetchWithClientCache({
+        key: CACHE_KEYS.DASHBOARD_BOOTSTRAP,
+        url: '/api/dashboard-bootstrap',
+        maxAgeMs: CACHE_TTL.ONE_DAY,
+        forceRefresh: true,
+        onFresh(data) {
+          applyBootstrapData(data, Date.now());
+          setBootstrapMsg(null);
+          sessionStorage.setItem(SESSION_REFRESH_KEY, '1');
+        },
+      });
+      if (result.stale) setBootstrapMsg('Showing saved data. Tap refresh for latest.');
+    } catch {
+      setBootstrapMsg("Couldn't refresh right now. Showing saved data.");
+    } finally {
+      setBootstrapRefreshing(false);
+    }
+  }
+
+  // Bootstrap: load dashboard data from cache then silently refresh once per session.
+  useEffect(() => {
+    if (status === 'loading') return;
+    const cached = readCache(CACHE_KEYS.DASHBOARD_BOOTSTRAP, CACHE_TTL.ONE_DAY);
+    if (cached) {
+      applyBootstrapData(cached.data, cached.timestamp);
+      if (!cached.isFresh) setBootstrapMsg('Showing saved data. Tap refresh for latest.');
+    } else {
+      if (!isLoggedIn) setProfileLoading(false);
+    }
+    const alreadyRefreshed = !!sessionStorage.getItem(SESSION_REFRESH_KEY);
+    if (cached?.isFresh || alreadyRefreshed) {
+      setWeeklyLoading(false);
       return;
     }
-
-    if (!usedCache) setWeeklyLoading(true);
-    if (usedCache) setWeeklyUpdating(true);
-    fetch('/api/leaderboard?scope=weekly')
-      .then(async r => {
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error || 'Failed to load leaderboard');
-        return {
-          leaders: (data.leaders || []).slice(0, 20),
-          currentUser: data.currentUser || null,
-        };
-      })
-      .then(({ leaders, currentUser }) => {
-        if (!leaders.length) return;
-        const cache = buildLeaderboardCache({ leaders, currentUser });
-        setTopPlayers(leaders);
-        setWeeklyUserRank(currentUser || null);
-        setWeeklyUpdatedAt(cache.lastFetchedAt);
-        setHasWeeklyCache(false);
-        writeLeaderboardCache(cache);
-      })
-      .catch(() => {})
-      .finally(() => {
-        setWeeklyUpdating(false);
-        setWeeklyLoading(false);
-      });
-  }, []);
+    fetchWithClientCache({
+      key: CACHE_KEYS.DASHBOARD_BOOTSTRAP,
+      url: '/api/dashboard-bootstrap',
+      maxAgeMs: CACHE_TTL.ONE_DAY,
+      forceRefresh: true,
+      onFresh(data) {
+        applyBootstrapData(data, Date.now());
+        setBootstrapMsg(null);
+        sessionStorage.setItem(SESSION_REFRESH_KEY, '1');
+      },
+    }).then(result => {
+      if (result.stale) setBootstrapMsg('Showing saved data. Tap refresh for latest.');
+      setWeeklyLoading(false);
+    }).catch(() => {
+      if (cached) setBootstrapMsg("Couldn't refresh right now. Showing saved data.");
+      setWeeklyLoading(false);
+    });
+  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // Auto-advance Weekly Champions carousel
@@ -561,21 +585,6 @@ export default function Dashboard() {
     const t = setInterval(() => setChampsSlide(s => (s + 1) % Math.min(topPlayers.length, 3)), 3000);
     return () => clearInterval(t);
   }, [topPlayers.length]);
-
-  // Prefetch collection totals for bell badge display
-  useEffect(() => {
-    const collections = ['PYQ', 'Parmar'];
-    collections.forEach(col => {
-      fetch(`/api/topics?collection=${encodeURIComponent(col)}`)
-        .then(r => r.json())
-        .then(data => {
-          const counts = data.subjectCounts || {};
-          const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
-          setCollectionTotals(prev => ({ ...prev, [col]: total }));
-        })
-        .catch(() => {});
-    });
-  }, []);
 
   // Fetch profile + run localStorage → cloud migration for saved questions
   useEffect(() => {
@@ -926,9 +935,17 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-3">
               <p className="font-display font-bold text-base text-white">🔥 Weekly Champions</p>
               <div className="flex items-center gap-3">
-                {weeklyUpdating && hasWeeklyCache && (
+                {bootstrapRefreshing && (
                   <span className="font-sans text-xs text-slate-500">Updating...</span>
                 )}
+                <button
+                  onClick={handleBootstrapRefresh}
+                  disabled={bootstrapRefreshing}
+                  className="font-sans text-xs text-slate-400 active:opacity-70 disabled:opacity-40"
+                  aria-label="Refresh leaderboard"
+                >
+                  ↻
+                </button>
                 <button
                   onClick={() => router.push('/leaderboard')}
                   className="flex items-center gap-1 text-emerald-400 text-xs font-sans font-medium active:opacity-70"
@@ -1042,9 +1059,9 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {weeklyUpdatedAt && (
-                  <p className="font-sans text-[11px] text-slate-500 text-center mt-2">
-                    {formatLastUpdated(weeklyUpdatedAt)}
+                {(bootstrapMsg || weeklyUpdatedAt) && (
+                  <p className="font-sans text-[11px] text-center mt-2" style={{ color: bootstrapMsg ? '#f59e0b' : 'rgb(100 116 139)' }}>
+                    {bootstrapMsg || `Last updated: ${formatLastUpdated(weeklyUpdatedAt)}`}
                   </p>
                 )}
 
