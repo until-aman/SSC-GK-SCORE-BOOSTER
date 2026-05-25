@@ -449,6 +449,7 @@ export default function Quiz() {
   const [quizComplete, setQuizComplete] = useState(false);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
+  const [retryCount, setRetryCount]     = useState(0);
   const [loadingCopy, setLoadingCopy]   = useState('Fetching fresh questions...');
   const [cacheWarning, setCacheWarning] = useState('');
   const [selectedOption, setSelectedOption] = useState(null);
@@ -755,7 +756,7 @@ export default function Quiz() {
     }
 
     fetchWithRetry(3);
-  }, [router.isReady, subject, topic, questionCount, collection, isSavedMode, mode, recoveryChecked, recoveryPrompt]);
+  }, [router.isReady, subject, topic, questionCount, collection, isSavedMode, mode, recoveryChecked, recoveryPrompt, retryCount]);
 
   useEffect(() => {
     if (!quizInProgress || recoveryPrompt) return;
@@ -1237,7 +1238,7 @@ export default function Quiz() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
           {error === 'fetch-failed' && (
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => { setError(null); setLoading(true); setRetryCount(c => c + 1); }}
               style={{
                 width: '100%', padding: '14px 0', borderRadius: 14, border: 'none', cursor: 'pointer',
                 fontFamily: 'var(--font-display,inherit)', fontWeight: 700, fontSize: 15, color: '#0f172a',

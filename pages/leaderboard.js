@@ -4,11 +4,11 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 
 import GoogleSignInCard from '@/components/GoogleSignInCard';
-import PodiumEntry from '@/components/PodiumEntry';
 import Loader from '@/components/ui/Loader';
 import {
   buildLeaderboardCache,
   claimLeaderboardRefresh,
+  formatLastUpdated,
   isLeaderboardCacheFresh,
   readLeaderboardCache,
   toDisplayLeader,
@@ -23,45 +23,63 @@ function truncateName(name, maxLength = 14) {
   return cleanName.length > maxLength ? `${cleanName.slice(0, maxLength - 1)}…` : cleanName;
 }
 
-function RankAvatar({ leader }) {
+function RankAvatar({ leader, size = 32, borderColor }) {
   const [imgError, setImgError] = useState(false);
-  const initial = (leader.name || '?').charAt(0).toUpperCase();
+  const initial    = (leader.name || '?').charAt(0).toUpperCase();
+  const fontSize   = Math.round(size * 0.42);
+  const sharedStyle = {
+    width: size, height: size, borderRadius: '50%', flexShrink: 0,
+    border: `2px solid ${borderColor || '#334155'}`,
+    overflow: 'hidden',
+  };
   if (leader.image && !imgError) {
     return (
-      <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-slate-600">
-        <img src={leader.image} alt={initial} className="w-full h-full object-cover" onError={() => setImgError(true)} />
+      <div style={sharedStyle}>
+        <img src={leader.image} alt={initial} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={() => setImgError(true)} />
       </div>
     );
   }
   return (
-    <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0">
-      <span className="font-display font-black text-[14px] text-white">{initial}</span>
+    <div style={{ ...sharedStyle, background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ fontSize, fontWeight: 900, color: 'white', fontFamily: 'inherit' }}>{initial}</span>
     </div>
   );
 }
 
 function RankRow({ leader, isSelf }) {
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl mb-2 ${
-      isSelf
-        ? 'bg-violet-900/40 border border-violet-500/40'
-        : 'bg-slate-800 border border-slate-700/50'
-    }`}>
-      <span className={`font-display font-bold text-sm w-6 text-center flex-shrink-0 ${
-        isSelf ? 'text-violet-300' : 'text-slate-500'
-      }`}>
+    <div
+      className="flex items-center gap-3 mb-2"
+      style={isSelf ? {
+        background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(31,41,55,0.80))',
+        border: '1px solid rgba(52,211,153,0.45)',
+        borderRadius: 18,
+        padding: 14,
+      } : {
+        background: 'rgba(31,41,55,0.72)',
+        border: '1px solid rgba(148,163,184,0.12)',
+        borderRadius: 18,
+        padding: 14,
+      }}
+    >
+      <span className="font-display font-bold text-sm w-6 text-center flex-shrink-0" style={{ color: isSelf ? '#34D399' : '#475569' }}>
         {leader.rank}
       </span>
-      <RankAvatar leader={leader} />
+      <RankAvatar leader={leader} borderColor={isSelf ? 'rgba(52,211,153,0.55)' : undefined} />
       <div className="flex-1 min-w-0">
-        <p className={`font-sans font-semibold text-sm truncate ${isSelf ? 'text-violet-200' : 'text-white'}`}>
-          {truncateName(leader.name)}
-          {isSelf && <span className="font-sans text-xs text-violet-400 ml-1.5">(you)</span>}
-        </p>
-        <p className="font-sans text-xs text-slate-500">{leader.level || 'Aspirant'}</p>
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <p className="font-sans font-semibold text-sm truncate" style={{ color: isSelf ? '#F0FDF4' : '#F8FAFC', margin: 0 }}>
+            {truncateName(leader.name)}
+          </p>
+          {isSelf && (
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#34D399', background: 'rgba(16,185,129,0.16)', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 6, padding: '1px 6px', flexShrink: 0, lineHeight: '16px' }}>
+              YOU
+            </span>
+          )}
+        </div>
       </div>
       <div className="text-right">
-        <p className={`font-display font-bold text-sm ${isSelf ? 'text-violet-300' : 'text-slate-300'}`}>
+        <p className="font-display font-bold text-sm" style={{ color: isSelf ? '#34D399' : '#CBD5E1' }}>
           {(leader.totalScore || 0).toFixed(1)}
         </p>
         <p className="font-sans text-xs text-slate-500">XP</p>
@@ -79,67 +97,85 @@ export default function Leaderboard() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState(null);
 
-  async function fetchLeaderboard(scope) {
+  async function fetchLeaderboard(scope, { forceRefresh = false } = {}) {
     let showedCache = false;
-    let cacheFresh = false;
-    if (scope === 'weekly') {
-      // 1. Check bootstrap cache first (dashboard already populated this, 24h TTL)
-      const bootstrap = readCache(CACHE_KEYS.DASHBOARD_BOOTSTRAP, CACHE_TTL.ONE_DAY);
-      if (bootstrap?.isFresh && bootstrap.data?.leaderboard?.weeklyTop?.length) {
-        const leaders = bootstrap.data.leaderboard.weeklyTop;
-        const self = session?.user?.email
-          ? leaders.find(l => l.email === session.user.email) || null
-          : null;
-        setLeaders(leaders);
-        setCurrentUser(self);
-        setLoading(false);
-        showedCache = true;
-        cacheFresh = true; // bootstrap fresh = no need to re-fetch
-      }
+    let cacheFresh  = false;
 
-      // 2. Fall back to old leaderboard cache (30-min TTL)
-      if (!showedCache) {
-        const cached = readLeaderboardCache();
-        if (cached?.top10?.length) {
-          cacheFresh = isLeaderboardCacheFresh(cached);
-          const cachedLeaders = cached.top10.map(toDisplayLeader);
-          const cachedUser = cached.userRank ? toDisplayLeader(cached.userRank) : null;
-          const userAlreadyInTop10 = cachedUser && cachedLeaders.some(l => l.email && l.email === cachedUser.email);
-          setLeaders(userAlreadyInTop10 || !cachedUser ? cachedLeaders : [...cachedLeaders, cachedUser]);
-          setCurrentUser(cachedUser);
-          setLoading(false);
-          showedCache = true;
+    // Outer try/finally guarantees setLoading(false) runs no matter what —
+    // even if cache reads throw, early returns fire, or the fetch hangs.
+    try {
+      if (scope === 'weekly') {
+        // 1. Bootstrap cache (dashboard populated, 24h TTL)
+        try {
+          const bootstrap = readCache(CACHE_KEYS.DASHBOARD_BOOTSTRAP, CACHE_TTL.ONE_DAY);
+          if (bootstrap?.isFresh && bootstrap.data?.leaderboard?.weeklyTop?.length) {
+            const cached = bootstrap.data.leaderboard.weeklyTop;
+            const self   = session?.user?.email
+              ? cached.find(l => l.email === session.user.email) || null
+              : null;
+            setLeaders(cached);
+            setCurrentUser(self);
+            setLoading(false);
+            showedCache = true;
+            cacheFresh  = true;
+          }
+        } catch { /* ignore corrupt bootstrap cache */ }
+
+        // 2. Leaderboard-specific cache (30-min TTL)
+        if (!showedCache) {
+          try {
+            const cached = readLeaderboardCache();
+            if (cached?.top10?.length) {
+              cacheFresh = isLeaderboardCacheFresh(cached);
+              const cachedLeaders = cached.top10.map(toDisplayLeader);
+              const cachedUser    = cached.userRank ? toDisplayLeader(cached.userRank) : null;
+              const alreadyIn     = cachedUser && cachedLeaders.some(l => l.email && l.email === cachedUser.email);
+              setLeaders(alreadyIn || !cachedUser ? cachedLeaders : [...cachedLeaders, cachedUser]);
+              setCurrentUser(cachedUser);
+              setLoading(false);
+              showedCache = true;
+            }
+          } catch { /* ignore corrupt leaderboard cache */ }
         }
       }
-    }
 
-    if (cacheFresh) return;
+      // Cache is fresh — nothing more to do
+      if (cacheFresh) return;
 
-    if (scope === 'weekly' && !claimLeaderboardRefresh()) {
-      if (!showedCache) setError(true);
-      setLoading(false);
-      return;
-    }
-
-    if (!showedCache) setLoading(true);
-    setError(false);
-    try {
-      const res = await fetch(`/api/leaderboard?scope=${scope}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setLeaders(data.leaders || []);
-      setCurrentUser(data.currentUser || null);
-      if (scope === 'weekly' && data.leaders?.length) {
-        writeLeaderboardCache(buildLeaderboardCache({
-          leaders: data.leaders,
-          currentUser: data.currentUser || null,
-        }));
+      // Throttle background re-fetch only when stale cache is already visible
+      if (!forceRefresh && scope === 'weekly' && showedCache) {
+        try { if (!claimLeaderboardRefresh()) return; } catch { return; }
       }
-    } catch {
-      if (!showedCache) setError(true);
+
+      if (!showedCache) setLoading(true);
+      if (forceRefresh)  setRefreshing(true);
+      setError(false);
+
+      // Inner try/catch handles API-level errors
+      try {
+        const res  = await fetch(`/api/leaderboard?scope=${scope}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        setLeaders(data.leaders || []);
+        setCurrentUser(data.currentUser || null);
+        setUpdatedAt(Date.now());
+        if (scope === 'weekly' && data.leaders?.length) {
+          writeLeaderboardCache(buildLeaderboardCache({
+            leaders:     data.leaders,
+            currentUser: data.currentUser || null,
+          }));
+        }
+      } catch {
+        if (!showedCache) setError(true);
+      }
+
     } finally {
+      // Always runs — clears loading/refreshing even if something threw above
       setLoading(false);
+      setRefreshing(false);
     }
   }
 
@@ -178,7 +214,7 @@ export default function Leaderboard() {
           </div>
 
           {/* Tab switcher */}
-          <div className="flex bg-white/10 rounded-full p-1 w-fit mx-auto">
+          <div className="flex rounded-full p-1 w-fit mx-auto gap-1" style={{ background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.12)' }}>
             {[
               { key: 'weekly', label: 'This Week' },
               { key: 'all',    label: 'All Time' },
@@ -186,11 +222,15 @@ export default function Leaderboard() {
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
-                className={`px-5 py-2 rounded-full text-sm font-display font-bold transition-all duration-200 active:scale-95 ${
-                  activeTab === key
-                    ? 'bg-white text-violet-700'
-                    : 'text-white/60'
-                }`}
+                className="px-5 py-2 rounded-full text-sm font-display font-bold transition-all duration-200 active:scale-95"
+                style={activeTab === key ? {
+                  background: 'linear-gradient(135deg, #7C3AED, #4F46E5)',
+                  color: '#FFFFFF',
+                  boxShadow: '0 4px 12px rgba(124,58,237,0.35)',
+                } : {
+                  background: 'rgba(148,163,184,0.10)',
+                  color: '#94A3B8',
+                }}
               >
                 {label}
               </button>
@@ -200,105 +240,206 @@ export default function Leaderboard() {
 
         {/* Scrollable area */}
         <div className="flex-1 overflow-y-auto bg-[#0f172a]">
+          <div className="px-4 pt-4 pb-6">
 
-          {/* Podium */}
-          <div
-            className="px-4 pb-6 pt-4"
-            style={{ background: 'linear-gradient(180deg, #1e1b4b 0%, #0f172a 100%)' }}
-          >
             {loading ? (
-              <div className="py-4">
+              <div className="py-8">
                 <Loader card size="md" label="Fetching rankings from the scoreboard…" />
               </div>
+
             ) : error ? (
-              <div className="text-center py-8">
+              <div className="text-center py-10">
                 <p className="text-white/60 text-sm mb-3">Could not load leaderboard.</p>
                 <button
-                  onClick={() => fetchLeaderboard(activeTab)}
+                  onClick={() => {
+                    try { localStorage.removeItem('ssc_leaderboard_refresh_started_at'); } catch {}
+                    fetchLeaderboard(activeTab, { forceRefresh: true });
+                  }}
                   className="px-6 py-2 bg-white text-violet-700 rounded-full text-xs font-display font-black uppercase"
                 >
                   Retry
                 </button>
               </div>
-            ) : (
-              <div className="flex items-end justify-center gap-4">
-                <PodiumEntry rank={2} user={second} />
-                <PodiumEntry rank={1} user={first}  />
-                <PodiumEntry rank={3} user={third}  />
-              </div>
-            )}
-          </div>
 
-          {/* Rank rows */}
-          <div className="px-4 pt-3">
-
-            {/* Current user rank (outside top 3) */}
-            {currentUser && currentUser.rank > 3 && (
-              <div className="bg-violet-900/40 border border-violet-500/40 rounded-2xl px-4 py-3 mb-3 flex items-center gap-3">
-                <span className="font-display font-black text-base text-violet-300 flex-shrink-0">
-                  #{currentUser.rank}
-                </span>
-                <div className="w-8 h-8 rounded-full bg-violet-700 flex items-center justify-center flex-shrink-0">
-                  <span className="font-display font-bold text-sm text-white">
-                    {(currentUser.name || '?').charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[13px] text-violet-200 truncate">
-                    {truncateName(currentUser.name)}
-                    <span className="font-sans text-xs text-violet-400 ml-1.5">(you)</span>
-                  </p>
-                  <p className="font-sans text-xs text-slate-500">Your rank this period</p>
-                </div>
-                <p className="font-display font-bold text-sm text-violet-300">
-                  {(currentUser.totalScore || 0).toFixed(1)} XP
-                </p>
-              </div>
-            )}
-
-            {/* Not on leaderboard */}
-            {!loading && !currentUser && session && (
-              <p className="text-slate-500 text-[12px] text-center mb-3">
-                Play a quiz to appear on the leaderboard!
-              </p>
-            )}
-
-            {/* Guest sign-in */}
-            {!session && (
-              <GoogleSignInCard
-                className="mb-3"
-                title="Save your rank"
-                subtitle="Sign in to appear on the leaderboard"
-                buttonText="Sign in"
-                callbackUrl="/leaderboard"
-              />
-            )}
-
-            {/* Rank 4+ */}
-            {!loading && !error && rest.length > 0 && (
-              <>
-                <p className="font-sans font-medium text-xs text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                  Rank 4 and beyond
-                </p>
-                {rest.map(leader => (
-                  <RankRow
-                    key={leader.email || leader.rank}
-                    leader={leader}
-                    isSelf={leader.email === session?.user?.email}
-                  />
-                ))}
-              </>
-            )}
-
-            {!loading && !error && leaders.length === 0 && (
+            ) : leaders.length === 0 ? (
               <div className="text-center py-12">
                 <span className="text-4xl">🏆</span>
                 <p className="text-slate-500 text-[13px] mt-3">No scores yet. Be the first to play!</p>
               </div>
+
+            ) : (
+              <>
+
+                {/* ── Your Rank ──────────────────────────────────────────── */}
+                {!session ? (
+                  <GoogleSignInCard
+                    className="mb-4"
+                    title="Save your rank"
+                    subtitle="Sign in to appear on the leaderboard"
+                    buttonText="Sign in"
+                    callbackUrl="/leaderboard"
+                  />
+                ) : !currentUser ? (
+                  <div className="mb-4 rounded-2xl px-4 py-4 text-center" style={{ background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.10)' }}>
+                    <p className="font-sans text-slate-400 text-[13px]">Play a quiz to appear on the leaderboard!</p>
+                  </div>
+                ) : (
+                  <div className="mb-4 px-4 py-4" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.20), rgba(16,185,129,0.10))', border: '1px solid rgba(139,92,246,0.45)', borderRadius: 22, boxShadow: '0 14px 35px rgba(124,58,237,0.14)' }}>
+                    <p className="font-sans text-[10px] font-bold text-violet-400 uppercase tracking-widest mb-3">Your Rank</p>
+
+                    {/* Rank + YOU chip */}
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-display font-black text-3xl text-violet-300 flex-shrink-0">
+                        #{currentUser.rank}
+                      </span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#34D399', background: 'rgba(16,185,129,0.16)', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 7, padding: '2px 8px', lineHeight: '18px', flexShrink: 0 }}>
+                        YOU
+                      </span>
+                    </div>
+
+                    {/* Name + XP row */}
+                    <div className="flex items-center gap-3 mb-2">
+                      <RankAvatar leader={currentUser} size={40} borderColor="rgba(139,92,246,0.55)" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-sans font-bold text-[15px] text-violet-100 truncate" style={{ margin: 0 }}>
+                          {truncateName(currentUser.name, 20)}
+                        </p>
+                        <p className="font-sans text-xs text-slate-500" style={{ margin: 0 }}>{currentUser.level || 'Aspirant'}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-display font-black text-base text-violet-300" style={{ margin: 0 }}>
+                          {(currentUser.totalScore || 0).toFixed(1)}
+                        </p>
+                        <p className="font-sans text-[10px] text-slate-500" style={{ margin: 0 }}>XP</p>
+                      </div>
+                    </div>
+
+                    {/* XP gap / top 3 message */}
+                    {currentUser.rank <= 3 ? (
+                      <p className="font-sans text-[13px] text-emerald-400 mb-3" style={{ margin: '0 0 12px' }}>🎉 You're in the Top 3!</p>
+                    ) : third && (third.totalScore || 0) > (currentUser.totalScore || 0) ? (
+                      <p className="font-sans text-[13px] text-amber-400" style={{ margin: '0 0 12px' }}>
+                        🔥 {Math.ceil((third.totalScore || 0) - (currentUser.totalScore || 0))} XP away from Top 3
+                      </p>
+                    ) : null}
+
+                    <button
+                      onClick={() => router.push('/dashboard')}
+                      className="font-display font-bold text-xs text-white active:scale-[0.97] transition-transform"
+                      style={{ background: 'linear-gradient(135deg, #7C3AED, #6D28D9)', border: 'none', borderRadius: 10, padding: '8px 18px', cursor: 'pointer' }}
+                    >
+                      Practice to climb →
+                    </button>
+                  </div>
+                )}
+
+                {/* ── Top 3 Champions ────────────────────────────────────── */}
+                {(() => {
+                  const top3 = [
+                    { leader: first,  medal: '🥇', color: '#FCD34D', rowBg: 'rgba(251,191,36,0.06)',  avatarBorder: 'rgba(251,191,36,0.55)' },
+                    { leader: second, medal: '🥈', color: '#93C5FD', rowBg: 'transparent',            avatarBorder: 'rgba(99,179,237,0.45)'  },
+                    { leader: third,  medal: '🥉', color: '#F9A8D4', rowBg: 'transparent',            avatarBorder: 'rgba(236,72,153,0.40)'  },
+                  ].filter(({ leader }) => !!leader);
+                  if (!top3.length) return null;
+                  return (
+                    <div className="mb-3" style={{ background: 'rgba(15,23,42,0.75)', border: '1px solid rgba(148,163,184,0.11)', borderRadius: 20, overflow: 'hidden' }}>
+                      {/* Card header */}
+                      <div style={{ padding: '10px 16px 9px', borderBottom: '1px solid rgba(148,163,184,0.08)' }}>
+                        <p style={{ fontSize: 10, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                          Top 3 Champions
+                        </p>
+                      </div>
+                      {/* Rows */}
+                      {top3.map(({ leader, medal, color, rowBg, avatarBorder }, i) => (
+                        <div
+                          key={leader.email || leader.rank}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 12,
+                            padding: '9px 14px',
+                            background: rowBg,
+                            borderBottom: i < top3.length - 1 ? '1px solid rgba(148,163,184,0.07)' : 'none',
+                          }}
+                        >
+                          <span style={{ fontSize: 20, flexShrink: 0, lineHeight: 1, width: 24, textAlign: 'center' }}>{medal}</span>
+                          <RankAvatar leader={leader} size={42} borderColor={avatarBorder} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 14, fontWeight: 700, color, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {truncateName(leader.name)}
+                              {leader.email === session?.user?.email && (
+                                <span style={{ fontSize: 11, color: '#7C3AED', marginLeft: 6 }}>(you)</span>
+                              )}
+                            </p>
+                            <p style={{ fontSize: 11, color: '#475569', margin: 0 }}>{leader.level || 'Aspirant'}</p>
+                          </div>
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <p style={{ fontSize: 14, fontWeight: 800, color, margin: 0 }}>
+                              {(leader.totalScore || 0).toFixed(1)}
+                            </p>
+                            <p style={{ fontSize: 10, color: '#334155', margin: 0 }}>XP</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+
+                {/* ── Refresh / cache info bar ───────────────────────────── */}
+                <div className="flex justify-end mt-2 mb-3">
+                  <button
+                    type="button"
+                    disabled={refreshing}
+                    onClick={() => {
+                      try { localStorage.removeItem('ssc_leaderboard_refresh_started_at'); } catch {}
+                      fetchLeaderboard(activeTab, { forceRefresh: true });
+                    }}
+                    className="font-sans active:opacity-70 disabled:opacity-50 flex items-center gap-1"
+                    style={{ fontSize: 12, color: updatedAt ? '#64748B' : '#F59E0B', background: 'none', border: 'none', padding: 0, cursor: refreshing ? 'default' : 'pointer' }}
+                  >
+                    {refreshing
+                      ? '↻ Refreshing...'
+                      : updatedAt
+                        ? `↻ Updated ${formatLastUpdated(updatedAt)}`
+                        : '📋 Showing last saved leaderboard'
+                    }
+                  </button>
+                </div>
+
+                {/* ── Rank 4 and beyond ──────────────────────────────────── */}
+                {rest.length > 0 && (
+                  <>
+                    {rest.map(leader => (
+                      <RankRow
+                        key={leader.email || leader.rank}
+                        leader={leader}
+                        isSelf={leader.email === session?.user?.email}
+                      />
+                    ))}
+                  </>
+                )}
+
+                <div className="h-24" />
+              </>
             )}
 
-            <div className="h-4" />
           </div>
+        </div>
+
+        {/* Sticky CTA — above bottom nav */}
+        <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-2 z-40 pointer-events-none">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="w-full font-display font-bold text-base text-white active:scale-[0.98] transition-transform pointer-events-auto"
+            style={{
+              borderRadius: 18,
+              padding: '15px 0',
+              border: 'none',
+              cursor: 'pointer',
+              background: 'linear-gradient(135deg, #FF7A1A, #FF4D00)',
+              boxShadow: '0 12px 28px rgba(255,90,0,0.22)',
+            }}
+          >
+            Practice to climb rank →
+          </button>
         </div>
       </div>
 
