@@ -5,6 +5,14 @@ import Head from 'next/head';
 
 import PodiumEntry from '@/components/PodiumEntry';
 import Loader from '@/components/ui/Loader';
+import {
+  buildLeaderboardCache,
+  claimLeaderboardRefresh,
+  isLeaderboardCacheFresh,
+  readLeaderboardCache,
+  toDisplayLeader,
+  writeLeaderboardCache,
+} from '@/lib/leaderboardCache';
 
 const GoogleSVG = () => (
   <svg width="18" height="18" viewBox="0 0 48 48">
@@ -78,7 +86,31 @@ export default function Leaderboard() {
   const [error, setError] = useState(false);
 
   async function fetchLeaderboard(scope) {
-    setLoading(true);
+    let showedCache = false;
+    let cacheFresh = false;
+    if (scope === 'weekly') {
+      const cached = readLeaderboardCache();
+      if (cached?.top10?.length) {
+        cacheFresh = isLeaderboardCacheFresh(cached);
+        const cachedLeaders = cached.top10.map(toDisplayLeader);
+        const cachedUser = cached.userRank ? toDisplayLeader(cached.userRank) : null;
+        const userAlreadyInTop10 = cachedUser && cachedLeaders.some(l => l.email && l.email === cachedUser.email);
+        setLeaders(userAlreadyInTop10 || !cachedUser ? cachedLeaders : [...cachedLeaders, cachedUser]);
+        setCurrentUser(cachedUser);
+        setLoading(false);
+        showedCache = true;
+      }
+    }
+
+    if (cacheFresh) return;
+
+    if (scope === 'weekly' && !claimLeaderboardRefresh()) {
+      if (!showedCache) setError(true);
+      setLoading(false);
+      return;
+    }
+
+    if (!showedCache) setLoading(true);
     setError(false);
     try {
       const res = await fetch(`/api/leaderboard?scope=${scope}`);
@@ -86,8 +118,14 @@ export default function Leaderboard() {
       if (!res.ok) throw new Error(data.error);
       setLeaders(data.leaders || []);
       setCurrentUser(data.currentUser || null);
+      if (scope === 'weekly' && data.leaders?.length) {
+        writeLeaderboardCache(buildLeaderboardCache({
+          leaders: data.leaders,
+          currentUser: data.currentUser || null,
+        }));
+      }
     } catch {
-      setError(true);
+      if (!showedCache) setError(true);
     } finally {
       setLoading(false);
     }

@@ -5,12 +5,21 @@ import Head from 'next/head';
 import Image from 'next/image';
 
 import NotificationBell from '@/components/NotificationBell';
+import Loader from '@/components/ui/Loader';
 import { getSubjectStyle, subjectStyles } from '@/lib/subjects';
 import { getISTDateString } from '@/lib/streak';
+import {
+  buildLeaderboardCache,
+  claimLeaderboardRefresh,
+  formatLastUpdated,
+  isLeaderboardCacheFresh,
+  readLeaderboardCache,
+  toDisplayLeader,
+  writeLeaderboardCache,
+} from '@/lib/leaderboardCache';
 
 const SUBJECTS = Object.keys(subjectStyles);
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-const WEEKLY_CHAMPIONS_CACHE_KEY = 'ssc_weekly_champions';
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
 const PARMAR_SERIES = [
@@ -350,6 +359,11 @@ export default function Dashboard() {
   const [userProfile, setUserProfile]   = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [topPlayers, setTopPlayers]     = useState([]);
+  const [weeklyUserRank, setWeeklyUserRank] = useState(null);
+  const [weeklyUpdating, setWeeklyUpdating] = useState(false);
+  const [weeklyLoading, setWeeklyLoading] = useState(true);
+  const [weeklyUpdatedAt, setWeeklyUpdatedAt] = useState(null);
+  const [hasWeeklyCache, setHasWeeklyCache] = useState(false);
   const [comingSoonModal,  setComingSoonModal]  = useState(false);
   const [notifyState,      setNotifyState]      = useState({}); // { [seriesId]: 'idle'|'loading'|'done'|'already' }
   const [notifyToast,      setNotifyToast]      = useState(null); // { msg, type }
@@ -488,26 +502,56 @@ export default function Dashboard() {
 
   // Fetch weekly champion preview. Keep the last good result visible through transient API errors.
   useEffect(() => {
+    let usedCache = false;
+    let cacheFresh = false;
     try {
-      const cached = localStorage.getItem(WEEKLY_CHAMPIONS_CACHE_KEY);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length) setTopPlayers(parsed);
+      const cached = readLeaderboardCache();
+      if (cached?.weekKey && cached.top10?.length) {
+        usedCache = true;
+        cacheFresh = isLeaderboardCacheFresh(cached);
+        setTopPlayers(cached.top10.map(toDisplayLeader));
+        setWeeklyUserRank(cached.userRank ? toDisplayLeader(cached.userRank) : null);
+        setWeeklyUpdatedAt(cached.lastFetchedAt);
+        setHasWeeklyCache(true);
       }
     } catch {}
 
+    if (cacheFresh) {
+      setWeeklyLoading(false);
+      return;
+    }
+
+    if (!claimLeaderboardRefresh()) {
+      setWeeklyLoading(false);
+      setWeeklyUpdating(false);
+      return;
+    }
+
+    if (!usedCache) setWeeklyLoading(true);
+    if (usedCache) setWeeklyUpdating(true);
     fetch('/api/leaderboard?scope=weekly')
       .then(async r => {
         const data = await r.json();
         if (!r.ok) throw new Error(data.error || 'Failed to load leaderboard');
-        return (data.leaders || []).slice(0, 20);
+        return {
+          leaders: (data.leaders || []).slice(0, 20),
+          currentUser: data.currentUser || null,
+        };
       })
-      .then(leaders => {
+      .then(({ leaders, currentUser }) => {
         if (!leaders.length) return;
+        const cache = buildLeaderboardCache({ leaders, currentUser });
         setTopPlayers(leaders);
-        try { localStorage.setItem(WEEKLY_CHAMPIONS_CACHE_KEY, JSON.stringify(leaders)); } catch {}
+        setWeeklyUserRank(currentUser || null);
+        setWeeklyUpdatedAt(cache.lastFetchedAt);
+        setHasWeeklyCache(false);
+        writeLeaderboardCache(cache);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        setWeeklyUpdating(false);
+        setWeeklyLoading(false);
+      });
   }, []);
 
 
@@ -562,6 +606,7 @@ export default function Dashboard() {
   const userRankIdx = isLoggedIn
     ? topPlayers.findIndex(p => p.email === session?.user?.email)
     : -1;
+  const weeklyRank = weeklyUserRank?.rank || (userRankIdx !== -1 ? userRankIdx + 1 : null);
 
   const dailyChallengeCard = (
     <div
@@ -880,18 +925,27 @@ export default function Dashboard() {
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
               <p className="font-display font-bold text-base text-white">🔥 Weekly Champions</p>
-              <button
-                onClick={() => router.push('/leaderboard')}
-                className="flex items-center gap-1 text-emerald-400 text-xs font-sans font-medium active:opacity-70"
-              >
-                See all
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 18l6-6-6-6" strokeLinecap="round"/>
-                </svg>
-              </button>
+              <div className="flex items-center gap-3">
+                {weeklyUpdating && hasWeeklyCache && (
+                  <span className="font-sans text-xs text-slate-500">Updating...</span>
+                )}
+                <button
+                  onClick={() => router.push('/leaderboard')}
+                  className="flex items-center gap-1 text-emerald-400 text-xs font-sans font-medium active:opacity-70"
+                >
+                  View your rank
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 18l6-6-6-6" strokeLinecap="round"/>
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            {topPlayers.length === 0 ? (
+            {weeklyLoading && topPlayers.length === 0 ? (
+              <div className="py-4">
+                <Loader card size="sm" label="Loading weekly champions..." />
+              </div>
+            ) : topPlayers.length === 0 ? (
               <p className="font-sans text-xs text-slate-500 text-center py-4">
                 No scores yet this week. Be the first! 🚀
               </p>
@@ -988,13 +1042,19 @@ export default function Dashboard() {
                   </div>
                 )}
 
+                {weeklyUpdatedAt && (
+                  <p className="font-sans text-[11px] text-slate-500 text-center mt-2">
+                    {formatLastUpdated(weeklyUpdatedAt)}
+                  </p>
+                )}
+
                 {/* Your rank row */}
                 {isLoggedIn && (
                   <div className="mt-3 pt-3 border-t border-slate-700/40 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="font-sans text-xs text-slate-400">Your Rank</span>
                       <span className="font-display font-black text-base text-white">
-                        {userRankIdx !== -1 ? `#${userRankIdx + 1}` : '—'}
+                        {weeklyRank ? `#${weeklyRank}` : '—'}
                       </span>
                     </div>
                     <span className={`text-xs font-semibold rounded-full px-3 py-1 ${
@@ -1034,7 +1094,7 @@ export default function Dashboard() {
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, marginTop: 6 }}>
               Previous year questions across all SSC exams. Real exam pattern, real marks.
             </p>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', fontWeight: 600, marginTop: 12 }}>4,800+ Questions</p>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', fontWeight: 600, marginTop: 12 }}>7,000+ Questions</p>
           </button>
 
           {/* Card 2 — Parmar SSC */}
@@ -1054,7 +1114,7 @@ export default function Dashboard() {
                 Parmar Sir
               </span>
               <p className="font-display font-bold text-white" style={{ fontSize: 22, marginTop: 12 }}>Parmar SSC</p>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', fontWeight: 600, marginTop: 8 }}>350+ Questions</p>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 700, marginTop: 8, letterSpacing: '0.06em' }}>COMING SOON…</p>
             </div>
             <LightningSVG size={36} color="rgba(139,92,246,0.5)" />
           </button>
