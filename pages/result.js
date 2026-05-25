@@ -712,7 +712,13 @@ export default function Result() {
         )}
 
         {/* ── 6. WEEKLY CHAMPIONS ── */}
-        <div className="champs-in" style={{ background: '#172235', border: '1px solid rgba(251,191,36,0.20)', borderRadius: 24, padding: 20 }}>
+        <div className="champs-in" style={{
+          background: 'linear-gradient(145deg, #111827 0%, #0f1f2e 100%)',
+          border: '1px solid rgba(245, 158, 11, 0.35)',
+          borderRadius: 24,
+          boxShadow: '0 12px 35px rgba(245, 158, 11, 0.08)',
+          padding: 18,
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: '#F8FAFC' }}>Weekly Champions</p>
             <button

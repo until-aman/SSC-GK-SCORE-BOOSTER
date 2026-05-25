@@ -1009,7 +1009,13 @@ export default function Dashboard() {
 
         {/* ── WEEKLY CHAMPIONS ── */}
         <div className="mt-5 px-4">
-          <div className="p-4" style={{ borderRadius: 22, background: '#111C2E', border: '1px solid rgba(253,186,59,0.22)', boxShadow: '0 0 24px rgba(253,186,59,0.06)' }}>
+          <div className="p-4" style={{
+            background: 'linear-gradient(145deg, #111827 0%, #0f1f2e 100%)',
+            border: '1px solid rgba(245, 158, 11, 0.35)',
+            borderRadius: 24,
+            boxShadow: '0 12px 35px rgba(245, 158, 11, 0.08)',
+            padding: 18,
+          }}>
 
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
