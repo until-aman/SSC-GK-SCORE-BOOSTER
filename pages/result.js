@@ -6,7 +6,7 @@ import XPToast from '@/components/XPToast';
 import Confetti from '@/components/Confetti';
 
 import Loader from '@/components/ui/Loader';
-import { fetchWithClientCache, patchCache, readCache, writeCache } from '@/lib/clientCache';
+import { fetchWithClientCache, formatLastUpdated, patchCache, readCache, writeCache } from '@/lib/clientCache';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
@@ -119,6 +119,7 @@ export default function Result() {
   const [champsSlide, setChampsSlide]         = useState(0);
   const [leaderboardRefreshing, setLeaderboardRefreshing] = useState(false);
   const [leaderboardMsg, setLeaderboardMsg]   = useState('');
+  const [weeklyUpdatedAt, setWeeklyUpdatedAt] = useState(null);
   const scoreSavedRef = useRef(false);
   const landingConfettiShownRef = useRef(false);
   const leaderboardRefreshedAfterScoreRef = useRef(false);
@@ -135,7 +136,10 @@ export default function Result() {
         forceRefresh,
         onCache(entry) {
           const players = getWeeklyPlayers(entry.data);
-          if (players.length > 0) setTopPerformers(players.slice(0, 5));
+          if (players.length > 0) {
+            setTopPerformers(players.slice(0, 5));
+            setWeeklyUpdatedAt(entry.timestamp);
+          }
         },
         onFresh(data) {
           const players = getWeeklyPlayers(data);
@@ -144,13 +148,15 @@ export default function Result() {
       });
       const players = getWeeklyPlayers(result.data);
       if (players.length > 0) setTopPerformers(players.slice(0, 5));
-      setLeaderboardMsg(result.stale ? 'Showing saved leaderboard.' : '');
+      setWeeklyUpdatedAt(result.timestamp || Date.now());
+      setLeaderboardMsg(result.stale ? 'Showing last saved leaderboard' : '');
     } catch {
       const cached = readCache(CACHE_KEYS.WEEKLY_LEADERBOARD, CACHE_TTL.THIRTY_MINUTES);
       const players = getWeeklyPlayers(cached?.data);
       if (players.length > 0) {
         setTopPerformers(players.slice(0, 5));
-        setLeaderboardMsg('Showing saved leaderboard.');
+        setWeeklyUpdatedAt(cached.timestamp);
+        setLeaderboardMsg('Showing last saved leaderboard');
       }
     } finally {
       if (!background) setLeaderboardRefreshing(false);
@@ -725,15 +731,6 @@ export default function Result() {
               <p style={{ fontSize: 13, color: '#94A3B8', marginTop: 3 }}>Top performers this week</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4 }}>
-              {leaderboardRefreshing && (
-                <span style={{ fontSize: 12, color: '#64748B' }}>Updating...</span>
-              )}
-              <button
-                onClick={() => loadWeeklyLeaderboard({ forceRefresh: true })}
-                disabled={leaderboardRefreshing}
-                style={{ fontSize: 14, color: '#64748B', background: 'none', border: 'none', cursor: 'pointer', opacity: leaderboardRefreshing ? 0.4 : 0.7, lineHeight: 1 }}
-                aria-label="Refresh leaderboard"
-              >↻</button>
               <button
                 onClick={() => router.push('/leaderboard')}
                 style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600, color: '#34D399', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
@@ -780,8 +777,28 @@ export default function Result() {
             );
           })()}
 
-          {leaderboardMsg && (
-            <p style={{ fontSize: 11, textAlign: 'center', marginTop: 8, color: '#FBBF24' }}>{leaderboardMsg}</p>
+          {(leaderboardMsg || leaderboardRefreshing || weeklyUpdatedAt) && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+              <button
+                type="button"
+                onClick={() => loadWeeklyLeaderboard({ forceRefresh: true })}
+                disabled={leaderboardRefreshing}
+                style={{
+                  fontSize: 12,
+                  color: '#64748B',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: leaderboardRefreshing ? 'default' : 'pointer',
+                }}
+              >
+                {leaderboardRefreshing
+                  ? '↻ Refreshing...'
+                  : leaderboardMsg
+                    ? `${leaderboardMsg} • Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`
+                    : `↻ Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`}
+              </button>
+            </div>
           )}
 
           <div style={{ marginTop: 14, textAlign: 'center' }}>

@@ -554,6 +554,7 @@ export default function Dashboard() {
           if (players.length > 0) {
             setTopPlayers(players);
             setHasWeeklyCache(true);
+            setWeeklyUpdatedAt(entry.timestamp);
             setWeeklyLoading(false);
           }
         },
@@ -568,14 +569,15 @@ export default function Dashboard() {
       const players = getWeeklyPlayers(result.data);
       if (players.length > 0) setTopPlayers(players);
       setWeeklyUpdatedAt(result.timestamp || Date.now());
-      setLeaderboardMsg(result.stale ? 'Showing saved leaderboard.' : null);
+      setLeaderboardMsg(result.stale ? 'Showing last saved leaderboard' : null);
     } catch {
       const cached = readCache(CACHE_KEYS.WEEKLY_LEADERBOARD, CACHE_TTL.THIRTY_MINUTES);
       const players = getWeeklyPlayers(cached?.data);
       if (players.length > 0) {
         setTopPlayers(players);
         setHasWeeklyCache(true);
-        setLeaderboardMsg('Showing saved leaderboard.');
+        setWeeklyUpdatedAt(cached.timestamp);
+        setLeaderboardMsg('Showing last saved leaderboard');
       }
     } finally {
       setWeeklyLoading(false);
@@ -1024,17 +1026,6 @@ export default function Dashboard() {
                 <p className="font-sans" style={{ fontSize: 13, color: '#94A3B8', marginTop: 3 }}>Top performers this week</p>
               </div>
               <div className="flex items-center gap-3" style={{ paddingTop: 4 }}>
-                {(bootstrapRefreshing || weeklyUpdating) && (
-                  <span className="font-sans text-xs text-slate-500">Updating...</span>
-                )}
-                <button
-                  onClick={handleLeaderboardRefresh}
-                  disabled={weeklyUpdating}
-                  className="font-sans text-xs text-slate-400 active:opacity-70 disabled:opacity-40"
-                  aria-label="Refresh leaderboard"
-                >
-                  ↻
-                </button>
                 <button
                   onClick={() => router.push('/leaderboard')}
                   className="flex items-center gap-1 font-sans font-medium active:opacity-70"
@@ -1129,30 +1120,29 @@ export default function Dashboard() {
                   );
                 })()}
 
-                {/* Dot indicators */}
-                {topPlayers.length > 1 && (
-                  <div style={{ display: 'flex', gap: 5, justifyContent: 'center', marginTop: 10 }}>
-                    {topPlayers.slice(0, 3).map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setChampsSlide(i)}
-                        aria-label={`Champion ${i + 1}`}
-                        style={{
-                          width: champsSlide % 3 === i ? 18 : 6,
-                          height: 6, borderRadius: 3,
-                          background: champsSlide % 3 === i ? '#f59e0b' : 'rgba(255,255,255,0.18)',
-                          border: 'none', padding: 0, cursor: 'pointer',
-                          transition: 'width 0.3s ease, background 0.3s ease',
-                        }}
-                      />
-                    ))}
+                {(leaderboardMsg || weeklyUpdating || bootstrapRefreshing || weeklyUpdatedAt) && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+                    <button
+                      type="button"
+                      onClick={handleLeaderboardRefresh}
+                      disabled={weeklyUpdating || bootstrapRefreshing}
+                      className="font-sans active:opacity-70 disabled:opacity-70"
+                      style={{
+                        fontSize: 12,
+                        color: '#64748B',
+                        background: 'none',
+                        border: 'none',
+                        padding: 0,
+                        cursor: weeklyUpdating || bootstrapRefreshing ? 'default' : 'pointer',
+                      }}
+                    >
+                      {weeklyUpdating || bootstrapRefreshing
+                        ? '↻ Refreshing...'
+                        : leaderboardMsg
+                          ? `${leaderboardMsg} • Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`
+                          : `↻ Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`}
+                    </button>
                   </div>
-                )}
-
-                {(leaderboardMsg || bootstrapMsg || weeklyUpdatedAt) && (
-                  <p className="font-sans text-[11px] text-center mt-2" style={{ color: (leaderboardMsg || bootstrapMsg) ? '#f59e0b' : 'rgb(100 116 139)' }}>
-                    {leaderboardMsg || bootstrapMsg || `Last updated: ${formatLastUpdated(weeklyUpdatedAt)}`}
-                  </p>
                 )}
 
                 {/* Your rank row */}
