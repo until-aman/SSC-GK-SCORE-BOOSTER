@@ -454,8 +454,8 @@ export default function Result() {
         .btn-primary { transition: transform 140ms ease, box-shadow 140ms ease; }
         .btn-primary:hover { transform: translateY(-1px); }
         @keyframes btnPulse {
-          0%, 100% { box-shadow: 0 8px 22px rgba(174,80,15,0.30); }
-          50%       { box-shadow: 0 12px 32px rgba(174,80,15,0.58), 0 0 0 5px rgba(174,80,15,0.10); }
+          0%, 100% { box-shadow: 0 8px 22px rgba(255,122,26,0.30); }
+          50%       { box-shadow: 0 12px 32px rgba(255,122,26,0.55), 0 0 0 5px rgba(255,122,26,0.10); }
         }
         .btn-pulse { animation: btnPulse 2.2s ease-in-out infinite; }
       `}</style>
@@ -537,7 +537,7 @@ export default function Result() {
                 onClick={() => { setLoadingDetailed(true); setTimeout(() => router.push('/result/detailed'), 100); }}
                 style={{
                   width: '100%', height: 50, borderRadius: 16, cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #AE500F, #A43E08)',
+                  background: 'linear-gradient(135deg, #FF7A1A, #FF5A00)',
                   color: '#FFFFFF', fontSize: 14, fontWeight: 700, border: 'none',
                   marginBottom: 10,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -635,7 +635,7 @@ export default function Result() {
             Choose Polity, History, Science, Geography and more.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-            {['7,000+ Questions', 'Exam-level Practice', 'Subject-wise'].map(tag => (
+            {["7,000+ Q's", 'Exam-level Practice', 'Subject-wise'].map(tag => (
               <span key={tag} style={{ fontSize: 10, fontWeight: 600, color: '#7EA0C4', background: 'rgba(126,160,196,0.10)', border: '1px solid rgba(126,160,196,0.20)', borderRadius: 999, padding: '3px 10px' }}>
                 {tag}
               </span>
@@ -646,13 +646,13 @@ export default function Result() {
             onClick={() => router.push('/subjects?collection=ssc_pyq')}
             style={{
               width: '100%', height: 56, borderRadius: 18, cursor: 'pointer',
-              background: 'linear-gradient(135deg, #AE500F, #A43E08)',
+              background: 'linear-gradient(135deg, #FF7A1A, #FF5A00)',
               color: '#FFFFFF', fontSize: 15, fontWeight: 700, border: 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transform: 'translateY(0)', transition: 'transform 140ms ease, box-shadow 140ms ease',
             }}
-            onPointerEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 16px 32px rgba(174,80,15,0.45)'; }}
-            onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(174,80,15,0.15)'; }}
+            onPointerEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 16px 32px rgba(255,122,26,0.45)'; }}
+            onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,122,26,0.15)'; }}
             onPointerUp={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
             onPointerLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
           >
@@ -892,7 +892,7 @@ export default function Result() {
         </div>
 
         {/* ── 7. SHARE RESULT ── */}
-        <div style={{ background: '#172235', border: '1px solid #2A3A52', borderRadius: 20, padding: '16px 18px' }}>
+        <div style={{ background: '#172235', border: '1px solid #2A3A52', borderRadius: 20, padding: '16px 18px', borderLeft: '4px solid #34D399' }}>
           <p style={{ fontSize: 13, fontWeight: 600, color: '#F8FAFC', marginBottom: 2 }}>Share your result</p>
           <p style={{ fontSize: 12, color: '#64748B', marginBottom: 14 }}>Challenge friends to beat your score.</p>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -945,9 +945,9 @@ export default function Result() {
           ) : (
             <button
               onClick={() => setShowFeedbackSheet(true)}
-              style={{ fontSize: 12, color: '#64748B', background: 'none', border: 'none', cursor: 'pointer' }}
+              style={{ fontSize: 12, color: '#64748B', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'center', lineHeight: 1.7 }}
             >
-              Help us improve your quiz experience.{' '}
+              Help us improve your quiz experience. 🙏<br />
               <span style={{ color: '#93A4BC', textDecoration: 'underline', textUnderlineOffset: 3 }}>Share feedback</span>
             </button>
           )}
@@ -1028,7 +1028,21 @@ export default function Result() {
             <div style={{ padding: 0 }}>
               {/* Header row */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <p className="font-display font-black" style={{ fontSize: 18, color: '#F8FAFC' }}>Share feedback</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {/* Orange alert icon */}
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                    background: 'rgba(255,122,26,0.12)',
+                    border: '1.5px solid rgba(255,122,26,0.35)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF7A1A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                      <line x1="4" y1="22" x2="4" y2="15"/>
+                    </svg>
+                  </div>
+                  <p className="font-display font-black" style={{ fontSize: 18, color: '#F8FAFC' }}>Report a quiz issue</p>
+                </div>
                 <button
                   onClick={() => setShowFeedbackSheet(false)}
                   style={{
@@ -1046,25 +1060,29 @@ export default function Result() {
               </div>
 
               <p className="font-sans" style={{ fontSize: 13, color: '#64748B', marginBottom: 12, lineHeight: 1.5 }}>
-                Tell us what went wrong or what we can improve.
+                Found a wrong answer, typo, or confusing explanation?
               </p>
 
               {/* Type chips */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-                {['Wrong answer', 'Typo', 'Poor explanation', 'App issue', 'Suggestion'].map(type => {
+                {['Wrong answer', 'Typo', 'Explanation issue', 'App issue', 'Suggestion'].map(type => {
                   const active = feedbackType === type;
                   return (
                     <button
                       key={type}
                       type="button"
                       onClick={() => setFeedbackType(active ? '' : type)}
+                      onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.96)'; }}
+                      onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                      onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
                       style={{
-                        padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
+                        padding: '7px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
                         cursor: 'pointer', fontFamily: 'inherit',
-                        background: active ? 'rgba(249,115,22,0.15)' : 'rgba(148,163,184,0.08)',
-                        border: active ? '1px solid rgba(249,115,22,0.50)' : '1px solid rgba(148,163,184,0.18)',
-                        color: active ? '#FDBA74' : '#64748B',
-                        transition: 'background 120ms ease, border-color 120ms ease, color 120ms ease',
+                        background: active ? 'rgba(255,122,26,0.14)' : 'rgba(255,255,255,0.04)',
+                        border: active ? '1px solid rgba(255,122,26,0.45)' : '1px solid rgba(148,163,184,0.18)',
+                        color: active ? '#FFB26B' : '#94A3B8',
+                        transition: 'background 120ms ease, border-color 120ms ease, color 120ms ease, transform 80ms ease',
+                        transform: 'scale(1)',
                       }}
                     >
                       {type}
@@ -1106,12 +1124,10 @@ export default function Result() {
                 <button
                   onClick={() => setShowFeedbackSheet(false)}
                   style={{
-                    flex: 1, minHeight: 52, borderRadius: 16,
-                    background: 'transparent',
-                    border: '1.5px solid rgba(148,163,184,0.18)',
-                    color: '#64748B',
-                    fontFamily: 'inherit', fontWeight: 700, fontSize: 15,
-                    cursor: 'pointer',
+                    background: 'none', border: 'none',
+                    color: '#64748B', fontFamily: 'inherit',
+                    fontWeight: 500, fontSize: 14,
+                    cursor: 'pointer', padding: '0 8px',
                   }}
                 >
                   Cancel
