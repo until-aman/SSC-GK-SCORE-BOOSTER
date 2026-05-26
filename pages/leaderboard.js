@@ -8,14 +8,12 @@ import Loader from '@/components/ui/Loader';
 import {
   buildLeaderboardCache,
   claimLeaderboardRefresh,
-  formatLastUpdated,
   isLeaderboardCacheFresh,
   readLeaderboardCache,
   toDisplayLeader,
   writeLeaderboardCache,
 } from '@/lib/leaderboardCache';
-import { readCache } from '@/lib/clientCache';
-import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
+import { formatLastUpdated } from '@/lib/clientCache';
 
 
 function truncateName(name, maxLength = 14) {
@@ -103,47 +101,30 @@ export default function Leaderboard() {
   async function fetchLeaderboard(scope, { forceRefresh = false } = {}) {
     let showedCache = false;
     let cacheFresh  = false;
+    const refreshStartedAt = forceRefresh ? Date.now() : 0;
 
     // Outer try/finally guarantees setLoading(false) runs no matter what —
     // even if cache reads throw, early returns fire, or the fetch hangs.
     try {
       if (scope === 'weekly') {
-        // 1. Bootstrap cache (dashboard populated, 24h TTL)
         try {
-          const bootstrap = readCache(CACHE_KEYS.DASHBOARD_BOOTSTRAP, CACHE_TTL.ONE_DAY);
-          if (bootstrap?.isFresh && bootstrap.data?.leaderboard?.weeklyTop?.length) {
-            const cached = bootstrap.data.leaderboard.weeklyTop;
-            const self   = session?.user?.email
-              ? cached.find(l => l.email === session.user.email) || null
-              : null;
-            setLeaders(cached);
-            setCurrentUser(self);
+          const cached = readLeaderboardCache();
+          if (cached?.top10?.length) {
+            cacheFresh = isLeaderboardCacheFresh(cached);
+            const cachedLeaders = cached.top10.map(toDisplayLeader);
+            const cachedUser    = cached.userRank ? toDisplayLeader(cached.userRank) : null;
+            const alreadyIn     = cachedUser && cachedLeaders.some(l => l.email && l.email === cachedUser.email);
+            setLeaders(alreadyIn || !cachedUser ? cachedLeaders : [...cachedLeaders, cachedUser]);
+            setCurrentUser(cachedUser);
+            setUpdatedAt(cached.lastFetchedAt || null);
             setLoading(false);
             showedCache = true;
-            cacheFresh  = true;
           }
-        } catch { /* ignore corrupt bootstrap cache */ }
-
-        // 2. Leaderboard-specific cache (30-min TTL)
-        if (!showedCache) {
-          try {
-            const cached = readLeaderboardCache();
-            if (cached?.top10?.length) {
-              cacheFresh = isLeaderboardCacheFresh(cached);
-              const cachedLeaders = cached.top10.map(toDisplayLeader);
-              const cachedUser    = cached.userRank ? toDisplayLeader(cached.userRank) : null;
-              const alreadyIn     = cachedUser && cachedLeaders.some(l => l.email && l.email === cachedUser.email);
-              setLeaders(alreadyIn || !cachedUser ? cachedLeaders : [...cachedLeaders, cachedUser]);
-              setCurrentUser(cachedUser);
-              setLoading(false);
-              showedCache = true;
-            }
-          } catch { /* ignore corrupt leaderboard cache */ }
-        }
+        } catch { /* ignore corrupt leaderboard cache */ }
       }
 
-      // Cache is fresh — nothing more to do
-      if (cacheFresh) return;
+      // Cache is fresh — nothing more to do unless the user explicitly refreshes.
+      if (cacheFresh && !forceRefresh) return;
 
       // Throttle background re-fetch only when stale cache is already visible
       if (!forceRefresh && scope === 'weekly' && showedCache) {
@@ -161,11 +142,13 @@ export default function Leaderboard() {
         if (!res.ok) throw new Error(data.error);
         setLeaders(data.leaders || []);
         setCurrentUser(data.currentUser || null);
-        setUpdatedAt(Date.now());
+        const fetchedAt = Date.now();
+        setUpdatedAt(fetchedAt);
         if (scope === 'weekly' && data.leaders?.length) {
           writeLeaderboardCache(buildLeaderboardCache({
             leaders:     data.leaders,
             currentUser: data.currentUser || null,
+            now:         fetchedAt,
           }));
         }
       } catch {
@@ -174,23 +157,40 @@ export default function Leaderboard() {
 
     } finally {
       // Always runs — clears loading/refreshing even if something threw above
+      if (forceRefresh) {
+        const remainingMs = 650 - (Date.now() - refreshStartedAt);
+        if (remainingMs > 0) await new Promise(resolve => setTimeout(resolve, remainingMs));
+      }
       setLoading(false);
       setRefreshing(false);
     }
   }
 
-  useEffect(() => { fetchLeaderboard(activeTab); }, [activeTab]);
+  useEffect(() => {
+    // Reset stale state immediately so the old tab's data never bleeds into the new tab
+    setLeaders([]);
+    setCurrentUser(null);
+    setLoading(true);
+    setError(false);
+    fetchLeaderboard(activeTab);
+  }, [activeTab]);
 
 
-  const first  = leaders[0] || null;
-  const second = leaders[1] || null;
-  const third  = leaders[2] || null;
-  const rest   = leaders.slice(3);
+  // Deduplicate by email so a user with duplicate sheet rows never shows twice
+  const displayLeaders = leaders.reduce((acc, l) => {
+    if (!l.email || !acc.some(x => x.email === l.email)) acc.push(l);
+    return acc;
+  }, []);
+
+  const first  = displayLeaders[0] || null;
+  const second = displayLeaders[1] || null;
+  const third  = displayLeaders[2] || null;
+  const rest   = displayLeaders.slice(3);
 
   return (
     <>
       <Head><title>Leaderboard — SSC GK Score Booster</title></Head>
-      <div className="h-screen flex flex-col overflow-hidden pb-16">
+      <div className="h-screen flex flex-col pb-16">
 
         {/* Fixed header */}
         <div
@@ -239,7 +239,7 @@ export default function Leaderboard() {
         </div>
 
         {/* Scrollable area */}
-        <div className="flex-1 overflow-y-auto bg-[#0f172a]">
+        <div className="flex-1 overflow-y-auto min-h-0 bg-[#0f172a]">
           <div className="px-4 pt-4 pb-6">
 
             {loading ? (
@@ -392,15 +392,12 @@ export default function Leaderboard() {
                       try { localStorage.removeItem('ssc_leaderboard_refresh_started_at'); } catch {}
                       fetchLeaderboard(activeTab, { forceRefresh: true });
                     }}
-                    className="font-sans active:opacity-70 disabled:opacity-50 flex items-center gap-1"
-                    style={{ fontSize: 12, color: updatedAt ? '#64748B' : '#F59E0B', background: 'none', border: 'none', padding: 0, cursor: refreshing ? 'default' : 'pointer' }}
+                    className="font-sans active:opacity-70 disabled:opacity-70 flex items-center gap-1"
+                    style={{ fontSize: 12, color: '#64748B', background: 'none', border: 'none', padding: 0, cursor: refreshing ? 'default' : 'pointer' }}
                   >
                     {refreshing
-                      ? '↻ Refreshing...'
-                      : updatedAt
-                        ? `↻ Updated ${formatLastUpdated(updatedAt)}`
-                        : '📋 Showing last saved leaderboard'
-                    }
+                      ? '\u21bb Refreshing...'
+                      : `\u21bb Updated ${formatLastUpdated(updatedAt) || 'recently'}`}
                   </button>
                 </div>
 
@@ -417,18 +414,18 @@ export default function Leaderboard() {
                   </>
                 )}
 
-                <div className="h-24" />
+                <div className="h-2" />
               </>
             )}
 
           </div>
         </div>
 
-        {/* Sticky CTA — above bottom nav */}
-        <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-2 z-40 pointer-events-none">
+        {/* Practice CTA — flex child, always visible above bottom nav */}
+        <div className="flex-shrink-0 px-4 pt-2 pb-3" style={{ background: '#0f172a' }}>
           <button
             onClick={() => router.push('/dashboard')}
-            className="w-full font-display font-bold text-base text-white active:scale-[0.98] transition-transform pointer-events-auto"
+            className="w-full font-display font-bold text-base text-white active:scale-[0.98] transition-transform"
             style={{
               borderRadius: 18,
               padding: '15px 0',
