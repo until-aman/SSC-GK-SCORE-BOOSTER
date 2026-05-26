@@ -1091,25 +1091,28 @@ export default function Result() {
                 })}
               </div>
 
-              {/* Textarea — 16px font prevents iOS auto-zoom */}
+              {/* Textarea label + input — 16px font prevents iOS auto-zoom */}
+              <p style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 6 }}>
+                Describe the issue
+              </p>
               <textarea
                 value={feedback}
                 onChange={e => setFeedback(e.target.value)}
-                placeholder={"Describe the issue briefly...\n\nExample: Option B seems correct, but app marked C."}
+                placeholder="Option B seems correct, but app marked C."
                 autoFocus
-                rows={4}
                 style={{
                   width: '100%', boxSizing: 'border-box',
                   background: 'rgba(15,23,42,0.70)',
                   border: '1px solid rgba(148,163,184,0.18)',
                   borderRadius: 16,
-                  padding: '14px 16px',
+                  padding: '12px 14px',
                   fontSize: 16,
                   color: '#F8FAFC',
                   lineHeight: 1.55,
                   resize: 'none',
                   outline: 'none',
                   fontFamily: 'inherit',
+                  height: 120,
                   marginBottom: 14,
                 }}
                 onFocus={e => { e.target.style.borderColor = 'rgba(148,163,184,0.40)'; }}
@@ -1119,36 +1122,28 @@ export default function Result() {
                 Minimum 7 characters
               </p>
 
-              {/* Buttons — full-width on mobile */}
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  onClick={() => setShowFeedbackSheet(false)}
-                  style={{
-                    background: 'none', border: 'none',
-                    color: '#64748B', fontFamily: 'inherit',
-                    fontWeight: 500, fontSize: 14,
-                    cursor: 'pointer', padding: '0 8px',
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={async () => { await handleFeedbackSubmit(); setShowFeedbackSheet(false); }}
-                  disabled={feedback.trim().length < 7}
-                  style={{
-                    flex: 1, minHeight: 52, borderRadius: 16,
-                    background: feedback.trim().length >= 7 ? 'linear-gradient(90deg, #FF7A1A, #FF5A00)' : 'rgba(148,163,184,0.08)',
-                    border: 'none',
-                    color: feedback.trim().length >= 7 ? '#fff' : '#475569',
-                    fontFamily: 'inherit', fontWeight: 700, fontSize: 15,
-                    boxShadow: feedback.trim().length >= 7 ? '0 8px 24px rgba(255,106,0,0.25)' : 'none',
-                    cursor: feedback.trim().length >= 7 ? 'pointer' : 'not-allowed',
-                    transition: 'background 0.15s, box-shadow 0.15s',
-                  }}
-                >
-                  Send Feedback
-                </button>
-              </div>
+              {/* Send button — full width, Cancel removed (X button handles close) */}
+              {(() => {
+                const ready = feedback.trim().length >= 7;
+                return (
+                  <button
+                    onClick={async () => { await handleFeedbackSubmit(); setShowFeedbackSheet(false); }}
+                    disabled={!ready}
+                    style={{
+                      width: '100%', minHeight: 52, borderRadius: 16,
+                      background: ready ? 'linear-gradient(135deg, #FF7A1A, #FF5A00)' : 'rgba(255,255,255,0.06)',
+                      border: ready ? 'none' : '1px solid rgba(255,255,255,0.06)',
+                      color: ready ? '#FFFFFF' : 'rgba(203,213,225,0.45)',
+                      fontFamily: 'inherit', fontWeight: 700, fontSize: 15,
+                      boxShadow: ready ? '0 8px 22px rgba(255,106,0,0.18)' : 'none',
+                      cursor: ready ? 'pointer' : 'not-allowed',
+                      transition: 'background 150ms ease, box-shadow 150ms ease, color 150ms ease, border-color 150ms ease',
+                    }}
+                  >
+                    {ready ? 'Send Feedback →' : 'Send Feedback'}
+                  </button>
+                );
+              })()}
             </div>
           </div>
         </>
