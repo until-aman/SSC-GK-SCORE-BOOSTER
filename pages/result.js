@@ -674,10 +674,10 @@ export default function Result() {
           return (
             <div className="mentor-in" style={{ background: '#172235', border: '1px solid #2A3A52', borderRadius: 24, padding: 20, borderLeft: '4px solid #34D399' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 4px rgba(52,211,153,0.65))' }}>
+                  <path d="M9 18h6M10 22h4M12 2a7 7 0 017 7c0 2.6-1.4 4.9-3.5 6.2-.5.3-.5.8-.5 1.3V17H9v-.5c0-.5 0-1-.5-1.3A7 7 0 0112 2z"/>
                 </svg>
-                <p style={{ fontSize: 11, fontWeight: 700, color: '#34D399', textTransform: 'uppercase', letterSpacing: '0.08em' }}>AI Mentor</p>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#34D399', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Smart Review Tip</p>
               </div>
               <p style={{ fontSize: 13, color: '#93A4BC', lineHeight: 1.65, marginBottom: 14 }}>{tip}</p>
               {aiAnalysis?.summary ? (
@@ -917,7 +917,7 @@ export default function Result() {
             <button
               onClick={handleCopy}
               style={{
-                flex: 0.8, height: 40, borderRadius: 12, cursor: 'pointer',
+                flex: 0.8, height: 48, borderRadius: 12, cursor: 'pointer',
                 background: copied ? 'rgba(52,211,153,0.12)' : '#1E2B40',
                 color: copied ? '#34D399' : '#F8FAFC',
                 border: `1px solid ${copied ? 'rgba(52,211,153,0.30)' : '#334155'}`,
@@ -1098,7 +1098,14 @@ export default function Result() {
               <textarea
                 value={feedback}
                 onChange={e => setFeedback(e.target.value)}
-                placeholder="Option B seems correct, but app marked C."
+                placeholder={
+                  feedbackType === 'Wrong answer'      ? 'Which option seems correct and why?' :
+                  feedbackType === 'Typo'              ? 'Where did you notice the typo?' :
+                  feedbackType === 'Explanation issue' ? 'What part of the explanation felt confusing?' :
+                  feedbackType === 'App issue'         ? 'What happened? E.g. button not working, screen stuck…' :
+                  feedbackType === 'Suggestion'        ? 'What would you like to see improved?' :
+                  'Option B seems correct, but app marked C.'
+                }
                 autoFocus
                 style={{
                   width: '100%', boxSizing: 'border-box',

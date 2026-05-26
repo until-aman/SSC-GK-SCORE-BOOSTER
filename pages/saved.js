@@ -87,9 +87,10 @@ function QuestionRow({ q, index, onView, onUnsave }) {
 
 /* ── Full-screen revision overlay ─────────────────────────────────────── */
 function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
-  const [idx, setIdx]               = useState(startIndex);
-  const [revealed, setRevealed]     = useState(false);
-  const [markedDone, setMarkedDone] = useState(false);
+  const [idx, setIdx]                     = useState(startIndex);
+  const [revealed, setRevealed]           = useState(false);
+  const [markedDone, setMarkedDone]       = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null);
   const touchStartX = useRef(null);
 
   // Clamp if questions shrink (after unsave)
@@ -98,7 +99,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
   }, [questions.length, idx]);
 
   // Reset state on every new question
-  useEffect(() => { setRevealed(false); setMarkedDone(false); }, [idx]);
+  useEffect(() => { setRevealed(false); setMarkedDone(false); setSelectedOption(null); }, [idx]);
 
   if (!questions.length) return null;
   const q     = questions[idx];
@@ -170,53 +171,99 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           {q.question}
         </p>
 
-        {/* Options */}
+        {/* Options — tappable before reveal */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
           {OPTION_LABELS.map((label, i) => {
-            const text      = q[OPTION_KEYS[i]];
-            const isCorrect = revealed && label === q.correctOption;
+            const text       = q[OPTION_KEYS[i]];
+            if (!text) return null;
+            const isSelected = !revealed && selectedOption === label;
+            const isCorrect  = revealed && label === q.correctOption;
+            const isWrong    = revealed && selectedOption === label && label !== q.correctOption;
+
+            // Compute per-state colours
+            let rowBg, rowBorder, textColor, dotBg, dotColor;
+            if (isCorrect) {
+              rowBg = 'rgba(52,211,153,0.10)'; rowBorder = 'rgba(52,211,153,0.35)';
+              textColor = '#34D399'; dotBg = '#34D399'; dotColor = '#0F172A';
+            } else if (isWrong) {
+              rowBg = 'rgba(239,68,68,0.10)'; rowBorder = 'rgba(239,68,68,0.35)';
+              textColor = '#FCA5A5'; dotBg = 'rgba(239,68,68,0.65)'; dotColor = '#FFF';
+            } else if (isSelected) {
+              rowBg = 'rgba(99,102,241,0.12)'; rowBorder = 'rgba(99,102,241,0.50)';
+              textColor = '#C7D2FE'; dotBg = 'rgba(99,102,241,0.70)'; dotColor = '#FFF';
+            } else {
+              rowBg = 'rgba(255,255,255,0.04)'; rowBorder = 'rgba(148,163,184,0.10)';
+              textColor = '#94A3B8'; dotBg = 'rgba(148,163,184,0.15)'; dotColor = '#64748B';
+            }
+
             return (
-              <div key={label} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                borderRadius: 14, padding: '12px 14px',
-                background:  isCorrect ? 'rgba(52,211,153,0.10)' : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${isCorrect ? 'rgba(52,211,153,0.35)' : 'rgba(148,163,184,0.10)'}`,
-                transition: 'background 300ms ease, border-color 300ms ease',
-              }}>
+              <button
+                key={label}
+                onClick={() => { if (!revealed) { setSelectedOption(label); setRevealed(true); if (onReveal) onReveal(q.questionId); } }}
+                onPointerDown={e => { if (!revealed) e.currentTarget.style.transform = 'scale(0.98)'; }}
+                onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  borderRadius: 14, padding: '12px 14px', width: '100%', textAlign: 'left',
+                  background: rowBg, border: `1px solid ${rowBorder}`,
+                  cursor: revealed ? 'default' : 'pointer',
+                  transition: 'background 250ms ease, border-color 250ms ease, transform 80ms ease',
+                  transform: 'scale(1)',
+                }}
+              >
                 <span style={{
                   width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 11, fontWeight: 700,
-                  background: isCorrect ? '#34D399' : 'rgba(148,163,184,0.15)',
-                  color: isCorrect ? '#0F172A' : '#64748B',
-                  transition: 'background 300ms ease, color 300ms ease',
+                  background: dotBg, color: dotColor,
+                  transition: 'background 250ms ease, color 250ms ease',
                 }}>
                   {label}
                 </span>
-                <span style={{ fontSize: 13, lineHeight: 1.4, color: isCorrect ? '#34D399' : '#94A3B8', fontWeight: isCorrect ? 600 : 400, transition: 'color 300ms ease' }}>
+                <span style={{ fontSize: 13, lineHeight: 1.4, color: textColor, fontWeight: (isCorrect || isWrong || isSelected) ? 600 : 400, transition: 'color 250ms ease', flex: 1 }}>
                   {text}
                 </span>
                 {isCorrect && (
                   <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                 )}
-              </div>
+                {isWrong && (
+                  <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FCA5A5" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                )}
+              </button>
             );
           })}
         </div>
 
-        {/* Show Answer button — hidden once revealed */}
+        {/* Correct / Wrong result badge — shown after reveal when user picked an option */}
+        {revealed && selectedOption && (
+          <div style={{
+            textAlign: 'center', marginBottom: 14,
+            fontSize: 14, fontWeight: 700,
+            color: selectedOption === q.correctOption ? '#34D399' : '#FCA5A5',
+          }}>
+            {selectedOption === q.correctOption
+              ? '✓ Correct!'
+              : `✗ Incorrect — answer is ${q.correctOption}`}
+          </div>
+        )}
+
+        {/* Show / Check Answer button — hidden once revealed */}
         {!revealed && (
           <button
             onClick={handleReveal}
             style={{
               width: '100%', padding: '14px 0', borderRadius: 14,
               border: 'none', cursor: 'pointer',
-              background: 'linear-gradient(135deg, #1E40AF, #2563EB)',
+              background: selectedOption
+                ? 'linear-gradient(135deg, #FF7A1A, #FF5A00)'
+                : 'linear-gradient(135deg, #1E40AF, #2563EB)',
               color: '#FFFFFF', fontSize: 15, fontWeight: 700,
               marginBottom: 8,
+              transition: 'background 200ms ease',
             }}
           >
-            Show Answer
+            {selectedOption ? 'Check Answer →' : 'Show Answer'}
           </button>
         )}
 
@@ -284,7 +331,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
             cursor: idx === total - 1 ? 'default' : 'pointer',
             background: idx === total - 1
               ? 'rgba(255,255,255,0.04)'
-              : 'linear-gradient(135deg, #AE500F, #A43E08)',
+              : 'linear-gradient(135deg, #FF7A1A, #FF5A00)',
             border: idx === total - 1 ? '1px solid rgba(148,163,184,0.12)' : 'none',
             color: idx === total - 1 ? '#1E293B' : '#FFFFFF',
             fontSize: 14, fontWeight: 700,
@@ -490,7 +537,7 @@ export default function Saved() {
           <GoogleSignInCard
             className="mx-4 mb-3"
             title="Sync across devices"
-            subtitle="Sign in to back up your saved questions to the cloud"
+            subtitle="Back up & sync your questions"
             buttonText="Sign in"
             callbackUrl="/saved"
           />
