@@ -432,6 +432,18 @@ function BookmarkIcon({ filled, size = 20, animKey }) {
   );
 }
 
+// ─── Display helper ───────────────────────────────────────────────────────────
+// When subject is "Mixed" and collection is not "general", show the collection
+// name instead of "Mixed" so the header reads e.g. "SSC PYQ · Mixed" not "Mixed · Mixed".
+const COLLECTION_DISPLAY_NAMES = { PYQ: 'SSC PYQ', Parmar: 'Parmar SSC' };
+function getDisplaySubject(subject, collection) {
+  if (!subject) return subject;
+  if (subject === 'Mixed' && collection && collection !== 'general') {
+    return COLLECTION_DISPLAY_NAMES[collection] || collection;
+  }
+  return subject;
+}
+
 export default function Quiz() {
   const router = useRouter();
   const { status } = useSession();
@@ -1164,7 +1176,7 @@ export default function Quiz() {
           <p className="text-sm leading-relaxed mb-5" style={{ color: '#CBD5E1' }}>
             {isExpiredPrompt
               ? `Your previous quiz was inactive for too long. You answered ${sessionAnsweredCount} questions.`
-              : `You have an unfinished ${session.subject || 'Quiz'} · ${session.topic || 'Mixed'} quiz. You answered ${sessionAnsweredCount} of ${session.totalQuestions || session.questions?.length || 0} questions.`}
+              : `You have an unfinished ${getDisplaySubject(session.subject, session.collection) || 'Quiz'} · ${session.topic || 'Mixed'} quiz. You answered ${sessionAnsweredCount} of ${session.totalQuestions || session.questions?.length || 0} questions.`}
           </p>
 
           {sessionAttemptedCount > 0 && (
@@ -1359,16 +1371,16 @@ export default function Quiz() {
               </svg>
             </div>
 
-            <h2 id="exit-quiz-title" className="font-display font-black text-2xl mb-3" style={{ color: '#F8FAFC' }}>
+            <h2 id="exit-quiz-title" className="t-page-title font-display mb-3" style={{ color: '#F8FAFC' }}>
               Leave quiz?
             </h2>
 
             {attemptedCount > 0 && (
               <div className="w-full mb-4">
-                <div className="inline-flex items-center mb-2" style={{
-                  fontSize: 12, fontWeight: 700, color: '#FF7A1A',
+                <div className="t-badge inline-flex items-center mb-2" style={{
+                  color: '#FF7A1A',
                   background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 999, padding: '4px 12px', letterSpacing: '0.01em',
+                  borderRadius: 999, padding: '4px 12px',
                 }}>
                   {attemptedCount} / {questions.length} attempted
                 </div>
@@ -1384,14 +1396,14 @@ export default function Quiz() {
               </div>
             )}
 
-            <p className="text-sm leading-relaxed mb-5" style={{ color: '#94A3B8' }}>
+            <p className="t-body mb-5" style={{ color: '#94A3B8' }}>
               End now to see your current result, or continue the quiz.
             </p>
 
             <div className="flex flex-col gap-3">
               <button
                 onClick={handleContinueQuiz}
-                className="w-full rounded-2xl py-3.5 font-display font-bold text-base active:scale-[0.98] transition-transform"
+                className="t-button-lg w-full rounded-2xl py-3.5 font-display active:scale-[0.98] transition-transform flex items-center justify-center"
                 style={{
                   background: 'linear-gradient(90deg, #FF7A1A, #FF5A00)',
                   color: '#F8FAFC',
@@ -1402,10 +1414,9 @@ export default function Quiz() {
               </button>
               <button
                 onClick={handleEndQuiz}
-                className="w-full rounded-2xl font-display font-semibold active:scale-[0.98] transition-transform"
+                className="t-button-sm w-full rounded-2xl font-display active:scale-[0.98] transition-transform flex items-center justify-center"
                 style={{
-                  padding: '10px 16px',
-                  fontSize: 14,
+                  padding: '11px 16px',
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(248,113,113,0.35)',
                   color: '#fca5a5',
@@ -1432,14 +1443,14 @@ export default function Quiz() {
       <div className="px-4 pt-3 flex-shrink-0">
         {/* Row 1: subject · topic | Q X/Y | ⚡ Earn XP */}
         <div className="h-10 flex items-center justify-between">
-          <span className="font-sans font-medium text-xs text-slate-400 truncate max-w-[150px]">
-            {effectiveSubject} · {effectiveTopic}
+          <span className="t-badge font-sans text-slate-400 truncate max-w-[150px]">
+            {getDisplaySubject(effectiveSubject, collection)} · {effectiveTopic}
           </span>
-          <span className="font-display font-bold text-sm text-white">
+          <span className="t-stat-sm font-display text-white">
             Q {currentIndex + 1}
-            <span className="font-sans font-normal text-slate-500">/{questions.length}</span>
+            <span className="t-badge font-sans font-normal text-slate-500">/{questions.length}</span>
           </span>
-          <span className="font-sans font-medium text-xs text-orange-400">⚡ Earn XP</span>
+          <span className="t-badge font-sans text-orange-400">⚡ Earn XP</span>
         </div>
         {cacheWarning && (
           <p className="text-xs pb-2" style={{ color: '#fbbf24' }}>

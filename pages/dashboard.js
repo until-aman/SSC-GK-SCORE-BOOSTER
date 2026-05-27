@@ -735,49 +735,31 @@ export default function Dashboard() {
         boxShadow: '0 20px 60px rgba(255, 122, 26, 0.08)',
       }}
     >
-      <div style={{
-        fontSize: '11px',
-        fontWeight: '700',
-        letterSpacing: '0.6px',
-        textTransform: 'uppercase',
-        color: '#f97316',
-        marginBottom: '8px',
-      }}>
+      <div className="t-section-label" style={{ color: '#f97316', marginBottom: '8px' }}>
         🔥 Daily Challenge
       </div>
-      <div style={{
-        fontFamily: 'var(--font-display, inherit)',
-        fontSize: '20px',
-        fontWeight: '800',
-        color: '#ffffff',
-        lineHeight: '1.2',
-        marginBottom: '10px',
-      }}>
+      <div className="t-card-title" style={{ color: '#ffffff', marginBottom: '10px' }}>
         Today&apos;s Mixed GK Challenge
       </div>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '18px' }}>
         {[['📝', '25 Questions'], ['⏱', '~7 min'], ['🪙', '+50 XP']].map(([icon, label]) => (
-          <span key={label} style={{
+          <span key={label} className="t-badge" style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: '4px',
             background: 'rgba(255,255,255,0.08)',
             color: 'rgba(255,255,255,0.75)',
-            fontSize: '12px',
-            fontWeight: '600',
             padding: '4px 10px',
             borderRadius: '20px',
           }}>{icon} {label}</span>
         ))}
       </div>
-      <div className="btn-daily-pulse daily-challenge-cta" style={{
-        display: 'block',
+      <div className="btn-daily-pulse daily-challenge-cta t-button-lg" style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         width: '100%',
-        textAlign: 'center',
         color: '#ffffff',
-        fontFamily: 'var(--font-display, inherit)',
-        fontWeight: '700',
-        fontSize: '14px',
         padding: '13px 0',
         borderRadius: '18px',
         background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)',
@@ -849,27 +831,13 @@ export default function Dashboard() {
 
         {/* ── WELCOME MESSAGE ── */}
         <div style={{ padding: '4px 20px 16px' }}>
-          <div style={{
-            fontFamily: 'var(--font-display, inherit)',
-            fontSize: '22px',
-            fontWeight: '800',
-            color: '#ffffff',
-            lineHeight: '1.25',
-          }}>
+          <div className="t-page-title" style={{ color: '#ffffff' }}>
             Good {timeOfDay},{' '}
-            <span style={{
-              color: '#35D299',
-              fontSize: '20px',
-            }}>
+            <span style={{ color: '#35D299' }}>
               {session?.user?.name?.split(' ')[0] || 'Aspirant'} 👋
             </span>
           </div>
-          <div style={{
-            fontSize: '13px',
-            color: 'rgba(255,255,255,0.45)',
-            marginTop: '3px',
-            fontWeight: '400',
-          }}>
+          <div className="t-page-subtitle" style={{ color: 'rgba(255,255,255,0.45)' }}>
             Ready for today&apos;s GK challenge?
           </div>
         </div>
@@ -1058,7 +1026,7 @@ export default function Dashboard() {
             {/* Header */}
             <div className="flex items-start justify-between gap-3 mb-3">
               <div>
-                <p className="font-display" style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 7 }}>
+                <p className="t-card-title" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 7 }}>
                   <span style={{ fontSize: 16, lineHeight: 1 }}>🔥</span>
                   Weekly Champions
                 </p>
@@ -1069,8 +1037,8 @@ export default function Dashboard() {
                     e.stopPropagation();
                     router.push('/leaderboard');
                   }}
-                  className="flex items-center gap-1 font-sans font-medium active:opacity-70"
-                  style={{ fontSize: 13, color: '#34D399' }}
+                  className="t-button-sm flex items-center gap-1 font-sans active:opacity-70"
+                  style={{ color: '#34D399', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
                 >
                   View your rank
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1128,13 +1096,12 @@ export default function Dashboard() {
                       {/* Name + level + XP */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                          <p className="font-display font-bold truncate"
-                            style={{ fontSize: 15, color: isSelf ? '#10b981' : '#ffffff', margin: 0 }}>
+                          <p className="t-card-subtitle font-display font-bold truncate"
+                            style={{ color: isSelf ? '#10b981' : '#ffffff', margin: 0 }}>
                             {(player.name || 'User').split(' ')[0]}
                           </p>
-                          <span style={{
-                            fontSize: 10, fontWeight: 700, flexShrink: 0,
-                            color: '#facc15',
+                          <span className="t-badge" style={{
+                            flexShrink: 0, color: '#facc15',
                             background: 'rgba(250,204,21,0.15)',
                             border: '1px solid rgba(250,204,21,0.3)',
                             borderRadius: 20, padding: '2px 8px',
@@ -1142,8 +1109,8 @@ export default function Dashboard() {
                             ⭐ {player.level || 'Aspirant'}
                           </span>
                           {isSelf && (
-                            <span style={{
-                              fontSize: 10, fontWeight: 700, flexShrink: 0,
+                            <span className="t-badge" style={{
+                              flexShrink: 0,
                               background: 'rgba(16,185,129,0.15)', color: '#10b981',
                               border: '1px solid rgba(16,185,129,0.3)',
                               borderRadius: 20, padding: '2px 7px',
@@ -1153,8 +1120,8 @@ export default function Dashboard() {
                       </div>
 
                       {/* XP */}
-                      <p className="font-display font-bold"
-                        style={{ fontSize: 17, color: '#FDBA3B', margin: 0, flexShrink: 0 }}>
+                      <p className="t-stat-sm font-display"
+                        style={{ color: '#FDBA3B', margin: 0, flexShrink: 0 }}>
                         {Math.round(player.totalScore || 0).toLocaleString()} XP
                       </p>
                     </div>
@@ -1215,7 +1182,7 @@ export default function Dashboard() {
 
         {/* ── DISCOVER QUIZZES ── */}
         <div className="mt-6 mb-4" style={{ padding: '0 20px' }}>
-          <p className="font-display font-bold text-base text-white mb-4">Discover Quizzes</p>
+          <p className="t-section-label" style={{ color: '#94A3B8' }}>Discover Quizzes</p>
 
           {/* Card 1 — SSC PYQs */}
           <button
@@ -1228,14 +1195,14 @@ export default function Dashboard() {
               boxShadow: 'inset 0 2px 0 rgba(124, 58, 237, 0.8)',
             }}
           >
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', padding: '4px 12px', borderRadius: 20, background: 'rgba(124,58,237,0.18)', color: '#c4b5fd', border: '1px solid rgba(124,58,237,0.3)', display: 'inline-block' }}>
+            <span className="t-badge" style={{ letterSpacing: '0.05em', textTransform: 'uppercase', padding: '4px 12px', borderRadius: 20, background: 'rgba(124,58,237,0.18)', color: '#c4b5fd', border: '1px solid rgba(124,58,237,0.3)', display: 'inline-block' }}>
               Most Attempted
             </span>
-            <p className="font-display font-bold text-white" style={{ fontSize: 22, marginTop: 12 }}>SSC PYQs</p>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, marginTop: 6 }}>
+            <p className="t-card-title" style={{ color: '#ffffff', marginTop: 12 }}>SSC PYQs</p>
+            <p className="t-card-subtitle" style={{ color: 'rgba(255,255,255,0.55)', marginTop: 6 }}>
               Previous year questions across all SSC exams. Real exam pattern, real marks.
             </p>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', fontWeight: 600, marginTop: 12 }}>7,000+ Questions</p>
+            <p className="t-badge" style={{ color: 'rgba(255,255,255,0.40)', marginTop: 12 }}>7,000+ Questions</p>
           </button>
 
           {/* Card 2 — Parmar SSC */}
@@ -1251,11 +1218,11 @@ export default function Dashboard() {
             }}
           >
             <div>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', padding: '4px 12px', borderRadius: 20, background: 'rgba(139,92,246,0.15)', color: '#c4b5fd', border: '1px solid rgba(139,92,246,0.28)', display: 'inline-block' }}>
+              <span className="t-badge" style={{ letterSpacing: '0.05em', textTransform: 'uppercase', padding: '4px 12px', borderRadius: 20, background: 'rgba(139,92,246,0.15)', color: '#c4b5fd', border: '1px solid rgba(139,92,246,0.28)', display: 'inline-block' }}>
                 Parmar Sir
               </span>
-              <p className="font-display font-bold text-white" style={{ fontSize: 22, marginTop: 12 }}>Parmar SSC</p>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 700, marginTop: 8, letterSpacing: '0.06em' }}>COMING SOON…</p>
+              <p className="t-card-title" style={{ color: '#ffffff', marginTop: 12 }}>Parmar SSC</p>
+              <p className="t-badge" style={{ color: 'rgba(255,255,255,0.35)', marginTop: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>COMING SOON…</p>
             </div>
             <LightningSVG size={36} color="rgba(139,92,246,0.5)" />
           </button>
@@ -1359,14 +1326,14 @@ export default function Dashboard() {
             {notifyModalView === 'done' && (
               <div style={{ textAlign: 'center', padding: '8px 0' }}>
                 <div style={{ fontSize: 38, marginBottom: 12 }}>✅</div>
-                <p className="font-display" style={{ fontSize: 18, fontWeight: 800, color: '#f1f5f9', margin: '0 0 8px' }}>
+                <p className="t-card-title font-display" style={{ color: '#f1f5f9', margin: '0 0 8px' }}>
                   You&apos;re on the list!
                 </p>
-                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.65, margin: '0 0 20px' }}>
+                <p className="t-body" style={{ color: '#64748b', margin: '0 0 20px' }}>
                   We&apos;ll notify you when this series is ready.
                 </p>
-                <button onClick={closeModal} className="font-display"
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: '#e2e8f0', borderRadius: 12, padding: '13px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                <button onClick={closeModal} className="t-button-lg font-display"
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: '#e2e8f0', borderRadius: 12, padding: '13px 0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   Got it
                 </button>
               </div>
@@ -1376,14 +1343,14 @@ export default function Dashboard() {
             {notifyModalView === 'already' && (
               <div style={{ textAlign: 'center', padding: '8px 0' }}>
                 <div style={{ fontSize: 34, marginBottom: 12 }}>🔔</div>
-                <p className="font-display" style={{ fontSize: 18, fontWeight: 800, color: '#f1f5f9', margin: '0 0 8px' }}>
+                <p className="t-card-title font-display" style={{ color: '#f1f5f9', margin: '0 0 8px' }}>
                   Already joined
                 </p>
-                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.65, margin: '0 0 20px' }}>
+                <p className="t-body" style={{ color: '#64748b', margin: '0 0 20px' }}>
                   You&apos;re already on the waitlist for this series.
                 </p>
-                <button onClick={closeModal} className="font-display"
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: '#e2e8f0', borderRadius: 12, padding: '13px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                <button onClick={closeModal} className="t-button-lg font-display"
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: '#e2e8f0', borderRadius: 12, padding: '13px 0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   Got it
                 </button>
               </div>
@@ -1392,22 +1359,21 @@ export default function Dashboard() {
             {/* ── VIEW: guest sign-in prompt ── */}
             {notifyModalView === 'guest-prompt' && (
               <div>
-                <p className="font-display" style={{ fontSize: 18, fontWeight: 800, color: '#f1f5f9', margin: '0 0 8px', lineHeight: 1.3 }}>
+                <p className="t-card-title font-display" style={{ color: '#f1f5f9', margin: '0 0 8px' }}>
                   Sign in to get notified
                 </p>
-                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.65, margin: '0 0 20px' }}>
+                <p className="t-body" style={{ color: '#64748b', margin: '0 0 20px' }}>
                   We need your email to notify you when this series launches.
                 </p>
                 <button
                   onClick={() => signIn('google', { callbackUrl: window.location.href })}
-                  className="font-display"
-                  style={{ width: '100%', background: 'linear-gradient(135deg, #FF7A1A, #FF5A00)', color: '#fff', borderRadius: 12, padding: '14px 0', fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 18px rgba(255,90,0,0.28)' }}
+                  style={{ width: '100%', background: '#ffffff', color: '#3c4043', borderRadius: 12, padding: '11px 16px', fontSize: 14, fontWeight: 600, border: '1px solid #dadce0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontFamily: 'Roboto, sans-serif', boxShadow: '0 1px 3px rgba(0,0,0,0.12)' }}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#fff" fillOpacity="0.9"/>
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#fff" fillOpacity="0.9"/>
-                    <path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.83z" fill="#fff" fillOpacity="0.9"/>
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.83C6.71 7.31 9.14 5.38 12 5.38z" fill="#fff" fillOpacity="0.9"/>
+                  <svg width="20" height="20" viewBox="0 0 24 24">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.83z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.83C6.71 7.31 9.14 5.38 12 5.38z" fill="#EA4335"/>
                   </svg>
                   Sign in with Google
                 </button>
@@ -1421,24 +1387,24 @@ export default function Dashboard() {
             {/* ── VIEW: default / loading ── */}
             {(notifyModalView === 'default' || notifyModalView === 'loading') && (
               <div>
-                <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', color: '#FF7A1A', background: 'rgba(255,122,26,0.12)', border: '1px solid rgba(255,122,26,0.20)', borderRadius: 999, padding: '3px 10px', display: 'inline-block', marginBottom: 14 }}>WAITLIST</span>
+                <span className="t-badge" style={{ letterSpacing: '0.08em', textTransform: 'uppercase', color: '#FF7A1A', background: 'rgba(255,122,26,0.12)', border: '1px solid rgba(255,122,26,0.20)', borderRadius: 999, padding: '3px 10px', display: 'inline-block', marginBottom: 14 }}>WAITLIST</span>
 
-                <p className="font-display" style={{ fontSize: 18, fontWeight: 800, color: '#f1f5f9', margin: '0 0 6px', lineHeight: 1.3 }}>
+                <p className="t-card-title font-display" style={{ color: '#f1f5f9', margin: '0 0 6px' }}>
                   🔥 Want Parmar SSC quizzes?
                 </p>
-                <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 12px' }}>
+                <p className="t-card-subtitle" style={{ color: '#475569', margin: '0 0 12px' }}>
                   Video-wise GK practice in quiz format.
                 </p>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 16 }}>
                   {[['📹', 'Video-wise'], ['📝', 'Exam-style'], ['⚡', 'Quick revision']].map(([icon, label]) => (
-                    <span key={label} style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 999, padding: '5px 11px' }}>
+                    <span key={label} className="t-badge" style={{ color: '#94a3b8', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 999, padding: '5px 11px' }}>
                       {icon} {label}
                     </span>
                   ))}
                 </div>
 
-                <p style={{ fontSize: 12, color: '#475569', lineHeight: 1.55, margin: '0 0 16px' }}>
+                <p className="t-card-subtitle" style={{ color: '#475569', margin: '0 0 16px' }}>
                   Join the waitlist to help us prioritize this series.
                 </p>
 

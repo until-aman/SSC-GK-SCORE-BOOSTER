@@ -10,6 +10,15 @@ const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 const OPTION_KEYS   = ['optionA', 'optionB', 'optionC', 'optionD'];
 
 /* ── Helpers ──────────────────────────────────────────────────────────── */
+const COLLECTION_DISPLAY_NAMES = { PYQ: 'SSC PYQ', Parmar: 'Parmar SSC' };
+function getDisplaySubject(subject, collection) {
+  if (!subject) return subject;
+  if (subject === 'Mixed' && collection && collection !== 'general') {
+    return COLLECTION_DISPLAY_NAMES[collection] || collection;
+  }
+  return subject;
+}
+
 function formatSavedDate(ts) {
   if (!ts) return null;
   const diff = Date.now() - new Date(ts).getTime();
@@ -36,7 +45,7 @@ function QuestionRow({ q, index, onView, onUnsave }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
         {q.subject && (
           <span style={{ fontSize: 11, fontWeight: 700, color: '#34D399', background: 'rgba(52,211,153,0.10)', borderRadius: 99, padding: '2px 9px' }}>
-            {q.subject}
+            {getDisplaySubject(q.subject, q.collection)}
           </span>
         )}
         {q.topic && (
@@ -157,7 +166,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
             {q.subject && (
               <span style={{ fontSize: 11, fontWeight: 700, color: '#34D399', background: 'rgba(52,211,153,0.10)', borderRadius: 99, padding: '2px 10px' }}>
-                {q.subject}
+                {getDisplaySubject(q.subject, q.collection)}
               </span>
             )}
             {q.topic && (
@@ -167,7 +176,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
         )}
 
         {/* Question */}
-        <p style={{ fontSize: 16, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.55, marginBottom: 20 }}>
+        <p className="t-body" style={{ color: '#F8FAFC', fontWeight: 700, marginBottom: 20 }}>
           {q.question}
         </p>
 
@@ -258,7 +267,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
               background: selectedOption
                 ? 'linear-gradient(135deg, #FF7A1A, #FF5A00)'
                 : 'linear-gradient(135deg, #1E40AF, #2563EB)',
-              color: '#FFFFFF', fontSize: 15, fontWeight: 700,
+              color: '#FFFFFF', fontSize: 16, fontWeight: 700,
               marginBottom: 8,
               transition: 'background 200ms ease',
             }}
@@ -504,8 +513,8 @@ export default function Saved() {
     return (
       <div className="min-h-screen bg-[#0f172a] pb-24">
         <div className="px-4 pt-8 pb-3">
-          <h1 className="font-display font-black text-xl text-white">Saved Questions</h1>
-          <p className="font-sans text-xs text-slate-400 mt-0.5">Build your personal revision bank</p>
+          <h1 className="t-page-title font-display text-white">Saved Questions</h1>
+          <p className="t-page-subtitle font-sans text-slate-400">Build your personal revision bank</p>
         </div>
         <div className="px-4">
           <Loader card size="md" label="Fetching your saved questions…" />
@@ -522,14 +531,14 @@ export default function Saved() {
         {/* Header */}
         <div className="px-4 pt-8 pb-3">
           <div className="flex items-center gap-2.5">
-            <h1 className="font-display font-black text-xl text-white">Saved Questions</h1>
+            <h1 className="t-page-title font-display text-white">Saved Questions</h1>
             {questions.length > 0 && (
-              <span className="bg-emerald-500/20 border border-emerald-500/30 rounded-full px-2.5 py-0.5 font-display font-bold text-xs text-emerald-400">
+              <span className="t-badge bg-emerald-500/20 border border-emerald-500/30 rounded-full px-2.5 py-0.5 font-display text-emerald-400">
                 {questions.length}
               </span>
             )}
           </div>
-          <p className="font-sans text-xs text-slate-400 mt-0.5">Build your personal revision bank</p>
+          <p className="t-page-subtitle font-sans text-slate-400">Build your personal revision bank</p>
         </div>
 
         {/* Guest sign-in banner */}

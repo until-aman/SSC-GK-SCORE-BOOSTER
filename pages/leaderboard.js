@@ -60,13 +60,13 @@ function RankRow({ leader, isSelf }) {
         padding: 14,
       }}
     >
-      <span className="font-display font-bold text-sm w-6 text-center flex-shrink-0" style={{ color: isSelf ? '#34D399' : '#475569' }}>
+      <span className="t-stat-label font-display w-6 text-center flex-shrink-0" style={{ color: isSelf ? '#34D399' : '#475569' }}>
         {leader.rank}
       </span>
       <RankAvatar leader={leader} borderColor={isSelf ? 'rgba(52,211,153,0.55)' : undefined} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
-          <p className="font-sans font-semibold text-sm truncate" style={{ color: isSelf ? '#F0FDF4' : '#F8FAFC', margin: 0 }}>
+          <p className="t-card-subtitle font-sans font-semibold truncate" style={{ color: isSelf ? '#F0FDF4' : '#F8FAFC', margin: 0 }}>
             {truncateName(leader.name)}
           </p>
           {isSelf && (
@@ -77,7 +77,7 @@ function RankRow({ leader, isSelf }) {
         </div>
       </div>
       <div className="text-right">
-        <p className="font-display font-bold text-sm" style={{ color: isSelf ? '#34D399' : '#CBD5E1' }}>
+        <p className="t-stat-sm font-display" style={{ color: isSelf ? '#34D399' : '#CBD5E1' }}>
           {(leader.totalScore || 0).toFixed(1)}
         </p>
         <p className="font-sans text-xs text-slate-500">XP</p>
@@ -208,7 +208,7 @@ export default function Leaderboard() {
                 <path d="M18 6L6 18M6 6l12 12"/>
               </svg>
             </button>
-            <h1 className="absolute left-1/2 -translate-x-1/2 font-display font-black text-xl text-white leading-none whitespace-nowrap">
+            <h1 className="t-page-title absolute left-1/2 -translate-x-1/2 font-display text-white whitespace-nowrap">
               Leaderboard
             </h1>
           </div>
@@ -222,7 +222,7 @@ export default function Leaderboard() {
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
-                className="px-5 py-2 rounded-full text-sm font-display font-bold transition-all duration-200 active:scale-95"
+                className="t-button-sm px-5 py-2 rounded-full font-display transition-all duration-200 active:scale-95"
                 style={activeTab === key ? {
                   background: 'linear-gradient(135deg, #7C3AED, #4F46E5)',
                   color: '#FFFFFF',
@@ -285,11 +285,11 @@ export default function Leaderboard() {
                   </div>
                 ) : (
                   <div className="mb-4 px-4 py-4" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.20), rgba(16,185,129,0.10))', border: '1px solid rgba(139,92,246,0.45)', borderRadius: 22, boxShadow: '0 14px 35px rgba(124,58,237,0.14)' }}>
-                    <p className="font-sans text-[10px] font-bold text-violet-400 uppercase tracking-widest mb-3">Your Rank</p>
+                    <p className="t-section-label" style={{ color: '#a78bfa', marginBottom: 12 }}>Your Rank</p>
 
                     {/* Rank + YOU chip */}
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-display font-black text-3xl text-violet-300 flex-shrink-0">
+                      <span className="t-stat-lg font-display text-violet-300 flex-shrink-0">
                         #{currentUser.rank}
                       </span>
                       <span style={{ fontSize: 11, fontWeight: 700, color: '#34D399', background: 'rgba(16,185,129,0.16)', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 7, padding: '2px 8px', lineHeight: '18px', flexShrink: 0 }}>
@@ -301,16 +301,16 @@ export default function Leaderboard() {
                     <div className="flex items-center gap-3 mb-2">
                       <RankAvatar leader={currentUser} size={40} borderColor="rgba(139,92,246,0.55)" />
                       <div className="flex-1 min-w-0">
-                        <p className="font-sans font-bold text-[15px] text-violet-100 truncate" style={{ margin: 0 }}>
+                        <p className="t-card-subtitle font-sans font-bold text-violet-100 truncate" style={{ margin: 0 }}>
                           {truncateName(currentUser.name, 20)}
                         </p>
                         <p className="font-sans text-xs text-slate-500" style={{ margin: 0 }}>{currentUser.level || 'Aspirant'}</p>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="font-display font-black text-base text-violet-300" style={{ margin: 0 }}>
+                        <p className="t-stat-sm font-display text-violet-300" style={{ margin: 0 }}>
                           {(currentUser.totalScore || 0).toFixed(1)}
                         </p>
-                        <p className="font-sans text-[10px] text-slate-500" style={{ margin: 0 }}>XP</p>
+                        <p className="t-stat-label font-sans text-slate-500" style={{ margin: 0 }}>XP</p>
                       </div>
                     </div>
 
@@ -345,7 +345,7 @@ export default function Leaderboard() {
                     <div className="mb-3" style={{ background: 'rgba(15,23,42,0.75)', border: '1px solid rgba(148,163,184,0.11)', borderRadius: 20, overflow: 'hidden' }}>
                       {/* Card header */}
                       <div style={{ padding: '10px 16px 9px', borderBottom: '1px solid rgba(148,163,184,0.08)' }}>
-                        <p style={{ fontSize: 10, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                        <p className="t-section-label" style={{ color: '#475569', margin: 0 }}>
                           Top 3 Champions
                         </p>
                       </div>

@@ -156,6 +156,9 @@ html {
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 
+/* ── Spin keyframe (used for loading spinners) ── */
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
 /* ── Bottom sheet overlay ── */
 .sheet-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.6);
@@ -297,34 +300,144 @@ button, a {
 }
 .score-pop { animation: scorePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.25s both; }
 
-/* ── Typography utilities (legacy — some pages reference these) ── */
-@layer utilities {
-  .typo-page-heading {
-    font-size: 20px; font-weight: 700; line-height: 1.2;
-    letter-spacing: 0.08em; color: #1a1a1a;
+/* ── App Typography System ────────────────────────────────────────────────── */
+/*
+ * Central type scale for SSC GK Score Booster.
+ * Never hardcode text sizes inline — use these classes.
+ *
+ * Fonts: Nunito (font-display) for headings/numbers, Inter (default) for body.
+ *
+ *  t-page-title     — screen headings  (26px / 800 / Nunito / -0.02em)
+ *  t-page-subtitle  — screen subtitles (15px / 500)
+ *  t-section-label  — eyebrow labels   (12px / 700 / 0.12em / UPPER)
+ *  t-card-title     — card headings    (17px / 800 / Nunito / -0.01em)
+ *  t-card-subtitle  — card body copy   (14px / 500)
+ *  t-body           — long body text   (15px / 500 / 1.6lh)
+ *  t-button-lg      — primary buttons  (16px / 700)
+ *  t-button-sm      — secondary/small  (14px / 700)
+ *  t-badge          — pills & chips    (11px / 700 / 0.02em)
+ *  t-stat-lg        — score / accuracy (28px / 800 / Nunito / -0.03em)
+ *  t-stat-sm        — correct/wrong    (18px / 800 / Nunito)
+ *  t-stat-label     — stat captions    (12px / 600 / 0.04em / UPPER)
+ *  t-nav-label      — bottom-nav tabs  (11px / 600)
+ */
+@layer components {
+  /* 1 ─ Page Title */
+  .t-page-title {
+    font-family: 'Nunito', sans-serif;
+    font-size: 26px;
+    line-height: 32px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
   }
-  .typo-section-label {
-    font-size: 13px; font-weight: 600; line-height: 1.5; color: #6b7280;
+
+  /* 2 ─ Page Subtitle */
+  .t-page-subtitle {
+    font-size: 15px;
+    line-height: 22px;
+    font-weight: 500;
+    letter-spacing: 0em;
+    margin-top: 4px;
   }
-  .typo-question {
-    font-size: 16px; font-weight: 500; line-height: 1.6; color: #1a1a1a;
+
+  /* 3 ─ Section Label / Eyebrow */
+  .t-section-label {
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: block;
   }
-  .typo-option {
-    font-size: 15px; font-weight: 400; line-height: 1.5; color: #6b7280;
+
+  /* 4 ─ Card Title */
+  .t-card-title {
+    font-family: 'Nunito', sans-serif;
+    font-size: 17px;
+    line-height: 23px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
   }
-  .typo-body {
-    font-size: 14px; font-weight: 400; line-height: 1.5; color: #1a1a1a;
+
+  /* 5 ─ Card Subtitle */
+  .t-card-subtitle {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
   }
-  .typo-button {
-    font-size: 15px; font-weight: 600; line-height: 1.5; letter-spacing: 0.02em;
+
+  /* 6 ─ Body Text */
+  .t-body {
+    font-size: 15px;
+    line-height: 24px;
+    font-weight: 500;
+    letter-spacing: 0em;
   }
-  .typo-small-label {
-    font-size: 12px; font-weight: 400; line-height: 1.5; color: #6b7280;
+
+  /* 7a ─ Large CTA Button */
+  .t-button-lg {
+    font-size: 16px;
+    line-height: 20px;
+    font-weight: 700;
+    letter-spacing: -0.005em;
+    text-align: center;
   }
-  .typo-score {
-    font-size: 28px; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em;
+
+  /* 7b ─ Small / Secondary Button */
+  .t-button-sm {
+    font-size: 14px;
+    line-height: 18px;
+    font-weight: 700;
+    letter-spacing: 0em;
   }
-  .typo-username {
-    font-size: 14px; font-weight: 600; line-height: 1.5;
+
+  /* 8 ─ Badge / Pill */
+  .t-badge {
+    font-size: 11px;
+    line-height: 14px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  /* 9a ─ Large Stat (score, XP, accuracy) */
+  .t-stat-lg {
+    font-family: 'Nunito', sans-serif;
+    font-size: 28px;
+    line-height: 34px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+
+  /* 9b ─ Small Stat (correct / wrong / skipped) */
+  .t-stat-sm {
+    font-family: 'Nunito', sans-serif;
+    font-size: 18px;
+    line-height: 24px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  /* 9c ─ Stat Label (caption under numbers) */
+  .t-stat-label {
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* 10 ─ Bottom-Nav Label */
+  .t-nav-label {
+    font-size: 11px;
+    line-height: 14px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .t-nav-label-active {
+    font-size: 11px;
+    line-height: 14px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
   }
 }

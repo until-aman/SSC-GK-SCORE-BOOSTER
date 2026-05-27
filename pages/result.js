@@ -12,6 +12,16 @@ import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
+// ─── Display helper ───────────────────────────────────────────────────────────
+const COLLECTION_DISPLAY_NAMES = { PYQ: 'SSC PYQ', Parmar: 'Parmar SSC' };
+function getDisplaySubject(subject, collection) {
+  if (!subject) return subject;
+  if (subject === 'Mixed' && collection && collection !== 'general') {
+    return COLLECTION_DISPLAY_NAMES[collection] || collection;
+  }
+  return subject;
+}
+
 /* ── Avatar — mirrors dashboard Avatar component exactly ── */
 function ChampionAvatar({ imageUrl, name, size = 36 }) {
   const [imgError, setImgError] = useState(false);
@@ -490,27 +500,27 @@ export default function Result() {
           }
 
           const cardLabel = result.isDailyChallenge ? 'Daily Challenge Result'
-            : `${result.subject || 'Quiz'} Result`;
+            : `${getDisplaySubject(result.subject, result.collection) || 'Quiz'} Result`;
 
           return (
             <div className="card-in" style={{ background: '#172235', border: '1px solid #2A3A52', borderRadius: 28, padding: '18px 20px', boxShadow: '0 16px 40px rgba(0,0,0,0.22)' }}>
-              <p style={{ fontSize: 11, fontWeight: 600, color: '#7EA0C4', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, textAlign: 'center' }}>
+              <p className="t-stat-label" style={{ color: '#7EA0C4', marginBottom: 8, textAlign: 'center' }}>
                 {cardLabel}
               </p>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
-                <span style={{ background: statusBg, border: `1px solid ${statusBorder}`, color: statusColor, borderRadius: 999, padding: '4px 16px', fontSize: 13, fontWeight: 700 }}>
+                <span className="t-button-sm" style={{ background: statusBg, border: `1px solid ${statusBorder}`, color: statusColor, borderRadius: 999, padding: '4px 16px' }}>
                   {statusLabel}
                 </span>
               </div>
               {/* Score + Accuracy tiles */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                 <div style={{ flex: 1, background: '#111B2D', border: '1px solid #243247', borderRadius: 16, padding: '12px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontSize: 26, fontWeight: 900, color: scoreColor, lineHeight: 1 }}>{score}</span>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: '#7EA0C4', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Score</span>
+                  <span className="t-stat-lg font-display" style={{ color: scoreColor }}>{score}</span>
+                  <span className="t-stat-label" style={{ color: '#7EA0C4' }}>Score</span>
                 </div>
                 <div style={{ flex: 1, background: '#111B2D', border: '1px solid #243247', borderRadius: 16, padding: '12px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontSize: 26, fontWeight: 900, color: '#F8FAFC', lineHeight: 1 }}>{Math.round(acc)}%</span>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: '#7EA0C4', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Accuracy</span>
+                  <span className="t-stat-lg font-display" style={{ color: '#F8FAFC' }}>{Math.round(acc)}%</span>
+                  <span className="t-stat-label" style={{ color: '#7EA0C4' }}>Accuracy</span>
                 </div>
               </div>
 
@@ -522,26 +532,27 @@ export default function Result() {
                   { val: result.skipped,   label: 'Skipped', color: '#94A3B8' },
                 ].map(({ val, label, color: c }) => (
                   <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                    <span style={{ fontSize: 22, fontWeight: 900, color: c, lineHeight: 1 }}>{val}</span>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: '#7EA0C4', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+                    <span className="t-stat-sm font-display" style={{ color: c }}>{val}</span>
+                    <span className="t-stat-label" style={{ color: '#7EA0C4' }}>{label}</span>
                   </div>
                 ))}
               </div>
 
               {/* CTAs */}
-              <p style={{ textAlign: 'center', fontSize: 12, color: '#93A4BC', marginBottom: 10 }}>
+              <p className="t-badge" style={{ textAlign: 'center', color: '#93A4BC', marginBottom: 10 }}>
                 You answered {answeredCount} of {result.totalQuestions || 0} questions
               </p>
               <button
-                className="btn-pulse"
+                className="btn-pulse t-button-lg"
                 onClick={() => { setLoadingDetailed(true); setTimeout(() => router.push('/result/detailed'), 100); }}
                 style={{
-                  width: '100%', height: 50, borderRadius: 16, cursor: 'pointer',
+                  width: '100%', height: 52, borderRadius: 16, cursor: 'pointer',
                   background: 'linear-gradient(135deg, #FF7A1A, #FF5A00)',
-                  color: '#FFFFFF', fontSize: 14, fontWeight: 700, border: 'none',
+                  color: '#FFFFFF', border: 'none',
                   marginBottom: 10,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transform: 'translateY(0)', transition: 'transform 140ms ease, box-shadow 140ms ease',
+                  fontFamily: 'Nunito, sans-serif',
                 }}
                 onPointerEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 16px 32px rgba(174,80,15,0.45)'; }}
                 onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(174,80,15,0.15)'; }}
@@ -553,10 +564,11 @@ export default function Result() {
 
               <button
                 onClick={handleContinue}
+                className="t-button-sm"
                 style={{
                   width: '100%', height: 46, borderRadius: 14, cursor: 'pointer',
                   background: '#1E2B40', color: '#F8FAFC',
-                  border: '1px solid #334155', fontSize: 14, fontWeight: 600,
+                  border: '1px solid #334155',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transform: 'scale(1)', transition: 'transform 140ms ease, background 140ms ease',
                 }}
@@ -620,36 +632,35 @@ export default function Result() {
             }}
           />
           <div style={{ display: 'inline-flex', alignItems: 'center', marginBottom: 14, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: 999, padding: '3px 12px' }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#FDBA74', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most Useful Next Step</span>
+            <span className="t-badge" style={{ color: '#FDBA74', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most Useful Next Step</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <span style={{ fontSize: 16 }}>📚</span>
             </div>
-            <div>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC' }}>SSC PYQ Practice</p>
-            </div>
+            <p className="t-card-title font-display" style={{ color: '#F8FAFC', margin: 0 }}>SSC PYQ Practice</p>
           </div>
-          <p style={{ fontSize: 12, color: '#93A4BC', lineHeight: 1.55, marginBottom: 14 }}>
+          <p className="t-card-subtitle" style={{ color: '#93A4BC', marginBottom: 14 }}>
             Practice previous year SSC questions by subject.<br />
             Choose Polity, History, Science, Geography and more.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
             {["7,000+ Q's", 'Exam-level Practice', 'Subject-wise'].map(tag => (
-              <span key={tag} style={{ fontSize: 10, fontWeight: 600, color: '#7EA0C4', background: 'rgba(126,160,196,0.10)', border: '1px solid rgba(126,160,196,0.20)', borderRadius: 999, padding: '3px 10px' }}>
+              <span key={tag} className="t-badge" style={{ color: '#7EA0C4', background: 'rgba(126,160,196,0.10)', border: '1px solid rgba(126,160,196,0.20)', borderRadius: 999, padding: '3px 10px' }}>
                 {tag}
               </span>
             ))}
           </div>
           <button
-            className="btn-pulse"
+            className="btn-pulse t-button-lg"
             onClick={() => router.push('/subjects?collection=ssc_pyq')}
             style={{
-              width: '100%', height: 56, borderRadius: 18, cursor: 'pointer',
+              width: '100%', height: 52, borderRadius: 18, cursor: 'pointer',
               background: 'linear-gradient(135deg, #FF7A1A, #FF5A00)',
-              color: '#FFFFFF', fontSize: 15, fontWeight: 700, border: 'none',
+              color: '#FFFFFF', border: 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transform: 'translateY(0)', transition: 'transform 140ms ease, box-shadow 140ms ease',
+              fontFamily: 'Nunito, sans-serif',
             }}
             onPointerEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 16px 32px rgba(255,122,26,0.45)'; }}
             onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,122,26,0.15)'; }}
@@ -677,12 +688,12 @@ export default function Result() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 4px rgba(52,211,153,0.65))' }}>
                   <path d="M9 18h6M10 22h4M12 2a7 7 0 017 7c0 2.6-1.4 4.9-3.5 6.2-.5.3-.5.8-.5 1.3V17H9v-.5c0-.5 0-1-.5-1.3A7 7 0 0112 2z"/>
                 </svg>
-                <p style={{ fontSize: 11, fontWeight: 700, color: '#34D399', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Smart Review Tip</p>
+                <p className="t-section-label" style={{ color: '#34D399', marginBottom: 0 }}>Smart Review Tip</p>
               </div>
-              <p style={{ fontSize: 13, color: '#93A4BC', lineHeight: 1.65, marginBottom: 14 }}>{tip}</p>
+              <p className="t-body" style={{ color: '#93A4BC', marginBottom: 14 }}>{tip}</p>
               {aiAnalysis?.summary ? (
                 <div style={{ borderRadius: 12, border: '1px solid rgba(52,211,153,0.20)', background: 'rgba(52,211,153,0.07)', padding: '12px 14px' }}>
-                  <p style={{ fontSize: 13, color: '#A7F3D0', lineHeight: 1.65 }}>{aiAnalysis.summary}</p>
+                  <p className="t-body" style={{ color: '#A7F3D0' }}>{aiAnalysis.summary}</p>
                 </div>
               ) : (
                 <button
@@ -745,7 +756,7 @@ export default function Result() {
           {/* Header */}
           <div className="flex items-start justify-between gap-3 mb-3">
             <div>
-              <p className="font-display" style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 7 }}>
+              <p className="t-card-title font-display" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 7 }}>
                 <span style={{ fontSize: 16, lineHeight: 1 }}>🔥</span>
                 Weekly Champions
               </p>
@@ -756,8 +767,8 @@ export default function Result() {
                   e.stopPropagation();
                   router.push('/leaderboard');
                 }}
-                className="flex items-center gap-1 font-sans font-medium active:opacity-70"
-                style={{ fontSize: 13, color: '#34D399', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                className="t-button-sm flex items-center gap-1 font-sans active:opacity-70"
+                style={{ color: '#34D399', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
               >
                 View your rank
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
