@@ -218,7 +218,7 @@ export default function Result() {
         subject:          subject  || result?.subject  || '',
         topic:            topic    || result?.topic    || '',
         sessionId:        sessionId || result?.sessionId || crypto.randomUUID(),
-        isDailyChallenge: false,
+        isDailyChallenge: (subject || result?.subject) === 'Daily Challenge',
       }),
     })
       .then(r => r.json())
