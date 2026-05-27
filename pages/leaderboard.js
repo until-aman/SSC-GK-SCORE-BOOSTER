@@ -5,6 +5,9 @@ import Head from 'next/head';
 
 import GoogleSignInCard from '@/components/GoogleSignInCard';
 import Loader from '@/components/ui/Loader';
+import AppButton from '@/components/ui/AppButton';
+import AppCard from '@/components/ui/AppCard';
+import SectionHeader from '@/components/ui/SectionHeader';
 import {
   buildLeaderboardCache,
   claimLeaderboardRefresh,
@@ -46,18 +49,14 @@ function RankAvatar({ leader, size = 32, borderColor }) {
 
 function RankRow({ leader, isSelf }) {
   return (
-    <div
+    <AppCard
       className="flex items-center gap-3 mb-2"
       style={isSelf ? {
         background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(31,41,55,0.80))',
         border: '1px solid rgba(52,211,153,0.45)',
-        borderRadius: 18,
-        padding: 14,
       } : {
         background: 'rgba(31,41,55,0.72)',
         border: '1px solid rgba(148,163,184,0.12)',
-        borderRadius: 18,
-        padding: 14,
       }}
     >
       <span className="t-stat-label font-display w-6 text-center flex-shrink-0" style={{ color: isSelf ? '#34D399' : '#475569' }}>
@@ -82,7 +81,7 @@ function RankRow({ leader, isSelf }) {
         </p>
         <p className="font-sans text-xs text-slate-500">XP</p>
       </div>
-    </div>
+    </AppCard>
   );
 }
 
@@ -208,9 +207,11 @@ export default function Leaderboard() {
                 <path d="M18 6L6 18M6 6l12 12"/>
               </svg>
             </button>
-            <h1 className="t-page-title absolute left-1/2 -translate-x-1/2 font-display text-white whitespace-nowrap">
-              Leaderboard
-            </h1>
+            <SectionHeader
+              title="Leaderboard"
+              className="absolute left-1/2 -translate-x-1/2"
+              titleClassName="text-white whitespace-nowrap"
+            />
           </div>
 
           {/* Tab switcher */}
@@ -250,15 +251,17 @@ export default function Leaderboard() {
             ) : error ? (
               <div className="text-center py-10">
                 <p className="text-white/60 text-sm mb-3">Could not load leaderboard.</p>
-                <button
+                <AppButton
+                  as="button"
                   onClick={() => {
                     try { localStorage.removeItem('ssc_leaderboard_refresh_started_at'); } catch {}
                     fetchLeaderboard(activeTab, { forceRefresh: true });
                   }}
-                  className="px-6 py-2 bg-white text-violet-700 rounded-full text-xs font-display font-black uppercase"
+                  variant="secondary"
+                  className="px-6 py-2 bg-white text-violet-700 rounded-full text-xs uppercase"
                 >
                   Retry
-                </button>
+                </AppButton>
               </div>
 
             ) : leaders.length === 0 ? (

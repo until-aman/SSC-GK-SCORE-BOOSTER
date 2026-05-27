@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -7,16 +7,19 @@ import Image from 'next/image';
 import GoogleSignInCard from '@/components/GoogleSignInCard';
 import NotificationBell from '@/components/NotificationBell';
 import Loader from '@/components/ui/Loader';
+import RefreshStatus from '@/components/ui/RefreshStatus';
+import AppCard from '@/components/ui/AppCard';
 import { getSubjectStyle, subjectStyles } from '@/lib/subjects';
 import { getISTDateString } from '@/lib/streak';
 import {
   readCache,
-  fetchWithClientCache,
-  formatLastUpdated,
   writeCache,
   clearAllAppCache,
 } from '@/lib/clientCache';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
+import { getDashboardBootstrap } from '@/lib/data/appData';
+import { getLeaderboard } from '@/lib/data/leaderboardData';
+import { getDailyChallenge, getTopics } from '@/lib/data/questionData';
 
 const SUBJECTS = Object.keys(subjectStyles);
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -158,20 +161,12 @@ function getRankedStudentCount() {
 
 /* ─── Daily Challenge cache helpers (module-level — used by both Dashboard and SocialProofCarousel) ── */
 function getDCCacheKey() {
-  const today = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
-    .toISOString().split('T')[0];
-  return `dc_${today}`;
+  return CACHE_KEYS.DAILY_CHALLENGE(getISTDateString());
 }
 
 async function prefetchDailyChallenge() {
   try {
-    const key = getDCCacheKey();
-    if (typeof window !== 'undefined' && localStorage.getItem(key)) return;
-    const res = await fetch('/api/daily-challenge');
-    const data = await res.json();
-    if (data.questions?.length) {
-      localStorage.setItem(key, JSON.stringify(data));
-    }
+    await getDailyChallenge();
   } catch (_) {}
 }
 
@@ -187,7 +182,6 @@ function SocialProofCarousel({ userProfile, topPlayers, isLoggedIn, session, pla
   }, []);
 
   useEffect(() => {
-    fetch('/api/prefetch').catch(() => null);
     prefetchDailyChallenge();
   }, []);
 
@@ -389,8 +383,11 @@ export default function Dashboard() {
   const [champsSlide, setChampsSlide] = useState(0);
   const [champsPaused, setChampsPaused] = useState(false);
   const [bootstrapRefreshing, setBootstrapRefreshing] = useState(false);
+  const [bootstrapUpdatedAt, setBootstrapUpdatedAt] = useState(null);
   const [bootstrapMsg, setBootstrapMsg] = useState(null);
   const [leaderboardMsg, setLeaderboardMsg] = useState(null);
+  const profileFallbackRequested = useRef(false);
+  const savedQuestionsMigrated = useRef(false);
 
   async function handleNotify(e, series) {
     e.stopPropagation();
@@ -422,9 +419,8 @@ export default function Dashboard() {
     if (subjectChecking) return; // already checking one
     setSubjectChecking(subject);
     try {
-      const res  = await fetch(`/api/topics?subject=${encodeURIComponent(subject)}`);
-      const data = await res.json();
-      const topicMap = data[subject] || {};
+      const { data } = await getTopics({ subject });
+      const topicMap = data.topics?.[subject] || {};
       const total = Object.values(topicMap).reduce((sum, n) => sum + n, 0);
       if (total < 10) {
         setLowQModal(subject);
@@ -487,8 +483,7 @@ export default function Dashboard() {
     }
     // Prefetch hasn't resolved yet, or genuinely returned 0 — confirm with a fetch.
     try {
-      const res = await fetch(`/api/topics?collection=${encodeURIComponent(collection)}`);
-      const data = await res.json();
+      const { data } = await getTopics({ collection });
       const counts = data.subjectCounts || {};
       const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
       setCollectionTotals(prev => ({ ...prev, [collection]: total }));
@@ -514,10 +509,14 @@ export default function Dashboard() {
   // Migrate any locally-saved guest questions to the cloud (runs once on login)
   async function migrateLocalSavedQuestions() {
     try {
-      const raw = localStorage.getItem('savedQuestions');
+      const raw = localStorage.getItem('ssc_saved_questions') || localStorage.getItem('savedQuestions');
       if (!raw) return;
       const questions = JSON.parse(raw);
-      if (!Array.isArray(questions) || questions.length === 0) return;
+      if (!Array.isArray(questions) || questions.length === 0) {
+        localStorage.removeItem('ssc_saved_questions');
+        localStorage.removeItem('savedQuestions');
+        return;
+      }
       for (const q of questions) {
         if (!q.questionId || !q.question || !q.correctOption) continue;
         try {
@@ -528,8 +527,22 @@ export default function Dashboard() {
           });
         } catch {}
       }
+      localStorage.removeItem('ssc_saved_questions');
       localStorage.removeItem('savedQuestions');
     } catch {}
+  }
+
+  function loadUserProfileFallback() {
+    if (profileFallbackRequested.current) return;
+    profileFallbackRequested.current = true;
+    fetch('/api/user-profile')
+      .then(r => r.json())
+      .then(data => {
+        if (data.isNewUser === true) { router.replace('/onboarding'); return; }
+        setUserProfile(data);
+        setProfileLoading(false);
+      })
+      .catch(() => setProfileLoading(false));
   }
 
   function applyBootstrapData(data, timestamp) {
@@ -553,33 +566,33 @@ export default function Dashboard() {
       if (typeof cols[col]?.totalQuestions === 'number') newTotals[col] = cols[col].totalQuestions;
     });
     if (Object.keys(newTotals).length > 0) setCollectionTotals(prev => ({ ...prev, ...newTotals }));
-    if (timestamp) setWeeklyUpdatedAt(timestamp);
+    if (timestamp) {
+      setBootstrapUpdatedAt(timestamp);
+      setWeeklyUpdatedAt(timestamp);
+    }
   }
 
   async function loadWeeklyLeaderboard({ forceRefresh = false } = {}) {
     setWeeklyUpdating(forceRefresh);
     try {
-      const result = await fetchWithClientCache({
-        key: CACHE_KEYS.WEEKLY_LEADERBOARD,
-        url: '/api/leaderboard?scope=weekly',
-        maxAgeMs: CACHE_TTL.THIRTY_MINUTES,
+      const cached = readCache(CACHE_KEYS.WEEKLY_LEADERBOARD, CACHE_TTL.THIRTY_MINUTES);
+      if (!forceRefresh && cached) {
+        const cachedPlayers = getWeeklyPlayers(cached.data);
+        if (cachedPlayers.length > 0) {
+          setTopPlayers(cachedPlayers);
+          setHasWeeklyCache(true);
+          setWeeklyUpdatedAt(cached.timestamp);
+          setWeeklyLoading(false);
+          if (cached.isFresh) {
+            setWeeklyUpdating(false);
+            return;
+          }
+        }
+      }
+
+      const result = await getLeaderboard({
+        scope: 'weekly',
         forceRefresh,
-        onCache(entry) {
-          const players = getWeeklyPlayers(entry.data);
-          if (players.length > 0) {
-            setTopPlayers(players);
-            setHasWeeklyCache(true);
-            setWeeklyUpdatedAt(entry.timestamp);
-            setWeeklyLoading(false);
-          }
-        },
-        onFresh(data) {
-          const players = getWeeklyPlayers(data);
-          if (players.length > 0) {
-            setTopPlayers(players);
-            setHasWeeklyCache(true);
-          }
-        },
       });
       const players = getWeeklyPlayers(result.data);
       if (players.length > 0) {
@@ -615,20 +628,17 @@ export default function Dashboard() {
     if (bootstrapRefreshing) return;
     setBootstrapRefreshing(true);
     try {
-      const result = await fetchWithClientCache({
-        key: CACHE_KEYS.DASHBOARD_BOOTSTRAP,
-        url: '/api/dashboard-bootstrap',
-        maxAgeMs: CACHE_TTL.ONE_DAY,
+      const result = await getDashboardBootstrap({
         forceRefresh: true,
-        onFresh(data) {
-          applyBootstrapData(data, Date.now());
-          setBootstrapMsg(null);
-          sessionStorage.setItem(SESSION_REFRESH_KEY, '1');
-        },
       });
+      applyBootstrapData(result.data, result.timestamp || Date.now());
+      setBootstrapMsg(null);
+      sessionStorage.setItem(SESSION_REFRESH_KEY, '1');
       if (result.stale) setBootstrapMsg('Showing saved data. Tap refresh for latest.');
+      if (isLoggedIn && !result.data?.profile) loadUserProfileFallback();
     } catch {
       setBootstrapMsg("Couldn't refresh right now. Showing saved data.");
+      if (isLoggedIn && !userProfile) loadUserProfileFallback();
     } finally {
       setBootstrapRefreshing(false);
     }
@@ -645,29 +655,26 @@ export default function Dashboard() {
       if (!isLoggedIn) setProfileLoading(false);
     }
     const cachedHasLeaderboard = getWeeklyPlayers(cached?.data).length > 0;
-    const alreadyRefreshed = !!sessionStorage.getItem(SESSION_REFRESH_KEY);
-    if (cached?.isFresh || alreadyRefreshed) {
+    const cachedHasProfile = Boolean(cached?.data?.profile);
+    if (cached) {
       if (!cachedHasLeaderboard) loadWeeklyLeaderboard();
+      if (isLoggedIn && !cachedHasProfile) loadUserProfileFallback();
       setWeeklyLoading(false);
       return;
     }
-    fetchWithClientCache({
-      key: CACHE_KEYS.DASHBOARD_BOOTSTRAP,
-      url: '/api/dashboard-bootstrap',
-      maxAgeMs: CACHE_TTL.ONE_DAY,
-      forceRefresh: true,
-      onFresh(data) {
-        applyBootstrapData(data, Date.now());
-        setBootstrapMsg(null);
-        sessionStorage.setItem(SESSION_REFRESH_KEY, '1');
-      },
+    getDashboardBootstrap({
+      forceRefresh: false,
     }).then(result => {
+      applyBootstrapData(result.data, result.timestamp || Date.now());
+      sessionStorage.setItem(SESSION_REFRESH_KEY, '1');
       if (result.stale) setBootstrapMsg('Showing saved data. Tap refresh for latest.');
       if (getWeeklyPlayers(result.data).length === 0) loadWeeklyLeaderboard();
+      if (isLoggedIn && !result.data?.profile) loadUserProfileFallback();
       setWeeklyLoading(false);
     }).catch(() => {
       if (cached) setBootstrapMsg("Couldn't refresh right now. Showing saved data.");
       if (!cachedHasLeaderboard) loadWeeklyLeaderboard();
+      if (isLoggedIn && !cachedHasProfile) loadUserProfileFallback();
       setWeeklyLoading(false);
     });
   }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -680,19 +687,13 @@ export default function Dashboard() {
     return () => clearInterval(t);
   }, [topPlayers.length, champsPaused]);
 
-  // Fetch profile + run localStorage → cloud migration for saved questions
+  // Run localStorage -> cloud migration once the logged-in profile is available.
   useEffect(() => {
     if (!isLoggedIn) { setProfileLoading(false); return; }
-    fetch('/api/user-profile')
-      .then(r => r.json())
-      .then(data => {
-        if (data.isNewUser === true) { router.replace('/onboarding'); return; }
-        setUserProfile(data);
-        setProfileLoading(false);
-        migrateLocalSavedQuestions();
-      })
-      .catch(() => setProfileLoading(false));
-  }, [isLoggedIn, router]);
+    if (!userProfile || savedQuestionsMigrated.current) return;
+    savedQuestionsMigrated.current = true;
+    migrateLocalSavedQuestions();
+  }, [isLoggedIn, userProfile]);
 
   const hour = new Date().getHours();
   const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
@@ -715,11 +716,9 @@ export default function Dashboard() {
     <div
       className="daily-challenge-card"
       onClick={() => {
-        const today = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
-          .toISOString().split('T')[0];
-        const cached = localStorage.getItem(getDCCacheKey());
+        const cached = readCache(getDCCacheKey(), CACHE_TTL.ONE_DAY)?.data;
         if (cached) {
-          sessionStorage.setItem('dailyChallengeQuestions', cached);
+          sessionStorage.setItem('dailyChallengeQuestions', JSON.stringify(cached));
         }
         router.push('/quiz?mode=daily');
       }}
@@ -831,14 +830,21 @@ export default function Dashboard() {
 
         {/* ── WELCOME MESSAGE ── */}
         <div style={{ padding: '4px 20px 16px' }}>
-          <div className="t-page-title" style={{ color: '#ffffff' }}>
+          <div className="font-display text-[20px] leading-[1.2] font-extrabold" style={{ color: '#ffffff' }}>
             Good {timeOfDay},{' '}
             <span style={{ color: '#35D299' }}>
               {session?.user?.name?.split(' ')[0] || 'Aspirant'} 👋
             </span>
           </div>
-          <div className="t-page-subtitle" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <div className="font-body text-[13px] leading-[1.45] font-medium" style={{ color: 'rgba(255,255,255,0.45)' }}>
             Ready for today&apos;s GK challenge?
+          </div>
+          <div className="mt-2">
+            <RefreshStatus
+              updatedAt={bootstrapUpdatedAt}
+              isRefreshing={bootstrapRefreshing}
+              onRefresh={handleBootstrapRefresh}
+            />
           </div>
         </div>
 
@@ -847,9 +853,11 @@ export default function Dashboard() {
 
         {/* ── STREAK HISTORY CARD ── */}
         {isLoggedIn && !profileLoading && (
-          <button
+          <AppCard
+            as="button"
             onClick={() => router.push('/streak')}
-            className="mx-4 bg-slate-800 border border-slate-700/50 px-4 py-4 w-[calc(100%-2rem)] text-left active:scale-[0.98] transition-transform" style={{ borderRadius: 22 }}
+            interactive
+            className="mx-4 bg-slate-800 border-slate-700/50 w-[calc(100%-2rem)] text-left"
           >
             <div className="flex justify-between">
               {DAY_LABELS.map((day, i) => {
@@ -895,7 +903,7 @@ export default function Dashboard() {
                 : <span className="font-sans text-xs text-orange-400 ml-auto">Play to extend!</span>
               }
             </div>
-          </button>
+          </AppCard>
         )}
 
         {/* ── GUEST SIGN-IN NUDGE ── */}
@@ -921,11 +929,9 @@ export default function Dashboard() {
         {/*
         <div
           onClick={() => {
-            const today = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
-              .toISOString().split('T')[0];
-            const cached = localStorage.getItem(getDCCacheKey());
+            const cached = readCache(getDCCacheKey(), CACHE_TTL.ONE_DAY)?.data;
             if (cached) {
-              sessionStorage.setItem('dailyChallengeQuestions', cached);
+              sessionStorage.setItem('dailyChallengeQuestions', JSON.stringify(cached));
             }
             router.push('/quiz?mode=daily');
           }}
@@ -1128,31 +1134,17 @@ export default function Dashboard() {
                   );
                 })()}
 
-                {(leaderboardMsg || weeklyUpdating || bootstrapRefreshing || weeklyUpdatedAt) && (
+                {(leaderboardMsg || weeklyUpdating || weeklyUpdatedAt) && (
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-                    <button
-                      type="button"
-                      onClick={e => {
+                    <RefreshStatus
+                      updatedAt={weeklyUpdatedAt}
+                      isRefreshing={weeklyUpdating}
+                      refreshText="Refresh rank"
+                      onRefresh={e => {
                         e.stopPropagation();
                         handleLeaderboardRefresh();
                       }}
-                      disabled={weeklyUpdating || bootstrapRefreshing}
-                      className="font-sans active:opacity-70 disabled:opacity-70"
-                      style={{
-                        fontSize: 12,
-                        color: '#64748B',
-                        background: 'none',
-                        border: 'none',
-                        padding: 0,
-                        cursor: weeklyUpdating || bootstrapRefreshing ? 'default' : 'pointer',
-                      }}
-                    >
-                      {weeklyUpdating || bootstrapRefreshing
-                        ? '↻ Refreshing...'
-                        : leaderboardMsg
-                          ? `${leaderboardMsg} • Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`
-                          : `↻ Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`}
-                    </button>
+                    />
                   </div>
                 )}
 
