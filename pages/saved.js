@@ -5,6 +5,7 @@ import Head from 'next/head';
 
 import GoogleSignInCard from '@/components/GoogleSignInCard';
 import Loader from '@/components/ui/Loader';
+import { getSavedQuestions } from '@/lib/data/savedData';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 const OPTION_KEYS   = ['optionA', 'optionB', 'optionC', 'optionD'];
@@ -373,20 +374,13 @@ export default function Saved() {
   useEffect(() => {
     if (status === 'loading') return;
 
-    if (isLoggedIn) {
-      fetch('/api/saved-questions')
-        .then(r => r.json())
-        .then(d => { setQuestions(d.saved || []); setLoading(false); })
-        .catch(() => setLoading(false));
-    } else {
-      // Guest: read from localStorage
-      try {
-        const raw = localStorage.getItem('ssc_saved_questions');
-        const parsed = raw ? JSON.parse(raw) : [];
-        setQuestions(parsed);
-      } catch { setQuestions([]); }
-      setLoading(false);
-    }
+    getSavedQuestions({ isLoggedIn })
+      .then(result => {
+        const saved = Array.isArray(result) ? result : result.data?.saved || [];
+        setQuestions(saved);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, [status, isLoggedIn]);
 
   // ── Load revised IDs ──────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { getLeaderboard } from '@/lib/data/leaderboardData';
 
 export default function TopPerformers() {
   const [performers, setPerformers] = useState([]);
@@ -7,10 +8,10 @@ export default function TopPerformers() {
   const router = useRouter();
 
   useEffect(() => {
-    fetch('/api/leaderboard')
-      .then(res => res.json())
+    getLeaderboard()
       .then(data => {
-        const list = data.leaderboard || data || [];
+        const payload = data.data || data;
+        const list = payload.leaderboard || payload.weeklyTop || payload.leaders || payload || [];
         setPerformers(list.slice(0, 10));
         setLoading(false);
       })

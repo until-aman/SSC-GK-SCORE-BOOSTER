@@ -3,8 +3,12 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Loader from '@/components/ui/Loader';
+import AppButton from '@/components/ui/AppButton';
+import AppCard from '@/components/ui/AppCard';
 import { fetchWithClientCache, readCache } from '@/lib/clientCache';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
+import { getDailyChallenge, getQuestionBank } from '@/lib/data/questionData';
+import { getSavedQuestionIds } from '@/lib/data/savedData';
 
 const GK_FACTS = [
   // GK Facts
@@ -246,6 +250,15 @@ function pickQuestions(pool, count) {
   return shuffle(pool).slice(0, parseInt(count, 10));
 }
 
+function filterQuestionBankByTopic(questions, topic) {
+  if (topic === 'Mixed' || topic === 'All') return questions;
+  return questions.filter(q => q.topic === topic);
+}
+
+function withDelay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function playSound(type) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -462,8 +475,9 @@ export default function Quiz() {
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
   const [retryCount, setRetryCount]     = useState(0);
-  const [loadingCopy, setLoadingCopy]   = useState('Fetching fresh questions...');
+  const [loadingCopy, setLoadingCopy]   = useState('Preparing your quiz');
   const [cacheWarning, setCacheWarning] = useState('');
+  const [showLoadingRetry, setShowLoadingRetry] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [timeLeft, setTimeLeft]         = useState(20);
@@ -482,6 +496,7 @@ export default function Quiz() {
   const allowQuizExitRef = useRef(false);
   const restoredSessionRef = useRef(false);
   const activeSessionRef = useRef(null);
+  const loadRunRef = useRef(0);
   const isLoggedIn = status === 'authenticated';
   const attemptedCount = getAttemptedCount(answers);
   const answeredCount = getAnsweredCount(answers);
@@ -529,10 +544,11 @@ export default function Quiz() {
   // Load saved IDs for bookmark state
   useEffect(() => {
     if (status === 'loading') return;
-    if (!isLoggedIn) return;
-    fetch('/api/saved-questions/ids')
-      .then(r => r.ok ? r.json() : { savedIds: [] })
-      .then(d => setSavedIds(new Set(d.savedIds || [])))
+    getSavedQuestionIds({ isLoggedIn })
+      .then(result => {
+        const ids = Array.isArray(result) ? result : result.data?.savedIds || [];
+        setSavedIds(new Set(ids));
+      })
       .catch(() => {});
   }, [status, isLoggedIn]);
 
@@ -634,7 +650,8 @@ export default function Quiz() {
     if (mode === 'daily') {
       setLoading(true);
       setError(null);
-      setLoadingCopy('Fetching fresh questions...');
+      setShowLoadingRetry(false);
+      setLoadingCopy('Preparing your quiz');
       setCacheWarning('');
       (async () => {
         try {
@@ -650,18 +667,7 @@ export default function Quiz() {
             return;
           }
 
-          const result = await fetchWithClientCache({
-            key: cacheKey,
-            url: '/api/daily-challenge',
-            maxAgeMs: CACHE_TTL.ONE_DAY,
-            onCache(entry) {
-              const pool = getQuestionPool(entry.data);
-              if (pool.length) {
-                setLoadingCopy('Loading saved question pool...');
-                setQuestions(pool.slice(0, 25));
-              }
-            },
-          });
+          const result = await getDailyChallenge();
 
           const pool = getQuestionPool(result.data);
           if (pool.length) {
@@ -671,31 +677,9 @@ export default function Quiz() {
             return;
           }
 
-          // Backward compatibility for the old daily challenge key.
-          const legacyCached = localStorage.getItem(`dc_${today}`);
-          if (legacyCached) {
-            const data = JSON.parse(legacyCached);
-            const legacyPool = getQuestionPool(data);
-            if (legacyPool.length) {
-              setQuestions(legacyPool.slice(0, 25));
-              setLoading(false);
-              return;
-            }
-          }
-
           setError('no-questions');
           setLoading(false);
         } catch {
-          try {
-            const legacyCached = localStorage.getItem(`dc_${getISTDateString()}`);
-            const legacyPool = getQuestionPool(JSON.parse(legacyCached || 'null'));
-            if (legacyPool.length) {
-              setQuestions(legacyPool.slice(0, 25));
-              setCacheWarning('Showing saved questions. Refresh when internet is stable.');
-              setLoading(false);
-              return;
-            }
-          } catch {}
           setError('fetch-failed');
           setLoading(false);
         }
@@ -715,28 +699,91 @@ export default function Quiz() {
     if (!subject || !topic || !questionCount) return;
     setLoading(true);
     setError(null);
-    setLoadingCopy('Fetching fresh questions...');
+    setShowLoadingRetry(false);
+    setLoadingCopy('Preparing your quiz');
     setCacheWarning('');
+
+    (async () => {
+    const runId = ++loadRunRef.current;
+    const isActiveRun = () => loadRunRef.current === runId && !restoredSessionRef.current;
+    const startQuizFromPool = (pool, warning = '') => {
+      if (!isActiveRun()) return true;
+      setLoadingCopy('Selecting questions');
+      const selected = pickQuestions(pool, questionCount);
+      if (!selected.length) return false;
+      setQuestions(selected);
+      setCacheWarning(warning);
+      setShowLoadingRetry(false);
+      setLoadingCopy('Starting quiz');
+      setLoading(false);
+      return true;
+    };
 
     const url = `/api/questions?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}&collection=${encodeURIComponent(collection)}`;
     const cacheKey = CACHE_KEYS.QUESTIONS(collection, subject, topic);
+
+    async function refreshQuestionBank() {
+      if (subject === 'Mixed') return null;
+      return getQuestionBank({ collection, subject, forceRefresh: true });
+    }
+
+    if (subject !== 'Mixed') {
+      const bankCacheKey = CACHE_KEYS.QUESTION_BANK(collection, subject);
+      const freshBankCache = readCache(bankCacheKey, CACHE_TTL.ONE_DAY);
+      const anyBankCache = freshBankCache || readCache(bankCacheKey, Infinity);
+      const cachedBankPool = filterQuestionBankByTopic(getQuestionPool(anyBankCache?.data), topic);
+
+      if (freshBankCache?.isFresh && cachedBankPool.length) {
+        setLoadingCopy('Loading saved question pool');
+        startQuizFromPool(cachedBankPool);
+        return;
+      }
+
+      if (cachedBankPool.length) {
+        setLoadingCopy('Loading saved question pool');
+        try {
+          const refreshed = await Promise.race([
+            refreshQuestionBank(),
+            withDelay(5000).then(() => ({ timedOut: true })),
+          ]);
+          if (refreshed?.timedOut) {
+            startQuizFromPool(cachedBankPool, 'Using saved question pool. Refresh later for latest questions.');
+            return;
+          }
+          const refreshedPool = filterQuestionBankByTopic(getQuestionPool(refreshed?.data), topic);
+          if (refreshedPool.length) {
+            startQuizFromPool(refreshedPool, refreshed.stale ? 'Using saved question pool. Refresh later for latest questions.' : '');
+            return;
+          }
+        } catch {
+          startQuizFromPool(cachedBankPool, 'Using saved question pool. Refresh later for latest questions.');
+          return;
+        }
+      }
+
+      try {
+        setLoadingCopy('Loading saved question pool');
+        const refreshed = await refreshQuestionBank();
+        const refreshedPool = filterQuestionBankByTopic(getQuestionPool(refreshed?.data), topic);
+        if (refreshedPool.length) {
+          startQuizFromPool(refreshedPool, refreshed.stale ? 'Using saved question pool. Refresh later for latest questions.' : '');
+          return;
+        }
+      } catch {}
+    }
+
     const cached = readCache(cacheKey, CACHE_TTL.ONE_DAY);
     const cachedPool = cached ? getQuestionPool(cached.data) : [];
 
     if (cached?.isFresh && cachedPool.length) {
-      setLoadingCopy('Loading saved question pool...');
-      setQuestions(pickQuestions(cachedPool, questionCount));
-      setLoading(false);
+      setLoadingCopy('Loading saved question pool');
+      startQuizFromPool(cachedPool);
       return;
-    }
-
-    if (cachedPool.length) {
-      setLoadingCopy('Loading saved question pool...');
-      setQuestions(pickQuestions(cachedPool, questionCount));
     }
 
     async function fetchWithRetry(attemptsLeft) {
       try {
+        setLoadingCopy('Loading saved question pool');
         const result = await fetchWithClientCache({
           key: cacheKey,
           url,
@@ -745,14 +792,13 @@ export default function Quiz() {
         });
         const pool = getQuestionPool(result.data);
         if (pool.length) {
-          setQuestions(pickQuestions(pool, questionCount));
-          if (result.stale) setCacheWarning('Showing saved questions. Refresh when internet is stable.');
-          setLoading(false);
+          startQuizFromPool(pool, result.stale ? 'Using saved question pool. Refresh later for latest questions.' : '');
           return;
         }
         if (attemptsLeft > 0) {
           setTimeout(() => fetchWithRetry(attemptsLeft - 1), 1500);
         } else {
+          if (!isActiveRun()) return;
           setError('no-questions');
           setLoading(false);
         }
@@ -763,10 +809,9 @@ export default function Quiz() {
           // Last resort: serve stale cache silently rather than showing error
           const stalePool = getQuestionPool(readCache(cacheKey, Infinity)?.data);
           if (stalePool?.length) {
-            setQuestions(pickQuestions(stalePool, questionCount));
-            setCacheWarning('Showing saved questions. Refresh when internet is stable.');
-            setLoading(false);
+            startQuizFromPool(stalePool, 'Using saved question pool. Refresh later for latest questions.');
           } else {
+            if (!isActiveRun()) return;
             setError('fetch-failed');
             setLoading(false);
           }
@@ -775,7 +820,24 @@ export default function Quiz() {
     }
 
     fetchWithRetry(3);
+    })();
   }, [router.isReady, subject, topic, questionCount, collection, isSavedMode, mode, recoveryChecked, recoveryPrompt, retryCount]);
+
+  useEffect(() => {
+    if (!loading || error || mode === 'daily') return;
+    const fiveSecondTimer = setTimeout(() => {
+      setLoadingCopy('Still loading. Preparing your questions.');
+    }, 5000);
+    const tenSecondTimer = setTimeout(() => {
+      setLoadingCopy('Taking longer than usual. You can retry.');
+      setShowLoadingRetry(true);
+    }, 10000);
+
+    return () => {
+      clearTimeout(fiveSecondTimer);
+      clearTimeout(tenSecondTimer);
+    };
+  }, [loading, error, mode, retryCount]);
 
   useEffect(() => {
     if (!quizInProgress || recoveryPrompt) return;
@@ -1144,8 +1206,9 @@ export default function Quiz() {
     return (
       <div className="min-h-screen flex items-center justify-center px-5" style={{ background: '#0F172A' }}>
         <Head><title>{isExpiredPrompt ? 'Quiz Expired' : 'Resume Quiz'} — SSC GK Score Booster</title></Head>
-        <div
-          className="w-full max-w-[370px] rounded-3xl p-5"
+        <AppCard
+          variant="premium"
+          className="w-full max-w-[370px] p-5"
           style={{
             background: '#1E293B',
             border: '1px solid rgba(148,163,184,0.16)',
@@ -1186,9 +1249,10 @@ export default function Quiz() {
           )}
 
           <div className="flex flex-col gap-3">
-            <button
+            <AppButton
+              as="button"
               onClick={isExpiredPrompt ? handleEndStoredAttempt : handleResumeStoredQuiz}
-              className="w-full rounded-2xl py-3.5 font-display font-bold text-base active:scale-[0.98] transition-transform"
+              className="w-full py-3.5"
               style={{
                 background: 'linear-gradient(90deg, #FF7A1A, #FF5A00)',
                 color: '#F8FAFC',
@@ -1196,10 +1260,12 @@ export default function Quiz() {
               }}
             >
               {isExpiredPrompt ? 'View Partial Result' : 'Resume Quiz'}
-            </button>
-            <button
+            </AppButton>
+            <AppButton
+              as="button"
+              variant="secondary"
               onClick={isExpiredPrompt ? startFreshAfterRecovery : handleDiscardStoredAttempt}
-              className="w-full rounded-2xl py-3.5 font-display font-bold text-base active:scale-[0.98] transition-transform"
+              className="w-full py-3.5"
               style={{
                 background: isExpiredPrompt ? 'rgba(148,163,184,0.10)' : 'rgba(239,68,68,0.10)',
                 border: isExpiredPrompt ? '1px solid rgba(148,163,184,0.20)' : '1px solid rgba(248,113,113,0.30)',
@@ -1207,9 +1273,9 @@ export default function Quiz() {
               }}
             >
               {isExpiredPrompt ? 'Start Fresh' : 'End Attempt'}
-            </button>
+            </AppButton>
           </div>
-        </div>
+        </AppCard>
       </div>
     );
   }
@@ -1226,6 +1292,23 @@ export default function Quiz() {
       <p className="fixed bottom-8 left-0 right-0 text-center text-xs font-medium text-slate-500">
         {loadingCopy}
       </p>
+      {showLoadingRetry && mode !== 'daily' && (
+        <button
+          onClick={() => {
+            setShowLoadingRetry(false);
+            setLoadingCopy('Preparing your quiz');
+            setRetryCount(c => c + 1);
+          }}
+          className="fixed bottom-16 rounded-2xl px-5 py-2.5 text-sm font-bold active:scale-[0.98] transition-transform"
+          style={{
+            background: 'rgba(255,122,26,0.14)',
+            border: '1px solid rgba(255,122,26,0.32)',
+            color: '#FDBA74',
+          }}
+        >
+          Retry
+        </button>
+      )}
     </div>
   );
 
@@ -1257,7 +1340,13 @@ export default function Quiz() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
           {error === 'fetch-failed' && (
             <button
-              onClick={() => { setError(null); setLoading(true); setRetryCount(c => c + 1); }}
+              onClick={() => {
+                setError(null);
+                setShowLoadingRetry(false);
+                setLoadingCopy('Preparing your quiz');
+                setLoading(true);
+                setRetryCount(c => c + 1);
+              }}
               style={{
                 width: '100%', padding: '14px 0', borderRadius: 14, border: 'none', cursor: 'pointer',
                 fontFamily: 'var(--font-display,inherit)', fontWeight: 700, fontSize: 15, color: '#0f172a',
@@ -1500,7 +1589,7 @@ export default function Quiz() {
       <div className="flex-1 overflow-y-auto px-4 pb-4">
 
         {/* Question card */}
-        <div className="bg-slate-800/60 rounded-2xl px-4 py-3 border border-slate-700/50 mt-3 relative">
+        <AppCard className="bg-slate-800/60 border-slate-700/50 mt-3 relative">
           {/* Bookmark button */}
           <button
             onClick={() => handleBookmarkToggle(q)}
@@ -1531,7 +1620,7 @@ export default function Quiz() {
           <p className="font-display font-bold text-sm text-white leading-relaxed whitespace-pre-line pr-10">
             {q.question}
           </p>
-        </div>
+        </AppCard>
 
         {/* Options */}
         <div className="flex flex-col gap-2 mt-3">

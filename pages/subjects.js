@@ -4,6 +4,7 @@ import Head from 'next/head';
 import { useQuery } from '@tanstack/react-query';
 // subjectStyles kept only as an emergency icon fallback in SubjectGrid
 import { subjectStyles } from '@/lib/subjects';
+import { getTopics } from '@/lib/data/questionData';
 
 // Grouped sections — Mixed is excluded (it has its own featured card)
 const SUBJECT_SECTIONS = [
@@ -104,21 +105,10 @@ function writeSubjectCache(collection, counts) {
 
 /* ─── Query function ─────────────────────────────────────────────────────── */
 async function fetchSubjectCounts(collection) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
-  try {
-    const res  = await fetch(
-      `/api/topics?collection=${encodeURIComponent(collection)}`,
-      { signal: controller.signal },
-    );
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    const counts = data.subjectCounts || {};
-    writeSubjectCache(collection, counts);
-    return counts;
-  } finally {
-    clearTimeout(timer);
-  }
+  const result = await getTopics({ collection });
+  const counts = result.data?.subjectCounts || {};
+  writeSubjectCache(collection, counts);
+  return counts;
 }
 
 /* ─── Shared card grid ────────────────────────────────────────────────────────

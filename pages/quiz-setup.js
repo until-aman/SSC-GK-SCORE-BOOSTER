@@ -4,8 +4,13 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 
 import Loader from '@/components/ui/Loader';
+import RefreshStatus from '@/components/ui/RefreshStatus';
+import AppButton from '@/components/ui/AppButton';
+import AppCard from '@/components/ui/AppCard';
+import SectionHeader from '@/components/ui/SectionHeader';
 import { fetchWithClientCache, readCache } from '@/lib/clientCache';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
+import { getQuestionBank } from '@/lib/data/questionData';
 
 // Sentinel value meaning "no topic filter — use all questions for the subject"
 const ALL_TOPICS = '__ALL__';
@@ -146,6 +151,8 @@ export default function QuizSetup() {
   const [topicsLoading, setTopicsLoading] = useState(false);
   const [topicsError, setTopicsError] = useState(false);   // true only after a fetch failure
   const [topicsMessage, setTopicsMessage] = useState('');
+  const [questionBankRefreshing, setQuestionBankRefreshing] = useState(false);
+  const [questionBankUpdatedAt, setQuestionBankUpdatedAt] = useState(null);
 
   const [selectedCount, setSelectedCount] = useState(10);
 
@@ -233,18 +240,16 @@ export default function QuizSetup() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.isReady]);
 
-  // Background prefetch once subject+topic are set (skip for ALL_TOPICS — too many questions)
   useEffect(() => {
-    if (!selectedSubject || !selectedTopic || selectedTopic === ALL_TOPICS || !router.isReady) return;
-    const col = collection;
-    const cacheKey = CACHE_KEYS.QUESTIONS(col, selectedSubject, selectedTopic);
-    const cached = readCache(cacheKey, CACHE_TTL.ONE_DAY);
-    if (cached?.isFresh) return;
-    const url = `/api/questions?subject=${encodeURIComponent(selectedSubject)}&topic=${encodeURIComponent(selectedTopic)}&collection=${encodeURIComponent(col)}`;
-    fetchWithClientCache({ key: cacheKey, url, maxAgeMs: CACHE_TTL.ONE_DAY }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSubject, selectedTopic]);
+    if (!selectedSubject || selectedSubject === 'Mixed') {
+      setQuestionBankUpdatedAt(null);
+      return;
+    }
+    const cached = readCache(CACHE_KEYS.QUESTION_BANK(collection, selectedSubject), Infinity);
+    setQuestionBankUpdatedAt(cached?.timestamp || null);
+  }, [selectedSubject, collection]);
 
+  // Load topic metadata; question bank refresh is manual.
   async function fetchTopics(subject, col = 'general', { forceRefresh = false } = {}) {
     const bootstrapTopics = !forceRefresh ? getBootstrapTopics(subject, col) : null;
 
@@ -327,6 +332,24 @@ export default function QuizSetup() {
     fetchTopics(selectedSubject, collection, { forceRefresh: true });
   }
 
+  async function handleRefreshQuestionBank() {
+    if (!selectedSubject || selectedSubject === 'Mixed' || questionBankRefreshing) return;
+    setQuestionBankRefreshing(true);
+    try {
+      const result = await getQuestionBank({
+        collection,
+        subject: selectedSubject,
+        forceRefresh: true,
+      });
+      setQuestionBankUpdatedAt(result.timestamp || Date.now());
+    } catch {
+      const cached = readCache(CACHE_KEYS.QUESTION_BANK(collection, selectedSubject), Infinity);
+      setQuestionBankUpdatedAt(cached?.timestamp || null);
+    } finally {
+      setQuestionBankRefreshing(false);
+    }
+  }
+
   function handleStartQuiz() {
     if (!isReady) return;
     const sessionId = crypto.randomUUID();
@@ -381,10 +404,12 @@ export default function QuizSetup() {
               <path d="M19 12H5M12 5l-7 7 7 7"/>
             </svg>
           </button>
-          <div>
-            <h1 className="t-page-title font-display" style={{ color: COLORS.primary }}>Set Up Your Quiz</h1>
-            <p className="t-page-subtitle" style={{ color: COLORS.secondary }}>Choose your practice mode</p>
-          </div>
+          <SectionHeader
+            title="Set Up Your Quiz"
+            subtitle="Choose your practice mode"
+            titleClassName="text-slate-50"
+            subtitleClassName="text-slate-300"
+          />
         </div>
 
         <div className="px-4 flex flex-col gap-4">
@@ -401,10 +426,12 @@ export default function QuizSetup() {
               ].map(({ count, title, duration, icon }) => {
                 const sel = selectedCount === count;
                 return (
-                  <button
+                  <AppCard
+                    as="button"
                     key={count}
                     onClick={() => setSelectedCount(count)}
-                    className={`question-mode-card flex-1 rounded-2xl p-4 text-left ${sel ? 'question-mode-card-selected' : ''}`}
+                    interactive
+                    className={`question-mode-card flex-1 text-left ${sel ? 'question-mode-card-selected' : ''}`}
                     style={{
                       background: COLORS.card,
                       border: sel ? `1.5px solid ${COLORS.selected}` : `1px solid ${COLORS.border}`,
@@ -430,7 +457,7 @@ export default function QuizSetup() {
                     <p className="t-badge mt-1" style={{ color: COLORS.muted }}>
                       {duration}
                     </p>
-                  </button>
+                  </AppCard>
                 );
               })}
             </div>
@@ -540,7 +567,7 @@ export default function QuizSetup() {
           {isReady && (
             <div className="border rounded-2xl px-4 py-3 flex items-center gap-3 animate-fade-in-down" style={{ background: COLORS.card, borderColor: COLORS.border }}>
               <span className="text-2xl">📋</span>
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <p className="t-card-subtitle font-semibold" style={{ color: COLORS.primary }}>
                   {selectedSubject} · {selectedTopicLabel}
                 </p>
@@ -551,11 +578,24 @@ export default function QuizSetup() {
             </div>
           )}
 
+          {isReady && selectedSubject !== 'Mixed' && (
+            <div className="px-1">
+              <RefreshStatus
+                updatedAt={questionBankUpdatedAt}
+                label={questionBankUpdatedAt ? 'Question pool saved today' : 'Question pool not saved yet'}
+                isRefreshing={questionBankRefreshing}
+                refreshText="Refresh questions"
+                onRefresh={handleRefreshQuestionBank}
+              />
+            </div>
+          )}
+
           {/* Start button */}
-          <button
+          <AppButton
+            as="button"
             onClick={handleStartQuiz}
             disabled={!isReady}
-            className={`start-quiz-button t-button-lg w-full py-4 rounded-2xl font-display transition-all flex items-center justify-center gap-2 ${
+            className={`start-quiz-button w-full py-4 flex items-center justify-center gap-2 ${
               isReady
                 ? 'btn-breathe-orange active:scale-95 duration-100'
                 : 'border cursor-not-allowed'
@@ -576,7 +616,7 @@ export default function QuizSetup() {
                 <path d="M5 12h14M12 5l7 7-7 7"/>
               </svg>
             )}
-          </button>
+          </AppButton>
 
         </div>
       </div>
