@@ -891,6 +891,34 @@ export default function Result() {
           )}
         </div>
 
+        {/* ── FEEDBACK CARD ── */}
+        {feedbackSent ? (
+          <div style={{ borderRadius: 20, padding: 20, background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)', borderLeft: '4px solid rgba(52,211,153,0.7)', boxSizing: 'border-box' }}>
+            <p style={{ fontSize: 13, color: '#34D399', margin: 0, fontWeight: 600 }}>Thanks for your feedback! We'll look into it.</p>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowFeedbackSheet(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', boxSizing: 'border-box', borderRadius: 20, padding: 20, background: 'rgba(30,41,59,0.72)', border: '1px solid rgba(148,163,184,0.14)', borderLeft: '4px solid rgba(255,122,26,0.7)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
+          >
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(255,122,26,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF7A1A" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
+              </svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#E2E8F0', margin: '0 0 2px' }}>Help us improve the app</p>
+              <p style={{ fontSize: 11, color: '#64748B', margin: 0, lineHeight: 1.4 }}>Tell us what to improve, add, or fix.</p>
+            </div>
+            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#ffb26b' }}>Share Feedback</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffb26b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </div>
+          </button>
+        )}
+
         {/* ── 7. SHARE RESULT ── */}
         <div style={{ background: '#172235', border: '1px solid #2A3A52', borderRadius: 20, padding: '16px 18px', borderLeft: '4px solid #34D399' }}>
           <p style={{ fontSize: 13, fontWeight: 600, color: '#F8FAFC', marginBottom: 2 }}>Share your result</p>
@@ -938,20 +966,6 @@ export default function Result() {
           </div>
         </div>
 
-        {/* ── FEEDBACK LINK ── */}
-        <div style={{ textAlign: 'center', paddingTop: 8, paddingBottom: 8 }}>
-          {feedbackSent ? (
-            <p style={{ fontSize: 12, color: '#34D399' }}>🙏 Thanks for your feedback!</p>
-          ) : (
-            <button
-              onClick={() => setShowFeedbackSheet(true)}
-              style={{ fontSize: 12, color: '#64748B', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'center', lineHeight: 1.7 }}
-            >
-              Help us improve your quiz experience. 🙏<br />
-              <span style={{ color: '#93A4BC', textDecoration: 'underline', textUnderlineOffset: 3 }}>Share feedback</span>
-            </button>
-          )}
-        </div>
 
       </div>
 
@@ -1016,7 +1030,7 @@ export default function Result() {
               position: 'fixed',
               top: '50%', left: '50%',
               transform: 'translate(-50%, -50%)',
-              width: 'calc(100% - 32px)', maxWidth: 420,
+              width: 'calc(100% - 48px)', maxWidth: 360,
               zIndex: 50,
               background: '#1E293B',
               borderRadius: 24,
