@@ -155,19 +155,19 @@ function SubjectGrid({ subjects, displayCounts, selected, setSelected, startIdx 
 
             {/* Name + subtitle + bottom row */}
             <div style={{ position: 'relative', zIndex: 1, paddingTop: 4 }}>
-              <p className="font-display font-bold" style={{ fontSize: 14, lineHeight: 1.25, color: '#ffffff', marginBottom: 2 }}>
+              <p className="t-card-title font-display" style={{ color: '#ffffff', marginBottom: 2 }}>
                 {subject}
               </p>
-              <p style={{ fontSize: 10, lineHeight: 1.4, color: 'rgba(148,163,184,0.55)', marginBottom: 6, marginTop: 0 }}>
+              <p className="t-badge" style={{ color: 'rgba(148,163,184,0.55)', marginBottom: 6, marginTop: 0, lineHeight: 1.5 }}>
                 {theme.subtitle || ''}
               </p>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
                 {isSelected ? (
-                  <span style={{ fontSize: 10, fontWeight: 700, color: hex, background: `color-mix(in srgb, ${hex} 15%, transparent)`, border: `1px solid color-mix(in srgb, ${hex} 30%, transparent)`, borderRadius: 20, padding: '2px 8px', lineHeight: 1.6 }}>
+                  <span className="t-badge" style={{ color: hex, background: `color-mix(in srgb, ${hex} 15%, transparent)`, border: `1px solid color-mix(in srgb, ${hex} 30%, transparent)`, borderRadius: 20, padding: '2px 8px', lineHeight: 1.6 }}>
                     ✓ Selected
                   </span>
                 ) : count != null ? (
-                  <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(148,163,184,0.70)', background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.14)', borderRadius: 20, padding: '2px 8px', lineHeight: 1.6 }}>
+                  <span className="t-badge" style={{ color: 'rgba(148,163,184,0.70)', background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.14)', borderRadius: 20, padding: '2px 8px', lineHeight: 1.6 }}>
                     {count.toLocaleString()} Qs
                   </span>
                 ) : (
@@ -367,10 +367,10 @@ export default function SubjectsPage() {
             </svg>
           </button>
           <div>
-            <h1 className="font-display font-black text-white" style={{ fontSize: 21, lineHeight: 1.2 }}>
+            <h1 className="t-page-title font-display" style={{ color: '#ffffff' }}>
               Choose a Subject
             </h1>
-            <p style={{ fontSize: 12, color: 'rgba(148,163,184,0.8)', marginTop: 3 }}>
+            <p className="t-page-subtitle" style={{ color: 'rgba(148,163,184,0.8)' }}>
               Select one to start your GK quiz
             </p>
           </div>
@@ -397,7 +397,7 @@ export default function SubjectsPage() {
               onChange={e => setSearch(e.target.value)}
               style={{
                 flex: 1, background: 'transparent', border: 'none',
-                color: '#fff', fontSize: 13, fontFamily: 'inherit',
+                color: '#fff', fontSize: 15, lineHeight: '22px', fontFamily: 'inherit',
               }}
             />
             {search && (
@@ -458,21 +458,20 @@ export default function SubjectsPage() {
             {/* Text */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
-                <p className="font-display font-bold" style={{ fontSize: 15, color: '#ffffff', margin: 0, lineHeight: 1.2 }}>
+                <p className="t-card-title font-display" style={{ color: '#ffffff', margin: 0 }}>
                   Mixed GK Challenge
                 </p>
-                <span style={{
-                  fontSize: 9, fontWeight: 800, letterSpacing: '0.06em',
-                  color: '#fde68a',
+                <span className="t-badge" style={{
+                  letterSpacing: '0.06em', color: '#fde68a',
                   background: 'rgba(253,230,138,0.18)',
                   border: '1px solid rgba(253,230,138,0.35)',
-                  borderRadius: 20, padding: '2px 7px', lineHeight: 1.6,
+                  borderRadius: 20, padding: '2px 7px',
                   textTransform: 'uppercase', flexShrink: 0,
                 }}>
                   Recommended
                 </span>
               </div>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', margin: '4px 0 0', lineHeight: 1.3 }}>
+              <p className="t-card-subtitle" style={{ color: 'rgba(255,255,255,0.65)', margin: '4px 0 0' }}>
                 All subjects • Exam-like practice
               </p>
             </div>
@@ -572,10 +571,8 @@ export default function SubjectsPage() {
           return (
             <div key={section.label} style={{ marginBottom: 20 }}>
               {/* Section label */}
-              <p style={{
-                fontSize: 12, fontWeight: 800,
+              <p className="t-section-label" style={{
                 color: '#64748B',
-                textTransform: 'uppercase', letterSpacing: '0.08em',
                 margin: '0 20px 8px',
               }}>
                 {section.label}

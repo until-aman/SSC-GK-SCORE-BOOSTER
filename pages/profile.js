@@ -94,7 +94,7 @@ export default function Profile() {
 
         {/* Header bar h-14 */}
         <div className="h-14 px-4 flex items-center flex-shrink-0">
-          <h1 className="font-display font-black text-xl text-white">Profile</h1>
+          <h1 className="t-page-title font-display text-white">Profile</h1>
         </div>
 
         {/* Scrollable content */}
@@ -131,7 +131,7 @@ export default function Profile() {
 
             {/* Info */}
             <div className="flex flex-col gap-1 min-w-0 flex-1">
-              <span className="font-display font-black text-xl text-white truncate leading-tight">
+              <span className="t-page-title font-display text-white truncate">
                 {displayName}
               </span>
               {isLoggedIn && session?.user?.email && (
@@ -144,16 +144,16 @@ export default function Profile() {
               )}
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 {isLoggedIn ? (
-                  <span style={{ background: 'rgba(253,186,59,0.15)', border: '1px solid rgba(253,186,59,0.3)', color: '#FDBA3B', borderRadius: 999, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
+                  <span className="t-badge" style={{ background: 'rgba(253,186,59,0.15)', border: '1px solid rgba(253,186,59,0.3)', color: '#FDBA3B', borderRadius: 999, padding: '2px 10px' }}>
                     ⭐ {level}
                   </span>
                 ) : (
-                  <span style={{ background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.2)', color: '#94a3b8', borderRadius: 999, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>
+                  <span className="t-badge" style={{ background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.2)', color: '#94a3b8', borderRadius: 999, padding: '2px 10px' }}>
                     Guest Mode
                   </span>
                 )}
                 {isLoggedIn && (
-                  <span style={{ background: 'rgba(253,186,59,0.10)', border: '1px solid rgba(253,186,59,0.2)', color: '#FDBA3B', borderRadius: 999, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
+                  <span className="t-badge" style={{ background: 'rgba(253,186,59,0.10)', border: '1px solid rgba(253,186,59,0.2)', color: '#FDBA3B', borderRadius: 999, padding: '2px 10px' }}>
                     🪙 {totalXP.toLocaleString()} XP
                   </span>
                 )}
@@ -170,8 +170,8 @@ export default function Profile() {
               style={{ border: '1px solid rgba(52,211,153,0.15)' }}
             >
               <span className="text-lg leading-none mb-0.5">🪙</span>
-              <span className="font-display font-black text-xl text-emerald-400 leading-tight">{isGuest ? '—' : totalXP.toLocaleString()}</span>
-              <span className="font-sans text-[10px] text-slate-500 uppercase tracking-wide">Total XP</span>
+              <span className="t-stat-sm font-display text-emerald-400">{isGuest ? '—' : totalXP.toLocaleString()}</span>
+              <span className="t-stat-label font-sans text-slate-500">Total XP</span>
             </button>
 
             {/* Streak → Streak History */}
@@ -181,8 +181,8 @@ export default function Profile() {
               style={{ border: '1px solid rgba(249,115,22,0.15)' }}
             >
               <span className="text-lg leading-none mb-0.5">🔥</span>
-              <span className="font-display font-black text-xl text-orange-400 leading-tight">{isGuest ? '—' : streak}</span>
-              <span className="font-sans text-[10px] text-slate-500 uppercase tracking-wide">Day Streak</span>
+              <span className="t-stat-sm font-display text-orange-400">{isGuest ? '—' : streak}</span>
+              <span className="t-stat-label font-sans text-slate-500">Day Streak</span>
             </button>
 
             {/* Level → level modal */}
@@ -192,16 +192,16 @@ export default function Profile() {
               style={{ border: '1px solid rgba(167,139,250,0.15)' }}
             >
               <span className="text-lg leading-none mb-0.5">⭐</span>
-              <span className="font-display font-black text-sm text-violet-400 leading-tight text-center">{isGuest ? '—' : level}</span>
-              <span className="font-sans text-[10px] text-slate-500 uppercase tracking-wide">Level</span>
+              <span className="t-stat-sm font-display text-violet-400 text-center">{isGuest ? '—' : level}</span>
+              <span className="t-stat-label font-sans text-slate-500">Level</span>
             </button>
           </div>
 
           {/* Level progress bar */}
           <div className="bg-slate-800 rounded-2xl px-4 py-3 mt-3">
             <div className="flex items-center justify-between">
-              <span className="font-display font-bold text-sm text-white">{level}</span>
-              <span className="font-sans text-sm text-slate-500">{nextLevel || '—'}</span>
+              <span className="t-card-subtitle font-display font-bold text-white">{level}</span>
+              <span className="t-card-subtitle font-sans text-slate-500">{nextLevel || '—'}</span>
             </div>
             <div className="mt-2 h-2 bg-slate-700 rounded-3xl border border-slate-700 overflow-hidden">
               <div
@@ -237,7 +237,7 @@ export default function Profile() {
 
             return (
               <div className="mt-4">
-                <h2 className="font-display font-black text-base text-white mb-2 px-1">
+                <h2 className="t-card-title font-display text-white mb-2 px-1">
                   Achievements
                   <span className="font-sans font-semibold text-xs text-slate-500 ml-2">
                     {unlocked.length}/{achievementsList.length}
@@ -300,7 +300,7 @@ export default function Profile() {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="#f97316">
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
               </svg>
-              <span className="font-sans font-medium text-sm text-white flex-1 text-left">Streak History</span>
+              <span className="t-card-subtitle font-sans text-white flex-1 text-left">Streak History</span>
               <ChevronSVG />
             </button>
 
@@ -312,14 +312,14 @@ export default function Profile() {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5">
                 <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <span className="font-sans font-medium text-sm text-white flex-1 text-left">XP History</span>
+              <span className="t-card-subtitle font-sans text-white flex-1 text-left">XP History</span>
               <ChevronSVG />
             </button>
 
             {/* Sign Out / Sign In */}
             {isLoggedIn ? (
               <div className="mt-1">
-                <p className="font-sans text-[11px] font-semibold text-slate-500 uppercase tracking-widest px-1 mb-1">Account</p>
+                <p className="t-section-label font-sans text-slate-500 px-1">Account</p>
                 <button
                   onClick={() => signOut({ callbackUrl: '/' })}
                   className="w-full flex items-center gap-2 px-1 py-2 active:opacity-60 transition-opacity"

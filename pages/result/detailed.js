@@ -5,6 +5,16 @@ import { fetchAIExplain, fetchAITip } from '@/lib/fetchAI';
 
 const OPTION_KEYS = { A: 'optionA', B: 'optionB', C: 'optionC', D: 'optionD' };
 
+// ─── Display helper ───────────────────────────────────────────────────────────
+const COLLECTION_DISPLAY_NAMES = { PYQ: 'SSC PYQ', Parmar: 'Parmar SSC' };
+function getDisplaySubject(subject, collection) {
+  if (!subject) return subject;
+  if (subject === 'Mixed' && collection && collection !== 'general') {
+    return COLLECTION_DISPLAY_NAMES[collection] || collection;
+  }
+  return subject;
+}
+
 export default function DetailedAnalysis() {
   const router = useRouter();
   const [result, setResult] = useState(null);
@@ -65,7 +75,7 @@ export default function DetailedAnalysis() {
               </svg>
             </button>
             <div className="min-w-0">
-              <h1 className="font-display font-black text-[19px] text-white leading-none">Detailed Analysis</h1>
+              <h1 className="t-page-title font-display text-white">Detailed Analysis</h1>
             </div>
           </div>
           <div className="flex gap-2 px-4 pt-1 pb-3.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
@@ -85,7 +95,7 @@ export default function DetailedAnalysis() {
                   onClick={() => setFilter(key)}
                   style={{
                     padding: '5px 14px', borderRadius: '30px', border: 'none', cursor: 'pointer',
-                    fontSize: '12px', fontWeight: filter === key ? '700' : '400',
+                    fontSize: '12px', fontWeight: filter === key ? '700' : '500',
                     background: filter === key ? '#ffffff' : 'rgba(255,255,255,0.08)',
                     color: filter === key ? '#1a1a2a' : 'rgba(255,255,255,0.5)',
                     transition: 'all 0.15s', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0,
@@ -102,11 +112,11 @@ export default function DetailedAnalysis() {
         <div className="px-4 pt-4 flex flex-col gap-4">
           {filter === 'All' && (
             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '14px 16px' }}>
-              <p style={{ fontSize: 11, fontWeight: 800, color: 'rgba(148,163,184,0.7)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Review Summary</p>
+              <p className="t-section-label" style={{ color: 'rgba(148,163,184,0.7)', marginBottom: 8 }}>Review Summary</p>
               <div style={{ display: 'flex', gap: 16, marginBottom: 10 }}>
-                <span style={{ fontSize: 13, color: '#fca5a5' }}><strong style={{ fontSize: 16 }}>{wrongCount}</strong> wrong</span>
-                <span style={{ fontSize: 13, color: '#94a3b8' }}><strong style={{ fontSize: 16 }}>{totalSkipped}</strong> skipped</span>
-                <span style={{ fontSize: 13, color: '#6ee7b7' }}><strong style={{ fontSize: 16 }}>{correctCount}</strong> correct</span>
+                <span className="t-card-subtitle" style={{ color: '#fca5a5' }}><strong className="t-stat-sm font-display">{wrongCount}</strong> wrong</span>
+                <span className="t-card-subtitle" style={{ color: '#94a3b8' }}><strong className="t-stat-sm font-display">{totalSkipped}</strong> skipped</span>
+                <span className="t-card-subtitle" style={{ color: '#6ee7b7' }}><strong className="t-stat-sm font-display">{correctCount}</strong> correct</span>
               </div>
               <p style={{ fontSize: 12, color: 'rgba(148,163,184,0.6)', marginBottom: 10 }}>
                 {wrongCount > 0 ? 'Best next step: review your wrong answers first.' : totalSkipped > 0 ? 'Best next step: go through the skipped questions.' : 'Great job — all correct!'}
@@ -147,7 +157,7 @@ export default function DetailedAnalysis() {
                     question={q}
                     index={idx}
                     userAnswer={result.answers[q.id]}
-                    subject={result.subject}
+                    subject={getDisplaySubject(result.subject, result.collection)}
                     topic={result.topic}
                     topicMistakeCount={topicMistakeCounts[q.topic || result.topic || ''] || 0}
                     totalSkipped={totalSkipped}
@@ -327,7 +337,7 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
           <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 10px', borderRadius: 999, ...badgeStyle }}>{statusLabel}</span>
         </div>
         {(subject || topic) && (
-          <p style={{ fontSize: 11, color: '#475569', margin: '0 0 6px' }}>{[subject, topic].filter(Boolean).join(' · ')}</p>
+          <p className="t-badge" style={{ color: '#475569', margin: '0 0 6px' }}>{[subject, topic].filter(Boolean).join(' · ')}</p>
         )}
         <p style={{ fontSize: 13, color: isCorrect ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.75)', fontWeight: isCorrect ? 400 : 500, lineHeight: 1.5, marginBottom: !isCorrect ? 7 : 9 }}>
           {question.question}

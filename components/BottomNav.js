@@ -117,12 +117,8 @@ export default function BottomNav() {
                   }}
                 >
                   <Icon color={active ? '#ffffff' : '#94A3B8'} />
-                  <span style={{
-                    fontSize: 10,
-                    fontWeight: active ? 700 : 500,
+                  <span className={active ? 't-nav-label-active' : 't-nav-label'} style={{
                     color: active ? '#ffffff' : '#94A3B8',
-                    letterSpacing: '0.02em',
-                    lineHeight: 1,
                     fontFamily: 'inherit',
                   }}>
                     {label}

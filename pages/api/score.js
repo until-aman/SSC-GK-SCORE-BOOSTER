@@ -148,7 +148,7 @@ export default async function handler(req, res) {
       topic,
       sessionId,
       xpEarned,
-      isDailyChallenge: 'FALSE',
+      isDailyChallenge: subject === 'Daily Challenge' ? 'TRUE' : 'FALSE',
       streakMilestoneBonus: milestoneBonus,
       totalXP: newTotalXP,
     });
