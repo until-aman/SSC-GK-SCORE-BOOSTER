@@ -738,19 +738,26 @@ export default function Quiz() {
           setLoading(false);
           return;
         }
-        // Empty response — retry if attempts remain (cache may still be warming)
         if (attemptsLeft > 0) {
-          setTimeout(() => fetchWithRetry(attemptsLeft - 1), 3000);
+          setTimeout(() => fetchWithRetry(attemptsLeft - 1), 1500);
         } else {
           setError('no-questions');
           setLoading(false);
         }
       } catch {
         if (attemptsLeft > 0) {
-          setTimeout(() => fetchWithRetry(attemptsLeft - 1), 3000);
+          setTimeout(() => fetchWithRetry(attemptsLeft - 1), 1500);
         } else {
-          setError('fetch-failed');
-          setLoading(false);
+          // Last resort: serve stale cache silently rather than showing error
+          const stalePool = getQuestionPool(readCache(cacheKey, Infinity)?.data);
+          if (stalePool?.length) {
+            setQuestions(pickQuestions(stalePool, questionCount));
+            setCacheWarning('Showing saved questions. Refresh when internet is stable.');
+            setLoading(false);
+          } else {
+            setError('fetch-failed');
+            setLoading(false);
+          }
         }
       }
     }
@@ -1242,11 +1249,11 @@ export default function Quiz() {
               style={{
                 width: '100%', padding: '14px 0', borderRadius: 14, border: 'none', cursor: 'pointer',
                 fontFamily: 'var(--font-display,inherit)', fontWeight: 700, fontSize: 15, color: '#0f172a',
-                background: 'linear-gradient(90deg, #10B981, #059669)',
-                boxShadow: '0 8px 24px rgba(16,185,129,0.28)',
+                background: 'linear-gradient(90deg, #FF7A1A, #FF5A00)',
+                boxShadow: '0 8px 24px rgba(255,90,0,0.28)',
               }}
             >
-              Retry
+              Try Again
             </button>
           )}
           <button
@@ -1333,36 +1340,53 @@ export default function Quiz() {
           aria-labelledby="exit-quiz-title"
         >
           <div
-            className="w-full max-w-[360px] rounded-3xl p-5"
+            className="w-full max-w-[360px]"
             style={{
-              background: '#1E293B',
+              background: '#1e293b',
               border: '1px solid rgba(148,163,184,0.16)',
+              borderRadius: 28,
+              padding: 24,
               boxShadow: '0 24px 60px rgba(0,0,0,0.42)',
             }}
           >
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-              style={{ background: 'rgba(255,122,26,0.14)', color: '#FF7A1A' }}
+              style={{ background: 'rgba(255,122,26,0.12)', color: '#ff7a1a' }}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 9v4" />
-                <path d="M12 17h.01" />
-                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="6" y="4" width="4" height="16" rx="1.5" />
+                <rect x="14" y="4" width="4" height="16" rx="1.5" />
               </svg>
             </div>
 
-            <h2 id="exit-quiz-title" className="font-display font-black text-2xl mb-2" style={{ color: '#F8FAFC' }}>
-              Exit Quiz?
+            <h2 id="exit-quiz-title" className="font-display font-black text-2xl mb-3" style={{ color: '#F8FAFC' }}>
+              Leave quiz?
             </h2>
-            <p className="text-sm leading-relaxed mb-5" style={{ color: '#CBD5E1' }}>
-              You&apos;re in the middle of a quiz. If you leave now, this attempt will end and your progress may not be saved.
-            </p>
 
             {attemptedCount > 0 && (
-              <p className="text-xs leading-relaxed rounded-2xl px-3 py-2 mb-4" style={{ color: '#94A3B8', background: '#0F172A', border: '1px solid rgba(148,163,184,0.16)' }}>
-                You attempted {attemptedCount} of {questions.length} questions. If you end now, we&apos;ll show your result so far.
-              </p>
+              <div className="w-full mb-4">
+                <div className="inline-flex items-center mb-2" style={{
+                  fontSize: 12, fontWeight: 700, color: '#FF7A1A',
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 999, padding: '4px 12px', letterSpacing: '0.01em',
+                }}>
+                  {attemptedCount} / {questions.length} attempted
+                </div>
+                <div style={{ height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%',
+                    borderRadius: 999,
+                    width: `${Math.round((attemptedCount / questions.length) * 100)}%`,
+                    background: 'linear-gradient(90deg, #FF7A1A, #FF5A00)',
+                    transition: 'width 0.4s ease',
+                  }} />
+                </div>
+              </div>
             )}
+
+            <p className="text-sm leading-relaxed mb-5" style={{ color: '#94A3B8' }}>
+              End now to see your current result, or continue the quiz.
+            </p>
 
             <div className="flex flex-col gap-3">
               <button
@@ -1378,14 +1402,16 @@ export default function Quiz() {
               </button>
               <button
                 onClick={handleEndQuiz}
-                className="w-full rounded-2xl py-3.5 font-display font-bold text-base active:scale-[0.98] transition-transform"
+                className="w-full rounded-2xl font-display font-semibold active:scale-[0.98] transition-transform"
                 style={{
-                  background: 'rgba(239,68,68,0.10)',
-                  border: '1px solid rgba(248,113,113,0.30)',
-                  color: '#FCA5A5',
+                  padding: '10px 16px',
+                  fontSize: 14,
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(248,113,113,0.35)',
+                  color: '#fca5a5',
                 }}
               >
-                End Quiz
+                End &amp; See Result
               </button>
             </div>
           </div>

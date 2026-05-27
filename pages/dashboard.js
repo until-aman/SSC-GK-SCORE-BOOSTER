@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
@@ -376,12 +376,15 @@ export default function Dashboard() {
   const [hasWeeklyCache, setHasWeeklyCache] = useState(false);
   const [comingSoonModal,  setComingSoonModal]  = useState(false);
   const [notifyState,      setNotifyState]      = useState({}); // { [seriesId]: 'idle'|'loading'|'done'|'already' }
+  const [parmarWaitlistCount, setParmarWaitlistCount] = useState(null); // null = not fetched yet; 0 = hide counter
   const [notifyToast,      setNotifyToast]      = useState(null); // { msg, type }
   const [subjectChecking,  setSubjectChecking]  = useState(null); // subject name being checked
   const [lowQModal,        setLowQModal]        = useState(null); // subject name with low questions
   const [modal,            setModal]            = useState(null);  // coming-soon modal for discover cards — stores collection name
   const [notified,         setNotified]         = useState(false);
   const [notifyLoading,    setNotifyLoading]    = useState(false);
+  // 'default' | 'loading' | 'done' | 'already' | 'guest-prompt'
+  const [notifyModalView,  setNotifyModalView]  = useState('default');
   const [collectionTotals, setCollectionTotals] = useState({});   // { [collection]: totalCount }
   const [champsSlide, setChampsSlide] = useState(0);
   const [champsPaused, setChampsPaused] = useState(false);
@@ -440,6 +443,7 @@ export default function Dashboard() {
     setModal(null);
     setNotified(false);
     setNotifyLoading(false);
+    setNotifyModalView('default');
   }
 
   function handleClearAppCache() {
@@ -448,20 +452,29 @@ export default function Dashboard() {
   }
 
   async function handleNotifyInterest() {
-    if (notifyLoading || notified) return;
-    setNotifyLoading(true);
+    if (notifyModalView === 'loading' || notifyModalView === 'done' || notifyModalView === 'already') return;
+    // Guest: show sign-in prompt, do not hit the API
+    if (!isLoggedIn) {
+      setNotifyModalView('guest-prompt');
+      return;
+    }
+    setNotifyModalView('loading');
     try {
-      await fetch('/api/notify-interest', {
+      const res  = await fetch('/api/notify-interest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ collection: modal }),
       });
-      setNotified(true);
+      const data = await res.json();
+      if (data.alreadyJoined) {
+        setNotifyModalView('already');
+      } else {
+        setNotifyModalView('done');
+        setNotified(true);
+      }
     } catch {
-      // silently fail — still show success to user
+      setNotifyModalView('done');
       setNotified(true);
-    } finally {
-      setNotifyLoading(false);
     }
   }
 
@@ -1227,7 +1240,7 @@ export default function Dashboard() {
 
           {/* Card 2 — Parmar SSC */}
           <button
-            onClick={() => handleDiscoverClick('Parmar', '/subjects?collection=Parmar')}
+            onClick={() => setModal('Parmar')}
             className="card-lift w-full text-left active:scale-[0.98]"
             style={{
               borderRadius: 22, padding: '22px 22px', position: 'relative',
@@ -1314,18 +1327,20 @@ export default function Dashboard() {
             position: 'fixed', inset: 0, zIndex: 100,
             background: 'rgba(0,0,0,0.6)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '0 24px',
+            padding: '0 20px',
           }}
         >
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: '#ffffff',
-              borderRadius: 20,
-              padding: '28px 24px',
-              maxWidth: 300,
+              background: '#0f172a',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 24,
+              padding: '24px 22px 22px',
+              maxWidth: 360,
               width: '100%',
               position: 'relative',
+              boxShadow: '0 0 0 1px rgba(255,122,26,0.08), 0 24px 60px rgba(0,0,0,0.6)',
             }}
           >
             {/* Close button */}
@@ -1333,56 +1348,123 @@ export default function Dashboard() {
               onClick={closeModal}
               style={{
                 position: 'absolute', top: 14, right: 14,
-                width: 24, height: 24,
-                background: 'none', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 18, color: '#999', lineHeight: 1,
+                width: 28, height: 28, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 16, color: '#64748b', lineHeight: 1,
               }}
             >×</button>
 
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>🚧</div>
-              <p className="font-display" style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2a', margin: 0 }}>
-                Coming Soon
-              </p>
-              <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6, marginTop: 8 }}>
-                Our team is busy adding questions for this collection. Check back soon!
-              </p>
+            {/* ── VIEW: done ── */}
+            {notifyModalView === 'done' && (
+              <div style={{ textAlign: 'center', padding: '8px 0' }}>
+                <div style={{ fontSize: 38, marginBottom: 12 }}>✅</div>
+                <p className="font-display" style={{ fontSize: 18, fontWeight: 800, color: '#f1f5f9', margin: '0 0 8px' }}>
+                  You&apos;re on the list!
+                </p>
+                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.65, margin: '0 0 20px' }}>
+                  We&apos;ll notify you when this series is ready.
+                </p>
+                <button onClick={closeModal} className="font-display"
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: '#e2e8f0', borderRadius: 12, padding: '13px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                  Got it
+                </button>
+              </div>
+            )}
 
-              {/* Notify me button */}
-              <button
-                onClick={handleNotifyInterest}
-                disabled={notified || notifyLoading}
-                className="font-display"
-                style={{
-                  marginTop: 20, width: '100%',
-                  background: notified ? '#10b981' : '#1a1a2a',
-                  color: '#ffffff',
-                  borderRadius: 12, padding: '14px 0',
-                  fontSize: 15, fontWeight: 700,
-                  border: 'none', cursor: notified ? 'default' : 'pointer',
-                  opacity: notifyLoading ? 0.7 : 1,
-                  transition: 'background 0.2s ease',
-                }}
-              >
-                {notified ? "✅ We'll notify you!" : notifyLoading ? 'Saving…' : '🔔 Notify me when it\'s ready'}
-              </button>
+            {/* ── VIEW: already joined ── */}
+            {notifyModalView === 'already' && (
+              <div style={{ textAlign: 'center', padding: '8px 0' }}>
+                <div style={{ fontSize: 34, marginBottom: 12 }}>🔔</div>
+                <p className="font-display" style={{ fontSize: 18, fontWeight: 800, color: '#f1f5f9', margin: '0 0 8px' }}>
+                  Already joined
+                </p>
+                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.65, margin: '0 0 20px' }}>
+                  You&apos;re already on the waitlist for this series.
+                </p>
+                <button onClick={closeModal} className="font-display"
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: '#e2e8f0', borderRadius: 12, padding: '13px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                  Got it
+                </button>
+              </div>
+            )}
 
-              {/* Got it button */}
-              <button
-                onClick={closeModal}
-                className="font-display"
-                style={{
-                  marginTop: 10, width: '100%',
-                  background: 'transparent', color: '#888',
-                  borderRadius: 12, padding: '10px 0',
-                  fontSize: 14, fontWeight: 600,
-                  border: 'none', cursor: 'pointer',
-                }}
-              >
-                Got it
-              </button>
-            </div>
+            {/* ── VIEW: guest sign-in prompt ── */}
+            {notifyModalView === 'guest-prompt' && (
+              <div>
+                <p className="font-display" style={{ fontSize: 18, fontWeight: 800, color: '#f1f5f9', margin: '0 0 8px', lineHeight: 1.3 }}>
+                  Sign in to get notified
+                </p>
+                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.65, margin: '0 0 20px' }}>
+                  We need your email to notify you when this series launches.
+                </p>
+                <button
+                  onClick={() => signIn('google', { callbackUrl: window.location.href })}
+                  className="font-display"
+                  style={{ width: '100%', background: 'linear-gradient(135deg, #FF7A1A, #FF5A00)', color: '#fff', borderRadius: 12, padding: '14px 0', fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 18px rgba(255,90,0,0.28)' }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#fff" fillOpacity="0.9"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#fff" fillOpacity="0.9"/>
+                    <path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.83z" fill="#fff" fillOpacity="0.9"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.83C6.71 7.31 9.14 5.38 12 5.38z" fill="#fff" fillOpacity="0.9"/>
+                  </svg>
+                  Sign in with Google
+                </button>
+                <button onClick={() => setNotifyModalView('default')} className="font-display"
+                  style={{ marginTop: 10, width: '100%', background: 'transparent', color: '#475569', borderRadius: 12, padding: '10px 0', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+                  Maybe later
+                </button>
+              </div>
+            )}
+
+            {/* ── VIEW: default / loading ── */}
+            {(notifyModalView === 'default' || notifyModalView === 'loading') && (
+              <div>
+                <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', color: '#FF7A1A', background: 'rgba(255,122,26,0.12)', border: '1px solid rgba(255,122,26,0.20)', borderRadius: 999, padding: '3px 10px', display: 'inline-block', marginBottom: 14 }}>WAITLIST</span>
+
+                <p className="font-display" style={{ fontSize: 18, fontWeight: 800, color: '#f1f5f9', margin: '0 0 6px', lineHeight: 1.3 }}>
+                  🔥 Want Parmar SSC quizzes?
+                </p>
+                <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 12px' }}>
+                  Video-wise GK practice in quiz format.
+                </p>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 16 }}>
+                  {[['📹', 'Video-wise'], ['📝', 'Exam-style'], ['⚡', 'Quick revision']].map(([icon, label]) => (
+                    <span key={label} style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 999, padding: '5px 11px' }}>
+                      {icon} {label}
+                    </span>
+                  ))}
+                </div>
+
+                <p style={{ fontSize: 12, color: '#475569', lineHeight: 1.55, margin: '0 0 16px' }}>
+                  Join the waitlist to help us prioritize this series.
+                </p>
+
+                {parmarWaitlistCount > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, padding: '8px 12px', borderRadius: 10, background: 'rgba(255,122,26,0.08)', border: '1px solid rgba(255,122,26,0.18)' }}>
+                    <span style={{ fontSize: 13 }}>🔥</span>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: '#fb923c', margin: 0 }}>
+                      {parmarWaitlistCount.toLocaleString()} students already interested
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleNotifyInterest}
+                  disabled={notifyModalView === 'loading'}
+                  className="font-display"
+                  style={{ width: '100%', background: notifyModalView === 'loading' ? 'rgba(255,90,0,0.5)' : 'linear-gradient(135deg, #FF7A1A, #FF5A00)', color: '#fff', borderRadius: 12, padding: '14px 0', fontSize: 15, fontWeight: 700, border: 'none', cursor: notifyModalView === 'loading' ? 'default' : 'pointer', boxShadow: notifyModalView === 'loading' ? 'none' : '0 4px 18px rgba(255,90,0,0.28)', transition: 'opacity 0.2s ease' }}
+                >
+                  {notifyModalView === 'loading' ? 'Saving…' : '🔔 Notify Me When Ready'}
+                </button>
+
+                <p style={{ fontSize: 11, color: '#334155', textAlign: 'center', margin: '10px 0 0' }}>
+                  No spam. Only one launch update.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -55,7 +55,7 @@ export default function DetailedAnalysis() {
 
         {/* Sticky top bar: title + stats + filter tabs */}
         <div className="sticky top-0 z-10 bg-[#0f172a]/95 backdrop-blur-md border-b border-slate-800">
-          <div className="px-4 pt-3 pb-1.5 flex items-center gap-2.5">
+          <div className="px-4 pt-3 pb-2 flex items-center gap-2.5">
             <button
               onClick={() => router.push('/result')}
               className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center active:bg-slate-700 transition-colors flex-shrink-0"
@@ -65,19 +65,10 @@ export default function DetailedAnalysis() {
               </svg>
             </button>
             <div className="min-w-0">
-              <h1 className="font-display font-black text-[15px] text-white leading-none">Detailed Analysis</h1>
-              <p className="text-[11px] mt-0.5 flex items-center gap-1.5 flex-wrap">
-                <span className="text-slate-400">{totalQ} Questions</span>
-                <span className="text-slate-700">·</span>
-                <span className="text-emerald-400">{correctCount} Correct</span>
-                <span className="text-slate-700">·</span>
-                <span className="text-red-400">{wrongCount} Wrong</span>
-                <span className="text-slate-700">·</span>
-                <span className="text-slate-400">{totalSkipped} Skipped</span>
-              </p>
+              <h1 className="font-display font-black text-[19px] text-white leading-none">Detailed Analysis</h1>
             </div>
           </div>
-          <div className="flex gap-2 px-4 pb-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex gap-2 px-4 pt-1 pb-3.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
             {(() => {
               const savedIds = (() => { try { return JSON.parse(localStorage.getItem('ssc_saved_questions') || '[]').map(q => q.id); } catch { return []; } })();
               const savedCount = result.questions.filter(q => savedIds.includes(q.id)).length;

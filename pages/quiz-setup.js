@@ -106,6 +106,20 @@ export default function QuizSetup() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.isReady]);
 
+  // Background prefetch: as soon as subject+topic are chosen, silently warm the
+  // questions cache so quiz.js gets an instant cache hit instead of a cold fetch.
+  useEffect(() => {
+    if (!selectedSubject || !selectedTopic || !router.isReady) return;
+    const col = collection;
+    const cacheKey = CACHE_KEYS.QUESTIONS(col, selectedSubject, selectedTopic);
+    const cached = readCache(cacheKey, CACHE_TTL.ONE_DAY);
+    if (cached?.isFresh) return; // already fresh — nothing to do
+    const url = `/api/questions?subject=${encodeURIComponent(selectedSubject)}&topic=${encodeURIComponent(selectedTopic)}&collection=${encodeURIComponent(col)}`;
+    // Fire-and-forget — quiz page handles its own loading/error state
+    fetchWithClientCache({ key: cacheKey, url, maxAgeMs: CACHE_TTL.ONE_DAY }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSubject, selectedTopic]);
+
   async function fetchTopics(subject, col = 'general', { forceRefresh = false } = {}) {
     const bootstrapTopics = !forceRefresh ? getBootstrapTopics(subject, col) : null;
 
