@@ -1183,11 +1183,23 @@ export default function Dashboard() {
             className="card-lift w-full text-left"
             style={{
               borderRadius: 22, marginBottom: 16, padding: '24px 22px', position: 'relative',
-              background: '#172D47', border: '1px solid rgba(255,255,255,0.10)',
+              background: '#172D47',
+              border: '1px solid rgba(255,107,22,0.38)',
+              boxShadow: '0 0 24px rgba(255,107,22,0.10), inset 0 0 0 1px rgba(255,107,22,0.06)',
               cursor: 'pointer',
             }}
           >
-            <span className="t-badge app-pill" style={{ letterSpacing: 0, textTransform: 'uppercase', padding: '4px 12px', display: 'inline-block' }}>
+            <span
+              className="t-badge"
+              style={{
+                letterSpacing: '0.06em', textTransform: 'uppercase', padding: '4px 12px',
+                display: 'inline-block', borderRadius: 999,
+                background: 'rgba(255,107,22,0.15)',
+                border: '1px solid rgba(255,107,22,0.38)',
+                color: '#FF6B16',
+                boxShadow: '0 0 8px rgba(255,107,22,0.45), 0 0 18px rgba(255,107,22,0.22)',
+              }}
+            >
               Most Attempted
             </span>
             <p className="t-card-title" style={{ color: 'var(--text-primary)', marginTop: 12 }}>SSC PYQs</p>
@@ -1204,18 +1216,30 @@ export default function Dashboard() {
             style={{
               borderRadius: 22, padding: '22px 22px', position: 'relative',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: '#172D47', border: '1px solid rgba(255,255,255,0.10)',
+              background: '#172D47',
+              border: '1px solid rgba(245,158,11,0.35)',
+              boxShadow: '0 0 24px rgba(245,158,11,0.08), inset 0 0 0 1px rgba(245,158,11,0.05)',
               cursor: 'pointer',
             }}
           >
             <div>
-              <span className="t-badge app-pill" style={{ letterSpacing: 0, textTransform: 'uppercase', padding: '4px 12px', display: 'inline-block' }}>
+              <span
+                className="t-badge"
+                style={{
+                  letterSpacing: '0.06em', textTransform: 'uppercase', padding: '4px 12px',
+                  display: 'inline-block', borderRadius: 999,
+                  background: 'rgba(245,158,11,0.14)',
+                  border: '1px solid rgba(245,158,11,0.32)',
+                  color: '#F59E0B',
+                  boxShadow: '0 0 8px rgba(245,158,11,0.30), 0 0 16px rgba(245,158,11,0.14)',
+                }}
+              >
                 Parmar Sir
               </span>
               <p className="t-card-title" style={{ color: 'var(--text-primary)', marginTop: 12 }}>Parmar SSC</p>
               <p className="t-badge" style={{ color: 'var(--text-muted)', marginTop: 8, letterSpacing: 0, textTransform: 'uppercase' }}>COMING SOON…</p>
             </div>
-            <LightningSVG size={36} color="var(--text-muted)" />
+            <LightningSVG size={36} color="#F59E0B" />
           </button>
         </div>
 
