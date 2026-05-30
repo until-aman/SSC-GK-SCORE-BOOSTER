@@ -10,6 +10,7 @@ import '@/styles/globals.css';
 const BOTTOM_NAV_ROUTES = [
   '/dashboard',
   '/leaderboard',
+  '/analysis',
   '/saved',
   '/profile',
   '/result',

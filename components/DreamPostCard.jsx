@@ -249,10 +249,10 @@ export default function DreamPostCard({ coinsEarned }) {
   return (
     <div className="bg-[#172D47] border border-white/10 rounded-2xl p-4 mt-3">
 
-      {/* 🎯 [Post] Goal ————————————————————————— Edit */}
-      <div className="flex items-center justify-between">
-        <p className="text-[#F0F4F8] text-base font-semibold truncate pr-3">
-          🎯 {dreamPost} Goal
+      {/* 🎯 Dream Post ————————————————————————— Edit */}
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[#7A8FA6] text-sm font-semibold">
+          🎯 Dream Post
         </p>
         <button
           onClick={openEditForm}
@@ -262,15 +262,19 @@ export default function DreamPostCard({ coinsEarned }) {
         </button>
       </div>
 
-      {/* 1,482 / 8,000 coins · 19% */}
-      <p className="text-[#B8C4D4] text-sm mt-3">
-        <span className="text-[#F0F4F8] font-semibold">{coinsEarned.toLocaleString()}</span>
-        {' / 8,000 coins · '}
+      {/* Post name — prominent */}
+      <p className="text-[#F0F4F8] text-base font-bold mb-3 truncate">
+        {dreamPost}
+      </p>
+
+      {/* 18% completed */}
+      <p className="text-[#7A8FA6] text-xs mb-1.5">
         <span className="text-[#F0F4F8] font-semibold">{Math.floor(progressPercent)}%</span>
+        {' completed'}
       </p>
 
       {/* Progress bar */}
-      <div className="relative rounded-full mt-2" style={{ height: 10, background: '#0d1e33' }}>
+      <div className="relative rounded-full" style={{ height: 10, background: '#0d1e33' }}>
         <div
           className="h-full rounded-full transition-all duration-700"
           style={{
@@ -293,9 +297,9 @@ export default function DreamPostCard({ coinsEarned }) {
         )}
       </div>
 
-      {/* Coins to go */}
+      {/* Coins to unlock */}
       <p className="text-[#7A8FA6] text-xs mt-3">
-        {Math.max(0, DREAM_POST_TARGET - coinsEarned).toLocaleString()} coins to go. Keep practicing to move closer.
+        {Math.max(0, DREAM_POST_TARGET - coinsEarned).toLocaleString()} coins to unlock your tag
       </p>
 
     </div>

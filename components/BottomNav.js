@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const HomeIcon = ({ color }) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -31,16 +31,47 @@ const PersonIcon = ({ color }) => (
   </svg>
 );
 
+const BrainCircuitIcon = ({ color }) => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
+    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
+    <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+  </svg>
+);
+
+const TOOLTIP_KEY = 'analysis_tab_tooltip_seen';
+
 export default function BottomNav() {
   const router = useRouter();
   const path = router.pathname;
   const [pressed, setPressed] = useState(null);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(TOOLTIP_KEY) === 'true') return;
+    } catch {}
+
+    const showT = setTimeout(() => setShowTooltip(true), 1500);
+    const hideT = setTimeout(() => {
+      setShowTooltip(false);
+      try { localStorage.setItem(TOOLTIP_KEY, 'true'); } catch {}
+    }, 6500); // 1500 delay + 5000 visible
+
+    return () => { clearTimeout(showT); clearTimeout(hideT); };
+  }, []);
+
+  function markTooltipSeen() {
+    setShowTooltip(false);
+    try { localStorage.setItem(TOOLTIP_KEY, 'true'); } catch {}
+  }
 
   const items = [
-    { Icon: HomeIcon,     route: '/dashboard',   label: 'Home'    },
-    { Icon: TrophyIcon,   route: '/leaderboard', label: 'Rank'    },
-    { Icon: BookmarkIcon, route: '/saved',        label: 'Saved'   },
-    { Icon: PersonIcon,   route: '/profile',      label: 'Profile' },
+    { Icon: HomeIcon,         route: '/dashboard',   label: 'Home'     },
+    { Icon: TrophyIcon,       route: '/leaderboard', label: 'Rank'     },
+    { Icon: BrainCircuitIcon, route: '/analysis',    label: 'Analysis' },
+    { Icon: BookmarkIcon,     route: '/saved',        label: 'Saved'    },
+    { Icon: PersonIcon,       route: '/profile',      label: 'Profile'  },
   ];
 
   return (
@@ -55,6 +86,10 @@ export default function BottomNav() {
         .nav-item.pressed {
           transform: scale(0.84) !important;
           transition: transform 0.08s ease !important;
+        }
+        @keyframes analysisTooltipIn {
+          from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
       `}</style>
 
@@ -85,18 +120,23 @@ export default function BottomNav() {
             {items.map(({ Icon, route, label }) => {
               const active = path === route;
               const isPressed = pressed === route;
+              const isAnalysis = route === '/analysis';
 
               return (
                 <div
                   key={route}
                   className={`nav-item${active ? ' active' : ''}${isPressed ? ' pressed' : ''}`}
-                  onClick={() => router.push(route)}
+                  onClick={() => {
+                    if (isAnalysis) markTooltipSeen();
+                    router.push(route);
+                  }}
                   onMouseDown={() => setPressed(route)}
                   onMouseUp={() => setPressed(null)}
                   onMouseLeave={() => setPressed(null)}
                   onTouchStart={() => setPressed(route)}
                   onTouchEnd={() => setPressed(null)}
                   style={{
+                    position: 'relative',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -111,6 +151,57 @@ export default function BottomNav() {
                     boxSizing: 'border-box',
                   }}
                 >
+                  {/* Analysis tab tooltip */}
+                  {isAnalysis && showTooltip && (
+                    <div style={{
+                      position: 'absolute',
+                      bottom: 'calc(100% + 14px)',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: 220,
+                      background: 'rgba(10, 22, 40, 0.97)',
+                      border: '1px solid rgba(255, 107, 22, 0.45)',
+                      borderRadius: 14,
+                      padding: '11px 14px',
+                      pointerEvents: 'none',
+                      zIndex: 60,
+                      animation: 'analysisTooltipIn 0.3s ease forwards',
+                      boxShadow: '0 8px 28px rgba(0,0,0,0.5)',
+                    }}>
+                      {/* Tooltip text */}
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#F0F4F8', lineHeight: 1.35, marginBottom: 4 }}>
+                        New: AI GK Analysis ✨
+                      </div>
+                      <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.4 }}>
+                        Find weak topics &amp; your next revision plan.
+                      </div>
+
+                      {/* Arrow pointing down toward the icon */}
+                      <div style={{
+                        position: 'absolute',
+                        bottom: -6,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: 0,
+                        height: 0,
+                        borderLeft: '6px solid transparent',
+                        borderRight: '6px solid transparent',
+                        borderTop: '6px solid rgba(255, 107, 22, 0.45)',
+                      }} />
+                      <div style={{
+                        position: 'absolute',
+                        bottom: -5,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: 0,
+                        height: 0,
+                        borderLeft: '5px solid transparent',
+                        borderRight: '5px solid transparent',
+                        borderTop: '5px solid rgba(10, 22, 40, 0.97)',
+                      }} />
+                    </div>
+                  )}
+
                   <Icon color={active ? '#FF6B16' : '#7A8FA6'} />
                   <span className={active ? 't-nav-label-active' : 't-nav-label'} style={{
                     color: active ? '#FF6B16' : '#7A8FA6',
