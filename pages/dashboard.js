@@ -825,7 +825,7 @@ export default function Dashboard() {
         </div>
 
         {/* ── GREETING ── */}
-        <div style={{ padding: '18px 20px 16px' }}>
+        <div style={{ padding: '18px 20px 8px' }}>
           <div className="font-display text-[20px] leading-[1.2] font-extrabold" style={{ color: 'var(--text-primary)' }}>
             Good {timeOfDay},{' '}
             <span style={{ color: '#14B8A6' }}>
