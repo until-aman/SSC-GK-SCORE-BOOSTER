@@ -786,18 +786,30 @@ export default function Dashboard() {
       <div className="app-page">
       <div className="app-shell !px-0 pb-20">
 
-        {/* ── PROFILE BAR ── */}
-        <div className="px-4 pt-8 pb-3 flex items-center justify-between">
-          {/* Left: Bolt + App name */}
-          <div className="flex items-center gap-2">
+        {/* ── HEADER + GREETING (merged) ── */}
+        <div className="px-4 pt-8 pb-4 flex items-center justify-between gap-3">
+          {/* Left: Bolt + Greeting */}
+          <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-[12px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="#f97316">
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
               </svg>
             </div>
-            <span className="font-display font-black text-[13px] tracking-wide leading-none">
-              <span className="text-white">SSC GK </span><span style={{ color: '#f97316' }}>SCORE BOOSTER</span>
-            </span>
+            <div className="min-w-0">
+              <p className="font-display font-extrabold text-[17px] leading-tight text-white truncate">
+                Good {timeOfDay},{' '}
+                <span style={{ color: '#14B8A6' }}>
+                  {session?.user?.name?.split(' ')[0] || 'Aspirant'} 👋
+                </span>
+              </p>
+              <div className="mt-0.5">
+                <RefreshStatus
+                  updatedAt={bootstrapUpdatedAt}
+                  isRefreshing={bootstrapRefreshing}
+                  onRefresh={handleBootstrapRefresh}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Right: Avatar */}
@@ -808,26 +820,6 @@ export default function Dashboard() {
           >
             <Avatar imageUrl={googlePhoto} name={displayName} size={36} />
           </button>
-        </div>
-
-        {/* ── WELCOME MESSAGE ── */}
-        <div style={{ padding: '4px 20px 16px' }}>
-          <div className="font-display text-[20px] leading-[1.2] font-extrabold" style={{ color: 'var(--text-primary)' }}>
-            Good {timeOfDay},{' '}
-            <span style={{ color: '#14B8A6' }}>
-              {session?.user?.name?.split(' ')[0] || 'Aspirant'} 👋
-            </span>
-          </div>
-          <div className="font-body text-[13px] leading-[1.45] font-medium" style={{ color: 'var(--text-muted)' }}>
-            Ready for today&apos;s GK challenge?
-          </div>
-          <div className="mt-2">
-            <RefreshStatus
-              updatedAt={bootstrapUpdatedAt}
-              isRefreshing={bootstrapRefreshing}
-              onRefresh={handleBootstrapRefresh}
-            />
-          </div>
         </div>
 
         {/* ── STAT MINI-CARDS (mirrors profile screen layout) ── */}
