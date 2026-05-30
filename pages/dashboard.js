@@ -1040,8 +1040,78 @@ export default function Dashboard() {
 
         */}
 
+        {/* ── DISCOVER QUIZZES ── */}
+        <div className="mt-5 mb-4" style={{ padding: '0 20px' }}>
+          <p className="t-section-label app-section-label">Discover Quizzes</p>
+
+          {/* Card 1 — SSC PYQs */}
+          <button
+            onClick={() => handleDiscoverClick('PYQ', '/subjects?collection=PYQ')}
+            className="card-lift w-full text-left"
+            style={{
+              borderRadius: 22, marginBottom: 16, padding: '24px 22px', position: 'relative',
+              background: '#172D47',
+              border: '1px solid rgba(255,107,22,0.38)',
+              boxShadow: '0 0 24px rgba(255,107,22,0.10), inset 0 0 0 1px rgba(255,107,22,0.06)',
+              cursor: 'pointer',
+            }}
+          >
+            <span
+              className="t-badge"
+              style={{
+                letterSpacing: '0.06em', textTransform: 'uppercase', padding: '4px 12px',
+                display: 'inline-block', borderRadius: 999,
+                background: 'rgba(255,107,22,0.15)',
+                border: '1px solid rgba(255,107,22,0.38)',
+                color: '#FF6B16',
+                boxShadow: '0 0 8px rgba(255,107,22,0.45), 0 0 18px rgba(255,107,22,0.22)',
+              }}
+            >
+              Most Attempted
+            </span>
+            <p className="t-card-title" style={{ color: 'var(--text-primary)', marginTop: 12 }}>SSC PYQs</p>
+            <p className="t-card-subtitle" style={{ color: 'var(--text-muted)', marginTop: 6 }}>
+              Previous year questions across all SSC exams. Real exam pattern, real marks.
+            </p>
+            <p className="t-badge" style={{ color: 'var(--text-muted)', marginTop: 12 }}>7,000+ Questions</p>
+          </button>
+
+          {/* Card 2 — Parmar SSC */}
+          <button
+            onClick={() => setModal('Parmar')}
+            className="card-lift w-full text-left"
+            style={{
+              borderRadius: 22, padding: '22px 22px', position: 'relative',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: '#172D47',
+              border: '1px solid rgba(245,158,11,0.35)',
+              boxShadow: '0 0 24px rgba(245,158,11,0.08), inset 0 0 0 1px rgba(245,158,11,0.05)',
+              cursor: 'pointer',
+            }}
+          >
+            <div>
+              <span
+                className="t-badge"
+                style={{
+                  letterSpacing: '0.06em', textTransform: 'uppercase', padding: '4px 12px',
+                  display: 'inline-block', borderRadius: 999,
+                  background: 'rgba(245,158,11,0.14)',
+                  border: '1px solid rgba(245,158,11,0.32)',
+                  color: '#F59E0B',
+                  boxShadow: '0 0 8px rgba(245,158,11,0.30), 0 0 16px rgba(245,158,11,0.14)',
+                }}
+              >
+                Parmar Sir
+              </span>
+              <p className="t-card-title" style={{ color: 'var(--text-primary)', marginTop: 12 }}>Parmar SSC</p>
+              <p className="t-badge" style={{ color: 'var(--text-muted)', marginTop: 8, letterSpacing: 0, textTransform: 'uppercase' }}>COMING SOON…</p>
+            </div>
+            <LightningSVG size={36} color="#F59E0B" />
+          </button>
+        </div>
+
         {/* ── WEEKLY CHAMPIONS ── */}
-        <div className="mt-5 px-4">
+        <div className="mb-4 px-4">
           <div
             className="app-card p-4"
             role="button"
@@ -1207,76 +1277,6 @@ export default function Dashboard() {
             )}
 
           </div>
-        </div>
-
-        {/* ── DISCOVER QUIZZES ── */}
-        <div className="mt-6 mb-4" style={{ padding: '0 20px' }}>
-          <p className="t-section-label app-section-label">Discover Quizzes</p>
-
-          {/* Card 1 — SSC PYQs */}
-          <button
-            onClick={() => handleDiscoverClick('PYQ', '/subjects?collection=PYQ')}
-            className="card-lift w-full text-left"
-            style={{
-              borderRadius: 22, marginBottom: 16, padding: '24px 22px', position: 'relative',
-              background: '#172D47',
-              border: '1px solid rgba(255,107,22,0.38)',
-              boxShadow: '0 0 24px rgba(255,107,22,0.10), inset 0 0 0 1px rgba(255,107,22,0.06)',
-              cursor: 'pointer',
-            }}
-          >
-            <span
-              className="t-badge"
-              style={{
-                letterSpacing: '0.06em', textTransform: 'uppercase', padding: '4px 12px',
-                display: 'inline-block', borderRadius: 999,
-                background: 'rgba(255,107,22,0.15)',
-                border: '1px solid rgba(255,107,22,0.38)',
-                color: '#FF6B16',
-                boxShadow: '0 0 8px rgba(255,107,22,0.45), 0 0 18px rgba(255,107,22,0.22)',
-              }}
-            >
-              Most Attempted
-            </span>
-            <p className="t-card-title" style={{ color: 'var(--text-primary)', marginTop: 12 }}>SSC PYQs</p>
-            <p className="t-card-subtitle" style={{ color: 'var(--text-muted)', marginTop: 6 }}>
-              Previous year questions across all SSC exams. Real exam pattern, real marks.
-            </p>
-            <p className="t-badge" style={{ color: 'var(--text-muted)', marginTop: 12 }}>7,000+ Questions</p>
-          </button>
-
-          {/* Card 2 — Parmar SSC */}
-          <button
-            onClick={() => setModal('Parmar')}
-            className="card-lift w-full text-left"
-            style={{
-              borderRadius: 22, padding: '22px 22px', position: 'relative',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: '#172D47',
-              border: '1px solid rgba(245,158,11,0.35)',
-              boxShadow: '0 0 24px rgba(245,158,11,0.08), inset 0 0 0 1px rgba(245,158,11,0.05)',
-              cursor: 'pointer',
-            }}
-          >
-            <div>
-              <span
-                className="t-badge"
-                style={{
-                  letterSpacing: '0.06em', textTransform: 'uppercase', padding: '4px 12px',
-                  display: 'inline-block', borderRadius: 999,
-                  background: 'rgba(245,158,11,0.14)',
-                  border: '1px solid rgba(245,158,11,0.32)',
-                  color: '#F59E0B',
-                  boxShadow: '0 0 8px rgba(245,158,11,0.30), 0 0 16px rgba(245,158,11,0.14)',
-                }}
-              >
-                Parmar Sir
-              </span>
-              <p className="t-card-title" style={{ color: 'var(--text-primary)', marginTop: 12 }}>Parmar SSC</p>
-              <p className="t-badge" style={{ color: 'var(--text-muted)', marginTop: 8, letterSpacing: 0, textTransform: 'uppercase' }}>COMING SOON…</p>
-            </div>
-            <LightningSVG size={36} color="#F59E0B" />
-          </button>
         </div>
 
       </div>
