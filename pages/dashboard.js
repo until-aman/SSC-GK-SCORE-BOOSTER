@@ -832,10 +832,10 @@ export default function Dashboard() {
               {session?.user?.name?.split(' ')[0] || 'Aspirant'} 👋
             </span>
           </div>
-          <div className="font-body text-[13px] leading-[1.45] font-medium" style={{ color: 'var(--text-muted)' }}>
-            Ready for today&apos;s GK challenge?
-          </div>
-          <div className="mt-2">
+          <div className="flex items-center justify-between mt-1">
+            <div className="font-body text-[13px] leading-[1.45] font-medium" style={{ color: 'var(--text-muted)' }}>
+              Ready for today&apos;s GK challenge?
+            </div>
             <RefreshStatus
               updatedAt={bootstrapUpdatedAt}
               isRefreshing={bootstrapRefreshing}
