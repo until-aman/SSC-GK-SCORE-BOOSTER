@@ -758,7 +758,7 @@ export default function Saved() {
 
             {/* Start Revision CTA — sticky above bottom nav */}
             {filtered.length > 0 && (
-              <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-2 z-40">
+              <div className="fixed bottom-[82px] left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-2 z-40">
                 <button
                   onClick={() => setRevisionIdx(0)}
                   className="w-full font-display font-bold text-base text-white active:scale-[0.98] transition-transform"

@@ -512,7 +512,7 @@ export default function StreakPage() {
       {/* ── STICKY CTA — always orange ── */}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
-        padding: '10px 16px 24px',
+        padding: '10px 16px 82px',
         background: 'linear-gradient(to top, var(--bg-app) 65%, transparent)',
       }}>
         <button
