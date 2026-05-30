@@ -62,7 +62,7 @@ function GKFactCarousel({ subject, mode, accentColor = '#14B8A6', statusText }) 
   const [factIndex, setFactIndex] = useState(() => Math.floor(Math.random() * GK_FACTS.length));
   const [progress, setProgress] = useState(0);
   const [stageIdx, setStageIdx] = useState(0);
-  const [subtext, setSubtext] = useState(statusText || 'Preparing questions, timer and XP');
+  const [subtext, setSubtext] = useState(statusText || 'Preparing questions, timer and Coins');
 
   useEffect(() => {
     const iv = setInterval(() => setFactIndex(i => (i + 1) % GK_FACTS.length), 2500);
@@ -1539,7 +1539,7 @@ export default function Quiz() {
             Q {currentIndex + 1}
             <span className="t-badge font-sans font-normal text-slate-500">/{questions.length}</span>
           </span>
-          <span className="t-badge font-sans text-orange-400">⚡ Earn XP</span>
+          <span className="t-badge font-sans text-orange-400">⚡ Earn Coins</span>
         </div>
         {cacheWarning && (
           <p className="text-xs pb-2" style={{ color: '#fbbf24' }}>

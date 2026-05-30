@@ -590,7 +590,7 @@ export default function Result() {
         {savingXP && !xpResult && (
           <div style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.22)', borderRadius: 20, padding: 16, display: 'flex', alignItems: 'center', gap: 10, borderLeft: '4px solid #14B8A6' }}>
             <Loader size="sm" />
-            <span style={{ fontSize: 13, color: '#14B8A6', fontWeight: 600 }}>Saving your XP…</span>
+            <span style={{ fontSize: 13, color: '#14B8A6', fontWeight: 600 }}>Saving your Coins…</span>
           </div>
         )}
         {xpResult && (
@@ -723,7 +723,7 @@ export default function Result() {
         {isGuest && (
           <GoogleSignInCard
             title="Save your progress"
-            subtitle="Login to save score, XP, streak & rank."
+            subtitle="Login to save score, Coins, streak & rank."
             buttonText="Sign in"
             callbackUrl="/dashboard"
           />
@@ -854,7 +854,7 @@ export default function Result() {
                     {/* XP */}
                     <p className="font-display font-bold"
                       style={{ fontSize: 17, color: '#FDBA3B', margin: 0, flexShrink: 0 }}>
-                      {Math.round(player.totalScore || 0).toLocaleString()} XP
+                      {Math.round(player.totalScore || 0).toLocaleString()} Coins
                     </p>
                   </div>
                 );

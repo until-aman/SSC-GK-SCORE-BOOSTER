@@ -41,7 +41,7 @@ const SLIDES = [
     btnGlow: 'rgba(20,184,166,0.45)',
     accentColor: '#2DD4BF',
     tag: 'STEP 03',
-    title: 'Earn XP',
+    title: 'Earn Coins',
     desc: 'Correct answers help you level up from Aspirant to Legend.',
   },
   {

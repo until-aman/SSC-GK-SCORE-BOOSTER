@@ -11,7 +11,7 @@ const GoogleSVG = () => (
 
 export default function GoogleSignInCard({
   title = 'Save your progress',
-  subtitle = 'Login to save score, XP, streak & rank.',
+  subtitle = 'Login to save score, Coins, streak & rank.',
   buttonText = 'Sign in',
   callbackUrl = '/dashboard',
   className = '',

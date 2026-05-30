@@ -212,7 +212,7 @@ function SocialProofCarousel({ userProfile, topPlayers, isLoggedIn, session, pla
         items.push({
           emoji: '⚠️',
           main:  `Don't break your ${streak} day streak`,
-          sub:   'Play today to protect your bonus XP',
+          sub:   'Play today to protect your bonus Coins',
           color: '#ef4444',
         });
       } else if (streak === 0) {
@@ -250,7 +250,7 @@ function SocialProofCarousel({ userProfile, topPlayers, isLoggedIn, session, pla
         items.push({
           emoji: '⚡',
           main:  `${userProfile.totalXP.toLocaleString()} XP · Level: ${userProfile.level || 'Aspirant'}`,
-          sub:   'Every quiz adds XP — keep stacking',
+          sub:   'Every quiz adds Coins — keep stacking',
           color: '#06b6d4',
         });
       }
@@ -738,7 +738,7 @@ export default function Dashboard() {
         Today&apos;s Mixed GK Challenge
       </div>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '18px' }}>
-        {[['📝', '25 Questions'], ['⏱', '~7 min'], ['🪙', '+50 XP']].map(([icon, label]) => (
+        {[['📝', '25 Questions'], ['⏱', '~7 min'], ['🪙', '+50 Coins']].map(([icon, label]) => (
           <span key={label} className="t-badge" style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -862,7 +862,7 @@ export default function Dashboard() {
             <span className="t-stat-sm font-display" style={{ color: '#14B8A6' }}>
               {isGuest ? '—' : totalXP >= 10000 ? `${(totalXP / 1000).toFixed(1)}k` : totalXP.toLocaleString()}
             </span>
-            <span className="t-stat-label font-sans text-slate-500">Total XP</span>
+            <span className="t-stat-label font-sans text-slate-500">Total Coins</span>
           </button>
 
           {/* Streak → /streak */}
@@ -954,7 +954,7 @@ export default function Dashboard() {
           <GoogleSignInCard
             className="mx-4 mt-5 app-card"
             title="Save your progress"
-            subtitle="Login to save score, XP, streak & rank."
+            subtitle="Login to save score, Coins, streak & rank."
             buttonText="Sign in"
             callbackUrl="/dashboard"
             style={{
@@ -1015,7 +1015,7 @@ export default function Dashboard() {
             Today&apos;s Mixed GK Challenge
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '18px' }}>
-            {[['📝', '25 Questions'], ['⏱', '~7 min'], ['🪙', '+50 XP']].map(([icon, label]) => (
+            {[['📝', '25 Questions'], ['⏱', '~7 min'], ['🪙', '+50 Coins']].map(([icon, label]) => (
               <span key={label} style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -1252,7 +1252,7 @@ export default function Dashboard() {
                       {/* XP */}
                       <p className="t-stat-sm font-display"
                         style={{ color: '#FDBA3B', margin: 0, flexShrink: 0 }}>
-                        {Math.round(player.totalScore || 0).toLocaleString()} XP
+                        {Math.round(player.totalScore || 0).toLocaleString()} Coins
                       </p>
                     </div>
                   );

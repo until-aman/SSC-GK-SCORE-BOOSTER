@@ -171,7 +171,7 @@ export default function Profile() {
             >
               <span className="text-lg leading-none mb-0.5">🪙</span>
               <span className="t-stat-sm font-display" style={{ color: '#14B8A6' }}>{isGuest ? '—' : totalXP.toLocaleString()}</span>
-              <span className="t-stat-label font-sans text-slate-500">Total XP</span>
+              <span className="t-stat-label font-sans text-slate-500">Total Coins</span>
             </button>
 
             {/* Streak → Streak History */}
@@ -211,8 +211,8 @@ export default function Profile() {
             </div>
             <p className="text-right font-sans text-xs text-slate-500 mt-1">
               {nextLevel
-                ? `${totalXP} / ${thresh.max} XP`
-                : '3000+ XP — Maximum Level'}
+                ? `${totalXP} / ${thresh.max} Coins`
+                : '3000+ Coins — Maximum Level'}
             </p>
           </div>
 
@@ -312,7 +312,7 @@ export default function Profile() {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="1.5">
                 <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <span className="t-card-subtitle font-sans text-white flex-1 text-left">XP History</span>
+              <span className="t-card-subtitle font-sans text-white flex-1 text-left">Coins History</span>
               <ChevronSVG />
             </button>
 
@@ -333,7 +333,7 @@ export default function Profile() {
             ) : (
               <GoogleSignInCard
                 title="Save your progress"
-                subtitle="Login to save score, XP, streak & rank."
+                subtitle="Login to save score, Coins, streak & rank."
                 buttonText="Sign in"
                 callbackUrl="/dashboard"
               />
@@ -358,7 +358,7 @@ export default function Profile() {
             {/* Handle */}
             <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'rgba(255,255,255,0.15)' }} />
             <h3 className="font-display font-black text-lg text-white mb-1">Level Progress</h3>
-            <p className="font-sans text-xs text-slate-400 mb-4">Earn XP by completing quizzes to level up.</p>
+            <p className="font-sans text-xs text-slate-400 mb-4">Earn Coins by completing quizzes to level up.</p>
 
             {/* Level table */}
             <div className="flex flex-col gap-2">
@@ -386,7 +386,7 @@ export default function Profile() {
                       </span>
                     </div>
                     <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>
-                      {next ? `${min}–${max} XP` : `${min}+ XP`}
+                      {next ? `${min}–${max} Coins` : `${min}+ Coins`}
                     </span>
                   </div>
                 );

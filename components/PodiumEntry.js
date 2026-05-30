@@ -78,7 +78,7 @@ export default function PodiumEntry({ rank, user }) {
       </p>
       <div className="bg-white/15 backdrop-blur rounded-full px-2.5 py-0.5 mt-1">
         <span className={`font-display font-bold text-white ${cfg.score}`}>
-          {(user.totalScore || 0).toFixed(0)} XP
+          {(user.totalScore || 0).toFixed(0)} Coins
         </span>
       </div>
       <div className="bg-white/10 rounded-full px-2.5 py-1 mt-1">

@@ -80,7 +80,7 @@ function RankRow({ leader, isSelf }) {
         <p className="t-stat-sm font-display" style={{ color: isSelf ? '#14B8A6' : '#CBD5E1' }}>
           {(leader.totalScore || 0).toFixed(1)}
         </p>
-        <p className="font-sans text-xs text-slate-500">XP</p>
+        <p className="font-sans text-xs text-slate-500">Coins</p>
       </div>
     </AppCard>
   );
@@ -339,7 +339,7 @@ export default function Leaderboard() {
                         <p className="t-stat-sm font-display text-violet-300" style={{ margin: 0 }}>
                           {(effectiveCurrentUser.totalScore || 0).toFixed(1)}
                         </p>
-                        <p className="t-stat-label font-sans text-slate-500" style={{ margin: 0 }}>XP</p>
+                        <p className="t-stat-label font-sans text-slate-500" style={{ margin: 0 }}>Coins</p>
                       </div>
                     </div>
 
@@ -348,7 +348,7 @@ export default function Leaderboard() {
                       <p className="font-sans text-[13px] text-[#14B8A6] mb-3" style={{ margin: '0 0 12px' }}>🎉 You're in the Top 3!</p>
                     ) : third && (third.totalScore || 0) > (effectiveCurrentUser.totalScore || 0) ? (
                       <p className="font-sans text-[13px] text-amber-400" style={{ margin: '0 0 12px' }}>
-                        🔥 {Math.ceil((third.totalScore || 0) - (effectiveCurrentUser.totalScore || 0))} XP away from Top 3
+                        🔥 {Math.ceil((third.totalScore || 0) - (effectiveCurrentUser.totalScore || 0))} Coins away from Top 3
                       </p>
                     ) : null}
 
@@ -404,7 +404,7 @@ export default function Leaderboard() {
                             <p style={{ fontSize: 14, fontWeight: 800, color, margin: 0 }}>
                               {(leader.totalScore || 0).toFixed(1)}
                             </p>
-                            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.30)', margin: 0 }}>XP</p>
+                            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.30)', margin: 0 }}>Coins</p>
                           </div>
                         </div>
                       ))}

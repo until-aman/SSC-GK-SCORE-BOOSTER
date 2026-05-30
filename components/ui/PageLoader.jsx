@@ -10,7 +10,7 @@ const ROUTE_LABELS = {
   '/leaderboard':   'Fetching the leaderboard…',
   '/quiz-setup':    'Setting up your quiz…',
   '/saved':         'Loading saved questions…',
-  '/history':       'Loading XP history…',
+  '/history':       'Loading Coins history…',
   '/profile':       'Loading profile…',
 };
 
