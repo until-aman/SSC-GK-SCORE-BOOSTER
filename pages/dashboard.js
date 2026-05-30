@@ -788,24 +788,20 @@ export default function Dashboard() {
 
         {/* ── PROFILE BAR ── */}
         <div className="px-4 pt-8 pb-3 flex items-center justify-between">
+          {/* Left: Bolt + App name */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => router.push('/profile')}
-              className="flex-shrink-0 active:scale-90 transition-transform"
-              aria-label="Go to profile"
-            >
-              <Avatar imageUrl={googlePhoto} name={displayName} size={36} />
-            </button>
-            {isLoggedIn ? (
-              <span className="bg-white/10 rounded-full px-2.5 py-1 font-display font-bold text-xs text-white/70">
-                ⭐ {level}
-              </span>
-            ) : (
-              <span className="bg-slate-700/50 rounded-full px-2.5 py-1 font-sans text-xs text-slate-500">
-                Guest
-              </span>
-            )}
+            <div className="w-8 h-8 rounded-[12px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#f97316">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+            </div>
+            <span className="font-display font-black text-[13px] tracking-wide text-white leading-none">
+              SSC GK<br />
+              <span style={{ color: '#f97316' }}>SCORE BOOSTER</span>
+            </span>
           </div>
+
+          {/* Right: Avatar + level badge */}
           <div className="flex items-center gap-2">
             {process.env.NODE_ENV === 'development' && (
               <button
@@ -816,6 +812,22 @@ export default function Dashboard() {
                 Clear App Cache
               </button>
             )}
+            {isLoggedIn ? (
+              <span className="bg-white/10 rounded-full px-2.5 py-1 font-display font-bold text-xs text-white/70">
+                ⭐ {level}
+              </span>
+            ) : (
+              <span className="bg-slate-700/50 rounded-full px-2.5 py-1 font-sans text-xs text-slate-500">
+                Guest
+              </span>
+            )}
+            <button
+              onClick={() => router.push('/profile')}
+              className="flex-shrink-0 active:scale-90 transition-transform"
+              aria-label="Go to profile"
+            >
+              <Avatar imageUrl={googlePhoto} name={displayName} size={36} />
+            </button>
           </div>
         </div>
 
@@ -839,52 +851,45 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ── STAT MINI-CARDS ── */}
-        <div className="px-4 mb-3 grid grid-cols-3 gap-2.5">
-          {/* Streak → /streak */}
-          <button
-            onClick={() => !isGuest && router.push('/streak')}
-            className="text-left active:scale-95 transition-transform"
-            style={{ background: '#172D47', border: '1px solid rgba(245,158,11,0.28)', borderRadius: 16, padding: '12px 14px', boxShadow: '0 0 18px rgba(245,158,11,0.08)', cursor: isGuest ? 'default' : 'pointer' }}
-          >
-            <div className="flex items-center gap-1.5" style={{ marginBottom: 8 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2C9 7 6 9.5 6 14a6 6 0 0012 0c0-4.5-3-7-6-12zm0 17a4 4 0 01-4-4c0-2.5 1.5-4.5 4-7 2.5 2.5 4 4.5 4 7a4 4 0 01-4 4z"/></svg>
-              <span className="font-sans font-bold uppercase" style={{ fontSize: 10, color: '#F59E0B', letterSpacing: '0.07em' }}>Streak</span>
-            </div>
-            <p className="font-display font-black" style={{ fontSize: 22, lineHeight: 1, color: '#F0F4F8', margin: 0 }}>
-              {isGuest ? '—' : streakCount > 0 ? `${streakCount}d` : '0d'}
-            </p>
-          </button>
-
+        {/* ── STAT MINI-CARDS (mirrors profile screen layout) ── */}
+        <div className="grid grid-cols-3 gap-2 px-4 mb-3">
           {/* XP → /history */}
           <button
             onClick={() => !isGuest && router.push('/history')}
-            className="text-left active:scale-95 transition-transform"
-            style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.28)', borderRadius: 16, padding: '12px 14px', boxShadow: '0 0 18px rgba(20,184,166,0.08)', cursor: isGuest ? 'default' : 'pointer' }}
+            className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
+            style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.20)' }}
           >
-            <div className="flex items-center gap-1.5" style={{ marginBottom: 8 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              <span className="font-sans font-bold uppercase" style={{ fontSize: 10, color: '#14B8A6', letterSpacing: '0.07em' }}>XP</span>
-            </div>
-            <p className="font-display font-black flex items-center gap-1.5" style={{ fontSize: 22, lineHeight: 1, color: '#F0F4F8', margin: 0 }}>
-              {!isGuest && <span style={{ fontSize: 16, lineHeight: 1, filter: 'drop-shadow(0 0 4px rgba(234,179,8,0.6))' }}>🪙</span>}
+            <span className="text-lg leading-none mb-0.5">🪙</span>
+            <span className="t-stat-sm font-display" style={{ color: '#14B8A6' }}>
               {isGuest ? '—' : totalXP >= 10000 ? `${(totalXP / 1000).toFixed(1)}k` : totalXP.toLocaleString()}
-            </p>
+            </span>
+            <span className="t-stat-label font-sans text-slate-500">Total XP</span>
+          </button>
+
+          {/* Streak → /streak */}
+          <button
+            onClick={() => !isGuest && router.push('/streak')}
+            className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
+            style={{ background: '#172D47', border: '1px solid rgba(255,107,22,0.20)' }}
+          >
+            <span className="text-lg leading-none mb-0.5">🔥</span>
+            <span className="t-stat-sm font-display text-orange-400">
+              {isGuest ? '—' : streakCount}
+            </span>
+            <span className="t-stat-label font-sans text-slate-500">Day Streak</span>
           </button>
 
           {/* Rank → /leaderboard */}
           <button
             onClick={() => router.push('/leaderboard')}
-            className="text-left active:scale-95 transition-transform"
-            style={{ background: '#172D47', border: '1px solid rgba(124,92,255,0.28)', borderRadius: 16, padding: '12px 14px', boxShadow: '0 0 18px rgba(124,92,255,0.08)', cursor: 'pointer' }}
+            className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
+            style={{ background: '#172D47', border: '1px solid rgba(124,92,255,0.20)' }}
           >
-            <div className="flex items-center gap-1.5" style={{ marginBottom: 8 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C5CFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 010-5H6"/><path d="M18 9h1.5a2.5 2.5 0 000-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0012 0V2z"/></svg>
-              <span className="font-sans font-bold uppercase" style={{ fontSize: 10, color: '#7C5CFF', letterSpacing: '0.07em' }}>Rank</span>
-            </div>
-            <p className="font-display font-black" style={{ fontSize: 22, lineHeight: 1, color: '#F0F4F8', margin: 0 }}>
+            <span className="text-lg leading-none mb-0.5">🏆</span>
+            <span className="t-stat-sm font-display text-violet-400">
               {isGuest || !weeklyRank ? '—' : `#${weeklyRank}`}
-            </p>
+            </span>
+            <span className="t-stat-label font-sans text-slate-500">Rank</span>
           </button>
         </div>
 
