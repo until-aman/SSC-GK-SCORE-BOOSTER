@@ -610,7 +610,7 @@ export default function Result() {
         {/* ── 3. SSC PYQ PRACTICE CARD ── */}
         <div
           className="pyq-in"
-          onClick={() => router.push('/subjects?collection=ssc_pyq')}
+          onClick={() => router.push('/subjects?collection=PYQ')}
           style={{
             position: 'relative',
             overflow: 'hidden',
@@ -657,7 +657,7 @@ export default function Result() {
           </div>
           <button
             className="btn-pulse t-button-lg"
-            onClick={() => router.push('/subjects?collection=ssc_pyq')}
+            onClick={() => router.push('/subjects?collection=PYQ')}
             style={{
               width: '100%', height: 52, borderRadius: 18, cursor: 'pointer',
               background: 'linear-gradient(135deg, #FF7A1A, #FF5A00)',
