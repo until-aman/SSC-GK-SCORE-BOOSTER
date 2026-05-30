@@ -825,13 +825,29 @@ export default function Dashboard() {
         </div>
 
         {/* ── GREETING ── */}
-        <div className="px-4 pt-5 pb-3">
-          <p className="font-display font-extrabold text-[20px] leading-tight text-white">
+        <div style={{ padding: '4px 20px 16px' }}>
+          <div className="font-display text-[20px] leading-[1.2] font-extrabold" style={{ color: 'var(--text-primary)' }}>
             Good {timeOfDay},{' '}
             <span style={{ color: '#14B8A6' }}>
               {session?.user?.name?.split(' ')[0] || 'Aspirant'} 👋
             </span>
-          </p>
+          </div>
+          <div className="font-body text-[13px] leading-[1.45] font-medium" style={{ color: 'var(--text-muted)' }}>
+            Ready for today&apos;s GK challenge?
+          </div>
+          <div className="mt-2">
+            <RefreshStatus
+              updatedAt={bootstrapUpdatedAt}
+              isRefreshing={bootstrapRefreshing}
+              onRefresh={handleBootstrapRefresh}
+              refreshText={
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                </svg>
+              }
+            />
+          </div>
         </div>
 
         {/* ── STAT MINI-CARDS (mirrors profile screen layout) ── */}
@@ -875,15 +891,6 @@ export default function Dashboard() {
             <span className="t-stat-label font-sans text-slate-500">Rank</span>
           </button>
         </div>
-        <div className="px-4 pb-2 flex justify-end">
-          <RefreshStatus
-            updatedAt={bootstrapUpdatedAt}
-            isRefreshing={bootstrapRefreshing}
-            onRefresh={handleBootstrapRefresh}
-            refreshText="🔄"
-          />
-        </div>
-
         {/* ── DAILY CHALLENGE HERO CARD ── */}
         {dailyChallengeCard}
 
