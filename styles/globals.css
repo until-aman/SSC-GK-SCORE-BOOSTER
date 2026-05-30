@@ -243,8 +243,8 @@ html {
 
 .daily-challenge-card {
   background: linear-gradient(145deg, #17182B, #111827);
-  border: 1px solid rgba(255, 122, 26, 0.22);
-  box-shadow: 0 20px 60px rgba(255, 122, 26, 0.08);
+  border: 1px solid rgba(255, 122, 26, 0.25);
+  box-shadow: 0 23px 69px rgba(255, 122, 26, 0.10), 0 4px 16px rgba(255, 122, 26, 0.07);
 }
 
 .daily-challenge-cta {
