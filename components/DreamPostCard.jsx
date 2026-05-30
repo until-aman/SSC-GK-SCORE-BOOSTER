@@ -15,14 +15,15 @@ const DROPDOWN_OPTIONS = [
   'Other',
 ];
 
-function getMotivationalMessage(progressPercent) {
-  if (progressPercent >= 100) return 'You earned this tag through consistent practice.';
-  if (progressPercent >= 90)  return 'Almost there. Stay consistent — your Dream Post Tag is within reach.';
-  if (progressPercent >= 75)  return 'You are getting close. A few more focused quizzes can push you nearer to your goal.';
-  if (progressPercent >= 50)  return 'Halfway strong. Your regular practice is turning into real preparation.';
-  if (progressPercent >= 25)  return 'You are building consistency. Keep practicing to move closer to your Dream Post.';
-  if (progressPercent >= 10)  return 'Good start. Every quiz is adding strength to your GK preparation.';
-  return 'Your journey has started. Practice a few questions daily and build momentum.';
+function getMotivationalMessage(progressPercent, dreamPost) {
+  const post = dreamPost || 'your Dream Post';
+  if (progressPercent >= 100) return `You earned this tag through consistent practice.`;
+  if (progressPercent >= 90)  return `Almost there. Stay consistent — your ${post} tag is within reach.`;
+  if (progressPercent >= 75)  return `Getting close. A few more focused quizzes and your ${post} goal is yours.`;
+  if (progressPercent >= 50)  return `Halfway there. Your consistent practice is building real ${post} preparation.`;
+  if (progressPercent >= 25)  return `Building momentum. Keep practicing to get closer to your ${post} goal.`;
+  if (progressPercent >= 10)  return `Good start. Keep practicing — every quiz moves you closer to your ${post} goal.`;
+  return `Your journey has started. Practice daily and build momentum toward your ${post} goal.`;
 }
 
 export default function DreamPostCard({ coinsEarned }) {
@@ -247,31 +248,56 @@ export default function DreamPostCard({ coinsEarned }) {
   /* ── State 4: Post set, progress in flight ─────────────────────── */
   return (
     <div className="bg-[#172D47] border border-white/10 rounded-2xl p-4 mt-3">
-      <p className="text-[#F0F4F8] text-base font-semibold">🎯 Dream Post</p>
-      <p className="text-[#FF6B16] text-lg font-bold mt-1">{dreamPost}</p>
 
-      <p className="text-[#B8C4D4] text-sm mt-3">
-        <span className="text-[#F0F4F8] font-semibold">
-          {coinsEarned.toLocaleString()}
-        </span>{' '}/ 8,000 coins
-      </p>
-      <div className="h-2 bg-[#112236] rounded-full mt-2">
-        <div
-          className="h-2 bg-[#14B8A6] rounded-full transition-all duration-500"
-          style={{ width: `${progressPercent}%` }}
-        />
+      {/* 🎯 [Post] Goal ————————————————————————— Edit */}
+      <div className="flex items-center justify-between">
+        <p className="text-[#F0F4F8] text-base font-semibold truncate pr-3">
+          🎯 {dreamPost} Goal
+        </p>
+        <button
+          onClick={openEditForm}
+          className="text-[#4A5A6B] hover:text-[#B8C4D4] text-xs font-medium transition-colors active:opacity-50 flex-shrink-0"
+        >
+          Edit
+        </button>
       </div>
 
-      <p className="text-[#7A8FA6] text-sm mt-3 leading-relaxed">
-        {getMotivationalMessage(progressPercent)}
+      {/* 1,482 / 8,000 coins · 19% */}
+      <p className="text-[#B8C4D4] text-sm mt-3">
+        <span className="text-[#F0F4F8] font-semibold">{coinsEarned.toLocaleString()}</span>
+        {' / 8,000 coins · '}
+        <span className="text-[#F0F4F8] font-semibold">{Math.floor(progressPercent)}%</span>
       </p>
 
-      <button
-        onClick={openEditForm}
-        className="mt-3 bg-transparent border border-white/15 hover:bg-white/5 text-[#B8C4D4] font-medium rounded-xl px-4 py-2 text-sm transition-colors"
-      >
-        Edit
-      </button>
+      {/* Progress bar */}
+      <div className="relative rounded-full mt-2" style={{ height: 10, background: '#0d1e33' }}>
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{
+            width: `${progressPercent}%`,
+            background: 'linear-gradient(90deg, #0d9488, #14B8A6, #2DD4BF)',
+            boxShadow: '0 0 10px rgba(20,184,166,0.55), 0 0 4px rgba(45,212,191,0.4)',
+          }}
+        />
+        {progressPercent > 3 && (
+          <div
+            className="absolute top-1/2 -translate-y-1/2 rounded-full"
+            style={{
+              left: `calc(${progressPercent}% - 6px)`,
+              width: 12, height: 12,
+              background: '#fff',
+              border: '2px solid #2DD4BF',
+              boxShadow: '0 0 7px rgba(20,184,166,0.85)',
+            }}
+          />
+        )}
+      </div>
+
+      {/* Coins to go */}
+      <p className="text-[#7A8FA6] text-xs mt-3">
+        {Math.max(0, DREAM_POST_TARGET - coinsEarned).toLocaleString()} coins to go. Keep practicing to move closer.
+      </p>
+
     </div>
   );
 }

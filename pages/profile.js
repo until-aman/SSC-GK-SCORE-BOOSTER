@@ -198,25 +198,6 @@ export default function Profile() {
             </button>
           </div>
 
-          {/* Level progress bar */}
-          <div className="rounded-2xl px-4 py-3 mt-3" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div className="flex items-center justify-between">
-              <span className="t-card-subtitle font-display font-bold text-white">{level}</span>
-              <span className="t-card-subtitle font-sans text-slate-500">{nextLevel || '—'}</span>
-            </div>
-            <div className="mt-2 h-2 rounded-3xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
-              <div
-                className="h-full rounded-full transition-all duration-700"
-                style={{ width: `${xpBarWidth}%`, background: 'linear-gradient(90deg, #14B8A6, #2DD4BF)' }}
-              />
-            </div>
-            <p className="text-right font-sans text-xs text-slate-500 mt-1">
-              {nextLevel
-                ? `${totalXP} / ${thresh.max} Coins`
-                : '3000+ Coins — Maximum Level'}
-            </p>
-          </div>
-
           {/* ── Dream Post Card ── */}
           {session && (
             <DreamPostCard coinsEarned={totalXP} />

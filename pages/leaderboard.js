@@ -314,51 +314,48 @@ export default function Leaderboard() {
                   </div>
                 ) : (
                   <div className="mb-4 px-4 py-4" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.20), rgba(20,184,166,0.10))', border: '1px solid rgba(139,92,246,0.45)', borderRadius: 22, boxShadow: '0 14px 35px rgba(124,58,237,0.14)' }}>
-                    <p className="t-section-label" style={{ color: '#a78bfa', marginBottom: 12 }}>Your Rank</p>
+                    <p className="t-section-label" style={{ color: '#a78bfa', marginBottom: 10 }}>Your Rank</p>
 
-                    {/* Rank + YOU chip */}
-                    <div className="flex items-center gap-2 mb-1">
+                    {/* Rank · Name · Level ——————————— Score */}
+                    <div className="flex items-center gap-2">
                       <span className="t-stat-lg font-display text-violet-300 flex-shrink-0">
                         #{effectiveCurrentUser.rank}
                       </span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#14B8A6', background: 'rgba(20,184,166,0.16)', border: '1px solid rgba(20,184,166,0.35)', borderRadius: 7, padding: '2px 8px', lineHeight: '18px', flexShrink: 0 }}>
-                        YOU
-                      </span>
-                    </div>
-
-                    {/* Name + XP row */}
-                    <div className="flex items-center gap-3 mb-2">
-                      <RankAvatar leader={effectiveCurrentUser} size={40} borderColor="rgba(139,92,246,0.55)" />
-                      <div className="flex-1 min-w-0">
-                        <p className="t-card-subtitle font-sans font-bold text-violet-100 truncate" style={{ margin: 0 }}>
+                      <div className="flex-1 min-w-0 flex items-baseline gap-1.5 overflow-hidden">
+                        <span className="font-sans font-bold text-violet-100 text-sm truncate">
                           {truncateName(effectiveCurrentUser.name, 20)}
-                        </p>
-                        <p className="font-sans text-xs text-slate-500" style={{ margin: 0 }}>{effectiveCurrentUser.level || 'Aspirant'}</p>
+                        </span>
+                        <span className="font-sans text-xs text-slate-500 flex-shrink-0">
+                          · {effectiveCurrentUser.level || 'Aspirant'}
+                        </span>
                       </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="t-stat-sm font-display text-violet-300" style={{ margin: 0 }}>
-                          {(effectiveCurrentUser.totalScore || 0).toFixed(1)}
-                        </p>
-                        <p className="t-stat-label font-sans text-slate-500" style={{ margin: 0 }}>Coins</p>
+                      <div className="flex-shrink-0 flex items-baseline gap-1">
+                        <span className="t-stat-sm font-display text-violet-300">
+                          {(effectiveCurrentUser.totalScore || 0).toFixed(0)}
+                        </span>
+                        <span className="font-sans text-xs text-slate-500">Coins</span>
                       </div>
                     </div>
 
-                    {/* XP gap / top 3 message */}
-                    {effectiveCurrentUser.rank <= 3 ? (
-                      <p className="font-sans text-[13px] text-[#14B8A6] mb-3" style={{ margin: '0 0 12px' }}>🎉 You're in the Top 3!</p>
-                    ) : third && (third.totalScore || 0) > (effectiveCurrentUser.totalScore || 0) ? (
-                      <p className="font-sans text-[13px] text-amber-400" style={{ margin: '0 0 12px' }}>
-                        🔥 {Math.ceil((third.totalScore || 0) - (effectiveCurrentUser.totalScore || 0))} Coins away from Top 3
-                      </p>
-                    ) : null}
-
-                    <button
-                      onClick={() => router.push('/dashboard')}
-                      className="font-display font-bold text-xs text-white active:scale-[0.97] transition-transform"
-                      style={{ background: 'linear-gradient(135deg, #7C3AED, #6D28D9)', border: 'none', borderRadius: 10, padding: '8px 18px', cursor: 'pointer' }}
-                    >
-                      Practice to climb →
-                    </button>
+                    {/* Message ————————————————————— Practice → */}
+                    <div className="flex items-center justify-between mt-2.5">
+                      {effectiveCurrentUser.rank <= 3 ? (
+                        <p className="font-sans text-[13px] text-[#14B8A6]" style={{ margin: 0 }}>🎉 You're in the Top 3!</p>
+                      ) : third && (third.totalScore || 0) > (effectiveCurrentUser.totalScore || 0) ? (
+                        <p className="font-sans text-[13px] text-amber-400" style={{ margin: 0 }}>
+                          🔥 {Math.ceil((third.totalScore || 0) - (effectiveCurrentUser.totalScore || 0))} Coins away from Top 3
+                        </p>
+                      ) : (
+                        <span />
+                      )}
+                      <button
+                        onClick={() => router.push('/dashboard')}
+                        className="font-display font-bold text-xs text-white active:scale-[0.97] transition-transform flex-shrink-0"
+                        style={{ background: 'linear-gradient(135deg, #7C3AED, #6D28D9)', border: 'none', borderRadius: 10, padding: '7px 14px', cursor: 'pointer', marginLeft: 8 }}
+                      >
+                        Practice →
+                      </button>
+                    </div>
                   </div>
                 )}
 
