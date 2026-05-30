@@ -720,7 +720,7 @@ export default function Dashboard() {
         router.push('/quiz?mode=daily');
       }}
       style={{
-        margin: '16px 20px 20px',
+        margin: '4px 20px 20px',
         borderRadius: '22px',
         padding: '22px 22px 20px',
         position: 'relative',
@@ -787,29 +787,20 @@ export default function Dashboard() {
       <div className="app-shell !px-0 pb-20">
 
         {/* ── HEADER + GREETING (merged) ── */}
-        <div className="px-4 pt-8 pb-4 flex items-center justify-between gap-3">
+        <div className="px-4 pt-8 pb-3 flex items-center justify-between gap-3">
           {/* Left: Bolt + Greeting */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-[12px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="#f97316">
+          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+            <div className="w-9 h-9 rounded-[12px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#f97316">
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
               </svg>
             </div>
-            <div className="min-w-0">
-              <p className="font-display font-extrabold text-[17px] leading-tight text-white truncate">
-                Good {timeOfDay},{' '}
-                <span style={{ color: '#14B8A6' }}>
-                  {session?.user?.name?.split(' ')[0] || 'Aspirant'} 👋
-                </span>
-              </p>
-              <div className="mt-0.5">
-                <RefreshStatus
-                  updatedAt={bootstrapUpdatedAt}
-                  isRefreshing={bootstrapRefreshing}
-                  onRefresh={handleBootstrapRefresh}
-                />
-              </div>
-            </div>
+            <p className="font-display font-extrabold text-[19px] leading-tight text-white truncate">
+              Good {timeOfDay},{' '}
+              <span style={{ color: '#14B8A6' }}>
+                {session?.user?.name?.split(' ')[0] || 'Aspirant'} 👋
+              </span>
+            </p>
           </div>
 
           {/* Right: Avatar */}
@@ -863,9 +854,17 @@ export default function Dashboard() {
             <span className="t-stat-label font-sans text-slate-500">Rank</span>
           </button>
         </div>
+        <div className="px-4 pb-2 flex justify-end">
+          <RefreshStatus
+            updatedAt={bootstrapUpdatedAt}
+            isRefreshing={bootstrapRefreshing}
+            onRefresh={handleBootstrapRefresh}
+            refreshText="🔄"
+          />
+        </div>
 
         {/* ── DAILY CHALLENGE HERO CARD ── */}
-        <p className="px-4 pb-2 font-body text-[13px] font-medium" style={{ color: 'var(--text-muted)' }}>
+        <p className="px-4 pb-1 font-body text-[13px] font-medium" style={{ color: 'var(--text-muted)' }}>
           Ready for today&apos;s GK challenge?
         </p>
         {dailyChallengeCard}
