@@ -291,7 +291,7 @@ function SocialProofCarousel({ userProfile, topPlayers, isLoggedIn, session, pla
 
   return (
     <div style={{ margin: '16px 16px 0' }}>
-      <style>{`
+      <style suppressHydrationWarning>{`
         @keyframes proofFade {
           from { opacity: 0; transform: translateY(7px); }
           to   { opacity: 1; transform: translateY(0); }

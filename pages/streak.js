@@ -122,7 +122,7 @@ export default function StreakPage() {
   return (
     <>
       <Head><title>Streak History — SSC GK Score Booster</title></Head>
-      <style>{`
+      <style suppressHydrationWarning>{`
         @keyframes streakPulse {
           0%,100% { box-shadow: 0 0 0 0 rgba(249,115,22,0.45); }
           50%      { box-shadow: 0 0 0 14px rgba(249,115,22,0); }

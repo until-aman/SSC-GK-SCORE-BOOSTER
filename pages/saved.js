@@ -549,7 +549,7 @@ export default function Saved() {
         {questions.length === 0 ? (
           /* ── Empty state ── */
           <>
-          <style>{`
+          <style suppressHydrationWarning>{`
             @keyframes ctaBeat {
               0%, 100% {
                 transform: scale(1);

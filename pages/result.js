@@ -454,7 +454,7 @@ export default function Result() {
         />
       )}
 
-      <style>{`
+      <style suppressHydrationWarning>{`
         @keyframes cardIn  { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
         @keyframes stripIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
         @keyframes proofFade { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
@@ -1024,14 +1024,14 @@ export default function Result() {
             <p style={{ fontSize: 16, fontWeight: 700, color: '#F8FAFC', textAlign: 'center' }}>Thanks for your feedback!</p>
             <p style={{ fontSize: 13, color: '#93A4BC', textAlign: 'center', lineHeight: 1.5 }}>We'll use it to improve your quiz experience.</p>
           </div>
-          <style>{`@keyframes toastPop { from { opacity:0; transform:scale(0.88); } to { opacity:1; transform:scale(1); } }`}</style>
+          <style suppressHydrationWarning>{`@keyframes toastPop { from { opacity:0; transform:scale(0.88); } to { opacity:1; transform:scale(1); } }`}</style>
         </div>
       )}
 
       {/* ── FEEDBACK BOTTOM SHEET ── */}
       {showFeedbackSheet && (
         <>
-          <style>{`
+          <style suppressHydrationWarning>{`
             @keyframes modalIn   { from { opacity:0; transform:translate(-50%,-50%) scale(0.94); } to { opacity:1; transform:translate(-50%,-50%) scale(1); } }
             @keyframes backdropIn{ from { opacity: 0; } to { opacity: 1; } }
           `}</style>

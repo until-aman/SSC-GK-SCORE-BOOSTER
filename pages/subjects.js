@@ -231,7 +231,7 @@ export default function SubjectsPage() {
     <>
       <Head><title>Choose a Subject — SSC GK Score Booster</title></Head>
 
-      <style>{`
+      <style suppressHydrationWarning>{`
         /* ── Shimmer skeleton ── */
         @keyframes shimmer {
           0%   { background-position:  200% 0; }
