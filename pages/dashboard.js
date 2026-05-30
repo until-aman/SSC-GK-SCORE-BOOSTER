@@ -6,6 +6,7 @@ import Image from 'next/image';
 
 import GoogleSignInCard from '@/components/GoogleSignInCard';
 import NotificationBell from '@/components/NotificationBell';
+import WhatsAppBell from '@/components/WhatsAppBell';
 import Loader from '@/components/ui/Loader';
 import RefreshStatus from '@/components/ui/RefreshStatus';
 import AppCard from '@/components/ui/AppCard';
@@ -814,14 +815,8 @@ export default function Dashboard() {
             </span>
           </div>
 
-          {/* Right: Avatar */}
-          <button
-            onClick={() => router.push('/profile')}
-            className="flex-shrink-0 active:scale-90 transition-transform"
-            aria-label="Go to profile"
-          >
-            <Avatar imageUrl={googlePhoto} name={displayName} size={36} />
-          </button>
+          {/* Right: WhatsApp bell */}
+          <WhatsAppBell />
         </div>
 
         {/* ── GREETING ── */}
