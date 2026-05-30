@@ -299,10 +299,7 @@ function SocialProofCarousel({ userProfile, topPlayers, isLoggedIn, session, pla
         .proof-slide { animation: proofFade 0.36s cubic-bezier(0.22,1,0.36,1) both; }
       `}</style>
 
-      <div style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: 18,
+      <div className="app-card" style={{
         padding: '14px 16px 12px',
       }}>
         {/* Slide content */}
@@ -311,13 +308,13 @@ function SocialProofCarousel({ userProfile, topPlayers, isLoggedIn, session, pla
 
           <div style={{ minWidth: 0, flex: 1 }}>
             <p className="font-display" style={{
-              fontSize: 13, fontWeight: 700, color: '#ffffff',
+              fontSize: 13, fontWeight: 700, color: 'var(--text-primary)',
               lineHeight: 1.35, margin: 0,
             }}>
               {current.main}
             </p>
             <p style={{
-              fontSize: 11, color: 'rgba(255,255,255,0.42)',
+              fontSize: 11, color: 'var(--text-muted)',
               marginTop: 3, lineHeight: 1.3,
             }}>
               {current.sub}
@@ -327,7 +324,7 @@ function SocialProofCarousel({ userProfile, topPlayers, isLoggedIn, session, pla
           {/* Accent bar */}
           <div style={{
             width: 3, height: 36, borderRadius: 4,
-            background: current.color, flexShrink: 0, opacity: 0.85,
+            background: current.color, flexShrink: 0, opacity: 0.45,
           }} />
         </div>
 
@@ -729,9 +726,9 @@ export default function Dashboard() {
         position: 'relative',
         overflow: 'hidden',
         cursor: 'pointer',
-        background: 'linear-gradient(145deg, #17182B, #111827)',
-        border: '1px solid rgba(255, 122, 26, 0.22)',
-        boxShadow: '0 20px 60px rgba(255, 122, 26, 0.08)',
+        background: '#172D47',
+        border: '1px solid rgba(255, 107, 22, 0.20)',
+        boxShadow: '0 18px 44px rgba(255, 107, 22, 0.09), 0 4px 16px rgba(0,0,0,0.3)',
       }}
     >
       <div className="t-section-label" style={{ color: '#f97316', marginBottom: '8px' }}>
@@ -746,8 +743,8 @@ export default function Dashboard() {
             display: 'inline-flex',
             alignItems: 'center',
             gap: '4px',
-            background: 'rgba(255,255,255,0.08)',
-            color: 'rgba(255,255,255,0.75)',
+            background: 'rgba(255,255,255,0.07)',
+            color: 'var(--text-secondary)',
             padding: '4px 10px',
             borderRadius: '20px',
           }}>{icon} {label}</span>
@@ -770,12 +767,14 @@ export default function Dashboard() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-[#0f172a] pb-20 px-4">
-        <div className="skeleton h-14 rounded-2xl mt-4" />
-        <div className="skeleton h-28 rounded-3xl mt-3" />
-        <div className="skeleton h-8 w-40 rounded-xl mt-5" />
-        <div className="flex gap-3 mt-3 overflow-hidden">
-          {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-24 w-28 rounded-3xl flex-shrink-0" />)}
+      <div className="app-page">
+        <div className="app-shell !px-4 pb-20">
+          <div className="skeleton h-14 rounded-2xl pt-4" />
+          <div className="skeleton h-28 rounded-3xl mt-3" />
+          <div className="skeleton h-8 w-40 rounded-xl mt-5" />
+          <div className="flex gap-3 mt-3 overflow-hidden">
+            {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-24 w-28 rounded-3xl flex-shrink-0" />)}
+          </div>
         </div>
       </div>
     );
@@ -784,7 +783,8 @@ export default function Dashboard() {
   return (
     <>
       <Head><title>Dashboard — SSC GK Score Booster</title></Head>
-      <div className="min-h-screen bg-[#0f172a] pb-20">
+      <div className="app-page">
+      <div className="app-shell !px-0 pb-20">
 
         {/* ── PROFILE BAR ── */}
         <div className="px-4 pt-8 pb-3 flex items-center justify-between">
@@ -830,13 +830,13 @@ export default function Dashboard() {
 
         {/* ── WELCOME MESSAGE ── */}
         <div style={{ padding: '4px 20px 16px' }}>
-          <div className="font-display text-[20px] leading-[1.2] font-extrabold" style={{ color: '#ffffff' }}>
+          <div className="font-display text-[20px] leading-[1.2] font-extrabold" style={{ color: 'var(--text-primary)' }}>
             Good {timeOfDay},{' '}
-            <span style={{ color: '#35D299' }}>
+            <span style={{ color: '#14B8A6' }}>
               {session?.user?.name?.split(' ')[0] || 'Aspirant'} 👋
             </span>
           </div>
-          <div className="font-body text-[13px] leading-[1.45] font-medium" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <div className="font-body text-[13px] leading-[1.45] font-medium" style={{ color: 'var(--text-muted)' }}>
             Ready for today&apos;s GK challenge?
           </div>
           <div className="mt-2">
@@ -857,7 +857,7 @@ export default function Dashboard() {
             as="button"
             onClick={() => router.push('/streak')}
             interactive
-            className="mx-4 bg-slate-800 border-slate-700/50 w-[calc(100%-2rem)] text-left"
+            className="mx-4 app-card w-[calc(100%-2rem)] text-left"
           >
             <div className="flex justify-between">
               {DAY_LABELS.map((day, i) => {
@@ -870,20 +870,20 @@ export default function Dashboard() {
 
                 let circleCls = 'w-9 h-9 rounded-full flex items-center justify-center ';
                 if (isDone || isTodayDone) {
-                  circleCls += 'bg-orange-500 ';
-                  if (isTodayDone) circleCls += 'ring-2 ring-orange-300 ring-offset-1 ring-offset-slate-800';
+                  circleCls += 'bg-[#FF6B16] ';
+                  if (isTodayDone) circleCls += 'ring-1 ring-[#FF6B16]/60 ring-offset-1 ring-offset-[#172D47]';
                 } else if (isTodayTodo) {
-                  circleCls += 'bg-white/5 border-2 border-orange-500';
+                  circleCls += 'bg-[#172D47] border border-[#FF6B16]/50';
                 } else if (isMissed) {
                   circleCls += 'bg-red-950/60 border border-red-900/50';
                 } else {
                   // future
-                  circleCls += 'bg-slate-700/30 border border-orange-500/40';
+                  circleCls += 'bg-[#172D47] border border-white/10';
                 }
 
                 return (
                   <div key={day} className="flex flex-col items-center gap-0.5">
-                    <span className="text-[10px] text-slate-500">{day}</span>
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{day}</span>
                     <div className={circleCls}>
                       {(isDone || isTodayDone) && <LightningSVG size={14} color="white" />}
                       {isMissed && <span className="text-[13px] leading-none">😢</span>}
@@ -897,9 +897,9 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-2 mt-3">
               <span className="flame-dance"><LightningSVG size={16} color="#f97316" /></span>
-              <span className="font-display font-black text-base text-white">{streakCount} day{streakCount !== 1 ? 's' : ''}</span>
+              <span className="font-display font-black text-base" style={{ color: 'var(--text-primary)' }}>{streakCount} day{streakCount !== 1 ? 's' : ''}</span>
               {playedToday
-                ? <span className="font-sans text-xs text-emerald-400 ml-auto">✓ Protected today</span>
+                ? <span className="font-sans text-xs ml-auto" style={{ color: '#14B8A6' }}>✓ Protected today</span>
                 : <span className="font-sans text-xs text-orange-400 ml-auto">Play to extend!</span>
               }
             </div>
@@ -909,11 +909,16 @@ export default function Dashboard() {
         {/* ── GUEST SIGN-IN NUDGE ── */}
         {isGuest && (
           <GoogleSignInCard
-            className="mx-4 mt-5"
+            className="mx-4 mt-5 app-card"
             title="Save your progress"
             subtitle="Login to save score, XP, streak & rank."
             buttonText="Sign in"
             callbackUrl="/dashboard"
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-soft)',
+              boxShadow: 'var(--shadow-soft)',
+            }}
           />
         )}
 
@@ -1002,7 +1007,7 @@ export default function Dashboard() {
         {/* ── WEEKLY CHAMPIONS ── */}
         <div className="mt-5 px-4">
           <div
-            className="p-4"
+            className="app-card p-4"
             role="button"
             tabIndex={0}
             onClick={() => router.push('/leaderboard')}
@@ -1013,10 +1018,6 @@ export default function Dashboard() {
               }
             }}
             style={{
-            background: 'linear-gradient(145deg, #111827 0%, #0f1f2e 100%)',
-            border: '1px solid rgba(245, 158, 11, 0.35)',
-            borderRadius: 24,
-            boxShadow: '0 12px 35px rgba(245, 158, 11, 0.08)',
             padding: 18,
             cursor: 'pointer',
             transition: 'transform 150ms ease',
@@ -1032,7 +1033,7 @@ export default function Dashboard() {
             {/* Header */}
             <div className="flex items-start justify-between gap-3 mb-3">
               <div>
-                <p className="t-card-title" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 7 }}>
+                <p className="t-card-title" style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 7 }}>
                   <span style={{ fontSize: 16, lineHeight: 1 }}>🔥</span>
                   Weekly Champions
                 </p>
@@ -1044,7 +1045,7 @@ export default function Dashboard() {
                     router.push('/leaderboard');
                   }}
                   className="t-button-sm flex items-center gap-1 font-sans active:opacity-70"
-                  style={{ color: '#34D399', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                  style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
                 >
                   View your rank
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1070,9 +1071,9 @@ export default function Dashboard() {
                   const player = topPlayers[idx];
                   const isSelf = player.email === session?.user?.email;
                   const cardTheme = [
-                    { bg: 'rgba(255,184,0,0.08)',   border: 'rgba(255,184,0,0.24)'   },
-                    { bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.22)' },
-                    { bg: 'rgba(180,83,9,0.08)',    border: 'rgba(180,83,9,0.20)'    },
+                    { bg: '#1E3554', border: 'rgba(255, 107, 22, 0.20)' },
+                    { bg: '#1E3554', border: 'rgba(255, 255, 255, 0.08)' },
+                    { bg: '#1E3554', border: 'rgba(255, 255, 255, 0.08)' },
                   ][idx];
                   return (
                     <div
@@ -1103,13 +1104,13 @@ export default function Dashboard() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                           <p className="t-card-subtitle font-display font-bold truncate"
-                            style={{ color: isSelf ? '#10b981' : '#ffffff', margin: 0 }}>
+                            style={{ color: isSelf ? '#14B8A6' : '#ffffff', margin: 0 }}>
                             {(player.name || 'User').split(' ')[0]}
                           </p>
                           <span className="t-badge" style={{
                             flexShrink: 0, color: '#facc15',
-                            background: 'rgba(250,204,21,0.15)',
-                            border: '1px solid rgba(250,204,21,0.3)',
+                            background: 'rgba(250,204,21,0.10)',
+                            border: '1px solid rgba(250,204,21,0.20)',
                             borderRadius: 20, padding: '2px 8px',
                           }}>
                             ⭐ {player.level || 'Aspirant'}
@@ -1117,8 +1118,8 @@ export default function Dashboard() {
                           {isSelf && (
                             <span className="t-badge" style={{
                               flexShrink: 0,
-                              background: 'rgba(16,185,129,0.15)', color: '#10b981',
-                              border: '1px solid rgba(16,185,129,0.3)',
+                              background: 'rgba(20,184,166,0.12)', color: '#14B8A6',
+                              border: '1px solid rgba(20,184,166,0.25)',
                               borderRadius: 20, padding: '2px 7px',
                             }}>You</span>
                           )}
@@ -1150,18 +1151,18 @@ export default function Dashboard() {
 
                 {/* Your rank row */}
                 {isLoggedIn && (
-                  <div className="mt-3 pt-3 border-t border-slate-700/40 flex items-center justify-between">
+                  <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--border-soft)' }}>
                     <div className="flex items-center gap-2">
-                      <span className="font-sans text-xs text-slate-400">Your Rank</span>
-                      <span className="font-display font-black text-base text-white">
+                      <span className="font-sans text-xs" style={{ color: 'var(--text-muted)' }}>Your Rank</span>
+                      <span className="font-display font-black text-base" style={{ color: 'var(--text-primary)' }}>
                         {weeklyRank ? `#${weeklyRank}` : '—'}
                       </span>
                     </div>
-                    <span className={`text-xs font-semibold rounded-full px-3 py-1 ${
+                    <span className="text-xs font-semibold rounded-full px-3 py-1" style={
                       playedToday
-                        ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-700/40'
-                        : 'bg-slate-700/60 text-slate-400 border border-slate-600/40'
-                    }`}>
+                        ? { background: 'rgba(20,184,166,0.12)', color: '#14B8A6', border: '1px solid rgba(20,184,166,0.25)' }
+                        : { background: 'rgba(255,107,22,0.10)', color: '#FF6B16', border: '1px solid rgba(255,107,22,0.25)' }
+                    }>
                       {playedToday ? '✓ Active today' : 'Play to rank up →'}
                     </span>
                   </div>
@@ -1174,55 +1175,55 @@ export default function Dashboard() {
 
         {/* ── DISCOVER QUIZZES ── */}
         <div className="mt-6 mb-4" style={{ padding: '0 20px' }}>
-          <p className="t-section-label" style={{ color: '#94A3B8' }}>Discover Quizzes</p>
+          <p className="t-section-label app-section-label">Discover Quizzes</p>
 
           {/* Card 1 — SSC PYQs */}
           <button
             onClick={() => handleDiscoverClick('PYQ', '/subjects?collection=PYQ')}
-            className="card-lift w-full text-left active:scale-[0.98]"
+            className="card-lift w-full text-left"
             style={{
               borderRadius: 22, marginBottom: 16, padding: '24px 22px', position: 'relative',
-              background: '#111C2E',
-              border: '1px solid rgba(148, 163, 184, 0.14)',
-              boxShadow: 'inset 0 2px 0 rgba(124, 58, 237, 0.8)',
+              background: '#172D47', border: '1px solid rgba(255,255,255,0.10)',
+              cursor: 'pointer',
             }}
           >
-            <span className="t-badge" style={{ letterSpacing: '0.05em', textTransform: 'uppercase', padding: '4px 12px', borderRadius: 20, background: 'rgba(124,58,237,0.18)', color: '#c4b5fd', border: '1px solid rgba(124,58,237,0.3)', display: 'inline-block' }}>
+            <span className="t-badge app-pill" style={{ letterSpacing: 0, textTransform: 'uppercase', padding: '4px 12px', display: 'inline-block' }}>
               Most Attempted
             </span>
-            <p className="t-card-title" style={{ color: '#ffffff', marginTop: 12 }}>SSC PYQs</p>
-            <p className="t-card-subtitle" style={{ color: 'rgba(255,255,255,0.55)', marginTop: 6 }}>
+            <p className="t-card-title" style={{ color: 'var(--text-primary)', marginTop: 12 }}>SSC PYQs</p>
+            <p className="t-card-subtitle" style={{ color: 'var(--text-muted)', marginTop: 6 }}>
               Previous year questions across all SSC exams. Real exam pattern, real marks.
             </p>
-            <p className="t-badge" style={{ color: 'rgba(255,255,255,0.40)', marginTop: 12 }}>7,000+ Questions</p>
+            <p className="t-badge" style={{ color: 'var(--text-muted)', marginTop: 12 }}>7,000+ Questions</p>
           </button>
 
           {/* Card 2 — Parmar SSC */}
           <button
             onClick={() => setModal('Parmar')}
-            className="card-lift w-full text-left active:scale-[0.98]"
+            className="card-lift w-full text-left"
             style={{
               borderRadius: 22, padding: '22px 22px', position: 'relative',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: '#111C2E',
-              border: '1px solid rgba(139,92,246,0.22)',
-              boxShadow: 'inset 0 2px 0 rgba(139,92,246,0.8)',
+              background: '#172D47', border: '1px solid rgba(255,255,255,0.10)',
+              cursor: 'pointer',
             }}
           >
             <div>
-              <span className="t-badge" style={{ letterSpacing: '0.05em', textTransform: 'uppercase', padding: '4px 12px', borderRadius: 20, background: 'rgba(139,92,246,0.15)', color: '#c4b5fd', border: '1px solid rgba(139,92,246,0.28)', display: 'inline-block' }}>
+              <span className="t-badge app-pill" style={{ letterSpacing: 0, textTransform: 'uppercase', padding: '4px 12px', display: 'inline-block' }}>
                 Parmar Sir
               </span>
-              <p className="t-card-title" style={{ color: '#ffffff', marginTop: 12 }}>Parmar SSC</p>
-              <p className="t-badge" style={{ color: 'rgba(255,255,255,0.35)', marginTop: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>COMING SOON…</p>
+              <p className="t-card-title" style={{ color: 'var(--text-primary)', marginTop: 12 }}>Parmar SSC</p>
+              <p className="t-badge" style={{ color: 'var(--text-muted)', marginTop: 8, letterSpacing: 0, textTransform: 'uppercase' }}>COMING SOON…</p>
             </div>
-            <LightningSVG size={36} color="rgba(139,92,246,0.5)" />
+            <LightningSVG size={36} color="var(--text-muted)" />
           </button>
         </div>
 
       </div>
 
       {/* ── LOW QUESTIONS MODAL ── */}
+      </div>
+
       {lowQModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center px-6"
@@ -1230,19 +1231,21 @@ export default function Dashboard() {
           onClick={() => setLowQModal(null)}
         >
           <div
-            className="w-full max-w-[360px] bg-[#1e293b] border border-slate-700/60 px-6 py-8 text-center" style={{ borderRadius: 22 }}
+            className="w-full max-w-[360px] px-6 py-8 text-center"
+            style={{ borderRadius: 22, background: '#172D47', border: '1px solid rgba(255,255,255,0.10)' }}
             onClick={e => e.stopPropagation()}
           >
             <div className="text-5xl mb-5">🚧</div>
-            <h3 className="font-display font-black text-xl text-white mb-3">
+            <h3 className="font-display font-black text-xl mb-3" style={{ color: '#F0F4F8' }}>
               {lowQModal} is still being built out.
             </h3>
-            <p className="font-sans font-medium text-sm text-slate-400 leading-relaxed mb-7">
+            <p className="font-sans font-medium text-sm leading-relaxed mb-7" style={{ color: '#7A8FA6' }}>
               Check back soon — questions are being added every day! 🙌
             </p>
             <button
               onClick={() => setLowQModal(null)}
-              className="w-full py-3.5 bg-emerald-500 text-white rounded-2xl font-display font-bold text-base active:scale-[0.98] transition-transform"
+              className="w-full py-3.5 rounded-2xl font-display font-bold text-base active:scale-[0.98] transition-transform text-white"
+              style={{ background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)' }}
             >
               Got it!
             </button>
@@ -1258,19 +1261,21 @@ export default function Dashboard() {
           onClick={() => setComingSoonModal(false)}
         >
           <div
-            className="w-full max-w-[430px] bg-[#1e293b] rounded-t-3xl px-6 pt-6 pb-10 text-center"
+            className="w-full max-w-[430px] rounded-t-3xl px-6 pt-6 pb-10 text-center"
+            style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.10)', borderBottom: 'none' }}
             onClick={e => e.stopPropagation()}
           >
             {/* Handle bar */}
-            <div className="w-10 h-1 bg-slate-600 rounded-full mx-auto mb-5" />
+            <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: 'rgba(255,255,255,0.15)' }} />
             <div className="text-5xl mb-4">🚀</div>
-            <h3 className="font-display font-black text-xl text-white mb-2">Coming Soon!</h3>
-            <p className="font-sans font-medium text-sm text-slate-400 leading-relaxed mb-6">
+            <h3 className="font-display font-black text-xl mb-2" style={{ color: '#F0F4F8' }}>Coming Soon!</h3>
+            <p className="font-sans font-medium text-sm leading-relaxed mb-6" style={{ color: '#7A8FA6' }}>
               This series will be available soon. Tap the 🔔 on any card to get notified when it goes live!
             </p>
             <button
               onClick={() => setComingSoonModal(false)}
-              className="w-full py-3.5 bg-emerald-500 text-white rounded-2xl font-display font-bold text-base active:scale-[0.98] transition-transform"
+              className="w-full py-3.5 rounded-2xl font-display font-bold text-base active:scale-[0.98] transition-transform text-white"
+              style={{ background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)' }}
             >
               Got it!
             </button>
@@ -1292,7 +1297,7 @@ export default function Dashboard() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: '#0f172a',
+              background: 'var(--bg-card)',
               border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: 24,
               padding: '24px 22px 22px',
@@ -1318,14 +1323,14 @@ export default function Dashboard() {
             {notifyModalView === 'done' && (
               <div style={{ textAlign: 'center', padding: '8px 0' }}>
                 <div style={{ fontSize: 38, marginBottom: 12 }}>✅</div>
-                <p className="t-card-title font-display" style={{ color: '#f1f5f9', margin: '0 0 8px' }}>
+                <p className="t-card-title font-display" style={{ color: '#F0F4F8', margin: '0 0 8px' }}>
                   You&apos;re on the list!
                 </p>
-                <p className="t-body" style={{ color: '#64748b', margin: '0 0 20px' }}>
+                <p className="t-body" style={{ color: '#7A8FA6', margin: '0 0 20px' }}>
                   We&apos;ll notify you when this series is ready.
                 </p>
                 <button onClick={closeModal} className="t-button-lg font-display"
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: '#e2e8f0', borderRadius: 12, padding: '13px 0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  style={{ width: '100%', background: 'rgba(255,107,22,0.12)', border: '1px solid rgba(255,107,22,0.25)', color: '#FF6B16', borderRadius: 12, padding: '13px 0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   Got it
                 </button>
               </div>
@@ -1335,14 +1340,14 @@ export default function Dashboard() {
             {notifyModalView === 'already' && (
               <div style={{ textAlign: 'center', padding: '8px 0' }}>
                 <div style={{ fontSize: 34, marginBottom: 12 }}>🔔</div>
-                <p className="t-card-title font-display" style={{ color: '#f1f5f9', margin: '0 0 8px' }}>
+                <p className="t-card-title font-display" style={{ color: '#F0F4F8', margin: '0 0 8px' }}>
                   Already joined
                 </p>
-                <p className="t-body" style={{ color: '#64748b', margin: '0 0 20px' }}>
+                <p className="t-body" style={{ color: '#7A8FA6', margin: '0 0 20px' }}>
                   You&apos;re already on the waitlist for this series.
                 </p>
                 <button onClick={closeModal} className="t-button-lg font-display"
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: '#e2e8f0', borderRadius: 12, padding: '13px 0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  style={{ width: '100%', background: 'rgba(255,107,22,0.12)', border: '1px solid rgba(255,107,22,0.25)', color: '#FF6B16', borderRadius: 12, padding: '13px 0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   Got it
                 </button>
               </div>
@@ -1351,10 +1356,10 @@ export default function Dashboard() {
             {/* ── VIEW: guest sign-in prompt ── */}
             {notifyModalView === 'guest-prompt' && (
               <div>
-                <p className="t-card-title font-display" style={{ color: '#f1f5f9', margin: '0 0 8px' }}>
+                <p className="t-card-title font-display" style={{ color: '#F0F4F8', margin: '0 0 8px' }}>
                   Sign in to get notified
                 </p>
-                <p className="t-body" style={{ color: '#64748b', margin: '0 0 20px' }}>
+                <p className="t-body" style={{ color: '#7A8FA6', margin: '0 0 20px' }}>
                   We need your email to notify you when this series launches.
                 </p>
                 <button
@@ -1381,10 +1386,10 @@ export default function Dashboard() {
               <div>
                 <span className="t-badge" style={{ letterSpacing: '0.08em', textTransform: 'uppercase', color: '#FF7A1A', background: 'rgba(255,122,26,0.12)', border: '1px solid rgba(255,122,26,0.20)', borderRadius: 999, padding: '3px 10px', display: 'inline-block', marginBottom: 14 }}>WAITLIST</span>
 
-                <p className="t-card-title font-display" style={{ color: '#f1f5f9', margin: '0 0 6px' }}>
+                <p className="t-card-title font-display" style={{ color: '#F0F4F8', margin: '0 0 6px' }}>
                   🔥 Want Parmar SSC quizzes?
                 </p>
-                <p className="t-card-subtitle" style={{ color: '#475569', margin: '0 0 12px' }}>
+                <p className="t-card-subtitle" style={{ color: '#B8C4D4', margin: '0 0 12px' }}>
                   Video-wise GK practice in quiz format.
                 </p>
 
@@ -1396,7 +1401,7 @@ export default function Dashboard() {
                   ))}
                 </div>
 
-                <p className="t-card-subtitle" style={{ color: '#475569', margin: '0 0 16px' }}>
+                <p className="t-card-subtitle" style={{ color: '#7A8FA6', margin: '0 0 16px' }}>
                   Join the waitlist to help us prioritize this series.
                 </p>
 
@@ -1418,7 +1423,7 @@ export default function Dashboard() {
                   {notifyModalView === 'loading' ? 'Saving…' : '🔔 Notify Me When Ready'}
                 </button>
 
-                <p style={{ fontSize: 11, color: '#334155', textAlign: 'center', margin: '10px 0 0' }}>
+                <p style={{ fontSize: 11, color: '#4A5A6B', textAlign: 'center', margin: '10px 0 0' }}>
                   No spam. Only one launch update.
                 </p>
               </div>
