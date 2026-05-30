@@ -786,21 +786,32 @@ export default function Dashboard() {
       <div className="app-page">
       <div className="app-shell !px-0 pb-20">
 
-        {/* ── HEADER + GREETING (merged) ── */}
-        <div className="px-4 pt-8 pb-3 flex items-center justify-between gap-3">
-          {/* Left: Bolt + Greeting */}
-          <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <div className="w-9 h-9 rounded-[12px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="#f97316">
+        {/* ── STICKY HEADER BAR ── */}
+        <div
+          className="sticky top-0 z-50 px-4 flex items-center justify-between"
+          style={{
+            height: '68px',
+            background: 'rgba(15,32,52,0.88)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            border: '1px solid rgba(20,184,166,0.18)',
+            borderTop: 'none',
+            borderLeft: 'none',
+            borderRight: 'none',
+            borderRadius: '0 0 22px 22px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.22)',
+          }}
+        >
+          {/* Left: Bolt + App name */}
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-[12px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#f97316">
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
               </svg>
             </div>
-            <p className="font-display font-extrabold text-[19px] leading-tight text-white truncate">
-              Good {timeOfDay},{' '}
-              <span style={{ color: '#14B8A6' }}>
-                {session?.user?.name?.split(' ')[0] || 'Aspirant'} 👋
-              </span>
-            </p>
+            <span className="font-display font-black text-[13px] tracking-wide leading-none whitespace-nowrap">
+              <span className="text-white">SSC GK </span><span style={{ color: '#f97316' }}>SCORE BOOSTER</span>
+            </span>
           </div>
 
           {/* Right: Avatar */}
@@ -811,6 +822,16 @@ export default function Dashboard() {
           >
             <Avatar imageUrl={googlePhoto} name={displayName} size={36} />
           </button>
+        </div>
+
+        {/* ── GREETING ── */}
+        <div className="px-4 pt-5 pb-3">
+          <p className="font-display font-extrabold text-[20px] leading-tight text-white">
+            Good {timeOfDay},{' '}
+            <span style={{ color: '#14B8A6' }}>
+              {session?.user?.name?.split(' ')[0] || 'Aspirant'} 👋
+            </span>
+          </p>
         </div>
 
         {/* ── STAT MINI-CARDS (mirrors profile screen layout) ── */}
