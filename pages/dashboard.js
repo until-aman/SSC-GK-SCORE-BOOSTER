@@ -809,7 +809,7 @@ export default function Dashboard() {
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
               </svg>
             </div>
-            <span className="font-display font-black text-[15px] tracking-wide leading-none whitespace-nowrap self-center">
+            <span className="font-display font-black text-[20px] tracking-wide leading-none whitespace-nowrap self-center">
               <span className="text-white">SSC GK </span><span style={{ color: '#f97316' }}>SCORE BOOSTER</span>
             </span>
           </div>
