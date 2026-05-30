@@ -449,13 +449,12 @@ export default function Leaderboard() {
           </div>
         </div>
 
-        {/* Practice CTA — flex child, slides in after user interaction */}
+        {/* Practice CTA — fixed above bottom nav, slides in after user interaction */}
         <div
-          className="flex-shrink-0 px-4 pt-2 pb-3"
+          className="fixed bottom-[74px] left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 z-40"
           style={{
-            background: 'var(--bg-app)',
             opacity: showCTA ? 1 : 0,
-            transform: showCTA ? 'translateY(0)' : 'translateY(16px)',
+            transform: showCTA ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(16px)',
             transition: 'opacity 0.4s ease, transform 0.4s ease',
             pointerEvents: showCTA ? 'auto' : 'none',
           }}
