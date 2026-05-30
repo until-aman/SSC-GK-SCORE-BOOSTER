@@ -1051,8 +1051,9 @@ export default function Dashboard() {
             style={{
               borderRadius: 22, marginBottom: 16, padding: '24px 22px', position: 'relative',
               background: '#172D47',
-              border: '1px solid rgba(255,107,22,0.38)',
-              boxShadow: '0 0 24px rgba(255,107,22,0.10), inset 0 0 0 1px rgba(255,107,22,0.06)',
+              border: '1px solid transparent',
+              borderTop: '1.5px solid rgba(255,107,22,0.70)',
+              boxShadow: '0 -4px 18px rgba(255,107,22,0.18)',
               cursor: 'pointer',
             }}
           >
@@ -1084,8 +1085,9 @@ export default function Dashboard() {
               borderRadius: 22, padding: '22px 22px', position: 'relative',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               background: '#172D47',
-              border: '1px solid rgba(245,158,11,0.35)',
-              boxShadow: '0 0 24px rgba(245,158,11,0.08), inset 0 0 0 1px rgba(245,158,11,0.05)',
+              border: '1px solid transparent',
+              borderTop: '1.5px solid rgba(255,107,22,0.70)',
+              boxShadow: '0 -4px 18px rgba(255,107,22,0.18)',
               cursor: 'pointer',
             }}
           >
