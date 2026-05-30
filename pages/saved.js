@@ -51,7 +51,7 @@ function QuestionRow({ q, index, onView, onUnsave }) {
         )}
         {q.topic && (
           <>
-            <span style={{ fontSize: 10, color: '#334155' }}>•</span>
+            <span style={{ fontSize: 10, color: '#4A5568' }}>•</span>
             <span style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>{q.topic}</span>
           </>
         )}
@@ -75,7 +75,7 @@ function QuestionRow({ q, index, onView, onUnsave }) {
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}
             title="Remove bookmark"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="#334155" stroke="#334155" strokeWidth="1.5" strokeLinecap="round">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="#4A5568" stroke="#4A5568" strokeWidth="1.5" strokeLinecap="round">
               <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/>
             </svg>
           </button>
@@ -295,9 +295,9 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 24, paddingBottom: 8 }}>
               <button
                 onClick={() => onUnsave(q.questionId)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#334155', fontWeight: 500 }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#4A5568', fontWeight: 500 }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="#334155" stroke="none" strokeLinecap="round">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#4A5568" stroke="none" strokeLinecap="round">
                   <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/>
                 </svg>
                 Remove from Saved
@@ -305,9 +305,9 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
               <button
                 onClick={handleMarkRevised}
                 disabled={markedDone}
-                style={{ background: 'none', border: 'none', cursor: markedDone ? 'default' : 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: markedDone ? '#14B8A6' : '#334155', fontWeight: 500 }}
+                style={{ background: 'none', border: 'none', cursor: markedDone ? 'default' : 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: markedDone ? '#14B8A6' : '#4A5568', fontWeight: 500 }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={markedDone ? '#14B8A6' : '#334155'} strokeWidth="2.5" strokeLinecap="round">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={markedDone ? '#14B8A6' : '#4A5568'} strokeWidth="2.5" strokeLinecap="round">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
                 {markedDone ? 'Marked as Revised' : 'Mark as Revised'}
@@ -327,7 +327,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
             cursor: idx === 0 ? 'default' : 'pointer',
             background: 'rgba(255,255,255,0.04)',
             border: '1px solid rgba(148,163,184,0.12)',
-            color: idx === 0 ? '#1E293B' : '#F8FAFC',
+            color: idx === 0 ? 'rgba(255,255,255,0.20)' : '#F8FAFC',
             fontSize: 14, fontWeight: 700,
           }}
         >
@@ -343,7 +343,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
               ? 'rgba(255,255,255,0.04)'
               : 'linear-gradient(135deg, #FF7A1A, #FF5A00)',
             border: idx === total - 1 ? '1px solid rgba(148,163,184,0.12)' : 'none',
-            color: idx === total - 1 ? '#1E293B' : '#FFFFFF',
+            color: idx === total - 1 ? 'rgba(255,255,255,0.20)' : '#FFFFFF',
             fontSize: 14, fontWeight: 700,
           }}
         >
@@ -747,7 +747,7 @@ export default function Saved() {
                   {/* Sentinel — triggers next page when scrolled into view */}
                   {visibleCount < filtered.length && (
                     <div ref={sentinelRef} style={{ padding: '12px 0', textAlign: 'center' }}>
-                      <span style={{ fontSize: 12, color: '#334155' }}>
+                      <span style={{ fontSize: 12, color: '#4A5568' }}>
                         Showing {Math.min(visibleCount, filtered.length)} of {filtered.length}
                       </span>
                     </div>

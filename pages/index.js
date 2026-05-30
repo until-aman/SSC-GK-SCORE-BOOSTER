@@ -314,7 +314,7 @@ export default function LandingPage() {
           </div>
 
           {/* Stat strip */}
-          <div className="stats-card bg-slate-800/60 rounded-[18px] px-4 py-3 mt-6 w-full max-w-[320px]">
+          <div className="stats-card rounded-[18px] px-4 py-3 mt-6 w-full max-w-[320px]" style={{ background: 'rgba(23,45,71,0.70)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div className="flex justify-around">
               {[
                 { target: 12,   suffix: '',  label: 'Subjects',  duration: 800,  delay: 400  },

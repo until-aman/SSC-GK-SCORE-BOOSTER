@@ -295,7 +295,7 @@ function QuizBulb({ state }) {
       className={`fixed bottom-6 right-4 w-11 h-11 rounded-full flex items-center justify-center border z-30 ${
         state === 'correct' ? 'bulb-correct' :
         state === 'wrong'   ? 'bulb-wrong'   :
-        'bg-slate-800/80 border-slate-700'
+        'border-white/10'
       }`}
     >
       <span className="text-xl leading-none select-none" style={{ filter: state === 'wrong' ? 'grayscale(0.6) brightness(0.7)' : state === 'correct' ? 'brightness(1.3)' : 'brightness(0.6)' }}>

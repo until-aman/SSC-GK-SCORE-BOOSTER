@@ -200,13 +200,13 @@ export default function HistoryPage() {
 
         {/* How to earn XP table */}
         <div className="mx-4 mt-5 rounded-2xl overflow-hidden" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <div className="px-4 py-3 border-b border-slate-700/50">
+          <div className="px-4 py-3 border-b border-white/[0.06]">
             <p className="font-display font-bold text-base text-white">How to earn XP ⚡</p>
             <p className="font-sans text-xs text-slate-400 mt-0.5">Earn more by playing consistently</p>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-700/40">
+              <tr className="border-b border-white/[0.06]">
                 <th className="px-4 py-2.5 text-left font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">Action</th>
                 <th className="px-4 py-2.5 text-right font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">XP</th>
               </tr>
@@ -219,7 +219,7 @@ export default function HistoryPage() {
                 { action: 'Wrong answer', xp: '−0', color: 'text-slate-500' },
                 { action: 'Skipped question', xp: '−0', color: 'text-slate-500' },
               ].map((row, i, arr) => (
-                <tr key={row.action} className={i < arr.length - 1 ? 'border-b border-slate-700/30' : ''}>
+                <tr key={row.action} className={i < arr.length - 1 ? 'border-b border-white/[0.05]' : ''}>
                   <td className="px-4 py-3 font-sans text-sm text-slate-300">{row.action}</td>
                   <td className={`px-4 py-3 text-right font-display font-black text-sm ${row.color}`}>{row.xp}</td>
                 </tr>

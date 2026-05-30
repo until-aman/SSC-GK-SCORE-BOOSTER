@@ -889,7 +889,7 @@ export default function Result() {
 
               {/* Your rank row */}
               {isLoggedIn && (
-                <div className="mt-3 pt-3 border-t border-slate-700/40 flex items-center justify-between">
+                <div className="mt-3 pt-3 border-t border-white/[0.07] flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="font-sans text-xs text-slate-400">Your Rank</span>
                     <span className="font-display font-black text-base text-white">

@@ -30,7 +30,7 @@ function RankAvatar({ leader, size = 32, borderColor }) {
   const fontSize   = Math.round(size * 0.42);
   const sharedStyle = {
     width: size, height: size, borderRadius: '50%', flexShrink: 0,
-    border: `2px solid ${borderColor || '#334155'}`,
+    border: `2px solid ${borderColor || 'rgba(255,255,255,0.12)'}`,
     overflow: 'hidden',
   };
   if (leader.image && !imgError) {
@@ -41,7 +41,7 @@ function RankAvatar({ leader, size = 32, borderColor }) {
     );
   }
   return (
-    <div style={{ ...sharedStyle, background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ ...sharedStyle, background: '#1E3554', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <span style={{ fontSize, fontWeight: 900, color: 'white', fontFamily: 'inherit' }}>{initial}</span>
     </div>
   );
@@ -378,7 +378,7 @@ export default function Leaderboard() {
                             <p style={{ fontSize: 14, fontWeight: 800, color, margin: 0 }}>
                               {(leader.totalScore || 0).toFixed(1)}
                             </p>
-                            <p style={{ fontSize: 10, color: '#334155', margin: 0 }}>XP</p>
+                            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.30)', margin: 0 }}>XP</p>
                           </div>
                         </div>
                       ))}
