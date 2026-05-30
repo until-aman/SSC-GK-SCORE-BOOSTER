@@ -496,7 +496,7 @@ export default function Result() {
             statusBg = 'rgba(20,184,166,0.10)'; statusBorder = 'rgba(20,184,166,0.30)'; statusColor = '#14B8A6';
           } else if (acc <= 85) {
             statusLabel = 'Strong Score';
-            statusBg = 'rgba(52,211,153,0.14)'; statusBorder = 'rgba(52,211,153,0.35)'; statusColor = '#6EE7B7';
+            statusBg = 'rgba(20,184,166,0.14)'; statusBorder = 'rgba(20,184,166,0.35)'; statusColor = '#14B8A6';
           } else {
             statusLabel = 'Excellent';
             statusBg = 'rgba(251,191,36,0.12)'; statusBorder = 'rgba(251,191,36,0.35)'; statusColor = '#FCD34D';
@@ -1005,7 +1005,7 @@ export default function Result() {
           animation: 'backdropIn 0.2s ease both',
         }}>
           <div style={{
-            background: '#172235', border: '1px solid rgba(52,211,153,0.30)',
+            background: '#172D47', border: '1px solid rgba(20,184,166,0.30)',
             borderRadius: 24, padding: '28px 32px',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
             boxShadow: '0 24px 48px rgba(0,0,0,0.40)',
@@ -1014,7 +1014,7 @@ export default function Result() {
           }}>
             <div style={{
               width: 52, height: 52, borderRadius: '50%',
-              background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.30)',
+              background: 'rgba(20,184,166,0.12)', border: '1px solid rgba(20,184,166,0.30)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

@@ -45,7 +45,7 @@ function QuestionRow({ q, index, onView, onUnsave }) {
       {/* Subject • Topic */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
         {q.subject && (
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#14B8A6', background: 'rgba(52,211,153,0.10)', borderRadius: 99, padding: '2px 9px' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#14B8A6', background: 'rgba(20,184,166,0.10)', borderRadius: 99, padding: '2px 9px' }}>
             {getDisplaySubject(q.subject, q.collection)}
           </span>
         )}
@@ -166,7 +166,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
         {(q.subject || q.topic) && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
             {q.subject && (
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#14B8A6', background: 'rgba(52,211,153,0.10)', borderRadius: 99, padding: '2px 10px' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#14B8A6', background: 'rgba(20,184,166,0.10)', borderRadius: 99, padding: '2px 10px' }}>
                 {getDisplaySubject(q.subject, q.collection)}
               </span>
             )}
@@ -193,7 +193,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
             // Compute per-state colours
             let rowBg, rowBorder, textColor, dotBg, dotColor;
             if (isCorrect) {
-              rowBg = 'rgba(52,211,153,0.10)'; rowBorder = 'rgba(52,211,153,0.35)';
+              rowBg = 'rgba(20,184,166,0.10)'; rowBorder = 'rgba(20,184,166,0.35)';
               textColor = '#14B8A6'; dotBg = '#14B8A6'; dotColor = '#0F172A';
             } else if (isWrong) {
               rowBg = 'rgba(239,68,68,0.10)'; rowBorder = 'rgba(239,68,68,0.35)';
@@ -280,7 +280,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
         {/* Answer + explanation — shown after reveal */}
         {revealed && (
           <>
-            <div style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.22)', borderRadius: 14, padding: '14px 16px', marginBottom: 16 }}>
+            <div style={{ background: 'rgba(20,184,166,0.06)', border: '1px solid rgba(20,184,166,0.22)', borderRadius: 14, padding: '14px 16px', marginBottom: 16 }}>
               <p style={{ fontSize: 14, fontWeight: 700, color: '#14B8A6', marginBottom: q.explanation ? 10 : 0 }}>
                 Correct Answer: {q.correctOption}
               </p>
@@ -527,7 +527,7 @@ export default function Saved() {
           <div className="flex items-center gap-2.5">
             <h1 className="t-page-title font-display text-white">Saved Questions</h1>
             {questions.length > 0 && (
-              <span className="t-badge bg-emerald-500/20 border border-emerald-500/30 rounded-full px-2.5 py-0.5 font-display text-emerald-400">
+              <span className="t-badge bg-[rgba(20,184,166,0.15)] border border-[rgba(20,184,166,0.30)] rounded-full px-2.5 py-0.5 font-display text-[#14B8A6]">
                 {questions.length}
               </span>
             )}
@@ -694,7 +694,7 @@ export default function Saved() {
                   className="flex-shrink-0"
                   style={{
                     borderRadius: 99, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',
-                    background: activeFilter === key ? '#10B981' : 'rgba(30,41,59,0.8)',
+                    background: activeFilter === key ? '#14B8A6' : 'rgba(23,45,71,0.8)',
                     color: activeFilter === key ? '#fff' : '#64748B',
                     border: activeFilter === key ? 'none' : '1px solid rgba(148,163,184,0.14)',
                   }}

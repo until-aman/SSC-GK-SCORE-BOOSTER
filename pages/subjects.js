@@ -36,7 +36,7 @@ const SUBJECT_THEME = {
   modernHistory:  { label: 'Modern History',    icon: '🗺️', subtitle: 'Freedom • Reforms',       accent: '#8B5CF6', glow: 'rgba(139,92,246,0.18)'   },
   economics:      { label: 'Economics',          icon: '📈',  subtitle: 'Banking • Budget',        accent: '#F97316', glow: 'rgba(249,115,22,0.18)'   },
   physics:        { label: 'Physics',            icon: '⚛️', subtitle: 'Motion • Energy',         accent: '#2563EB', glow: 'rgba(37,99,235,0.18)'    },
-  chemistry:      { label: 'Chemistry',          icon: '🧪',  subtitle: 'Elements • Reactions',   accent: '#10B981', glow: 'rgba(16,185,129,0.18)'   },
+  chemistry:      { label: 'Chemistry',          icon: '🧪',  subtitle: 'Elements • Reactions',   accent: '#14B8A6', glow: 'rgba(20,184,166,0.18)'   },
   biology:        { label: 'Biology',            icon: '🧬',  subtitle: 'Human Body • Life',       accent: '#16A34A', glow: 'rgba(22,163,74,0.18)'    },
   currentAffairs: { label: 'Current Affairs',   icon: '📰',  subtitle: 'Latest GK',               accent: '#DB2777', glow: 'rgba(219,39,119,0.18)'   },
   staticGk:       { label: 'Static GK',          icon: '📚',  subtitle: 'Awards • Books',          accent: '#14B8A6', glow: 'rgba(20,184,166,0.18)'   },

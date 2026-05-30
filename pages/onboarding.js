@@ -84,14 +84,15 @@ export default function Onboarding() {
           onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSubmit()}
           placeholder="Your display name"
-          className="w-full max-w-[320px] bg-slate-700 border border-slate-600 rounded-xl px-4 py-3.5 text-white text-sm font-medium placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          className="w-full max-w-[320px] bg-[#172D47] border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm font-medium placeholder:text-slate-500 focus:border-[#14B8A6] focus:outline-none focus:ring-1 focus:ring-[#14B8A6]"
         />
 
         {/* Let's Go button */}
         <button
           onClick={handleSubmit}
           disabled={saving || !name.trim()}
-          className="w-full max-w-[320px] mt-4 py-4 rounded-2xl bg-emerald-500 text-white font-display font-bold text-base btn-breathe active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full max-w-[320px] mt-4 py-4 rounded-2xl text-white font-display font-bold text-base btn-breathe active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)', boxShadow: '0 4px 14px rgba(255,107,22,0.30)' }}
         >
           {saving ? 'Saving…' : "Let's Go →"}
         </button>
@@ -104,7 +105,7 @@ export default function Onboarding() {
             })();
             router.push(alreadySeen ? '/dashboard' : '/onboarding-slides');
           }}
-          className="font-sans font-medium text-sm text-emerald-400 underline underline-offset-2 mt-3"
+          className="font-sans font-medium text-sm text-[#14B8A6] underline underline-offset-2 mt-3"
         >
           Skip, use my Google name
         </button>

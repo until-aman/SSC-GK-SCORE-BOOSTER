@@ -227,7 +227,7 @@ export default function Profile() {
               { icon: '🔥', label: '7-Day\nStreak',       color: '#f97316', glow: 'rgba(249,115,22,0.22)',  unlocked: !isGuest && streak >= 7  },
               { icon: '🏆', label: 'Champion',            color: '#fbbf24', glow: 'rgba(251,191,36,0.22)',  unlocked: !isGuest && ['Champion','Legend'].includes(level) },
               { icon: '👑', label: 'Legend',              color: '#fbbf24', glow: 'rgba(251,191,36,0.22)',  unlocked: !isGuest && level === 'Legend' },
-              { icon: '📚', label: '100\nQuizzes',        color: '#34d399', glow: 'rgba(52,211,153,0.22)',  unlocked: false },
+              { icon: '📚', label: '100\nQuizzes',        color: '#14B8A6', glow: 'rgba(20,184,166,0.22)',  unlocked: false },
               { icon: '🏅', label: 'Top 100\nRank',       color: '#60a5fa', glow: 'rgba(96,165,250,0.22)',  unlocked: false },
             ];
 

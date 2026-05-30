@@ -319,7 +319,7 @@ export default function Leaderboard() {
 
                     {/* XP gap / top 3 message */}
                     {currentUser.rank <= 3 ? (
-                      <p className="font-sans text-[13px] text-emerald-400 mb-3" style={{ margin: '0 0 12px' }}>🎉 You're in the Top 3!</p>
+                      <p className="font-sans text-[13px] text-[#14B8A6] mb-3" style={{ margin: '0 0 12px' }}>🎉 You're in the Top 3!</p>
                     ) : third && (third.totalScore || 0) > (currentUser.totalScore || 0) ? (
                       <p className="font-sans text-[13px] text-amber-400" style={{ margin: '0 0 12px' }}>
                         🔥 {Math.ceil((third.totalScore || 0) - (currentUser.totalScore || 0))} XP away from Top 3

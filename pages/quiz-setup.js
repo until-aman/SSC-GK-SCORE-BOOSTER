@@ -49,8 +49,8 @@ const COLORS = {
   page: 'var(--bg-app)',
   card: 'var(--bg-card)',
   border: 'rgba(148,163,184,0.16)',
-  selected: '#10B981',
-  selectedGlow: 'rgba(16,185,129,0.16)',
+  selected: '#14B8A6',
+  selectedGlow: 'rgba(20,184,166,0.16)',
   primary: '#F8FAFC',
   secondary: '#CBD5E1',
   muted: '#94A3B8',
@@ -96,9 +96,9 @@ function TopicRow({ label, count, isSelected, isLast, onClick, bold = false }) {
       onClick={onClick}
       className="w-full flex items-start gap-3 px-4 py-3 text-left transition-opacity active:opacity-60"
       style={{
-        background: isSelected ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.02)',
+        background: isSelected ? 'rgba(20,184,166,0.08)' : 'rgba(255,255,255,0.02)',
         borderBottom: isLast ? 'none' : '1px solid rgba(148,163,184,0.1)',
-        borderLeft: isSelected ? '3px solid #10B981' : '3px solid transparent',
+        borderLeft: isSelected ? '3px solid #14B8A6' : '3px solid transparent',
         WebkitTapHighlightColor: 'transparent',
       }}
     >
@@ -108,7 +108,7 @@ function TopicRow({ label, count, isSelected, isLast, onClick, bold = false }) {
           fontSize: 14,
           lineHeight: '20px',
           fontWeight: isSelected ? 700 : bold ? 600 : 500,
-          color: isSelected ? '#10B981' : '#F8FAFC',
+          color: isSelected ? '#14B8A6' : '#F8FAFC',
           display: '-webkit-box',
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
@@ -121,7 +121,7 @@ function TopicRow({ label, count, isSelected, isLast, onClick, bold = false }) {
             fontSize: 11,
             fontWeight: 600,
             lineHeight: '16px',
-            color: isSelected ? '#10B981' : '#64748B',
+            color: isSelected ? '#14B8A6' : '#64748B',
             marginTop: 2,
           }}>
             {count} questions
@@ -131,7 +131,7 @@ function TopicRow({ label, count, isSelected, isLast, onClick, bold = false }) {
 
       {/* Checkmark — aligns to first line of text */}
       {isSelected ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: '#10B981', flexShrink: 0, marginTop: 2 }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: '#14B8A6', flexShrink: 0, marginTop: 2 }}>
           <path d="M20 6 9 17l-5-5"/>
         </svg>
       ) : (
@@ -698,7 +698,7 @@ export default function QuizSetup() {
                             onClick={() => handleSubjectSelect(subj)}
                             className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:opacity-70 transition-opacity"
                             style={{
-                              background: isSelected ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.03)',
+                              background: isSelected ? 'rgba(20,184,166,0.10)' : 'rgba(255,255,255,0.03)',
                               borderBottom: isLast ? 'none' : `1px solid ${COLORS.border}`,
                             }}
                           >
@@ -824,7 +824,7 @@ export default function QuizSetup() {
               {topicsLoading && topics.length > 0 && (
                 <div
                   className="flex items-center gap-2 rounded-xl px-3 py-2 mb-3"
-                  style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}
+                  style={{ background: 'rgba(20,184,166,0.08)', border: '1px solid rgba(20,184,166,0.20)' }}
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: COLORS.selected, flexShrink: 0, animation: 'spin 1s linear infinite' }}>
                     <path d="M21 12a9 9 0 1 1-6.219-8.56"/>

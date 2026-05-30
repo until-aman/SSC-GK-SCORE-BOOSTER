@@ -58,7 +58,7 @@ function getLoadingTitle(subject, mode) {
   return `Building your ${cap} challenge…`;
 }
 
-function GKFactCarousel({ subject, mode, accentColor = '#10B981', statusText }) {
+function GKFactCarousel({ subject, mode, accentColor = '#14B8A6', statusText }) {
   const [factIndex, setFactIndex] = useState(() => Math.floor(Math.random() * GK_FACTS.length));
   const [progress, setProgress] = useState(0);
   const [stageIdx, setStageIdx] = useState(0);

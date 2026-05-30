@@ -220,7 +220,7 @@ function SocialProofCarousel({ userProfile, topPlayers, isLoggedIn, session, pla
           emoji: '🎯',
           main:  'Start your streak today',
           sub:   'Daily practice builds rank the fastest',
-          color: '#10b981',
+          color: '#14B8A6',
         });
       }
 
@@ -1436,7 +1436,7 @@ export default function Dashboard() {
       {notifyToast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-[390px] z-50">
           <div className={`rounded-2xl px-4 py-3.5 flex items-center gap-3 shadow-xl ${
-            notifyToast.type === 'success' ? 'bg-emerald-600'
+            notifyToast.type === 'success' ? 'bg-[#14B8A6]'
             : notifyToast.type === 'info'  ? 'bg-blue-600'
             : 'bg-red-600'
           }`}>
