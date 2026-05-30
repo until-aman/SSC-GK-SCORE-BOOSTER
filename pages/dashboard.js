@@ -865,6 +865,9 @@ export default function Dashboard() {
         </div>
 
         {/* ── DAILY CHALLENGE HERO CARD ── */}
+        <p className="px-4 pb-2 font-body text-[13px] font-medium" style={{ color: 'var(--text-muted)' }}>
+          Ready for today&apos;s GK challenge?
+        </p>
         {dailyChallengeCard}
 
         {/* ── STREAK HISTORY CARD ── */}
