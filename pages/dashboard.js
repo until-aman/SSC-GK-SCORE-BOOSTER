@@ -834,7 +834,7 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center justify-between mt-1">
             <div className="font-body text-[13px] leading-[1.45] font-medium" style={{ color: 'var(--text-muted)' }}>
-              Ready for today&apos;s GK challenge?
+              Keep your streak alive today 🔥
             </div>
             <RefreshStatus
               updatedAt={bootstrapUpdatedAt}
