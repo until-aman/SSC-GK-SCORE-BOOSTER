@@ -790,7 +790,7 @@ export default function Dashboard() {
         <div
           className="sticky top-0 z-50 px-4 flex items-center justify-between"
           style={{
-            height: '68px',
+            height: '58px',
             background: 'rgba(15,32,52,0.88)',
             backdropFilter: 'blur(14px)',
             WebkitBackdropFilter: 'blur(14px)',
@@ -804,12 +804,12 @@ export default function Dashboard() {
         >
           {/* Left: Bolt + App name */}
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-[12px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="#f97316">
+            <div className="w-8 h-8 rounded-[11px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#f97316">
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
               </svg>
             </div>
-            <span className="font-display font-black text-[20px] tracking-wide leading-none whitespace-nowrap self-center">
+            <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center">
               <span className="text-white">SSC GK </span><span style={{ color: '#f97316' }}>SCORE BOOSTER</span>
             </span>
           </div>
