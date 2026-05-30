@@ -5,6 +5,7 @@ import Head from 'next/head';
 import Image from 'next/image';
 
 import GoogleSignInCard from '@/components/GoogleSignInCard';
+import DreamPostCard from '@/components/DreamPostCard';
 
 function isGuestMode() {
   if (typeof document === 'undefined') return false;
@@ -215,6 +216,11 @@ export default function Profile() {
                 : '3000+ Coins — Maximum Level'}
             </p>
           </div>
+
+          {/* ── Dream Post Card ── */}
+          {session && (
+            <DreamPostCard coinsEarned={totalXP} />
+          )}
 
           {/* ── Achievements ── */}
           {(() => {
