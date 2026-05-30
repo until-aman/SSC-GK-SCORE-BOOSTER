@@ -64,11 +64,12 @@ export default function DetailedAnalysis() {
       <div className="min-h-screen [background:var(--bg-app)] pb-28">
 
         {/* Sticky top bar: title + stats + filter tabs */}
-        <div className="sticky top-0 z-10 [background:var(--bg-app)] backdrop-blur-md border-b border-slate-800">
+        <div className="sticky top-0 z-10 [background:var(--bg-app)] backdrop-blur-md border-b border-white/[0.08]">
           <div className="px-4 pt-3 pb-2 flex items-center gap-2.5">
             <button
               onClick={() => router.push('/result')}
-              className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center active:bg-slate-700 transition-colors flex-shrink-0"
+              className="w-8 h-8 rounded-full flex items-center justify-center active:opacity-80 transition-opacity flex-shrink-0"
+              style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.12)' }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M18 6L6 18M6 6l12 12"/>
@@ -111,12 +112,12 @@ export default function DetailedAnalysis() {
         {/* Question cards */}
         <div className="px-4 pt-4 flex flex-col gap-4">
           {filter === 'All' && (
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '14px 16px' }}>
+            <div style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '14px 16px' }}>
               <p className="t-section-label" style={{ color: 'rgba(148,163,184,0.7)', marginBottom: 8 }}>Review Summary</p>
               <div style={{ display: 'flex', gap: 16, marginBottom: 10 }}>
                 <span className="t-card-subtitle" style={{ color: '#fca5a5' }}><strong className="t-stat-sm font-display">{wrongCount}</strong> wrong</span>
                 <span className="t-card-subtitle" style={{ color: '#94a3b8' }}><strong className="t-stat-sm font-display">{totalSkipped}</strong> skipped</span>
-                <span className="t-card-subtitle" style={{ color: '#6ee7b7' }}><strong className="t-stat-sm font-display">{correctCount}</strong> correct</span>
+                <span className="t-card-subtitle" style={{ color: '#22C55E' }}><strong className="t-stat-sm font-display">{correctCount}</strong> correct</span>
               </div>
               <p style={{ fontSize: 12, color: 'rgba(148,163,184,0.6)', marginBottom: 10 }}>
                 {wrongCount > 0 ? 'Best next step: review your wrong answers first.' : totalSkipped > 0 ? 'Best next step: go through the skipped questions.' : 'Great job — all correct!'}
@@ -190,7 +191,7 @@ export default function DetailedAnalysis() {
       {(wrongCount > 0 || totalSkipped > 0) && (
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 30,
-          background: 'rgba(15,23,42,0.97)', backdropFilter: 'blur(14px)',
+          background: 'rgba(13,27,46,0.97)', backdropFilter: 'blur(14px)',
           borderTop: '1px solid rgba(255,255,255,0.07)',
           padding: '10px 16px 14px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
@@ -235,7 +236,7 @@ function getQuestionReviewTip({ status, selectedOption, correctOption, hasExplan
 
 function BookmarkIcon({ filled }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? '#10b981' : 'none'} stroke={filled ? '#10b981' : '#475569'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? '#14B8A6' : 'none'} stroke={filled ? '#14B8A6' : '#475569'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/>
     </svg>
   );
@@ -316,14 +317,14 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
   const correctAnswerText = `${question.correctOption}. ${question[OPTION_KEYS[question.correctOption]]}`;
   const statusLabel = isCorrect ? 'Correct' : isSkipped ? 'Skipped' : 'Incorrect';
   const badgeStyle = isCorrect
-    ? { background: 'rgba(16,185,129,0.13)', color: '#34d399' }
+    ? { background: 'rgba(34,197,94,0.12)', color: '#22C55E' }
     : isSkipped
     ? { background: 'rgba(100,116,139,0.14)', color: '#94a3b8' }
     : { background: 'rgba(239,68,68,0.13)', color: '#f87171' };
-  const cardBg = { background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' };
+  const cardBg = { background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' };
   const collapseBtn = { fontSize: 11, color: '#475569', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' };
   const leftBorder = isCorrect
-    ? '3px solid rgba(16,185,129,0.30)'
+    ? '3px solid rgba(34,197,94,0.30)'
     : isSkipped
     ? '3px solid rgba(100,116,139,0.28)'
     : '3px solid rgba(239,68,68,0.32)';
@@ -343,8 +344,8 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
           {question.question}
         </p>
         {!isCorrect && (
-          <p style={{ fontSize: 12, color: '#6ee7b7', marginBottom: 9 }}>
-            <span style={{ fontSize: 9, fontWeight: 800, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.08em', marginRight: 5 }}>Correct</span>
+          <p style={{ fontSize: 12, color: '#22C55E', marginBottom: 9 }}>
+            <span style={{ fontSize: 9, fontWeight: 800, color: '#22C55E', textTransform: 'uppercase', letterSpacing: '0.08em', marginRight: 5 }}>Correct</span>
             {correctAnswerText}
           </p>
         )}
@@ -379,12 +380,12 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
             return (
               <div key={opt} style={{
                 fontSize: 12, padding: '10px 14px', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8,
-                border: isThisCorrect ? '1px solid rgba(16,185,129,0.40)' : '1px solid rgba(148,163,184,0.08)',
-                background: isThisCorrect ? 'rgba(16,185,129,0.10)' : 'rgba(255,255,255,0.02)',
-                color: isThisCorrect ? '#6ee7b7' : '#475569', fontWeight: isThisCorrect ? 600 : 400,
+                border: isThisCorrect ? '1px solid rgba(34,197,94,0.40)' : '1px solid rgba(148,163,184,0.08)',
+                background: isThisCorrect ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.02)',
+                color: isThisCorrect ? '#22C55E' : '#475569', fontWeight: isThisCorrect ? 600 : 400,
               }}>
                 <span style={{ flex: 1 }}>{opt}. {question[OPTION_KEYS[opt]]}</span>
-                {isThisCorrect && <span style={{ fontSize: 10, fontWeight: 800, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>Correct</span>}
+                {isThisCorrect && <span style={{ fontSize: 10, fontWeight: 800, color: '#22C55E', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>Correct</span>}
               </div>
             );
           })}
@@ -414,18 +415,18 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
             return (
               <div key={opt} style={{
                 fontSize: 12, padding: '10px 14px', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                border: isThisCorrect ? '1px solid rgba(16,185,129,0.35)' : '1px solid rgba(148,163,184,0.08)',
-                background: isThisCorrect ? 'rgba(16,185,129,0.08)' : 'transparent',
-                color: isThisCorrect ? '#6ee7b7' : '#475569', fontWeight: isThisCorrect ? 600 : 400,
+                border: isThisCorrect ? '1px solid rgba(34,197,94,0.35)' : '1px solid rgba(148,163,184,0.08)',
+                background: isThisCorrect ? 'rgba(34,197,94,0.08)' : 'transparent',
+                color: isThisCorrect ? '#22C55E' : '#475569', fontWeight: isThisCorrect ? 600 : 400,
               }}>
                 <span>{opt}. {question[OPTION_KEYS[opt]]}</span>
-                {isThisCorrect && <span style={{ color: '#34d399' }}>✓</span>}
+                {isThisCorrect && <span style={{ color: '#22C55E' }}>✓</span>}
               </div>
             );
           })}
         </div>
         {question.explanation ? (
-          <div style={{ marginBottom: 10, padding: '10px 12px', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.10)', borderRadius: 12 }}>
+          <div style={{ marginBottom: 10, padding: '10px 12px', background: 'rgba(13,27,46,0.6)', border: '1px solid rgba(148,163,184,0.10)', borderRadius: 12 }}>
             <span style={{ display: 'block', fontSize: 9, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Explanation</span>
             <p style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.6, margin: '0 0 8px' }}>{question.explanation}</p>
             <p style={{ fontSize: 11, color: 'rgba(148,163,184,0.5)', margin: 0 }}>
@@ -453,7 +454,7 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
         )}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={toggleSave} style={isSaved
-            ? { fontSize: 11, fontWeight: 700, padding: '5px 13px', borderRadius: 999, border: '1px solid rgba(16,185,129,0.35)', background: 'rgba(16,185,129,0.10)', color: '#34d399', cursor: 'pointer', fontFamily: 'inherit' }
+            ? { fontSize: 11, fontWeight: 700, padding: '5px 13px', borderRadius: 999, border: '1px solid rgba(20,184,166,0.35)', background: 'rgba(20,184,166,0.10)', color: '#14B8A6', cursor: 'pointer', fontFamily: 'inherit' }
             : { fontSize: 11, fontWeight: 600, padding: '5px 13px', borderRadius: 999, border: '1px solid rgba(148,163,184,0.15)', background: 'rgba(255,255,255,0.04)', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}>
             {isSaved ? '✓ Saved' : 'Save for Revision'}
           </button>
@@ -489,20 +490,20 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
           const isThisUser    = userAnswer === opt;
           const isThisCorrect = question.correctOption === opt;
           let cls = 'text-[12px] px-4 py-3 rounded-xl border flex justify-between items-center gap-2';
-          if (isThisCorrect)                     cls += ' bg-emerald-500/15 border-emerald-500/40 text-emerald-300 font-bold';
+          if (isThisCorrect)                     cls += ' bg-[rgba(34,197,94,0.10)] border-[rgba(34,197,94,0.40)] text-[#22C55E] font-bold';
           else if (isThisUser && !isThisCorrect) cls += ' bg-red-500/15 border-red-500/40 text-red-300 font-bold';
           else                                   cls += ' bg-slate-900/40 border-slate-700/40 text-slate-500';
           return (
             <div key={opt} className={cls}>
               <span className="flex-1">{opt}. {question[OPTION_KEYS[opt]]}</span>
-              {isThisCorrect && <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wide flex-shrink-0">Correct</span>}
+              {isThisCorrect && <span className="text-[10px] font-black text-[#22C55E] uppercase tracking-wide flex-shrink-0">Correct</span>}
               {isThisUser && !isThisCorrect && <span className="text-[10px] font-black text-red-400 uppercase tracking-wide flex-shrink-0">Your answer</span>}
             </div>
           );
         })}
       </div>
       {question.explanation ? (
-        <div className="mb-3 px-4 py-3 bg-slate-900/60 border border-slate-700/40 rounded-2xl">
+        <div className="mb-3 px-4 py-3 rounded-2xl" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
           <span className="block text-[9px] font-black text-orange-400 uppercase tracking-widest mb-1.5">Explanation</span>
           <p className="text-[12px] text-slate-400 leading-relaxed" style={{ marginBottom: 8 }}>{question.explanation}</p>
           <p style={{ fontSize: 11, color: 'rgba(251,146,60,0.5)', margin: 0 }}>
@@ -542,7 +543,7 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
       )}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button onClick={toggleSave} style={isSaved
-          ? { fontSize: 11, fontWeight: 700, padding: '5px 13px', borderRadius: 999, border: '1px solid rgba(16,185,129,0.35)', background: 'rgba(16,185,129,0.10)', color: '#34d399', cursor: 'pointer', fontFamily: 'inherit' }
+          ? { fontSize: 11, fontWeight: 700, padding: '5px 13px', borderRadius: 999, border: '1px solid rgba(20,184,166,0.35)', background: 'rgba(20,184,166,0.10)', color: '#14B8A6', cursor: 'pointer', fontFamily: 'inherit' }
           : { fontSize: 11, fontWeight: 600, padding: '5px 13px', borderRadius: 999, border: '1px solid rgba(148,163,184,0.15)', background: 'rgba(255,255,255,0.04)', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}>
           {isSaved ? '✓ Saved' : 'Save for Revision'}
         </button>
