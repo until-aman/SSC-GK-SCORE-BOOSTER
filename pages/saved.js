@@ -39,13 +39,13 @@ function QuestionRow({ q, index, onView, onUnsave }) {
   const savedLabel = formatSavedDate(q.savedAt || q.createdAt);
   return (
     <div style={{
-      background: '#131D2E', border: '1px solid rgba(148,163,184,0.10)',
+      background: '#172D47', border: '1px solid rgba(255,255,255,0.08)',
       borderRadius: 18, padding: '14px 16px', marginBottom: 10,
     }}>
       {/* Subject • Topic */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
         {q.subject && (
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#34D399', background: 'rgba(52,211,153,0.10)', borderRadius: 99, padding: '2px 9px' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#14B8A6', background: 'rgba(52,211,153,0.10)', borderRadius: 99, padding: '2px 9px' }}>
             {getDisplaySubject(q.subject, q.collection)}
           </span>
         )}
@@ -166,7 +166,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
         {(q.subject || q.topic) && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
             {q.subject && (
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#34D399', background: 'rgba(52,211,153,0.10)', borderRadius: 99, padding: '2px 10px' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#14B8A6', background: 'rgba(52,211,153,0.10)', borderRadius: 99, padding: '2px 10px' }}>
                 {getDisplaySubject(q.subject, q.collection)}
               </span>
             )}
@@ -194,7 +194,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
             let rowBg, rowBorder, textColor, dotBg, dotColor;
             if (isCorrect) {
               rowBg = 'rgba(52,211,153,0.10)'; rowBorder = 'rgba(52,211,153,0.35)';
-              textColor = '#34D399'; dotBg = '#34D399'; dotColor = '#0F172A';
+              textColor = '#14B8A6'; dotBg = '#14B8A6'; dotColor = '#0F172A';
             } else if (isWrong) {
               rowBg = 'rgba(239,68,68,0.10)'; rowBorder = 'rgba(239,68,68,0.35)';
               textColor = '#FCA5A5'; dotBg = 'rgba(239,68,68,0.65)'; dotColor = '#FFF';
@@ -235,7 +235,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
                   {text}
                 </span>
                 {isCorrect && (
-                  <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                 )}
                 {isWrong && (
                   <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FCA5A5" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -250,7 +250,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           <div style={{
             textAlign: 'center', marginBottom: 14,
             fontSize: 14, fontWeight: 700,
-            color: selectedOption === q.correctOption ? '#34D399' : '#FCA5A5',
+            color: selectedOption === q.correctOption ? '#14B8A6' : '#FCA5A5',
           }}>
             {selectedOption === q.correctOption
               ? '✓ Correct!'
@@ -281,7 +281,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
         {revealed && (
           <>
             <div style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.22)', borderRadius: 14, padding: '14px 16px', marginBottom: 16 }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#34D399', marginBottom: q.explanation ? 10 : 0 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: '#14B8A6', marginBottom: q.explanation ? 10 : 0 }}>
                 Correct Answer: {q.correctOption}
               </p>
               {q.explanation && (
@@ -305,9 +305,9 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
               <button
                 onClick={handleMarkRevised}
                 disabled={markedDone}
-                style={{ background: 'none', border: 'none', cursor: markedDone ? 'default' : 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: markedDone ? '#34D399' : '#334155', fontWeight: 500 }}
+                style={{ background: 'none', border: 'none', cursor: markedDone ? 'default' : 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: markedDone ? '#14B8A6' : '#334155', fontWeight: 500 }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={markedDone ? '#34D399' : '#334155'} strokeWidth="2.5" strokeLinecap="round">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={markedDone ? '#14B8A6' : '#334155'} strokeWidth="2.5" strokeLinecap="round">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
                 {markedDone ? 'Marked as Revised' : 'Mark as Revised'}
@@ -505,7 +505,7 @@ export default function Saved() {
   // ── Loading ───────────────────────────────────────────────────────────
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-[#0f172a] pb-24">
+      <div className="min-h-screen [background:var(--bg-app)] pb-24">
         <div className="px-4 pt-8 pb-3">
           <h1 className="t-page-title font-display text-white">Saved Questions</h1>
           <p className="t-page-subtitle font-sans text-slate-400">Build your personal revision bank</p>
@@ -520,7 +520,7 @@ export default function Saved() {
   return (
     <>
       <Head><title>Saved Questions — SSC GK Score Booster</title></Head>
-      <div className="min-h-screen bg-[#0f172a] pb-24">
+      <div className="min-h-screen [background:var(--bg-app)] pb-24">
 
         {/* Header */}
         <div className="px-4 pt-8 pb-3">

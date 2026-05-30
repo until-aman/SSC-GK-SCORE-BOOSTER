@@ -61,10 +61,10 @@ export default function DetailedAnalysis() {
   return (
     <>
       <Head><title>Detailed Analysis — SSC GK Score Booster</title></Head>
-      <div className="min-h-screen bg-[#0f172a] pb-28">
+      <div className="min-h-screen [background:var(--bg-app)] pb-28">
 
         {/* Sticky top bar: title + stats + filter tabs */}
-        <div className="sticky top-0 z-10 bg-[#0f172a]/95 backdrop-blur-md border-b border-slate-800">
+        <div className="sticky top-0 z-10 [background:var(--bg-app)] backdrop-blur-md border-b border-slate-800">
           <div className="px-4 pt-3 pb-2 flex items-center gap-2.5">
             <button
               onClick={() => router.push('/result')}

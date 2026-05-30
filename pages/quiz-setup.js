@@ -46,8 +46,8 @@ const SUBJECT_SHEET_SECTIONS = [
 ];
 
 const COLORS = {
-  page: '#0F172A',
-  card: '#1E293B',
+  page: 'var(--bg-app)',
+  card: 'var(--bg-card)',
   border: 'rgba(148,163,184,0.16)',
   selected: '#10B981',
   selectedGlow: 'rgba(16,185,129,0.16)',

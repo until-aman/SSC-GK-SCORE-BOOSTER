@@ -282,7 +282,7 @@ export default function LandingPage() {
           animation: ambientFloatC 8.5s ease-in-out infinite;
         }
       `}</style>
-      <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#0a1628] via-[#0f172a] to-[#0c1a0e] flex flex-col items-center justify-center px-6 py-10">
+      <div className="relative min-h-screen overflow-hidden [background:var(--bg-app)] flex flex-col items-center justify-center px-6 py-10">
         <div className="ambient-glow ambient-glow-blue" aria-hidden="true" />
         <div className="ambient-glow ambient-glow-green" aria-hidden="true" />
         <div className="ambient-glow ambient-glow-orange" aria-hidden="true" />

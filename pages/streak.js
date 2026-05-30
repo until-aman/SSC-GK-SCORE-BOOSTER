@@ -89,7 +89,7 @@ export default function StreakPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-[#0f172a] px-4 pt-10">
+      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-10">
         <div className="skeleton h-9 w-48 rounded-xl mb-4" />
         <div className="skeleton h-36 rounded-3xl mb-4" />
         <div className="skeleton h-52 rounded-3xl" />
@@ -132,7 +132,7 @@ export default function StreakPage() {
         .prog-bar { animation: progFill 0.8s cubic-bezier(0.22,1,0.36,1) both; }
       `}</style>
 
-      <div className="min-h-screen bg-[#0f172a]" style={{ paddingBottom: 100 }}>
+      <div className="min-h-screen [background:var(--bg-app)]" style={{ paddingBottom: 100 }}>
 
         {/* ── HEADER ── */}
         <div className="px-4 pt-10 pb-3 flex items-center gap-3">
@@ -513,7 +513,7 @@ export default function StreakPage() {
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
         padding: '10px 16px 24px',
-        background: 'linear-gradient(to top, #0f172a 65%, transparent)',
+        background: 'linear-gradient(to top, var(--bg-app) 65%, transparent)',
       }}>
         <button
           onPointerDown={() => setBtnPress(true)}

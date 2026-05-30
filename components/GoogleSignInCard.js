@@ -41,7 +41,7 @@ export default function GoogleSignInCard({
         <p className="font-display" style={{ fontSize: 16, fontWeight: 800, color: '#F8FAFC', lineHeight: 1.2, marginBottom: 6 }}>
           {title}
         </p>
-        <p className="font-sans" style={{ fontSize: 13, color: '#64748B', lineHeight: 1.35 }}>
+        <p className="font-sans" style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.35 }}>
           {subtitle}
         </p>
       </div>

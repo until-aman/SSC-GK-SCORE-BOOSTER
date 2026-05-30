@@ -54,7 +54,7 @@ export default function HistoryPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-[#0f172a] px-4 pt-10">
+      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-10">
         <div className="flex items-center gap-3 mb-6">
           <BackButton />
           <h1 className="font-display font-bold text-[20px] text-white">XP History</h1>
@@ -68,7 +68,7 @@ export default function HistoryPage() {
     return (
       <>
         <Head><title>XP History — SSC GK Score Booster</title></Head>
-        <div className="min-h-screen bg-[#0f172a] pb-10">
+        <div className="min-h-screen [background:var(--bg-app)] pb-10">
           <div className="px-4 pt-10 pb-4 flex items-center gap-3">
             <BackButton />
             <h1 className="font-display font-black text-xl text-white">XP History</h1>
@@ -99,7 +99,7 @@ export default function HistoryPage() {
   return (
     <>
       <Head><title>XP History — SSC GK Score Booster</title></Head>
-      <div className="min-h-screen bg-[#0f172a] pb-10">
+      <div className="min-h-screen [background:var(--bg-app)] pb-10">
 
         {/* Header */}
         <div className="px-4 pt-10 pb-4 flex items-center gap-3">

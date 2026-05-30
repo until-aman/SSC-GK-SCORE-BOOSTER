@@ -142,7 +142,7 @@ export default function OnboardingSlides() {
           minHeight: '100dvh',
           WebkitTapHighlightColor: 'transparent',
           /* Full-screen dark base */
-          background: '#07111F',
+          background: 'var(--bg-app)',
         }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}

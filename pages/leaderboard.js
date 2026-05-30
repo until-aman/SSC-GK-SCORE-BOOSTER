@@ -52,31 +52,31 @@ function RankRow({ leader, isSelf }) {
     <AppCard
       className="flex items-center gap-3 mb-2"
       style={isSelf ? {
-        background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(31,41,55,0.80))',
-        border: '1px solid rgba(52,211,153,0.45)',
+        background: 'linear-gradient(135deg, rgba(20,184,166,0.12), rgba(23,45,71,0.90))',
+        border: '1px solid rgba(20,184,166,0.40)',
       } : {
-        background: 'rgba(31,41,55,0.72)',
-        border: '1px solid rgba(148,163,184,0.12)',
+        background: '#172D47',
+        border: '1px solid rgba(255,255,255,0.08)',
       }}
     >
-      <span className="t-stat-label font-display w-6 text-center flex-shrink-0" style={{ color: isSelf ? '#34D399' : '#475569' }}>
+      <span className="t-stat-label font-display w-6 text-center flex-shrink-0" style={{ color: isSelf ? '#14B8A6' : '#475569' }}>
         {leader.rank}
       </span>
-      <RankAvatar leader={leader} borderColor={isSelf ? 'rgba(52,211,153,0.55)' : undefined} />
+      <RankAvatar leader={leader} borderColor={isSelf ? 'rgba(20,184,166,0.55)' : undefined} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
           <p className="t-card-subtitle font-sans font-semibold truncate" style={{ color: isSelf ? '#F0FDF4' : '#F8FAFC', margin: 0 }}>
             {truncateName(leader.name)}
           </p>
           {isSelf && (
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#34D399', background: 'rgba(16,185,129,0.16)', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 6, padding: '1px 6px', flexShrink: 0, lineHeight: '16px' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#14B8A6', background: 'rgba(20,184,166,0.16)', border: '1px solid rgba(20,184,166,0.35)', borderRadius: 6, padding: '1px 6px', flexShrink: 0, lineHeight: '16px' }}>
               YOU
             </span>
           )}
         </div>
       </div>
       <div className="text-right">
-        <p className="t-stat-sm font-display" style={{ color: isSelf ? '#34D399' : '#CBD5E1' }}>
+        <p className="t-stat-sm font-display" style={{ color: isSelf ? '#14B8A6' : '#CBD5E1' }}>
           {(leader.totalScore || 0).toFixed(1)}
         </p>
         <p className="font-sans text-xs text-slate-500">XP</p>
@@ -194,7 +194,7 @@ export default function Leaderboard() {
         {/* Fixed header */}
         <div
           className="flex-shrink-0 px-4 pt-4 pb-4"
-          style={{ background: 'linear-gradient(180deg, #2e1065 0%, #1e1b4b 100%)' }}
+          style={{ background: '#172D47', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
         >
           {/* Close + Title on same row — title truly centred */}
           <div className="relative flex items-center mb-3">
@@ -225,9 +225,9 @@ export default function Leaderboard() {
                 onClick={() => setActiveTab(key)}
                 className="t-button-sm px-5 py-2 rounded-full font-display transition-all duration-200 active:scale-95"
                 style={activeTab === key ? {
-                  background: 'linear-gradient(135deg, #7C3AED, #4F46E5)',
+                  background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)',
                   color: '#FFFFFF',
-                  boxShadow: '0 4px 12px rgba(124,58,237,0.35)',
+                  boxShadow: '0 4px 12px rgba(255,107,22,0.35)',
                 } : {
                   background: 'rgba(148,163,184,0.10)',
                   color: '#94A3B8',
@@ -240,7 +240,7 @@ export default function Leaderboard() {
         </div>
 
         {/* Scrollable area */}
-        <div className="flex-1 overflow-y-auto min-h-0 bg-[#0f172a]">
+        <div className="flex-1 overflow-y-auto min-h-0 [background:var(--bg-app)]">
           <div className="px-4 pt-4 pb-6">
 
             {loading ? (
@@ -287,7 +287,7 @@ export default function Leaderboard() {
                     <p className="font-sans text-slate-400 text-[13px]">Play a quiz to appear on the leaderboard!</p>
                   </div>
                 ) : (
-                  <div className="mb-4 px-4 py-4" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.20), rgba(16,185,129,0.10))', border: '1px solid rgba(139,92,246,0.45)', borderRadius: 22, boxShadow: '0 14px 35px rgba(124,58,237,0.14)' }}>
+                  <div className="mb-4 px-4 py-4" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.20), rgba(20,184,166,0.10))', border: '1px solid rgba(139,92,246,0.45)', borderRadius: 22, boxShadow: '0 14px 35px rgba(124,58,237,0.14)' }}>
                     <p className="t-section-label" style={{ color: '#a78bfa', marginBottom: 12 }}>Your Rank</p>
 
                     {/* Rank + YOU chip */}
@@ -295,7 +295,7 @@ export default function Leaderboard() {
                       <span className="t-stat-lg font-display text-violet-300 flex-shrink-0">
                         #{currentUser.rank}
                       </span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#34D399', background: 'rgba(16,185,129,0.16)', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 7, padding: '2px 8px', lineHeight: '18px', flexShrink: 0 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#14B8A6', background: 'rgba(20,184,166,0.16)', border: '1px solid rgba(20,184,166,0.35)', borderRadius: 7, padding: '2px 8px', lineHeight: '18px', flexShrink: 0 }}>
                         YOU
                       </span>
                     </div>
@@ -425,7 +425,7 @@ export default function Leaderboard() {
         </div>
 
         {/* Practice CTA — flex child, always visible above bottom nav */}
-        <div className="flex-shrink-0 px-4 pt-2 pb-3" style={{ background: '#0f172a' }}>
+        <div className="flex-shrink-0 px-4 pt-2 pb-3" style={{ background: 'var(--bg-app)' }}>
           <button
             onClick={() => router.push('/dashboard')}
             className="w-full font-display font-bold text-base text-white active:scale-[0.98] transition-transform"
