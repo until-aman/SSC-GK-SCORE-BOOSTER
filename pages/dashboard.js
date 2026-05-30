@@ -795,40 +795,19 @@ export default function Dashboard() {
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
               </svg>
             </div>
-            <span className="font-display font-black text-[13px] tracking-wide text-white leading-none">
-              SSC GK<br />
-              <span style={{ color: '#f97316' }}>SCORE BOOSTER</span>
+            <span className="font-display font-black text-[13px] tracking-wide leading-none">
+              <span className="text-white">SSC GK </span><span style={{ color: '#f97316' }}>SCORE BOOSTER</span>
             </span>
           </div>
 
-          {/* Right: Avatar + level badge */}
-          <div className="flex items-center gap-2">
-            {process.env.NODE_ENV === 'development' && (
-              <button
-                type="button"
-                onClick={handleClearAppCache}
-                className="rounded-full border border-rose-400/30 bg-rose-500/10 px-2.5 py-1 font-sans text-[10px] font-semibold text-rose-200"
-              >
-                Clear App Cache
-              </button>
-            )}
-            {isLoggedIn ? (
-              <span className="bg-white/10 rounded-full px-2.5 py-1 font-display font-bold text-xs text-white/70">
-                ⭐ {level}
-              </span>
-            ) : (
-              <span className="bg-slate-700/50 rounded-full px-2.5 py-1 font-sans text-xs text-slate-500">
-                Guest
-              </span>
-            )}
-            <button
-              onClick={() => router.push('/profile')}
-              className="flex-shrink-0 active:scale-90 transition-transform"
-              aria-label="Go to profile"
-            >
-              <Avatar imageUrl={googlePhoto} name={displayName} size={36} />
-            </button>
-          </div>
+          {/* Right: Avatar */}
+          <button
+            onClick={() => router.push('/profile')}
+            className="flex-shrink-0 active:scale-90 transition-transform"
+            aria-label="Go to profile"
+          >
+            <Avatar imageUrl={googlePhoto} name={displayName} size={36} />
+          </button>
         </div>
 
         {/* ── WELCOME MESSAGE ── */}
