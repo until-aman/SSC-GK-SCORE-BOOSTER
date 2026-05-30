@@ -816,15 +816,6 @@ export default function Dashboard() {
                 Clear App Cache
               </button>
             )}
-            <button
-              onClick={() => isLoggedIn && router.push('/history')}
-              className="bg-yellow-500/20 border border-yellow-400/50 rounded-full px-3 py-1.5 flex items-center gap-1.5"
-            >
-              <span className="text-[14px] leading-none" style={{ filter: 'drop-shadow(0 0 4px rgba(234,179,8,0.7))' }}>🪙</span>
-              <span className={`font-display font-bold text-xs ${isGuest ? 'text-slate-600' : 'text-yellow-400'}`}>
-                {isGuest ? '0' : totalXP}
-              </span>
-            </button>
           </div>
         </div>
 
@@ -850,8 +841,12 @@ export default function Dashboard() {
 
         {/* ── STAT MINI-CARDS ── */}
         <div className="px-4 mb-3 grid grid-cols-3 gap-2.5">
-          {/* Streak */}
-          <div style={{ background: '#172D47', border: '1px solid rgba(245,158,11,0.28)', borderRadius: 16, padding: '12px 14px', boxShadow: '0 0 18px rgba(245,158,11,0.08)' }}>
+          {/* Streak → /streak */}
+          <button
+            onClick={() => !isGuest && router.push('/streak')}
+            className="text-left active:scale-95 transition-transform"
+            style={{ background: '#172D47', border: '1px solid rgba(245,158,11,0.28)', borderRadius: 16, padding: '12px 14px', boxShadow: '0 0 18px rgba(245,158,11,0.08)', cursor: isGuest ? 'default' : 'pointer' }}
+          >
             <div className="flex items-center gap-1.5" style={{ marginBottom: 8 }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2C9 7 6 9.5 6 14a6 6 0 0012 0c0-4.5-3-7-6-12zm0 17a4 4 0 01-4-4c0-2.5 1.5-4.5 4-7 2.5 2.5 4 4.5 4 7a4 4 0 01-4 4z"/></svg>
               <span className="font-sans font-bold uppercase" style={{ fontSize: 10, color: '#F59E0B', letterSpacing: '0.07em' }}>Streak</span>
@@ -859,21 +854,30 @@ export default function Dashboard() {
             <p className="font-display font-black" style={{ fontSize: 22, lineHeight: 1, color: '#F0F4F8', margin: 0 }}>
               {isGuest ? '—' : streakCount > 0 ? `${streakCount}d` : '0d'}
             </p>
-          </div>
+          </button>
 
-          {/* XP */}
-          <div style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.28)', borderRadius: 16, padding: '12px 14px', boxShadow: '0 0 18px rgba(20,184,166,0.08)' }}>
+          {/* XP → /history */}
+          <button
+            onClick={() => !isGuest && router.push('/history')}
+            className="text-left active:scale-95 transition-transform"
+            style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.28)', borderRadius: 16, padding: '12px 14px', boxShadow: '0 0 18px rgba(20,184,166,0.08)', cursor: isGuest ? 'default' : 'pointer' }}
+          >
             <div className="flex items-center gap-1.5" style={{ marginBottom: 8 }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
               <span className="font-sans font-bold uppercase" style={{ fontSize: 10, color: '#14B8A6', letterSpacing: '0.07em' }}>XP</span>
             </div>
-            <p className="font-display font-black" style={{ fontSize: 22, lineHeight: 1, color: '#F0F4F8', margin: 0 }}>
+            <p className="font-display font-black flex items-center gap-1.5" style={{ fontSize: 22, lineHeight: 1, color: '#F0F4F8', margin: 0 }}>
+              {!isGuest && <span style={{ fontSize: 16, lineHeight: 1, filter: 'drop-shadow(0 0 4px rgba(234,179,8,0.6))' }}>🪙</span>}
               {isGuest ? '—' : totalXP >= 10000 ? `${(totalXP / 1000).toFixed(1)}k` : totalXP.toLocaleString()}
             </p>
-          </div>
+          </button>
 
-          {/* Rank */}
-          <div style={{ background: '#172D47', border: '1px solid rgba(124,92,255,0.28)', borderRadius: 16, padding: '12px 14px', boxShadow: '0 0 18px rgba(124,92,255,0.08)' }}>
+          {/* Rank → /leaderboard */}
+          <button
+            onClick={() => router.push('/leaderboard')}
+            className="text-left active:scale-95 transition-transform"
+            style={{ background: '#172D47', border: '1px solid rgba(124,92,255,0.28)', borderRadius: 16, padding: '12px 14px', boxShadow: '0 0 18px rgba(124,92,255,0.08)', cursor: 'pointer' }}
+          >
             <div className="flex items-center gap-1.5" style={{ marginBottom: 8 }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C5CFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 010-5H6"/><path d="M18 9h1.5a2.5 2.5 0 000-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0012 0V2z"/></svg>
               <span className="font-sans font-bold uppercase" style={{ fontSize: 10, color: '#7C5CFF', letterSpacing: '0.07em' }}>Rank</span>
@@ -881,7 +885,7 @@ export default function Dashboard() {
             <p className="font-display font-black" style={{ fontSize: 22, lineHeight: 1, color: '#F0F4F8', margin: 0 }}>
               {isGuest || !weeklyRank ? '—' : `#${weeklyRank}`}
             </p>
-          </div>
+          </button>
         </div>
 
         {/* ── DAILY CHALLENGE HERO CARD ── */}
