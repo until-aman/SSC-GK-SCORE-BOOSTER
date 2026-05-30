@@ -36,7 +36,7 @@ const SUBJECT_THEME = {
   modernHistory:  { label: 'Modern History',    icon: '🗺️', subtitle: 'Freedom • Reforms',       accent: '#8B5CF6', glow: 'rgba(139,92,246,0.18)'   },
   economics:      { label: 'Economics',          icon: '📈',  subtitle: 'Banking • Budget',        accent: '#F97316', glow: 'rgba(249,115,22,0.18)'   },
   physics:        { label: 'Physics',            icon: '⚛️', subtitle: 'Motion • Energy',         accent: '#2563EB', glow: 'rgba(37,99,235,0.18)'    },
-  chemistry:      { label: 'Chemistry',          icon: '🧪',  subtitle: 'Elements • Reactions',   accent: '#10B981', glow: 'rgba(16,185,129,0.18)'   },
+  chemistry:      { label: 'Chemistry',          icon: '🧪',  subtitle: 'Elements • Reactions',   accent: '#14B8A6', glow: 'rgba(20,184,166,0.18)'   },
   biology:        { label: 'Biology',            icon: '🧬',  subtitle: 'Human Body • Life',       accent: '#16A34A', glow: 'rgba(22,163,74,0.18)'    },
   currentAffairs: { label: 'Current Affairs',   icon: '📰',  subtitle: 'Latest GK',               accent: '#DB2777', glow: 'rgba(219,39,119,0.18)'   },
   staticGk:       { label: 'Static GK',          icon: '📚',  subtitle: 'Awards • Books',          accent: '#14B8A6', glow: 'rgba(20,184,166,0.18)'   },
@@ -231,17 +231,18 @@ export default function SubjectsPage() {
     <>
       <Head><title>Choose a Subject — SSC GK Score Booster</title></Head>
 
-      <style>{`
+      <style suppressHydrationWarning>{`
         /* ── Shimmer skeleton ── */
         @keyframes shimmer {
           0%   { background-position:  200% 0; }
           100% { background-position: -200% 0; }
         }
         .skeleton-card {
-          background: linear-gradient(90deg, #1E293B 25%, #263449 50%, #1E293B 75%);
+          background: linear-gradient(90deg, #172D47 25%, #1E3554 50%, #172D47 75%);
           background-size: 200% 100%;
           animation: shimmer 1.2s infinite;
           border-radius: 22px;
+          border: 1px solid rgba(255,255,255,0.07);
         }
         .skeleton-bone {
           background: linear-gradient(90deg,
@@ -260,12 +261,8 @@ export default function SubjectsPage() {
           min-height: 130px;
           padding: 14px;
           border-radius: 22px;
-          background: linear-gradient(
-            145deg,
-            rgba(30, 41, 59, 0.96),
-            rgba(15, 23, 42, 0.98)
-          );
-          border: 1px solid rgba(148, 163, 184, 0.12);
+          background: #172D47;
+          border: 1px solid rgba(255, 255, 255, 0.10);
           overflow: hidden;
           cursor: pointer;
           display: flex;
@@ -332,12 +329,12 @@ export default function SubjectsPage() {
           transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
         .subj-search-wrap:focus-within {
-          border-color: rgba(124, 58, 237, 0.5) !important;
-          box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.16);
+          border-color: rgba(255, 107, 22, 0.45) !important;
+          box-shadow: 0 0 0 3px rgba(255, 107, 22, 0.12);
         }
       `}</style>
 
-      <div className="min-h-screen pb-28" style={{ background: '#0f172a' }}>
+      <div className="min-h-screen pb-28" style={{ background: 'var(--bg-app)' }}>
 
         {/* ── HEADER ── */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '24px 20px 12px' }}>
@@ -346,7 +343,7 @@ export default function SubjectsPage() {
             className="active:scale-95 transition-transform"
             style={{
               width: 36, height: 36, borderRadius: '50%',
-              background: '#1E293B', border: '1px solid rgba(255,255,255,0.10)',
+              background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.10)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#fff', flexShrink: 0, marginTop: 2,
             }}
@@ -370,7 +367,7 @@ export default function SubjectsPage() {
         <div style={{ padding: '0 20px 12px' }}>
           <div className="subj-search-wrap" style={{
             display: 'flex', alignItems: 'center', gap: 10,
-            background: '#1E293B',
+            background: 'var(--bg-card)',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: 14,
             padding: '10px 14px',
@@ -562,7 +559,7 @@ export default function SubjectsPage() {
             <div key={section.label} style={{ marginBottom: 20 }}>
               {/* Section label */}
               <p className="t-section-label" style={{
-                color: '#64748B',
+                color: '#7A8FA6',
                 margin: '0 20px 8px',
               }}>
                 {section.label}
@@ -582,7 +579,7 @@ export default function SubjectsPage() {
           maxWidth: 430, margin: '0 auto',
           padding: '10px 16px',
           paddingBottom: 'max(20px, env(safe-area-inset-bottom, 20px))',
-          background: 'linear-gradient(to top, #0f172a 72%, transparent)',
+          background: 'linear-gradient(to top, var(--bg-app) 72%, transparent)',
         }}>
 
           {/* Main CTA button */}
@@ -600,10 +597,10 @@ export default function SubjectsPage() {
               borderRadius: 18,
               border: selected ? 'none' : '1px solid rgba(148,163,184,0.16)',
               background: displayCounts === null
-                ? '#1E293B'
+                ? '#172D47'
                 : selected
-                  ? 'linear-gradient(90deg, #FF7A1A, #FF5A00)'
-                  : '#1E293B',
+                  ? 'linear-gradient(135deg, #FF8A1F, #FF5A00)'
+                  : '#172D47',
               boxShadow: selected ? '0 12px 28px rgba(255,106,0,0.28)' : 'none',
               color: selected ? '#ffffff' : '#64748B',
               fontSize: 15,

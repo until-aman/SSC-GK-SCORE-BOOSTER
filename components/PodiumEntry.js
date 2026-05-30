@@ -50,16 +50,16 @@ function GhostEntry({ rank }) {
   return (
     <div className="flex flex-col items-center pop-in" style={{ animationDelay: `${rank * 80}ms` }}>
       <div
-        className="rounded-full bg-slate-700 border-4 border-slate-600 flex items-center justify-center"
-        style={{ width: cfg.size, height: cfg.size }}
+        className="rounded-full border-4 flex items-center justify-center"
+        style={{ width: cfg.size, height: cfg.size, background: '#1E3554', borderColor: 'rgba(255,255,255,0.12)' }}
       >
-        <span className="font-display font-black text-slate-500 text-xl">?</span>
+        <span className="font-display font-black text-white/25 text-xl">?</span>
       </div>
-      <p className={`text-slate-600 font-display font-bold ${cfg.name} text-center mt-1.5 truncate`}>---</p>
-      <div className="bg-slate-700/30 rounded-full px-2.5 py-0.5 mt-1">
-        <span className={`font-display font-bold text-slate-600 ${cfg.score}`}>0</span>
+      <p className={`text-white/20 font-display font-bold ${cfg.name} text-center mt-1.5 truncate`}>---</p>
+      <div className="rounded-full px-2.5 py-0.5 mt-1" style={{ background: 'rgba(255,255,255,0.06)' }}>
+        <span className={`font-display font-bold text-white/25 ${cfg.score}`}>0</span>
       </div>
-      <div className={`${cfg.block} mt-2 rounded-t-xl flex items-center justify-center border-slate-700 bg-slate-700/20`}>
+      <div className={`${cfg.block} mt-2 rounded-t-xl flex items-center justify-center`} style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)' }}>
         <span className="text-2xl opacity-30">{medals[rank]}</span>
       </div>
     </div>

@@ -104,8 +104,8 @@ export default function Profile() {
           <div
             className="flex items-center gap-4 px-5 py-5"
             style={{
-              background: 'linear-gradient(135deg, #0f1f3d 0%, #111C2E 60%, #0f2d2a 100%)',
-              border: '1px solid rgba(255,255,255,0.07)',
+              background: '#172D47',
+              border: '1px solid rgba(255,255,255,0.10)',
               borderRadius: 22,
             }}
           >
@@ -166,19 +166,19 @@ export default function Profile() {
             {/* XP → XP History */}
             <button
               onClick={() => !isGuest && router.push('/history')}
-              className="bg-slate-800 rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
-              style={{ border: '1px solid rgba(52,211,153,0.15)' }}
+              className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
+              style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.20)' }}
             >
               <span className="text-lg leading-none mb-0.5">🪙</span>
-              <span className="t-stat-sm font-display text-emerald-400">{isGuest ? '—' : totalXP.toLocaleString()}</span>
+              <span className="t-stat-sm font-display" style={{ color: '#14B8A6' }}>{isGuest ? '—' : totalXP.toLocaleString()}</span>
               <span className="t-stat-label font-sans text-slate-500">Total XP</span>
             </button>
 
             {/* Streak → Streak History */}
             <button
               onClick={() => !isGuest && router.push('/streak')}
-              className="bg-slate-800 rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
-              style={{ border: '1px solid rgba(249,115,22,0.15)' }}
+              className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
+              style={{ background: '#172D47', border: '1px solid rgba(255,107,22,0.20)' }}
             >
               <span className="text-lg leading-none mb-0.5">🔥</span>
               <span className="t-stat-sm font-display text-orange-400">{isGuest ? '—' : streak}</span>
@@ -188,8 +188,8 @@ export default function Profile() {
             {/* Level → level modal */}
             <button
               onClick={() => !isGuest && setLevelModal(true)}
-              className="bg-slate-800 rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
-              style={{ border: '1px solid rgba(167,139,250,0.15)' }}
+              className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
+              style={{ background: '#172D47', border: '1px solid rgba(124,92,255,0.20)' }}
             >
               <span className="text-lg leading-none mb-0.5">⭐</span>
               <span className="t-stat-sm font-display text-violet-400 text-center">{isGuest ? '—' : level}</span>
@@ -198,15 +198,15 @@ export default function Profile() {
           </div>
 
           {/* Level progress bar */}
-          <div className="bg-slate-800 rounded-2xl px-4 py-3 mt-3">
+          <div className="rounded-2xl px-4 py-3 mt-3" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div className="flex items-center justify-between">
               <span className="t-card-subtitle font-display font-bold text-white">{level}</span>
               <span className="t-card-subtitle font-sans text-slate-500">{nextLevel || '—'}</span>
             </div>
-            <div className="mt-2 h-2 bg-slate-700 rounded-3xl border border-slate-700 overflow-hidden">
+            <div className="mt-2 h-2 rounded-3xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
               <div
-                className="h-full bg-emerald-500 rounded-full transition-all duration-700"
-                style={{ width: `${xpBarWidth}%` }}
+                className="h-full rounded-full transition-all duration-700"
+                style={{ width: `${xpBarWidth}%`, background: 'linear-gradient(90deg, #14B8A6, #2DD4BF)' }}
               />
             </div>
             <p className="text-right font-sans text-xs text-slate-500 mt-1">
@@ -227,7 +227,7 @@ export default function Profile() {
               { icon: '🔥', label: '7-Day\nStreak',       color: '#f97316', glow: 'rgba(249,115,22,0.22)',  unlocked: !isGuest && streak >= 7  },
               { icon: '🏆', label: 'Champion',            color: '#fbbf24', glow: 'rgba(251,191,36,0.22)',  unlocked: !isGuest && ['Champion','Legend'].includes(level) },
               { icon: '👑', label: 'Legend',              color: '#fbbf24', glow: 'rgba(251,191,36,0.22)',  unlocked: !isGuest && level === 'Legend' },
-              { icon: '📚', label: '100\nQuizzes',        color: '#34d399', glow: 'rgba(52,211,153,0.22)',  unlocked: false },
+              { icon: '📚', label: '100\nQuizzes',        color: '#14B8A6', glow: 'rgba(20,184,166,0.22)',  unlocked: false },
               { icon: '🏅', label: 'Top 100\nRank',       color: '#60a5fa', glow: 'rgba(96,165,250,0.22)',  unlocked: false },
             ];
 
@@ -295,7 +295,7 @@ export default function Profile() {
             {/* Streak History */}
             <button
               onClick={() => router.push('/streak')}
-              className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-4 flex items-center gap-3 active:scale-[0.98] transition-transform"
+              className="w-full rounded-2xl px-4 py-4 flex items-center gap-3 active:scale-[0.98] transition-transform" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="#f97316">
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
@@ -307,9 +307,9 @@ export default function Profile() {
             {/* XP History */}
             <button
               onClick={() => router.push('/history')}
-              className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-4 flex items-center gap-3 active:scale-[0.98] transition-transform"
+              className="w-full rounded-2xl px-4 py-4 flex items-center gap-3 active:scale-[0.98] transition-transform" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="1.5">
                 <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <span className="t-card-subtitle font-sans text-white flex-1 text-left">XP History</span>
@@ -352,11 +352,11 @@ export default function Profile() {
         >
           <div
             className="w-full max-w-[430px] px-5 pt-5 pb-10"
-            style={{ background: '#111C2E', borderRadius: '22px 22px 0 0', border: '1px solid rgba(148,163,184,0.12)' }}
+            style={{ background: '#172D47', borderRadius: '22px 22px 0 0', border: '1px solid rgba(255,255,255,0.10)' }}
             onClick={e => e.stopPropagation()}
           >
             {/* Handle */}
-            <div className="w-10 h-1 bg-slate-600 rounded-full mx-auto mb-4" />
+            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'rgba(255,255,255,0.15)' }} />
             <h3 className="font-display font-black text-lg text-white mb-1">Level Progress</h3>
             <p className="font-sans text-xs text-slate-400 mb-4">Earn XP by completing quizzes to level up.</p>
 

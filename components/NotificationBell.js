@@ -82,7 +82,8 @@ export default function NotificationBell({ streakCount = 0 }) {
       {/* Bell icon button */}
       <button
         onClick={handleBellTap}
-        className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center relative active:scale-90 transition-transform"
+        className="w-9 h-9 rounded-full flex items-center justify-center relative active:scale-90 transition-transform"
+        style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.10)' }}
         aria-label="Daily reminder settings"
       >
         <svg
@@ -90,7 +91,7 @@ export default function NotificationBell({ streakCount = 0 }) {
           fill={isEnabled ? 'currentColor' : 'none'}
           stroke="currentColor"
           strokeWidth="1.5"
-          className={`w-5 h-5 ${isEnabled ? 'text-emerald-400' : 'text-slate-400'}`}
+          className={`w-5 h-5 ${isEnabled ? 'text-[#14B8A6]' : 'text-slate-400 bg-[#1E3554] border border-white/[0.08]'}`}
         >
           <path
             d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
@@ -100,7 +101,7 @@ export default function NotificationBell({ streakCount = 0 }) {
         </svg>
         {/* Green dot when enabled */}
         {isEnabled && (
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-400 rounded-full border border-slate-800" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#14B8A6] rounded-full border border-[#172D47]" />
         )}
       </button>
 
@@ -112,14 +113,16 @@ export default function NotificationBell({ streakCount = 0 }) {
           onClick={() => setShowSheet(false)}
         >
           <div
-            className="w-full max-w-[390px] bg-[#1e293b] border border-slate-700/60 rounded-3xl px-6 pt-6 pb-8 overflow-y-auto max-h-[85vh] relative"
+            className="w-full max-w-[390px] rounded-3xl px-6 pt-6 pb-8 overflow-y-auto max-h-[85vh] relative"
+            style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.10)' }}
             onClick={e => e.stopPropagation()}
           >
 
             {/* Close button */}
             <button
               onClick={() => setShowSheet(false)}
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/60 active:scale-90 transition-transform"
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full active:scale-90 transition-transform"
+              style={{ background: 'rgba(30,53,84,0.80)' }}
               aria-label="Close"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
@@ -135,7 +138,7 @@ export default function NotificationBell({ streakCount = 0 }) {
 
             {/* Unsupported */}
             {!supported && (
-              <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 text-center">
+              <div className="rounded-2xl p-4 text-center" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <p className="text-2xl mb-2">😕</p>
                 <p className="font-sans text-sm text-slate-300">
                   Your browser does not support push notifications.
@@ -169,8 +172,8 @@ export default function NotificationBell({ streakCount = 0 }) {
                       onClick={() => handleTimeChange(hour)}
                       className={`px-4 py-2 rounded-full font-sans font-semibold text-sm transition-all active:scale-95 ${
                         reminderHour === hour
-                          ? 'bg-emerald-500 text-white'
-                          : 'bg-slate-800 border border-slate-700 text-slate-400'
+                          ? 'bg-[#14B8A6] text-white'
+                          : 'text-slate-400 bg-[#1E3554] border border-white/[0.08]'
                       }`}
                     >
                       {label}
@@ -182,7 +185,8 @@ export default function NotificationBell({ streakCount = 0 }) {
                 <button
                   onClick={handleEnable}
                   disabled={saving}
-                  className="w-full py-4 rounded-2xl bg-emerald-500 text-white font-display font-bold text-base active:scale-95 transition-transform disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(16,185,129,0.3)]"
+                  className="w-full py-4 rounded-2xl text-white font-display font-bold text-base active:scale-95 transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{ background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)', boxShadow: '0 4px 14px rgba(255,107,22,0.30)' }}
                 >
                   {saving ? 'Enabling...' : 'Enable Daily Reminder 🔔'}
                 </button>
@@ -194,16 +198,16 @@ export default function NotificationBell({ streakCount = 0 }) {
               saved ? (
                 <div className="text-center py-4">
                   <p className="text-3xl mb-2">✅</p>
-                  <p className="font-display font-bold text-base text-emerald-400">Reminder set!</p>
+                  <p className="font-display font-bold text-base text-[#14B8A6]">Reminder set!</p>
                 </div>
               ) : (
                 <>
                   {/* Current schedule */}
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 mb-5">
+                  <div className="bg-[rgba(20,184,166,0.10)] border border-[rgba(20,184,166,0.20)] rounded-2xl p-4 mb-5">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">🔔</span>
                       <div>
-                        <p className="font-display font-bold text-sm text-emerald-400">Reminders enabled</p>
+                        <p className="font-display font-bold text-sm text-[#14B8A6]">Reminders enabled</p>
                         <p className="font-sans text-xs text-slate-400 mt-0.5">
                           Daily at{' '}
                           {new Date(2000, 0, 1, reminderHour).toLocaleTimeString('en-IN', {
@@ -226,8 +230,8 @@ export default function NotificationBell({ streakCount = 0 }) {
                         onClick={() => handleTimeChange(hour)}
                         className={`px-4 py-2 rounded-full font-sans font-semibold text-sm transition-all active:scale-95 ${
                           reminderHour === hour
-                            ? 'bg-emerald-500 text-white'
-                            : 'bg-slate-800 border border-slate-700 text-slate-400'
+                            ? 'bg-[#14B8A6] text-white'
+                            : 'text-slate-400 bg-[#1E3554] border border-white/[0.08]'
                         }`}
                       >
                         {label}

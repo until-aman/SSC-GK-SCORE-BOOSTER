@@ -13,7 +13,7 @@ const MILESTONES = [
   { days: 7,  xp: 30,  label: '1-week',  color: '#f97316', floor: '#92400E' },
   { days: 14, xp: 60,  label: '2-week',  color: '#f59e0b', floor: '#78350F' },
   { days: 30, xp: 150, label: '1-month', color: '#eab308', floor: '#713F12' },
-  { days: 90, xp: 500, label: '3-month', color: '#10b981', floor: '#065F46' },
+  { days: 90, xp: 500, label: '3-month', color: '#14B8A6', floor: '#0D4F47' },
 ];
 
 const LightningSVG = ({ size = 16, color = 'white' }) => (
@@ -89,7 +89,7 @@ export default function StreakPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-[#0f172a] px-4 pt-10">
+      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-10">
         <div className="skeleton h-9 w-48 rounded-xl mb-4" />
         <div className="skeleton h-36 rounded-3xl mb-4" />
         <div className="skeleton h-52 rounded-3xl" />
@@ -122,7 +122,7 @@ export default function StreakPage() {
   return (
     <>
       <Head><title>Streak History — SSC GK Score Booster</title></Head>
-      <style>{`
+      <style suppressHydrationWarning>{`
         @keyframes streakPulse {
           0%,100% { box-shadow: 0 0 0 0 rgba(249,115,22,0.45); }
           50%      { box-shadow: 0 0 0 14px rgba(249,115,22,0); }
@@ -132,7 +132,7 @@ export default function StreakPage() {
         .prog-bar { animation: progFill 0.8s cubic-bezier(0.22,1,0.36,1) both; }
       `}</style>
 
-      <div className="min-h-screen bg-[#0f172a]" style={{ paddingBottom: 100 }}>
+      <div className="min-h-screen [background:var(--bg-app)]" style={{ paddingBottom: 100 }}>
 
         {/* ── HEADER ── */}
         <div className="px-4 pt-10 pb-3 flex items-center gap-3">
@@ -177,10 +177,10 @@ export default function StreakPage() {
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
               borderRadius: 20, padding: '5px 12px',
-              background: playedToday ? 'rgba(16,185,129,0.12)' : 'rgba(249,115,22,0.10)',
-              border: playedToday ? '1px solid rgba(16,185,129,0.26)' : '1px solid rgba(249,115,22,0.24)',
+              background: playedToday ? 'rgba(20,184,166,0.12)' : 'rgba(249,115,22,0.10)',
+              border: playedToday ? '1px solid rgba(20,184,166,0.26)' : '1px solid rgba(249,115,22,0.24)',
             }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: playedToday ? '#34d399' : '#fb923c' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: playedToday ? '#14B8A6' : '#fb923c' }}>
                 {playedToday ? '✓ Protected today' : '⚡ At risk — play now!'}
               </span>
             </div>
@@ -230,7 +230,7 @@ export default function StreakPage() {
             </div>
           )}
           {!nextMs && (
-            <p className="font-display font-bold text-sm text-center mt-4" style={{ color: '#10b981' }}>
+            <p className="font-display font-bold text-sm text-center mt-4" style={{ color: '#14B8A6' }}>
               🏆 All milestones unlocked! Legend status.
             </p>
           )}
@@ -275,7 +275,7 @@ export default function StreakPage() {
                     <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.38)' }}>/ 7 active days</span>
                   </div>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: playedToday ? '#34d399' : '#fb923c', marginBottom: 2 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: playedToday ? '#14B8A6' : '#fb923c', marginBottom: 2 }}>
                   {playedToday ? '✓ Protected' : '⚡ Play today'}
                 </span>
               </div>
@@ -494,7 +494,7 @@ export default function StreakPage() {
 
           {!nextMs && (
             <div style={{ padding: '18px', textAlign: 'center' }}>
-              <p className="font-display font-bold text-sm" style={{ color: '#10b981' }}>
+              <p className="font-display font-bold text-sm" style={{ color: '#14B8A6' }}>
                 🏆 All milestones unlocked! Legend status.
               </p>
             </div>
@@ -513,7 +513,7 @@ export default function StreakPage() {
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
         padding: '10px 16px 24px',
-        background: 'linear-gradient(to top, #0f172a 65%, transparent)',
+        background: 'linear-gradient(to top, var(--bg-app) 65%, transparent)',
       }}>
         <button
           onPointerDown={() => setBtnPress(true)}

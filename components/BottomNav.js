@@ -71,10 +71,10 @@ export default function BottomNav() {
           padding: '6px 20px 5px',
         }}>
           <div style={{
-            background: 'rgba(17, 28, 46, 0.92)',
+            background: 'rgba(13, 27, 46, 0.95)',
             backdropFilter: 'blur(18px)',
             WebkitBackdropFilter: 'blur(18px)',
-            border: '1px solid rgba(148, 163, 184, 0.14)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
             borderRadius: '28px',
             padding: '8px 12px',
             display: 'flex',
@@ -104,21 +104,16 @@ export default function BottomNav() {
                     gap: 3,
                     cursor: 'pointer',
                     minWidth: 56,
-                    padding: '6px 4px',
+                    padding: '6px 8px',
                     borderRadius: 16,
-                    background: active
-                      ? 'linear-gradient(135deg, #7C3AED, #3B82F6)'
-                      : 'transparent',
-                    boxShadow: active
-                      ? '0 8px 24px rgba(124, 58, 237, 0.28)'
-                      : 'none',
+                    background: active ? 'rgba(255, 107, 22, 0.15)' : 'transparent',
                     flexShrink: 0,
                     boxSizing: 'border-box',
                   }}
                 >
-                  <Icon color={active ? '#ffffff' : '#94A3B8'} />
+                  <Icon color={active ? '#FF6B16' : '#7A8FA6'} />
                   <span className={active ? 't-nav-label-active' : 't-nav-label'} style={{
-                    color: active ? '#ffffff' : '#94A3B8',
+                    color: active ? '#FF6B16' : '#7A8FA6',
                     fontFamily: 'inherit',
                   }}>
                     {label}

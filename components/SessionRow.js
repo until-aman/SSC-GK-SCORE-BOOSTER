@@ -46,9 +46,9 @@ export default function SessionRow({ session: s }) {
 
   const style = getSubjectStyle(s.subject);
   return (
-    <div className="bg-slate-800 rounded-2xl px-4 py-3.5 mb-2 flex items-center gap-3">
+    <div className="rounded-2xl px-4 py-3.5 mb-2 flex items-center gap-3" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
       {/* Subject icon */}
-      <div className="w-8 h-8 rounded-xl bg-slate-700 flex items-center justify-center flex-shrink-0 text-lg">
+      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-lg" style={{ background: '#1E3554' }}>
         {style.icon}
       </div>
 
@@ -62,7 +62,7 @@ export default function SessionRow({ session: s }) {
 
       {/* Right */}
       <div className="flex flex-col items-end gap-0.5">
-        <span className="font-display font-bold text-[15px] text-emerald-400">+{s.xpEarned} XP</span>
+        <span className="font-display font-bold text-[15px] text-[#14B8A6]">+{s.xpEarned} XP</span>
         <span className="text-[11px] text-slate-500">{s.correctAnswers}/{s.totalQuestions} correct</span>
       </div>
     </div>

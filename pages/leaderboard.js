@@ -30,7 +30,7 @@ function RankAvatar({ leader, size = 32, borderColor }) {
   const fontSize   = Math.round(size * 0.42);
   const sharedStyle = {
     width: size, height: size, borderRadius: '50%', flexShrink: 0,
-    border: `2px solid ${borderColor || '#334155'}`,
+    border: `2px solid ${borderColor || 'rgba(255,255,255,0.12)'}`,
     overflow: 'hidden',
   };
   if (leader.image && !imgError) {
@@ -41,7 +41,7 @@ function RankAvatar({ leader, size = 32, borderColor }) {
     );
   }
   return (
-    <div style={{ ...sharedStyle, background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ ...sharedStyle, background: '#1E3554', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <span style={{ fontSize, fontWeight: 900, color: 'white', fontFamily: 'inherit' }}>{initial}</span>
     </div>
   );
@@ -52,31 +52,31 @@ function RankRow({ leader, isSelf }) {
     <AppCard
       className="flex items-center gap-3 mb-2"
       style={isSelf ? {
-        background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(31,41,55,0.80))',
-        border: '1px solid rgba(52,211,153,0.45)',
+        background: 'linear-gradient(135deg, rgba(20,184,166,0.12), rgba(23,45,71,0.90))',
+        border: '1px solid rgba(20,184,166,0.40)',
       } : {
-        background: 'rgba(31,41,55,0.72)',
-        border: '1px solid rgba(148,163,184,0.12)',
+        background: '#172D47',
+        border: '1px solid rgba(255,255,255,0.08)',
       }}
     >
-      <span className="t-stat-label font-display w-6 text-center flex-shrink-0" style={{ color: isSelf ? '#34D399' : '#475569' }}>
+      <span className="t-stat-label font-display w-6 text-center flex-shrink-0" style={{ color: isSelf ? '#14B8A6' : '#475569' }}>
         {leader.rank}
       </span>
-      <RankAvatar leader={leader} borderColor={isSelf ? 'rgba(52,211,153,0.55)' : undefined} />
+      <RankAvatar leader={leader} borderColor={isSelf ? 'rgba(20,184,166,0.55)' : undefined} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
           <p className="t-card-subtitle font-sans font-semibold truncate" style={{ color: isSelf ? '#F0FDF4' : '#F8FAFC', margin: 0 }}>
             {truncateName(leader.name)}
           </p>
           {isSelf && (
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#34D399', background: 'rgba(16,185,129,0.16)', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 6, padding: '1px 6px', flexShrink: 0, lineHeight: '16px' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#14B8A6', background: 'rgba(20,184,166,0.16)', border: '1px solid rgba(20,184,166,0.35)', borderRadius: 6, padding: '1px 6px', flexShrink: 0, lineHeight: '16px' }}>
               YOU
             </span>
           )}
         </div>
       </div>
       <div className="text-right">
-        <p className="t-stat-sm font-display" style={{ color: isSelf ? '#34D399' : '#CBD5E1' }}>
+        <p className="t-stat-sm font-display" style={{ color: isSelf ? '#14B8A6' : '#CBD5E1' }}>
           {(leader.totalScore || 0).toFixed(1)}
         </p>
         <p className="font-sans text-xs text-slate-500">XP</p>
@@ -181,6 +181,14 @@ export default function Leaderboard() {
     return acc;
   }, []);
 
+  // If the API didn't return currentUser but the session user is already in the
+  // top-10 list, derive their rank card from the list so "Play a quiz" is never
+  // shown to a user who clearly has a score on the board.
+  const effectiveCurrentUser = currentUser ||
+    (session?.user?.email
+      ? displayLeaders.find(l => l.email === session.user.email) || null
+      : null);
+
   const first  = displayLeaders[0] || null;
   const second = displayLeaders[1] || null;
   const third  = displayLeaders[2] || null;
@@ -194,7 +202,7 @@ export default function Leaderboard() {
         {/* Fixed header */}
         <div
           className="flex-shrink-0 px-4 pt-4 pb-4"
-          style={{ background: 'linear-gradient(180deg, #2e1065 0%, #1e1b4b 100%)' }}
+          style={{ background: '#172D47', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
         >
           {/* Close + Title on same row — title truly centred */}
           <div className="relative flex items-center mb-3">
@@ -225,9 +233,9 @@ export default function Leaderboard() {
                 onClick={() => setActiveTab(key)}
                 className="t-button-sm px-5 py-2 rounded-full font-display transition-all duration-200 active:scale-95"
                 style={activeTab === key ? {
-                  background: 'linear-gradient(135deg, #7C3AED, #4F46E5)',
+                  background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)',
                   color: '#FFFFFF',
-                  boxShadow: '0 4px 12px rgba(124,58,237,0.35)',
+                  boxShadow: '0 4px 12px rgba(255,107,22,0.35)',
                 } : {
                   background: 'rgba(148,163,184,0.10)',
                   color: '#94A3B8',
@@ -240,7 +248,7 @@ export default function Leaderboard() {
         </div>
 
         {/* Scrollable area */}
-        <div className="flex-1 overflow-y-auto min-h-0 bg-[#0f172a]">
+        <div className="flex-1 overflow-y-auto min-h-0 [background:var(--bg-app)]">
           <div className="px-4 pt-4 pb-6">
 
             {loading ? (
@@ -282,47 +290,47 @@ export default function Leaderboard() {
                     buttonText="Sign in"
                     callbackUrl="/leaderboard"
                   />
-                ) : !currentUser ? (
+                ) : !effectiveCurrentUser ? (
                   <div className="mb-4 rounded-2xl px-4 py-4 text-center" style={{ background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.10)' }}>
                     <p className="font-sans text-slate-400 text-[13px]">Play a quiz to appear on the leaderboard!</p>
                   </div>
                 ) : (
-                  <div className="mb-4 px-4 py-4" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.20), rgba(16,185,129,0.10))', border: '1px solid rgba(139,92,246,0.45)', borderRadius: 22, boxShadow: '0 14px 35px rgba(124,58,237,0.14)' }}>
+                  <div className="mb-4 px-4 py-4" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.20), rgba(20,184,166,0.10))', border: '1px solid rgba(139,92,246,0.45)', borderRadius: 22, boxShadow: '0 14px 35px rgba(124,58,237,0.14)' }}>
                     <p className="t-section-label" style={{ color: '#a78bfa', marginBottom: 12 }}>Your Rank</p>
 
                     {/* Rank + YOU chip */}
                     <div className="flex items-center gap-2 mb-1">
                       <span className="t-stat-lg font-display text-violet-300 flex-shrink-0">
-                        #{currentUser.rank}
+                        #{effectiveCurrentUser.rank}
                       </span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#34D399', background: 'rgba(16,185,129,0.16)', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 7, padding: '2px 8px', lineHeight: '18px', flexShrink: 0 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#14B8A6', background: 'rgba(20,184,166,0.16)', border: '1px solid rgba(20,184,166,0.35)', borderRadius: 7, padding: '2px 8px', lineHeight: '18px', flexShrink: 0 }}>
                         YOU
                       </span>
                     </div>
 
                     {/* Name + XP row */}
                     <div className="flex items-center gap-3 mb-2">
-                      <RankAvatar leader={currentUser} size={40} borderColor="rgba(139,92,246,0.55)" />
+                      <RankAvatar leader={effectiveCurrentUser} size={40} borderColor="rgba(139,92,246,0.55)" />
                       <div className="flex-1 min-w-0">
                         <p className="t-card-subtitle font-sans font-bold text-violet-100 truncate" style={{ margin: 0 }}>
-                          {truncateName(currentUser.name, 20)}
+                          {truncateName(effectiveCurrentUser.name, 20)}
                         </p>
-                        <p className="font-sans text-xs text-slate-500" style={{ margin: 0 }}>{currentUser.level || 'Aspirant'}</p>
+                        <p className="font-sans text-xs text-slate-500" style={{ margin: 0 }}>{effectiveCurrentUser.level || 'Aspirant'}</p>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="t-stat-sm font-display text-violet-300" style={{ margin: 0 }}>
-                          {(currentUser.totalScore || 0).toFixed(1)}
+                          {(effectiveCurrentUser.totalScore || 0).toFixed(1)}
                         </p>
                         <p className="t-stat-label font-sans text-slate-500" style={{ margin: 0 }}>XP</p>
                       </div>
                     </div>
 
                     {/* XP gap / top 3 message */}
-                    {currentUser.rank <= 3 ? (
-                      <p className="font-sans text-[13px] text-emerald-400 mb-3" style={{ margin: '0 0 12px' }}>🎉 You're in the Top 3!</p>
-                    ) : third && (third.totalScore || 0) > (currentUser.totalScore || 0) ? (
+                    {effectiveCurrentUser.rank <= 3 ? (
+                      <p className="font-sans text-[13px] text-[#14B8A6] mb-3" style={{ margin: '0 0 12px' }}>🎉 You're in the Top 3!</p>
+                    ) : third && (third.totalScore || 0) > (effectiveCurrentUser.totalScore || 0) ? (
                       <p className="font-sans text-[13px] text-amber-400" style={{ margin: '0 0 12px' }}>
-                        🔥 {Math.ceil((third.totalScore || 0) - (currentUser.totalScore || 0))} XP away from Top 3
+                        🔥 {Math.ceil((third.totalScore || 0) - (effectiveCurrentUser.totalScore || 0))} XP away from Top 3
                       </p>
                     ) : null}
 
@@ -378,7 +386,7 @@ export default function Leaderboard() {
                             <p style={{ fontSize: 14, fontWeight: 800, color, margin: 0 }}>
                               {(leader.totalScore || 0).toFixed(1)}
                             </p>
-                            <p style={{ fontSize: 10, color: '#334155', margin: 0 }}>XP</p>
+                            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.30)', margin: 0 }}>XP</p>
                           </div>
                         </div>
                       ))}
@@ -425,7 +433,7 @@ export default function Leaderboard() {
         </div>
 
         {/* Practice CTA — flex child, always visible above bottom nav */}
-        <div className="flex-shrink-0 px-4 pt-2 pb-3" style={{ background: '#0f172a' }}>
+        <div className="flex-shrink-0 px-4 pt-2 pb-3" style={{ background: 'var(--bg-app)' }}>
           <button
             onClick={() => router.push('/dashboard')}
             className="w-full font-display font-bold text-base text-white active:scale-[0.98] transition-transform"

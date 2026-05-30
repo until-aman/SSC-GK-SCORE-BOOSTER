@@ -5,7 +5,8 @@ export default function BackButton() {
   return (
     <button
       onClick={() => router.back()}
-      className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center active:scale-90 transition-transform"
+      className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+      style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.10)' }}
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
            strokeWidth="1.5" className="w-5 h-5 text-white">

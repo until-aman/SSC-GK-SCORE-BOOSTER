@@ -54,7 +54,7 @@ export default function HistoryPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-[#0f172a] px-4 pt-10">
+      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-10">
         <div className="flex items-center gap-3 mb-6">
           <BackButton />
           <h1 className="font-display font-bold text-[20px] text-white">XP History</h1>
@@ -68,7 +68,7 @@ export default function HistoryPage() {
     return (
       <>
         <Head><title>XP History — SSC GK Score Booster</title></Head>
-        <div className="min-h-screen bg-[#0f172a] pb-10">
+        <div className="min-h-screen [background:var(--bg-app)] pb-10">
           <div className="px-4 pt-10 pb-4 flex items-center gap-3">
             <BackButton />
             <h1 className="font-display font-black text-xl text-white">XP History</h1>
@@ -99,7 +99,7 @@ export default function HistoryPage() {
   return (
     <>
       <Head><title>XP History — SSC GK Score Booster</title></Head>
-      <div className="min-h-screen bg-[#0f172a] pb-10">
+      <div className="min-h-screen [background:var(--bg-app)] pb-10">
 
         {/* Header */}
         <div className="px-4 pt-10 pb-4 flex items-center gap-3">
@@ -107,10 +107,11 @@ export default function HistoryPage() {
           <h1 className="font-display font-bold text-[20px] text-white flex-1">XP History</h1>
           <button
             onClick={fetchHistory}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-800 border border-slate-700/60 active:scale-90 transition-transform"
+            className="w-9 h-9 flex items-center justify-center rounded-full active:scale-90 transition-transform"
+            style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.10)' }}
             title="Refresh"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="23 4 23 10 17 10"/>
               <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
             </svg>
@@ -118,11 +119,11 @@ export default function HistoryPage() {
         </div>
 
         {/* XP Hero card */}
-        <div className="mx-4 bg-gradient-to-br from-emerald-900/40 to-teal-900/20 border border-emerald-500/30 rounded-3xl px-5 py-5">
+        <div className="mx-4 rounded-3xl px-5 py-5" style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.25)' }}>
           <div className="flex items-end justify-between mb-3">
             <div>
               <p className="font-display font-black text-4xl text-white leading-none">{totalXP}</p>
-              <p className="font-sans text-sm text-emerald-300 mt-0.5">total XP earned</p>
+              <p className="font-sans text-sm text-[#14B8A6] mt-0.5">total XP earned</p>
             </div>
             <div className="flex flex-col items-end gap-1">
               <span className="bg-white/10 rounded-full px-3 py-1 font-display font-bold text-sm text-white">
@@ -137,8 +138,8 @@ export default function HistoryPage() {
           {/* XP progress bar */}
           <div className="h-2 bg-white/10 rounded-full overflow-hidden">
             <div
-              className="h-full bg-emerald-500 rounded-full transition-all duration-700"
-              style={{ width: `${xpBarWidth}%` }}
+              className="h-full rounded-full transition-all duration-700"
+              style={{ background: 'linear-gradient(90deg, #14B8A6, #2DD4BF)', width: `${xpBarWidth}%` }}
             />
           </div>
           {nextLevel && (
@@ -152,13 +153,14 @@ export default function HistoryPage() {
         {/* Session list */}
         <div className="mx-4 mt-4">
           {sessions.length === 0 ? (
-            <div className="bg-slate-800 rounded-2xl p-8 flex flex-col items-center gap-4 text-center">
+            <div className="rounded-2xl p-8 flex flex-col items-center gap-4 text-center" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
               <span className="text-4xl">🎯</span>
               <p className="font-display font-bold text-base text-white">No quizzes yet</p>
               <p className="font-sans font-medium text-sm text-slate-400">Complete a quiz to start earning XP and building your history.</p>
               <button
                 onClick={() => router.push('/dashboard')}
-                className="bg-emerald-500 text-white rounded-2xl py-3 px-6 font-display font-bold text-sm active:scale-[0.98] transition-transform"
+                className="text-white rounded-2xl py-3 px-6 font-display font-bold text-sm active:scale-[0.98] transition-transform"
+                style={{ background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)', boxShadow: '0 4px 12px rgba(255,107,22,0.30)' }}
               >
                 Play Now →
               </button>
@@ -176,14 +178,15 @@ export default function HistoryPage() {
               {sessions.length > 3 && (
                 <button
                   onClick={() => setShowAllSessions(v => !v)}
-                  className="w-full flex items-center justify-center gap-2 py-3 mt-1 rounded-2xl bg-slate-800 border border-slate-700/50 active:scale-[0.98] transition-transform"
+                  className="w-full flex items-center justify-center gap-2 py-3 mt-1 rounded-2xl active:scale-[0.98] transition-transform"
+                  style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
-                  <span className="font-display font-bold text-sm text-emerald-400">
+                  <span className="font-display font-bold text-sm text-[#14B8A6]">
                     {showAllSessions ? 'Collapse history' : 'View full history'}
                   </span>
                   <svg
                     width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="#10b981" strokeWidth="2.5" strokeLinecap="round"
+                    stroke="#14B8A6" strokeWidth="2.5" strokeLinecap="round"
                     className={`transition-transform duration-300 ${showAllSessions ? 'rotate-180' : ''}`}
                   >
                     <path d="M6 9l6 6 6-6"/>
@@ -195,35 +198,35 @@ export default function HistoryPage() {
         </div>
 
         {/* How to earn XP table */}
-        <div className="mx-4 mt-5 bg-slate-800 rounded-2xl overflow-hidden border border-slate-700/50">
-          <div className="px-4 py-3 border-b border-slate-700/50">
+        <div className="mx-4 mt-5 rounded-2xl overflow-hidden" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="px-4 py-3 border-b border-white/[0.06]">
             <p className="font-display font-bold text-base text-white">How to earn XP ⚡</p>
             <p className="font-sans text-xs text-slate-400 mt-0.5">Earn more by playing consistently</p>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-700/40">
+              <tr className="border-b border-white/[0.06]">
                 <th className="px-4 py-2.5 text-left font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">Action</th>
                 <th className="px-4 py-2.5 text-right font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">XP</th>
               </tr>
             </thead>
             <tbody>
               {[
-                { action: 'Complete a quiz (5+ questions)', xp: '+10', color: 'text-emerald-400' },
-                { action: 'Each correct answer', xp: '+2', color: 'text-emerald-400' },
+                { action: 'Complete a quiz (5+ questions)', xp: '+10', color: 'text-[#14B8A6]' },
+                { action: 'Each correct answer', xp: '+2', color: 'text-[#14B8A6]' },
                 { action: 'First quiz of the day 🌅', xp: '+10', color: 'text-orange-400' },
                 { action: 'Wrong answer', xp: '−0', color: 'text-slate-500' },
                 { action: 'Skipped question', xp: '−0', color: 'text-slate-500' },
               ].map((row, i, arr) => (
-                <tr key={row.action} className={i < arr.length - 1 ? 'border-b border-slate-700/30' : ''}>
+                <tr key={row.action} className={i < arr.length - 1 ? 'border-b border-white/[0.05]' : ''}>
                   <td className="px-4 py-3 font-sans text-sm text-slate-300">{row.action}</td>
                   <td className={`px-4 py-3 text-right font-display font-black text-sm ${row.color}`}>{row.xp}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <div className="px-4 py-3 bg-emerald-500/5 border-t border-emerald-500/20">
-            <p className="font-sans text-xs text-emerald-400">💡 Max XP per quiz = 10 base + 2×correct + 10 first-of-day bonus</p>
+          <div className="px-4 py-3" style={{ background: 'rgba(20,184,166,0.06)', borderTop: '1px solid rgba(20,184,166,0.18)' }}>
+            <p className="font-sans text-xs text-[#14B8A6]">💡 Max XP per quiz = 10 base + 2×correct + 10 first-of-day bonus</p>
           </div>
         </div>
 
@@ -231,7 +234,8 @@ export default function HistoryPage() {
         <div className="mx-4 mt-4">
           <button
             onClick={() => router.push('/dashboard')}
-            className="w-full py-4 bg-emerald-500 text-white rounded-2xl font-display font-bold text-base active:scale-[0.98] transition-transform"
+            className="w-full py-4 text-white rounded-2xl font-display font-bold text-base active:scale-[0.98] transition-transform"
+            style={{ background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)', boxShadow: '0 4px 14px rgba(255,107,22,0.30)' }}
           >
             Practice Now →
           </button>

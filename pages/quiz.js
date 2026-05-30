@@ -58,7 +58,7 @@ function getLoadingTitle(subject, mode) {
   return `Building your ${cap} challenge…`;
 }
 
-function GKFactCarousel({ subject, mode, accentColor = '#10B981', statusText }) {
+function GKFactCarousel({ subject, mode, accentColor = '#14B8A6', statusText }) {
   const [factIndex, setFactIndex] = useState(() => Math.floor(Math.random() * GK_FACTS.length));
   const [progress, setProgress] = useState(0);
   const [stageIdx, setStageIdx] = useState(0);
@@ -111,7 +111,7 @@ function GKFactCarousel({ subject, mode, accentColor = '#10B981', statusText }) 
     <div style={{
       height: '100vh', display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      padding: '0 22px', background: '#0f172a',
+      padding: '0 22px', background: 'var(--bg-app)',
       width: '100%', maxWidth: 480, margin: '0 auto',
     }}>
       {/* Header */}
@@ -145,8 +145,8 @@ function GKFactCarousel({ subject, mode, accentColor = '#10B981', statusText }) 
 
       {/* Stage checklist */}
       <div style={{
-        width: '100%', background: '#111827', borderRadius: 16,
-        padding: '14px 16px', border: '1px solid rgba(255,255,255,0.06)',
+        width: '100%', background: '#172D47', borderRadius: 16,
+        padding: '14px 16px', border: '1px solid rgba(255,255,255,0.08)',
         marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 11,
       }}>
         {PROGRESS_STAGES.map((stage, i) => {
@@ -197,8 +197,8 @@ function GKFactCarousel({ subject, mode, accentColor = '#10B981', statusText }) 
 
       {/* Rotating tip card */}
       <div style={{
-        width: '100%', background: '#111827', borderRadius: 16,
-        padding: '15px 18px', border: '1px solid rgba(255,255,255,0.06)',
+        width: '100%', background: '#172D47', borderRadius: 16,
+        padding: '15px 18px', border: '1px solid rgba(255,255,255,0.08)',
         marginBottom: 14, minHeight: 76,
       }}>
         <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: accentColor, marginBottom: 6 }}>
@@ -233,7 +233,7 @@ function DailyChallengeLoader({ statusText }) {
 }
 
 function QuizLoader({ subject, statusText }) {
-  return <GKFactCarousel subject={subject} mode="standard" accentColor="#10B981" statusText={statusText} />;
+  return <GKFactCarousel subject={subject} mode="standard" accentColor="#14B8A6" statusText={statusText} />;
 }
 
 function getISTDateString() {
@@ -295,7 +295,7 @@ function QuizBulb({ state }) {
       className={`fixed bottom-6 right-4 w-11 h-11 rounded-full flex items-center justify-center border z-30 ${
         state === 'correct' ? 'bulb-correct' :
         state === 'wrong'   ? 'bulb-wrong'   :
-        'bg-slate-800/80 border-slate-700'
+        'border-white/10'
       }`}
     >
       <span className="text-xl leading-none select-none" style={{ filter: state === 'wrong' ? 'grayscale(0.6) brightness(0.7)' : state === 'correct' ? 'brightness(1.3)' : 'brightness(0.6)' }}>
@@ -377,9 +377,9 @@ function TimerRing({ timeLeft, duration = 20 }) {
   const CIRC   = 2 * Math.PI * RADIUS;
   const offset = CIRC * (1 - timeLeft / duration);
 
-  const color = timeLeft >= 11 ? '#10b981'   // green  20–11 s
-    : timeLeft >= 6            ? '#f59e0b'   // amber  10–6 s
-    :                            '#ef4444';  // red     5–0 s
+  const color = timeLeft >= 11 ? '#14B8A6'   // teal   20–11 s
+    : timeLeft >= 6            ? '#F59E0B'   // gold   10–6 s
+    :                            '#EF4444';  // red     5–0 s
 
   const isPanic = timeLeft <= 5 && timeLeft > 0;
 
@@ -432,7 +432,7 @@ function BookmarkIcon({ filled, size = 20, animKey }) {
     <svg
       key={animKey}
       width={size} height={size} viewBox="0 0 24 24"
-      fill="#10b981" stroke="#10b981" strokeWidth="1.5"
+      fill="#14B8A6" stroke="#14B8A6" strokeWidth="1.5"
       strokeLinecap="round" strokeLinejoin="round"
       style={{ animation: 'bmPop 0.32s cubic-bezier(0.34,1.56,0.64,1) both' }}
     >
@@ -1204,13 +1204,13 @@ export default function Quiz() {
     const isExpiredPrompt = recoveryPrompt.type === 'expired';
 
     return (
-      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: '#0F172A' }}>
+      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: 'var(--bg-app)' }}>
         <Head><title>{isExpiredPrompt ? 'Quiz Expired' : 'Resume Quiz'} — SSC GK Score Booster</title></Head>
         <AppCard
           variant="premium"
           className="w-full max-w-[370px] p-5"
           style={{
-            background: '#1E293B',
+            background: 'var(--bg-card)',
             border: '1px solid rgba(148,163,184,0.16)',
             boxShadow: '0 24px 60px rgba(0,0,0,0.42)',
           }}
@@ -1243,7 +1243,7 @@ export default function Quiz() {
           </p>
 
           {sessionAttemptedCount > 0 && (
-            <p className="text-xs leading-relaxed rounded-2xl px-3 py-2 mb-4" style={{ color: '#94A3B8', background: '#0F172A', border: '1px solid rgba(148,163,184,0.16)' }}>
+            <p className="text-xs leading-relaxed rounded-2xl px-3 py-2 mb-4" style={{ color: '#94A3B8', background: 'var(--bg-card-soft)', border: '1px solid rgba(148,163,184,0.16)' }}>
               Progress saved locally: {sessionAttemptedCount} attempted of {session.totalQuestions || session.questions?.length || 0}.
             </p>
           )}
@@ -1281,7 +1281,7 @@ export default function Quiz() {
   }
 
   if (loading) return (
-    <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] px-4">
+    <div className="h-screen flex flex-col items-center justify-center [background:var(--bg-app)] px-4">
       <Head><title>Loading — SSC GK Score Booster</title></Head>
       {mode === 'daily' ? (
         <DailyChallengeLoader statusText={loadingCopy} />
@@ -1313,10 +1313,10 @@ export default function Quiz() {
   );
 
   if (error) return (
-    <div className="h-screen flex flex-col items-center justify-center px-5 bg-[#0f172a]">
+    <div className="h-screen flex flex-col items-center justify-center px-5 [background:var(--bg-app)]">
       <Head><title>Couldn&apos;t load quiz — SSC GK Score Booster</title></Head>
       <div style={{
-        width: '100%', maxWidth: 380, background: '#1E293B',
+        width: '100%', maxWidth: 380, background: 'var(--bg-card)',
         borderRadius: 24, padding: '28px 24px',
         border: '1px solid rgba(148,163,184,0.14)',
         boxShadow: '0 24px 56px rgba(0,0,0,0.45)',
@@ -1374,9 +1374,9 @@ export default function Quiz() {
   );
 
   if (quizComplete) return (
-    <div className="h-screen flex flex-col items-center justify-center bg-[#0f172a] gap-4">
+    <div className="h-screen flex flex-col items-center justify-center [background:var(--bg-app)] gap-4">
       <Head><title>Results — SSC GK Score Booster</title></Head>
-      <div className="w-12 h-12 rounded-full border-4 border-emerald-500/30 border-t-emerald-500 animate-spin" />
+      <div className="w-12 h-12 rounded-full border-4 animate-spin" style={{ borderColor: 'rgba(20,184,166,0.25)', borderTopColor: '#14B8A6' }} />
       <p className="font-display font-bold text-lg text-white">Loading your results…</p>
     </div>
   );
@@ -1385,7 +1385,7 @@ export default function Quiz() {
   if (!q) return null;
 
   return (
-    <div className="h-screen flex flex-col bg-[#0f172a] overflow-hidden">
+    <div className="h-screen flex flex-col [background:var(--bg-app)] overflow-hidden">
       <Head><title>Q{currentIndex + 1} — SSC GK Score Booster</title></Head>
       <style suppressHydrationWarning>{`
         @keyframes timerPanic {
@@ -1443,8 +1443,8 @@ export default function Quiz() {
           <div
             className="w-full max-w-[360px]"
             style={{
-              background: '#1e293b',
-              border: '1px solid rgba(148,163,184,0.16)',
+              background: '#172D47',
+              border: '1px solid rgba(255,255,255,0.10)',
               borderRadius: 28,
               padding: 24,
               boxShadow: '0 24px 60px rgba(0,0,0,0.42)',
@@ -1520,7 +1520,7 @@ export default function Quiz() {
 
       {/* Guest bookmark banner */}
       {showGuestBanner && (
-        <div className="fixed top-4 left-4 right-4 z-50 bg-slate-800 border border-emerald-500/30 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl max-w-[400px] mx-auto">
+        <div className="fixed top-4 left-4 right-4 z-50 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl max-w-[400px] mx-auto" style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.30)' }}>
           <span className="text-xl flex-shrink-0">🔖</span>
           <p className="font-sans font-medium text-sm text-slate-300 leading-snug flex-1">
             Saved! Sign in to sync across devices.
@@ -1554,7 +1554,7 @@ export default function Quiz() {
               style={{
                 height: '100%',
                 width: `${(currentIndex / questions.length) * 100}%`,
-                background: 'linear-gradient(90deg, #10b981, #34d399)',
+                background: 'linear-gradient(90deg, #14B8A6, #2DD4BF)',
                 borderRadius: 999,
                 transition: 'width 0.5s cubic-bezier(0.22,1,0.36,1)',
               }}
@@ -1589,7 +1589,7 @@ export default function Quiz() {
       <div className="flex-1 overflow-y-auto px-4 pb-4">
 
         {/* Question card */}
-        <AppCard className="bg-slate-800/60 border-slate-700/50 mt-3 relative">
+        <AppCard className="mt-3 relative" style={{ background: '#1E3554', border: '1px solid rgba(255,255,255,0.10)' }}>
           {/* Bookmark button */}
           <button
             onClick={() => handleBookmarkToggle(q)}
@@ -1600,15 +1600,15 @@ export default function Quiz() {
             <div
               className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
               style={{
-                background: savedIds.has(q.id) ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.08)',
-                border: savedIds.has(q.id) ? '1px solid rgba(16,185,129,0.4)' : '1px solid rgba(255,255,255,0.12)',
+                background: savedIds.has(q.id) ? 'rgba(20,184,166,0.18)' : 'rgba(255,255,255,0.08)',
+                border: savedIds.has(q.id) ? '1px solid rgba(20,184,166,0.40)' : '1px solid rgba(255,255,255,0.12)',
               }}
             >
               <BookmarkIcon filled={savedIds.has(q.id)} size={16} animKey={bmAnimKey} />
             </div>
             {bookmarkFeedback === q.id && (
               <span style={{
-                fontSize: 9, fontWeight: 700, color: '#10b981',
+                fontSize: 9, fontWeight: 700, color: '#14B8A6',
                 whiteSpace: 'nowrap',
                 animation: 'bmLabelIn 0.2s ease both',
               }}>
@@ -1636,8 +1636,8 @@ export default function Quiz() {
               display: 'flex', alignItems: 'center', gap: 12,
               width: '100%', textAlign: 'left',
               cursor: showFeedback ? 'default' : 'pointer',
-              background: 'rgba(30,41,59,0.9)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: '#172D47',
+              border: '1px solid rgba(255,255,255,0.10)',
             };
 
             /* ── Badge style ── */
@@ -1657,14 +1657,14 @@ export default function Quiz() {
             if (showFeedback) {
               if (isCorrect) {
                 rowStyle = { ...rowStyle,
-                  background: 'rgba(16,185,129,0.13)',
-                  border: '1px solid #10b981',
-                  boxShadow: '0 0 20px rgba(16,185,129,0.18)',
+                  background: 'rgba(34,197,94,0.12)',
+                  border: '1px solid #22C55E',
+                  boxShadow: '0 0 20px rgba(34,197,94,0.18)',
                   animation: 'optCorrect 0.32s cubic-bezier(0.34,1.56,0.64,1) both',
                 };
                 badgeStyle = { ...badgeStyle,
-                  background: '#10b981', color: '#fff',
-                  boxShadow: '0 0 10px rgba(16,185,129,0.55)',
+                  background: '#22C55E', color: '#fff',
+                  boxShadow: '0 0 10px rgba(34,197,94,0.55)',
                 };
                 badgeContent = 'check';
               } else if (isSelected) {

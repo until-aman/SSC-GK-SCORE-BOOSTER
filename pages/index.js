@@ -86,10 +86,10 @@ export default function LandingPage() {
         }
         .stats-card:hover {
           transform: translateY(-3px);
-          box-shadow: 0 8px 24px rgba(52,211,153,0.12);
+          box-shadow: 0 8px 24px rgba(20,184,166,0.12);
         }
         .stats-card:hover .stat-num {
-          color: #6ee7b7;
+          color: #14B8A6;
         }
         .exam-chip {
           animation: slideUpFade 0.4s cubic-bezier(0.22,1,0.36,1) both;
@@ -100,10 +100,10 @@ export default function LandingPage() {
         .exam-chip:hover {
           opacity: 1;
           transform: translateY(-2px);
-          background: rgba(52,211,153,0.14) !important;
-          border-color: rgba(52,211,153,0.42) !important;
+          background: rgba(20,184,166,0.14) !important;
+          border-color: rgba(20,184,166,0.42) !important;
           color: #5eead4 !important;
-          box-shadow: 0 0 8px rgba(52,211,153,0.18);
+          box-shadow: 0 0 8px rgba(20,184,166,0.18);
         }
         @keyframes logoGlowPulse {
           0%, 70%, 100% { box-shadow: 0 0 0px rgba(249,115,22,0); }
@@ -120,20 +120,20 @@ export default function LandingPage() {
         }
         @keyframes guestCtaPulse {
           0%, 100% {
-            box-shadow: 0 0 0 rgba(52,211,153,0), 0 16px 36px rgba(0,0,0,0.24);
+            box-shadow: 0 0 0 rgba(20,184,166,0), 0 16px 36px rgba(0,0,0,0.24);
           }
           50% {
-            box-shadow: 0 0 26px rgba(52,211,153,0.32), 0 18px 42px rgba(0,0,0,0.34);
+            box-shadow: 0 0 26px rgba(20,184,166,0.32), 0 18px 42px rgba(0,0,0,0.34);
           }
         }
         .guest-cta {
           position: relative;
           overflow: hidden;
           background:
-            linear-gradient(135deg, rgba(15,23,42,0.98), rgba(12,36,30,0.98)),
-            radial-gradient(circle at 50% 0%, rgba(52,211,153,0.32), transparent 52%);
-          border-color: rgba(52,211,153,0.58);
-          box-shadow: 0 0 18px rgba(52,211,153,0.2), 0 16px 36px rgba(0,0,0,0.24);
+            linear-gradient(135deg, rgba(15,23,42,0.98), rgba(13,27,46,0.98)),
+            radial-gradient(circle at 50% 0%, rgba(20,184,166,0.32), transparent 52%);
+          border-color: rgba(20,184,166,0.58);
+          box-shadow: 0 0 18px rgba(20,184,166,0.2), 0 16px 36px rgba(0,0,0,0.24);
           animation: guestCtaPulse 2.8s ease-in-out infinite;
           transition:
             transform 0.18s cubic-bezier(0.34,1.56,0.64,1),
@@ -147,17 +147,17 @@ export default function LandingPage() {
           position: absolute;
           inset: 1px;
           border-radius: 14px;
-          background: linear-gradient(90deg, transparent, rgba(110,231,183,0.14), transparent);
+          background: linear-gradient(90deg, transparent, rgba(20,184,166,0.14), transparent);
           transform: translateX(-120%);
           transition: transform 0.45s ease;
         }
         .guest-cta:hover {
           transform: translateY(-3px) scale(1.03);
           background:
-            linear-gradient(135deg, rgba(17,31,49,0.98), rgba(10,58,44,0.98)),
-            radial-gradient(circle at 50% 0%, rgba(52,211,153,0.42), transparent 56%);
-          border-color: rgba(110,231,183,0.95);
-          box-shadow: 0 0 34px rgba(52,211,153,0.46), 0 18px 44px rgba(0,0,0,0.36);
+            linear-gradient(135deg, rgba(17,31,49,0.98), rgba(13,27,46,0.98)),
+            radial-gradient(circle at 50% 0%, rgba(20,184,166,0.42), transparent 56%);
+          border-color: rgba(20,184,166,0.95);
+          box-shadow: 0 0 34px rgba(20,184,166,0.46), 0 18px 44px rgba(0,0,0,0.36);
         }
         .guest-cta:hover::before {
           transform: translateX(120%);
@@ -269,7 +269,7 @@ export default function LandingPage() {
           height: 260px;
           right: -108px;
           bottom: -88px;
-          background: radial-gradient(circle, rgba(16,185,129,0.36), rgba(16,185,129,0) 70%);
+          background: radial-gradient(circle, rgba(20,184,166,0.36), rgba(20,184,166,0) 70%);
           animation: ambientFloatB 12s ease-in-out infinite;
         }
         .ambient-glow-orange {
@@ -282,7 +282,7 @@ export default function LandingPage() {
           animation: ambientFloatC 8.5s ease-in-out infinite;
         }
       `}</style>
-      <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#0a1628] via-[#0f172a] to-[#0c1a0e] flex flex-col items-center justify-center px-6 py-10">
+      <div className="relative min-h-screen overflow-hidden [background:var(--bg-app)] flex flex-col items-center justify-center px-6 py-10">
         <div className="ambient-glow ambient-glow-blue" aria-hidden="true" />
         <div className="ambient-glow ambient-glow-green" aria-hidden="true" />
         <div className="ambient-glow ambient-glow-orange" aria-hidden="true" />
@@ -305,7 +305,7 @@ export default function LandingPage() {
             {['CGL', 'CHSL', 'MTS', 'GD'].map((tag, i) => (
               <span
                 key={tag}
-                className="exam-chip font-sans text-xs font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-3 py-1 rounded-full"
+                className="exam-chip font-sans text-xs font-semibold text-[#14B8A6] bg-[rgba(20,184,166,0.10)] border border-[rgba(20,184,166,0.20)] px-3 py-1 rounded-full"
                 style={{ animationDelay: `${1.05 + i * 0.1}s` }}
               >
                 {tag}
@@ -314,7 +314,7 @@ export default function LandingPage() {
           </div>
 
           {/* Stat strip */}
-          <div className="stats-card bg-slate-800/60 rounded-[18px] px-4 py-3 mt-6 w-full max-w-[320px]">
+          <div className="stats-card rounded-[18px] px-4 py-3 mt-6 w-full max-w-[320px]" style={{ background: 'rgba(23,45,71,0.70)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div className="flex justify-around">
               {[
                 { target: 12,   suffix: '',  label: 'Subjects',  duration: 800,  delay: 400  },
@@ -322,7 +322,7 @@ export default function LandingPage() {
                 { target: 100,  suffix: '%', label: 'Free',      duration: 1000, delay: 600  },
               ].map(({ target, suffix, label, duration, delay }) => (
                 <div key={label} className="flex flex-col items-center">
-                  <span className="stat-num font-display font-black text-lg text-emerald-400 transition-colors duration-200">
+                  <span className="stat-num font-display font-black text-lg text-[#14B8A6] transition-colors duration-200">
                     <CountUp target={target} suffix={suffix} duration={duration} delay={delay} />
                   </span>
                   <span className="font-sans text-xs text-slate-500 mt-0.5">{label}</span>

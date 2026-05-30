@@ -35,11 +35,11 @@ const SLIDES = [
   {
     id: 3,
     emoji: '⚡',
-    iconGradient: 'linear-gradient(135deg,#10b981,#14b8a6)',
-    bgGlow: 'rgba(16,185,129,0.4)',
-    btnGradient: 'linear-gradient(135deg,#10b981,#0d9488)',
-    btnGlow: 'rgba(16,185,129,0.45)',
-    accentColor: '#6ee7b7',
+    iconGradient: 'linear-gradient(135deg,#14B8A6,#0d9488)',
+    bgGlow: 'rgba(20,184,166,0.4)',
+    btnGradient: 'linear-gradient(135deg,#14B8A6,#0d9488)',
+    btnGlow: 'rgba(20,184,166,0.45)',
+    accentColor: '#2DD4BF',
     tag: 'STEP 03',
     title: 'Earn XP',
     desc: 'Correct answers help you level up from Aspirant to Legend.',
@@ -61,8 +61,8 @@ const SLIDES = [
     emoji: '🔥',
     iconGradient: 'linear-gradient(135deg,#8b5cf6,#9333ea)',
     bgGlow: 'rgba(139,92,246,0.4)',
-    btnGradient: 'linear-gradient(135deg,#10b981,#059669)',
-    btnGlow: 'rgba(16,185,129,0.45)',
+    btnGradient: 'linear-gradient(135deg,#FF8A1F,#FF5A00)',
+    btnGlow: 'rgba(255,107,22,0.45)',
     accentColor: '#c4b5fd',
     tag: 'STEP 05',
     title: 'Build a Habit',
@@ -142,7 +142,7 @@ export default function OnboardingSlides() {
           minHeight: '100dvh',
           WebkitTapHighlightColor: 'transparent',
           /* Full-screen dark base */
-          background: '#07111F',
+          background: 'var(--bg-app)',
         }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}

@@ -5,12 +5,70 @@
 /* ── Fonts ── */
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@400;500;600&display=swap');
 
+:root {
+  /* === DEPTH LADDER === */
+  --color-bg-base:     #0D1B2E;
+  --color-bg-surface:  #112236;
+  --color-bg-card:     #172D47;
+  --color-bg-elevated: #1E3554;
+  --color-bg-overlay:  #243D60;
+
+  /* === ACCENTS === */
+  --color-orange:      #FF6B16;
+  --color-orange-dim:  #E55E0E;
+  --color-teal:        #14B8A6;
+  --color-gold:        #F59E0B;
+  --color-purple:      #7C5CFF;
+
+  /* === SEMANTIC === */
+  --color-correct:     #22C55E;
+  --color-wrong:       #EF4444;
+
+  /* === TEXT === */
+  --color-text-1:      #F0F4F8;
+  --color-text-2:      #B8C4D4;
+  --color-text-3:      #7A8FA6;
+
+  /* === BORDERS === */
+  --border-subtle:     rgba(255, 255, 255, 0.08);
+  --border-medium:     rgba(255, 255, 255, 0.12);
+  --border-strong:     rgba(255, 255, 255, 0.20);
+
+  /* === LEGACY ALIASES (keep so existing inline styles don't break) === */
+  --bg-app:            #0D1B2E;
+  --bg-page:           #0D1B2E;
+  --bg-card:           #172D47;
+  --bg-card-soft:      #112236;
+  --bg-card-hover:     #1E3554;
+  --border-soft:       rgba(255, 255, 255, 0.08);
+  --text-primary:      #F0F4F8;
+  --text-secondary:    #B8C4D4;
+  --text-muted:        #7A8FA6;
+  --text-faint:        #4A5A6B;
+  --accent-orange:     #FF6B16;
+  --accent-orange-hover: #E55E0E;
+  --accent-orange-soft:  rgba(255, 107, 22, 0.15);
+  --accent-green:      #22C55E;
+  --accent-green-soft: rgba(34, 197, 94, 0.12);
+  --accent-purple:     #7C5CFF;
+  --accent-purple-soft: rgba(124, 92, 255, 0.15);
+  --accent-gold:       #F59E0B;
+  --accent-gold-soft:  rgba(245, 158, 11, 0.12);
+  --danger:            #EF4444;
+  --danger-soft:       rgba(239, 68, 68, 0.12);
+
+  --radius-card: 24px;
+  --radius-button: 18px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.30), 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+  --shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
 body {
   font-family: 'Inter', sans-serif;
-  background:
-    radial-gradient(circle at top right, rgba(124, 58, 237, 0.16), transparent 30%),
-    radial-gradient(circle at bottom left, rgba(34, 230, 168, 0.10), transparent 28%),
-    #07111F;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-2);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 0;
@@ -25,18 +83,102 @@ html {
 
 .app-premium-bg {
   background:
-    radial-gradient(circle at top right, rgba(124, 58, 237, 0.16), transparent 30%),
-    radial-gradient(circle at bottom left, rgba(34, 230, 168, 0.10), transparent 28%),
-    #07111F;
+    radial-gradient(circle at top right, rgba(124, 58, 237, 0.10), transparent 35%),
+    radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.08), transparent 35%),
+    var(--bg-app);
 }
 
 /* ── Animations ── */
+.app-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, rgba(124, 58, 237, 0.10), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.07), transparent 35%),
+    var(--bg-app);
+  color: var(--text-primary);
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--bg-page);
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.app-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+}
+
+.app-card-soft {
+  background: var(--bg-card-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+}
+
+.app-card-interactive {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.app-card-interactive:active {
+  transform: scale(0.985);
+}
+
+.app-section-label {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.app-title {
+  color: var(--text-primary);
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.app-subtitle {
+  color: var(--text-muted);
+}
+
+.app-button-primary {
+  background: linear-gradient(135deg, #FF8A1A, #FF5C00);
+  color: white;
+  border-radius: var(--radius-button);
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgba(255, 122, 26, 0.22);
+}
+
+.app-button-secondary {
+  background: rgba(148, 163, 184, 0.08);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-button);
+  font-weight: 700;
+}
+
+.app-pill {
+  border-radius: var(--radius-pill);
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  color: var(--text-secondary);
+}
+
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg,#1e293b 25%,#263348 50%,#1e293b 75%);
+  background: linear-gradient(90deg,#172D47 25%,#1E3554 50%,#172D47 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: 0.5rem;
@@ -127,8 +269,8 @@ html {
 }
 
 @keyframes breathe {
-  0%,100% { box-shadow: 0 0 16px rgba(16,185,129,0.3); }
-  50%     { box-shadow: 0 0 28px rgba(16,185,129,0.6); }
+  0%,100% { box-shadow: 0 0 16px rgba(20,184,166,0.3); }
+  50%     { box-shadow: 0 0 28px rgba(20,184,166,0.6); }
 }
 .btn-breathe { animation: breathe 2.5s ease-in-out infinite; }
 
@@ -176,9 +318,13 @@ html {
 }
 
 /* ── Elevation shadows ── */
-.shadow-card   { box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
-.shadow-cta    { box-shadow: 0 0 20px rgba(16,185,129,0.35); }
-.shadow-streak { box-shadow: 0 0 16px rgba(249,115,22,0.4); }
+.shadow-card   { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.30), 0 0 0 0.5px rgba(255, 255, 255, 0.06); }
+.shadow-orange { box-shadow: 0 4px 20px rgba(255, 107, 22, 0.25); }
+.shadow-teal   { box-shadow: 0 4px 16px rgba(20, 184, 166, 0.20); }
+.shadow-gold   { box-shadow: 0 4px 16px rgba(245, 158, 11, 0.20); }
+/* legacy aliases */
+.shadow-cta    { box-shadow: 0 4px 20px rgba(255, 107, 22, 0.25); }
+.shadow-streak { box-shadow: 0 4px 16px rgba(245, 158, 11, 0.20); }
 .shadow-gold   { box-shadow: 0 0 20px rgba(245,158,11,0.5); }
 
 /* ── Custom scrollbar (subtle) ── */

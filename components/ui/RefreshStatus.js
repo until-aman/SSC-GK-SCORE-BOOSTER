@@ -28,7 +28,7 @@ export default function RefreshStatus({
         disabled={isRefreshing}
         className="font-semibold active:opacity-70 disabled:opacity-60"
         style={{
-          color: '#34D399',
+          color: '#14B8A6',
           background: 'none',
           border: 'none',
           padding: 0,
