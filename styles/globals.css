@@ -178,7 +178,7 @@ html {
   100% { background-position:  200% 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg,#1e293b 25%,#263348 50%,#1e293b 75%);
+  background: linear-gradient(90deg,#172D47 25%,#1E3554 50%,#172D47 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: 0.5rem;
