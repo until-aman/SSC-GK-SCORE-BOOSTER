@@ -139,8 +139,7 @@ export default function HistoryPage() {
           <div className="h-2 bg-white/10 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-700"
-              style={{ background: 'linear-gradient(90deg, #14B8A6, #2DD4BF)' }}
-              style={{ width: `${xpBarWidth}%` }}
+              style={{ background: 'linear-gradient(90deg, #14B8A6, #2DD4BF)', width: `${xpBarWidth}%` }}
             />
           </div>
           {nextLevel && (
