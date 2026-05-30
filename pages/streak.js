@@ -77,6 +77,23 @@ export default function StreakPage() {
   const [calView, setCalView]         = useState('week');
   const [monthOffset, setMonthOffset] = useState(0);
   const [btnPress, setBtnPress]       = useState(false);
+  const [showCTA, setShowCTA]         = useState(false);
+
+  useEffect(() => {
+    let timer;
+    function onInteract() {
+      timer = setTimeout(() => setShowCTA(true), 4000);
+    }
+    window.addEventListener('scroll', onInteract, { capture: true, once: true });
+    window.addEventListener('touchstart', onInteract, { capture: true, once: true });
+    window.addEventListener('pointermove', onInteract, { capture: true, once: true });
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('scroll', onInteract, true);
+      window.removeEventListener('touchstart', onInteract, true);
+      window.removeEventListener('pointermove', onInteract, true);
+    };
+  }, []);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -512,8 +529,12 @@ export default function StreakPage() {
       {/* ── STICKY CTA — always orange ── */}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
-        padding: '10px 16px 24px',
+        padding: '10px 16px 74px',
         background: 'linear-gradient(to top, var(--bg-app) 65%, transparent)',
+        opacity: showCTA ? 1 : 0,
+        transform: showCTA ? 'translateY(0)' : 'translateY(16px)',
+        transition: 'opacity 0.4s ease, transform 0.4s ease',
+        pointerEvents: showCTA ? 'auto' : 'none',
       }}>
         <button
           onPointerDown={() => setBtnPress(true)}

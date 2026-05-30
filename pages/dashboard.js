@@ -720,7 +720,7 @@ export default function Dashboard() {
         router.push('/quiz?mode=daily');
       }}
       style={{
-        margin: '16px 20px 20px',
+        margin: '4px 20px 20px',
         borderRadius: '22px',
         padding: '22px 22px 20px',
         position: 'relative',
@@ -786,104 +786,111 @@ export default function Dashboard() {
       <div className="app-page">
       <div className="app-shell !px-0 pb-20">
 
-        {/* ── PROFILE BAR ── */}
-        <div className="px-4 pt-8 pb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => router.push('/profile')}
-              className="flex-shrink-0 active:scale-90 transition-transform"
-              aria-label="Go to profile"
-            >
-              <Avatar imageUrl={googlePhoto} name={displayName} size={36} />
-            </button>
-            {isLoggedIn ? (
-              <span className="bg-white/10 rounded-full px-2.5 py-1 font-display font-bold text-xs text-white/70">
-                ⭐ {level}
-              </span>
-            ) : (
-              <span className="bg-slate-700/50 rounded-full px-2.5 py-1 font-sans text-xs text-slate-500">
-                Guest
-              </span>
-            )}
+        {/* ── STICKY HEADER BAR ── */}
+        <div
+          className="sticky top-0 z-50 px-4 flex items-center justify-between"
+          style={{
+            height: '58px',
+            background: 'rgba(15,32,52,0.88)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            border: '1px solid rgba(20,184,166,0.18)',
+            borderTop: 'none',
+            borderLeft: 'none',
+            borderRight: 'none',
+            borderRadius: '0 0 22px 22px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.22)',
+          }}
+        >
+          {/* Left: Bolt + App name */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-[11px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#f97316">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+            </div>
+            <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center text-white">
+              SSC GK SCORE BOOSTER
+            </span>
           </div>
-          <div className="flex items-center gap-2">
-            {process.env.NODE_ENV === 'development' && (
-              <button
-                type="button"
-                onClick={handleClearAppCache}
-                className="rounded-full border border-rose-400/30 bg-rose-500/10 px-2.5 py-1 font-sans text-[10px] font-semibold text-rose-200"
-              >
-                Clear App Cache
-              </button>
-            )}
-            <button
-              onClick={() => isLoggedIn && router.push('/history')}
-              className="bg-yellow-500/20 border border-yellow-400/50 rounded-full px-3 py-1.5 flex items-center gap-1.5"
-            >
-              <span className="text-[14px] leading-none" style={{ filter: 'drop-shadow(0 0 4px rgba(234,179,8,0.7))' }}>🪙</span>
-              <span className={`font-display font-bold text-xs ${isGuest ? 'text-slate-600' : 'text-yellow-400'}`}>
-                {isGuest ? '0' : totalXP}
-              </span>
-            </button>
-          </div>
+
+          {/* Right: Avatar */}
+          <button
+            onClick={() => router.push('/profile')}
+            className="flex-shrink-0 active:scale-90 transition-transform"
+            aria-label="Go to profile"
+          >
+            <Avatar imageUrl={googlePhoto} name={displayName} size={36} />
+          </button>
         </div>
 
-        {/* ── WELCOME MESSAGE ── */}
-        <div style={{ padding: '4px 20px 16px' }}>
+        {/* ── GREETING ── */}
+        <div style={{ padding: '18px 20px 8px' }}>
           <div className="font-display text-[20px] leading-[1.2] font-extrabold" style={{ color: 'var(--text-primary)' }}>
             Good {timeOfDay},{' '}
             <span style={{ color: '#14B8A6' }}>
               {session?.user?.name?.split(' ')[0] || 'Aspirant'} 👋
             </span>
           </div>
-          <div className="font-body text-[13px] leading-[1.45] font-medium" style={{ color: 'var(--text-muted)' }}>
-            Ready for today&apos;s GK challenge?
-          </div>
-          <div className="mt-2">
+          <div className="flex items-center justify-between mt-1">
+            <div className="font-body text-[13px] leading-[1.45] font-medium" style={{ color: 'var(--text-muted)' }}>
+              Keep your streak alive today 🔥
+            </div>
             <RefreshStatus
               updatedAt={bootstrapUpdatedAt}
               isRefreshing={bootstrapRefreshing}
               onRefresh={handleBootstrapRefresh}
+              refreshText={
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                </svg>
+              }
             />
           </div>
         </div>
 
-        {/* ── STAT MINI-CARDS ── */}
-        <div className="px-4 mb-3 grid grid-cols-3 gap-2.5">
-          {/* Streak */}
-          <div style={{ background: '#172D47', border: '1px solid rgba(245,158,11,0.28)', borderRadius: 16, padding: '12px 14px', boxShadow: '0 0 18px rgba(245,158,11,0.08)' }}>
-            <div className="flex items-center gap-1.5" style={{ marginBottom: 8 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2C9 7 6 9.5 6 14a6 6 0 0012 0c0-4.5-3-7-6-12zm0 17a4 4 0 01-4-4c0-2.5 1.5-4.5 4-7 2.5 2.5 4 4.5 4 7a4 4 0 01-4 4z"/></svg>
-              <span className="font-sans font-bold uppercase" style={{ fontSize: 10, color: '#F59E0B', letterSpacing: '0.07em' }}>Streak</span>
-            </div>
-            <p className="font-display font-black" style={{ fontSize: 22, lineHeight: 1, color: '#F0F4F8', margin: 0 }}>
-              {isGuest ? '—' : streakCount > 0 ? `${streakCount}d` : '0d'}
-            </p>
-          </div>
-
-          {/* XP */}
-          <div style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.28)', borderRadius: 16, padding: '12px 14px', boxShadow: '0 0 18px rgba(20,184,166,0.08)' }}>
-            <div className="flex items-center gap-1.5" style={{ marginBottom: 8 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              <span className="font-sans font-bold uppercase" style={{ fontSize: 10, color: '#14B8A6', letterSpacing: '0.07em' }}>XP</span>
-            </div>
-            <p className="font-display font-black" style={{ fontSize: 22, lineHeight: 1, color: '#F0F4F8', margin: 0 }}>
+        {/* ── STAT MINI-CARDS (mirrors profile screen layout) ── */}
+        <div className="grid grid-cols-3 gap-2 px-4 mb-3">
+          {/* XP → /history */}
+          <button
+            onClick={() => !isGuest && router.push('/history')}
+            className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
+            style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.20)' }}
+          >
+            <span className="text-lg leading-none mb-0.5">🪙</span>
+            <span className="t-stat-sm font-display" style={{ color: '#14B8A6' }}>
               {isGuest ? '—' : totalXP >= 10000 ? `${(totalXP / 1000).toFixed(1)}k` : totalXP.toLocaleString()}
-            </p>
-          </div>
+            </span>
+            <span className="t-stat-label font-sans text-slate-500">Total XP</span>
+          </button>
 
-          {/* Rank */}
-          <div style={{ background: '#172D47', border: '1px solid rgba(124,92,255,0.28)', borderRadius: 16, padding: '12px 14px', boxShadow: '0 0 18px rgba(124,92,255,0.08)' }}>
-            <div className="flex items-center gap-1.5" style={{ marginBottom: 8 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C5CFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 010-5H6"/><path d="M18 9h1.5a2.5 2.5 0 000-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0012 0V2z"/></svg>
-              <span className="font-sans font-bold uppercase" style={{ fontSize: 10, color: '#7C5CFF', letterSpacing: '0.07em' }}>Rank</span>
-            </div>
-            <p className="font-display font-black" style={{ fontSize: 22, lineHeight: 1, color: '#F0F4F8', margin: 0 }}>
+          {/* Streak → /streak */}
+          <button
+            onClick={() => !isGuest && router.push('/streak')}
+            className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
+            style={{ background: '#172D47', border: '1px solid rgba(255,107,22,0.20)' }}
+          >
+            <span className="text-lg leading-none mb-0.5">🔥</span>
+            <span className="t-stat-sm font-display text-orange-400">
+              {isGuest ? '—' : streakCount}
+            </span>
+            <span className="t-stat-label font-sans text-slate-500">Day Streak</span>
+          </button>
+
+          {/* Rank → /leaderboard */}
+          <button
+            onClick={() => router.push('/leaderboard')}
+            className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
+            style={{ background: '#172D47', border: '1px solid rgba(124,92,255,0.20)' }}
+          >
+            <span className="text-lg leading-none mb-0.5">🏆</span>
+            <span className="t-stat-sm font-display text-violet-400">
               {isGuest || !weeklyRank ? '—' : `#${weeklyRank}`}
-            </p>
-          </div>
+            </span>
+            <span className="t-stat-label font-sans text-slate-500">Rank</span>
+          </button>
         </div>
-
         {/* ── DAILY CHALLENGE HERO CARD ── */}
         {dailyChallengeCard}
 
@@ -1256,11 +1263,16 @@ export default function Dashboard() {
                     <RefreshStatus
                       updatedAt={weeklyUpdatedAt}
                       isRefreshing={weeklyUpdating}
-                      refreshText="Refresh rank"
                       onRefresh={e => {
                         e.stopPropagation();
                         handleLeaderboardRefresh();
                       }}
+                      refreshText={
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="23 4 23 10 17 10"/>
+                          <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                        </svg>
+                      }
                     />
                   </div>
                 )}

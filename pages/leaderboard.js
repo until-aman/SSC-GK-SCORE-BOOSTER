@@ -8,6 +8,7 @@ import Loader from '@/components/ui/Loader';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 import SectionHeader from '@/components/ui/SectionHeader';
+import RefreshStatus from '@/components/ui/RefreshStatus';
 import {
   buildLeaderboardCache,
   claimLeaderboardRefresh,
@@ -96,6 +97,23 @@ export default function Leaderboard() {
   const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [updatedAt, setUpdatedAt] = useState(null);
+  const [showCTA, setShowCTA] = useState(false);
+
+  useEffect(() => {
+    let timer;
+    function onInteract() {
+      timer = setTimeout(() => setShowCTA(true), 4000);
+    }
+    window.addEventListener('scroll', onInteract, { capture: true, once: true });
+    window.addEventListener('touchstart', onInteract, { capture: true, once: true });
+    window.addEventListener('pointermove', onInteract, { capture: true, once: true });
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('scroll', onInteract, true);
+      window.removeEventListener('touchstart', onInteract, true);
+      window.removeEventListener('pointermove', onInteract, true);
+    };
+  }, []);
 
   async function fetchLeaderboard(scope, { forceRefresh = false } = {}) {
     let showedCache = false;
@@ -396,20 +414,20 @@ export default function Leaderboard() {
 
                 {/* ── Refresh / cache info bar ───────────────────────────── */}
                 <div className="flex justify-end mt-2 mb-3">
-                  <button
-                    type="button"
-                    disabled={refreshing}
-                    onClick={() => {
+                  <RefreshStatus
+                    updatedAt={updatedAt}
+                    isRefreshing={refreshing}
+                    onRefresh={() => {
                       try { localStorage.removeItem('ssc_leaderboard_refresh_started_at'); } catch {}
                       fetchLeaderboard(activeTab, { forceRefresh: true });
                     }}
-                    className="font-sans active:opacity-70 disabled:opacity-70 flex items-center gap-1"
-                    style={{ fontSize: 12, color: '#64748B', background: 'none', border: 'none', padding: 0, cursor: refreshing ? 'default' : 'pointer' }}
-                  >
-                    {refreshing
-                      ? '\u21bb Refreshing...'
-                      : `\u21bb Updated ${formatLastUpdated(updatedAt) || 'recently'}`}
-                  </button>
+                    refreshText={
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                      </svg>
+                    }
+                  />
                 </div>
 
                 {/* ── Rank 4 and beyond ──────────────────────────────────── */}
@@ -432,8 +450,16 @@ export default function Leaderboard() {
           </div>
         </div>
 
-        {/* Practice CTA — flex child, always visible above bottom nav */}
-        <div className="flex-shrink-0 px-4 pt-2 pb-3" style={{ background: 'var(--bg-app)' }}>
+        {/* Practice CTA — fixed above bottom nav, slides in after user interaction */}
+        <div
+          className="fixed bottom-[74px] left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 z-40"
+          style={{
+            opacity: showCTA ? 1 : 0,
+            transform: showCTA ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(16px)',
+            transition: 'opacity 0.4s ease, transform 0.4s ease',
+            pointerEvents: showCTA ? 'auto' : 'none',
+          }}
+        >
           <button
             onClick={() => router.push('/dashboard')}
             className="w-full font-display font-bold text-base text-white active:scale-[0.98] transition-transform"

@@ -17,7 +17,7 @@ export default function RefreshStatus({
 
   return (
     <div
-      className="flex items-center gap-1.5 text-xs"
+      className="flex items-center gap-1.5 text-[10px]"
       style={{ color: '#64748B', minWidth: 0, flexWrap: 'wrap' }}
     >
       <span>{statusText}</span>
