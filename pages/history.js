@@ -57,9 +57,9 @@ export default function HistoryPage() {
       <div className="min-h-screen [background:var(--bg-app)] px-4 pt-10">
         <div className="flex items-center gap-3 mb-6">
           <BackButton />
-          <h1 className="font-display font-bold text-[20px] text-white">XP History</h1>
+          <h1 className="font-display font-bold text-[20px] text-white">Coins History</h1>
         </div>
-        <Loader card size="md" label="Fetching your XP history…" />
+        <Loader card size="md" label="Fetching your Coins history…" />
       </div>
     );
   }
@@ -67,16 +67,16 @@ export default function HistoryPage() {
   if (isGuest) {
     return (
       <>
-        <Head><title>XP History — SSC GK Score Booster</title></Head>
+        <Head><title>Coins History — SSC GK Score Booster</title></Head>
         <div className="min-h-screen [background:var(--bg-app)] pb-10">
           <div className="px-4 pt-10 pb-4 flex items-center gap-3">
             <BackButton />
-            <h1 className="font-display font-black text-xl text-white">XP History</h1>
+            <h1 className="font-display font-black text-xl text-white">Coins History</h1>
           </div>
           <GoogleSignInCard
             className="mx-4 mt-8"
             title="Track Your Progress"
-            subtitle="Login to save your XP, track streaks, and see your full quiz history."
+            subtitle="Login to save your Coins, track streaks, and see your full quiz history."
             buttonText="Sign in"
             callbackUrl="/dashboard"
           />
@@ -98,13 +98,13 @@ export default function HistoryPage() {
 
   return (
     <>
-      <Head><title>XP History — SSC GK Score Booster</title></Head>
+      <Head><title>Coins History — SSC GK Score Booster</title></Head>
       <div className="min-h-screen [background:var(--bg-app)] pb-10">
 
         {/* Header */}
         <div className="px-4 pt-10 pb-4 flex items-center gap-3">
           <BackButton />
-          <h1 className="font-display font-bold text-[20px] text-white flex-1">XP History</h1>
+          <h1 className="font-display font-bold text-[20px] text-white flex-1">Coins History</h1>
           <button
             onClick={fetchHistory}
             className="w-9 h-9 flex items-center justify-center rounded-full active:scale-90 transition-transform"
@@ -123,14 +123,14 @@ export default function HistoryPage() {
           <div className="flex items-end justify-between mb-3">
             <div>
               <p className="font-display font-black text-4xl text-white leading-none">{totalXP}</p>
-              <p className="font-sans text-sm text-[#14B8A6] mt-0.5">total XP earned</p>
+              <p className="font-sans text-sm text-[#14B8A6] mt-0.5">total Coins earned</p>
             </div>
             <div className="flex flex-col items-end gap-1">
               <span className="bg-white/10 rounded-full px-3 py-1 font-display font-bold text-sm text-white">
                 ⭐ {level}
               </span>
               {nextLevel && (
-                <span className="font-sans text-xs text-slate-400">{xpToNext} XP to {nextLevel}</span>
+                <span className="font-sans text-xs text-slate-400">{xpToNext} Coins to {nextLevel}</span>
               )}
             </div>
           </div>
@@ -144,8 +144,8 @@ export default function HistoryPage() {
           </div>
           {nextLevel && (
             <div className="flex justify-between font-sans text-xs text-slate-500 mt-1">
-              <span>{thresh.min} XP</span>
-              <span>{thresh.max} XP</span>
+              <span>{thresh.min} Coins</span>
+              <span>{thresh.max} Coins</span>
             </div>
           )}
         </div>
@@ -156,7 +156,7 @@ export default function HistoryPage() {
             <div className="rounded-2xl p-8 flex flex-col items-center gap-4 text-center" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
               <span className="text-4xl">🎯</span>
               <p className="font-display font-bold text-base text-white">No quizzes yet</p>
-              <p className="font-sans font-medium text-sm text-slate-400">Complete a quiz to start earning XP and building your history.</p>
+              <p className="font-sans font-medium text-sm text-slate-400">Complete a quiz to start earning Coins and building your history.</p>
               <button
                 onClick={() => router.push('/dashboard')}
                 className="text-white rounded-2xl py-3 px-6 font-display font-bold text-sm active:scale-[0.98] transition-transform"
@@ -200,14 +200,14 @@ export default function HistoryPage() {
         {/* How to earn XP table */}
         <div className="mx-4 mt-5 rounded-2xl overflow-hidden" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="px-4 py-3 border-b border-white/[0.06]">
-            <p className="font-display font-bold text-base text-white">How to earn XP ⚡</p>
+            <p className="font-display font-bold text-base text-white">How to earn Coins ⚡</p>
             <p className="font-sans text-xs text-slate-400 mt-0.5">Earn more by playing consistently</p>
           </div>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/[0.06]">
                 <th className="px-4 py-2.5 text-left font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">Action</th>
-                <th className="px-4 py-2.5 text-right font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">XP</th>
+                <th className="px-4 py-2.5 text-right font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">Coins</th>
               </tr>
             </thead>
             <tbody>
@@ -226,7 +226,7 @@ export default function HistoryPage() {
             </tbody>
           </table>
           <div className="px-4 py-3" style={{ background: 'rgba(20,184,166,0.06)', borderTop: '1px solid rgba(20,184,166,0.18)' }}>
-            <p className="font-sans text-xs text-[#14B8A6]">💡 Max XP per quiz = 10 base + 2×correct + 10 first-of-day bonus</p>
+            <p className="font-sans text-xs text-[#14B8A6]">💡 Max Coins per quiz = 10 base + 2×correct + 10 first-of-day bonus</p>
           </div>
         </div>
 

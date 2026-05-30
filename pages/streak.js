@@ -217,8 +217,8 @@ export default function StreakPage() {
           {nextMs && (
             <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.48)', marginTop: 10, lineHeight: 1.55 }}>
               {playedToday
-                ? `Practice tomorrow to make it ${streakCount + 1} days and unlock +${nextMs.xp} XP.`
-                : `Play today to protect your ${streakCount}-day streak and stay on track for +${nextMs.xp} XP.`
+                ? `Practice tomorrow to make it ${streakCount + 1} days and unlock +${nextMs.xp} Coins.`
+                : `Play today to protect your ${streakCount}-day streak and stay on track for +${nextMs.xp} Coins.`
               }
             </p>
           )}
@@ -231,7 +231,7 @@ export default function StreakPage() {
                   Next: <span style={{ color: nextMs.color, fontWeight: 700 }}>{nextMs.label} streak</span>
                 </span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: nextMs.color }}>
-                  {daysToNext} day{daysToNext !== 1 ? 's' : ''} away · +{nextMs.xp} XP
+                  {daysToNext} day{daysToNext !== 1 ? 's' : ''} away · +{nextMs.xp} Coins
                 </span>
               </div>
               <div style={{ height: 6, borderRadius: 6, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
@@ -443,7 +443,7 @@ export default function StreakPage() {
                   </p>
                   <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
                     {daysToNext} more active day{daysToNext !== 1 ? 's' : ''} to unlock{' '}
-                    <span style={{ color: nextMs.color, fontWeight: 700 }}>+{nextMs.xp} XP</span>
+                    <span style={{ color: nextMs.color, fontWeight: 700 }}>+{nextMs.xp} Coins</span>
                   </p>
                 </div>
                 <div style={{
@@ -455,7 +455,7 @@ export default function StreakPage() {
                   <p className="font-display font-black" style={{ fontSize: 16, color: nextMs.color, lineHeight: 1 }}>
                     +{nextMs.xp}
                   </p>
-                  <p style={{ fontSize: 9, color: nextMs.color, opacity: 0.7, marginTop: 1 }}>XP</p>
+                  <p style={{ fontSize: 9, color: nextMs.color, opacity: 0.7, marginTop: 1 }}>Coins</p>
                 </div>
               </div>
             </div>
@@ -479,7 +479,7 @@ export default function StreakPage() {
                     <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
                     <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.32)', fontWeight: 400 }}>{m.label} streak</span>
                   </div>
-                  <span className="font-display font-bold" style={{ fontSize: 13, color: 'rgba(255,255,255,0.20)' }}>+{m.xp} XP</span>
+                  <span className="font-display font-bold" style={{ fontSize: 13, color: 'rgba(255,255,255,0.20)' }}>+{m.xp} Coins</span>
                 </div>
               ))}
             </>
@@ -503,7 +503,7 @@ export default function StreakPage() {
                     <span style={{ color: m.color, fontSize: 12, lineHeight: 1 }}>✓</span>
                     <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>{m.label} streak</span>
                   </div>
-                  <span className="font-display font-bold" style={{ fontSize: 13, color: m.color }}>+{m.xp} XP</span>
+                  <span className="font-display font-bold" style={{ fontSize: 13, color: m.color }}>+{m.xp} Coins</span>
                 </div>
               ))}
             </>
@@ -519,7 +519,7 @@ export default function StreakPage() {
 
           <div style={{ padding: '9px 16px', background: 'rgba(249,115,22,0.05)', borderTop: '1px solid rgba(249,115,22,0.10)' }}>
             <p style={{ fontSize: 11, color: 'rgba(249,115,22,0.58)' }}>
-              💡 Bonus XP is awarded automatically when you hit a milestone
+              💡 Bonus Coins are awarded automatically when you hit a milestone
             </p>
           </div>
         </div>
