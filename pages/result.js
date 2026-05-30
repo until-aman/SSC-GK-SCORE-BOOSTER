@@ -46,7 +46,7 @@ function ChampionAvatar({ imageUrl, name, size = 36 }) {
   }
   return (
     <div
-      className="rounded-full bg-gradient-to-br from-blue-600 to-emerald-600 flex items-center justify-center flex-shrink-0"
+      className="rounded-full bg-gradient-to-br from-blue-600 to-[#14B8A6] flex items-center justify-center flex-shrink-0"
       style={{ width: size, height: size }}
     >
       <span

@@ -68,8 +68,8 @@ module.exports = {
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         breathe: {
-          '0%, 100%': { boxShadow: '0 0 16px rgba(16,185,129,0.3)' },
-          '50%': { boxShadow: '0 0 28px rgba(16,185,129,0.6)' },
+          '0%, 100%': { boxShadow: '0 0 16px rgba(20,184,166,0.3)' },
+          '50%': { boxShadow: '0 0 28px rgba(20,184,166,0.6)' },
         },
         slideUp: {
           from: { transform: 'translateY(80px)', opacity: '0' },
