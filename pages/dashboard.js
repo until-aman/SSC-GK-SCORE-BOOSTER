@@ -720,7 +720,7 @@ export default function Dashboard() {
         router.push('/quiz?mode=daily');
       }}
       style={{
-        margin: '12px 20px 20px',
+        margin: '4px 20px 20px',
         borderRadius: '22px',
         padding: '22px 22px 20px',
         position: 'relative',
