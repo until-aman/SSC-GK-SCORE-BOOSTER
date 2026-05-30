@@ -8,6 +8,7 @@ import Loader from '@/components/ui/Loader';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 import SectionHeader from '@/components/ui/SectionHeader';
+import RefreshStatus from '@/components/ui/RefreshStatus';
 import {
   buildLeaderboardCache,
   claimLeaderboardRefresh,
@@ -413,20 +414,20 @@ export default function Leaderboard() {
 
                 {/* ── Refresh / cache info bar ───────────────────────────── */}
                 <div className="flex justify-end mt-2 mb-3">
-                  <button
-                    type="button"
-                    disabled={refreshing}
-                    onClick={() => {
+                  <RefreshStatus
+                    updatedAt={updatedAt}
+                    isRefreshing={refreshing}
+                    onRefresh={() => {
                       try { localStorage.removeItem('ssc_leaderboard_refresh_started_at'); } catch {}
                       fetchLeaderboard(activeTab, { forceRefresh: true });
                     }}
-                    className="font-sans active:opacity-70 disabled:opacity-70 flex items-center gap-1"
-                    style={{ fontSize: 12, color: '#64748B', background: 'none', border: 'none', padding: 0, cursor: refreshing ? 'default' : 'pointer' }}
-                  >
-                    {refreshing
-                      ? '\u21bb Refreshing...'
-                      : `\u21bb Updated ${formatLastUpdated(updatedAt) || 'recently'}`}
-                  </button>
+                    refreshText={
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                      </svg>
+                    }
+                  />
                 </div>
 
                 {/* ── Rank 4 and beyond ──────────────────────────────────── */}

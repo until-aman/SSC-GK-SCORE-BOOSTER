@@ -1263,11 +1263,16 @@ export default function Dashboard() {
                     <RefreshStatus
                       updatedAt={weeklyUpdatedAt}
                       isRefreshing={weeklyUpdating}
-                      refreshText="Refresh rank"
                       onRefresh={e => {
                         e.stopPropagation();
                         handleLeaderboardRefresh();
                       }}
+                      refreshText={
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="23 4 23 10 17 10"/>
+                          <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                        </svg>
+                      }
                     />
                   </div>
                 )}

@@ -10,6 +10,7 @@ import Loader from '@/components/ui/Loader';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 import SectionHeader from '@/components/ui/SectionHeader';
+import RefreshStatus from '@/components/ui/RefreshStatus';
 import { fetchWithClientCache, formatLastUpdated, patchCache, readCache, writeCache } from '@/lib/clientCache';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 
@@ -861,29 +862,20 @@ export default function Result() {
 
               {(leaderboardMsg || leaderboardRefreshing || weeklyUpdatedAt) && (
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-                  <button
-                    type="button"
-                    onClick={e => {
+                  <RefreshStatus
+                    updatedAt={weeklyUpdatedAt}
+                    isRefreshing={leaderboardRefreshing}
+                    onRefresh={e => {
                       e.stopPropagation();
                       loadWeeklyLeaderboard({ forceRefresh: true });
                     }}
-                    disabled={leaderboardRefreshing}
-                    className="font-sans active:opacity-70 disabled:opacity-70"
-                    style={{
-                      fontSize: 12,
-                      color: '#64748B',
-                      background: 'none',
-                      border: 'none',
-                      padding: 0,
-                      cursor: leaderboardRefreshing ? 'default' : 'pointer',
-                    }}
-                  >
-                    {leaderboardRefreshing
-                      ? '↻ Refreshing...'
-                      : leaderboardMsg
-                        ? `${leaderboardMsg} • Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`
-                        : `↻ Updated ${formatLastUpdated(weeklyUpdatedAt) || 'recently'}`}
-                  </button>
+                    refreshText={
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                      </svg>
+                    }
+                  />
                 </div>
               )}
 
