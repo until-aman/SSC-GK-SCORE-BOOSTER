@@ -365,7 +365,24 @@ export default function Saved() {
   const [sortOrder, setSortOrder]       = useState('newest');
   const [revisedIds, setRevisedIds]     = useState(new Set());
   const [visibleCount, setVisibleCount] = useState(20);
+  const [showCTA, setShowCTA] = useState(false);
   const sentinelRef = useRef(null);
+
+  useEffect(() => {
+    let timer;
+    function onInteract() {
+      timer = setTimeout(() => setShowCTA(true), 4000);
+    }
+    window.addEventListener('scroll', onInteract, { capture: true, once: true });
+    window.addEventListener('touchstart', onInteract, { capture: true, once: true });
+    window.addEventListener('pointermove', onInteract, { capture: true, once: true });
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('scroll', onInteract, true);
+      window.removeEventListener('touchstart', onInteract, true);
+      window.removeEventListener('pointermove', onInteract, true);
+    };
+  }, []);
 
   const isLoggedIn = status === 'authenticated';
   const isGuest    = status === 'unauthenticated';
@@ -758,7 +775,15 @@ export default function Saved() {
 
             {/* Start Revision CTA — sticky above bottom nav */}
             {filtered.length > 0 && (
-              <div className="fixed bottom-[82px] left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-2 z-40">
+              <div
+                className="fixed bottom-[74px] left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-2 z-40"
+                style={{
+                  opacity: showCTA ? 1 : 0,
+                  transform: showCTA ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(16px)',
+                  transition: 'opacity 0.4s ease, transform 0.4s ease',
+                  pointerEvents: showCTA ? 'auto' : 'none',
+                }}
+              >
                 <button
                   onClick={() => setRevisionIdx(0)}
                   className="w-full font-display font-bold text-base text-white active:scale-[0.98] transition-transform"

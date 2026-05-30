@@ -96,6 +96,23 @@ export default function Leaderboard() {
   const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [updatedAt, setUpdatedAt] = useState(null);
+  const [showCTA, setShowCTA] = useState(false);
+
+  useEffect(() => {
+    let timer;
+    function onInteract() {
+      timer = setTimeout(() => setShowCTA(true), 4000);
+    }
+    window.addEventListener('scroll', onInteract, { capture: true, once: true });
+    window.addEventListener('touchstart', onInteract, { capture: true, once: true });
+    window.addEventListener('pointermove', onInteract, { capture: true, once: true });
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('scroll', onInteract, true);
+      window.removeEventListener('touchstart', onInteract, true);
+      window.removeEventListener('pointermove', onInteract, true);
+    };
+  }, []);
 
   async function fetchLeaderboard(scope, { forceRefresh = false } = {}) {
     let showedCache = false;
@@ -432,8 +449,17 @@ export default function Leaderboard() {
           </div>
         </div>
 
-        {/* Practice CTA — flex child, always visible above bottom nav */}
-        <div className="flex-shrink-0 px-4 pt-2 pb-3" style={{ background: 'var(--bg-app)' }}>
+        {/* Practice CTA — flex child, slides in after user interaction */}
+        <div
+          className="flex-shrink-0 px-4 pt-2 pb-3"
+          style={{
+            background: 'var(--bg-app)',
+            opacity: showCTA ? 1 : 0,
+            transform: showCTA ? 'translateY(0)' : 'translateY(16px)',
+            transition: 'opacity 0.4s ease, transform 0.4s ease',
+            pointerEvents: showCTA ? 'auto' : 'none',
+          }}
+        >
           <button
             onClick={() => router.push('/dashboard')}
             className="w-full font-display font-bold text-base text-white active:scale-[0.98] transition-transform"
