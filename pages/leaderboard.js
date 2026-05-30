@@ -181,6 +181,14 @@ export default function Leaderboard() {
     return acc;
   }, []);
 
+  // If the API didn't return currentUser but the session user is already in the
+  // top-10 list, derive their rank card from the list so "Play a quiz" is never
+  // shown to a user who clearly has a score on the board.
+  const effectiveCurrentUser = currentUser ||
+    (session?.user?.email
+      ? displayLeaders.find(l => l.email === session.user.email) || null
+      : null);
+
   const first  = displayLeaders[0] || null;
   const second = displayLeaders[1] || null;
   const third  = displayLeaders[2] || null;
@@ -282,7 +290,7 @@ export default function Leaderboard() {
                     buttonText="Sign in"
                     callbackUrl="/leaderboard"
                   />
-                ) : !currentUser ? (
+                ) : !effectiveCurrentUser ? (
                   <div className="mb-4 rounded-2xl px-4 py-4 text-center" style={{ background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.10)' }}>
                     <p className="font-sans text-slate-400 text-[13px]">Play a quiz to appear on the leaderboard!</p>
                   </div>
@@ -293,7 +301,7 @@ export default function Leaderboard() {
                     {/* Rank + YOU chip */}
                     <div className="flex items-center gap-2 mb-1">
                       <span className="t-stat-lg font-display text-violet-300 flex-shrink-0">
-                        #{currentUser.rank}
+                        #{effectiveCurrentUser.rank}
                       </span>
                       <span style={{ fontSize: 11, fontWeight: 700, color: '#14B8A6', background: 'rgba(20,184,166,0.16)', border: '1px solid rgba(20,184,166,0.35)', borderRadius: 7, padding: '2px 8px', lineHeight: '18px', flexShrink: 0 }}>
                         YOU
@@ -302,27 +310,27 @@ export default function Leaderboard() {
 
                     {/* Name + XP row */}
                     <div className="flex items-center gap-3 mb-2">
-                      <RankAvatar leader={currentUser} size={40} borderColor="rgba(139,92,246,0.55)" />
+                      <RankAvatar leader={effectiveCurrentUser} size={40} borderColor="rgba(139,92,246,0.55)" />
                       <div className="flex-1 min-w-0">
                         <p className="t-card-subtitle font-sans font-bold text-violet-100 truncate" style={{ margin: 0 }}>
-                          {truncateName(currentUser.name, 20)}
+                          {truncateName(effectiveCurrentUser.name, 20)}
                         </p>
-                        <p className="font-sans text-xs text-slate-500" style={{ margin: 0 }}>{currentUser.level || 'Aspirant'}</p>
+                        <p className="font-sans text-xs text-slate-500" style={{ margin: 0 }}>{effectiveCurrentUser.level || 'Aspirant'}</p>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="t-stat-sm font-display text-violet-300" style={{ margin: 0 }}>
-                          {(currentUser.totalScore || 0).toFixed(1)}
+                          {(effectiveCurrentUser.totalScore || 0).toFixed(1)}
                         </p>
                         <p className="t-stat-label font-sans text-slate-500" style={{ margin: 0 }}>XP</p>
                       </div>
                     </div>
 
                     {/* XP gap / top 3 message */}
-                    {currentUser.rank <= 3 ? (
+                    {effectiveCurrentUser.rank <= 3 ? (
                       <p className="font-sans text-[13px] text-[#14B8A6] mb-3" style={{ margin: '0 0 12px' }}>🎉 You're in the Top 3!</p>
-                    ) : third && (third.totalScore || 0) > (currentUser.totalScore || 0) ? (
+                    ) : third && (third.totalScore || 0) > (effectiveCurrentUser.totalScore || 0) ? (
                       <p className="font-sans text-[13px] text-amber-400" style={{ margin: '0 0 12px' }}>
-                        🔥 {Math.ceil((third.totalScore || 0) - (currentUser.totalScore || 0))} XP away from Top 3
+                        🔥 {Math.ceil((third.totalScore || 0) - (effectiveCurrentUser.totalScore || 0))} XP away from Top 3
                       </p>
                     ) : null}
 
