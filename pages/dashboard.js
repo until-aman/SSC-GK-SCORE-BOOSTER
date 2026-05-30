@@ -720,7 +720,7 @@ export default function Dashboard() {
         router.push('/quiz?mode=daily');
       }}
       style={{
-        margin: '4px 20px 20px',
+        margin: '12px 20px 20px',
         borderRadius: '22px',
         padding: '22px 22px 20px',
         position: 'relative',
@@ -864,9 +864,6 @@ export default function Dashboard() {
         </div>
 
         {/* ── DAILY CHALLENGE HERO CARD ── */}
-        <p className="px-4 pb-1 font-body text-[13px] font-medium" style={{ color: 'var(--text-muted)' }}>
-          Ready for today&apos;s GK challenge?
-        </p>
         {dailyChallengeCard}
 
         {/* ── STREAK HISTORY CARD ── */}
