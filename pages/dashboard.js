@@ -827,10 +827,11 @@ export default function Dashboard() {
               {session?.user?.name?.split(' ')[0] || 'Aspirant'} 👋
             </span>
           </div>
-          <div className="flex items-center justify-between mt-1">
+          <div className="mt-1">
             <div className="font-body text-[13px] leading-[1.45] font-medium" style={{ color: 'var(--text-muted)' }}>
               Keep your streak alive today 🔥
             </div>
+            <div className="mt-1">
             <RefreshStatus
               updatedAt={bootstrapUpdatedAt}
               isRefreshing={bootstrapRefreshing}
@@ -842,6 +843,7 @@ export default function Dashboard() {
                 </svg>
               }
             />
+            </div>
           </div>
         </div>
 

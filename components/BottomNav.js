@@ -88,8 +88,8 @@ export default function BottomNav() {
           transition: transform 0.08s ease !important;
         }
         @keyframes analysisTooltipIn {
-          from { opacity: 0; transform: translateX(-50%) translateY(6px); }
-          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+          from { opacity: 0; transform: translateX(-50%) scale(0.92) translateY(6px); transform-origin: bottom center; }
+          to   { opacity: 1; transform: translateX(-50%) scale(1) translateY(0);   transform-origin: bottom center; }
         }
       `}</style>
 
@@ -151,53 +151,59 @@ export default function BottomNav() {
                     boxSizing: 'border-box',
                   }}
                 >
-                  {/* Analysis tab tooltip */}
+                  {/* Analysis tab tooltip — cloud message bubble */}
                   {isAnalysis && showTooltip && (
-                    <div style={{
-                      position: 'absolute',
-                      bottom: 'calc(100% + 14px)',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      width: 220,
-                      background: 'rgba(10, 22, 40, 0.97)',
-                      border: '1px solid rgba(255, 107, 22, 0.45)',
-                      borderRadius: 14,
-                      padding: '11px 14px',
-                      pointerEvents: 'none',
-                      zIndex: 60,
-                      animation: 'analysisTooltipIn 0.3s ease forwards',
-                      boxShadow: '0 8px 28px rgba(0,0,0,0.5)',
-                    }}>
-                      {/* Tooltip text */}
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#F0F4F8', lineHeight: 1.35, marginBottom: 4 }}>
-                        New: AI GK Analysis ✨
-                      </div>
-                      <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.4 }}>
-                        Find weak topics &amp; your next revision plan.
+                    <div
+                      onClick={(e) => { e.stopPropagation(); markTooltipSeen(); router.push('/analysis'); }}
+                      style={{
+                        position: 'absolute',
+                        bottom: 'calc(100% + 12px)',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: 250,
+                        filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.55))',
+                        pointerEvents: 'auto',
+                        cursor: 'pointer',
+                        zIndex: 60,
+                        animation: 'analysisTooltipIn 0.28s ease forwards',
+                      }}>
+                      {/* Bubble body */}
+                      <div style={{
+                        background: 'linear-gradient(135deg, #1E3A5A 0%, #172D47 100%)',
+                        border: '1px solid rgba(255, 107, 22, 0.4)',
+                        borderRadius: 16,
+                        padding: '12px 14px 13px',
+                      }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#F0F4F8', lineHeight: 1.35, marginBottom: 4 }}>
+                          New: AI GK Analysis ✨
+                        </div>
+                        <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.4 }}>
+                          Find weak topics &amp; your next revision plan.
+                        </div>
                       </div>
 
-                      {/* Arrow pointing down toward the icon */}
+                      {/* Bubble tail pointing DOWN toward the Analysis icon */}
                       <div style={{
                         position: 'absolute',
-                        bottom: -6,
+                        bottom: -10,
                         left: '50%',
                         transform: 'translateX(-50%)',
                         width: 0,
                         height: 0,
-                        borderLeft: '6px solid transparent',
-                        borderRight: '6px solid transparent',
-                        borderTop: '6px solid rgba(255, 107, 22, 0.45)',
+                        borderLeft: '10px solid transparent',
+                        borderRight: '10px solid transparent',
+                        borderTop: '10px solid rgba(255, 107, 22, 0.4)',
                       }} />
                       <div style={{
                         position: 'absolute',
-                        bottom: -5,
+                        bottom: -9,
                         left: '50%',
                         transform: 'translateX(-50%)',
                         width: 0,
                         height: 0,
-                        borderLeft: '5px solid transparent',
-                        borderRight: '5px solid transparent',
-                        borderTop: '5px solid rgba(10, 22, 40, 0.97)',
+                        borderLeft: '9px solid transparent',
+                        borderRight: '9px solid transparent',
+                        borderTop: '9px solid #172D47',
                       }} />
                     </div>
                   )}

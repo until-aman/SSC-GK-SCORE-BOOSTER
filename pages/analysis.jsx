@@ -60,6 +60,47 @@ function ProgressBar({ pct, color = ORANGE, height = 8 }) {
   );
 }
 
+// ── Subject health data (static) ─────────────────────────────────────────
+const SUBJECTS = [
+  { name: 'Polity',           acc: 78, attempted: 145, target: 85, need: 30,  focus: 'Judiciary + Preamble',            status: 'Strong',   impact: 'Helping score' },
+  { name: 'Modern History',   acc: 61, attempted:  98, target: 70, need: 60,  focus: 'Independence Movement + INC',     status: 'Improve',  impact: 'Hurting score' },
+  { name: 'Ancient History',  acc: 69, attempted:  82, target: 75, need: 50,  focus: 'Vedic Period + Maurya Empire',    status: 'Good',     impact: 'Helping score' },
+  { name: 'Medieval History', acc: 46, attempted:  64, target: 55, need: 80,  focus: 'Delhi Sultanate + Mughal Empire', status: 'Weak',     impact: 'Hurting score' },
+  { name: 'Biology',          acc: 43, attempted:  76, target: 55, need: 90,  focus: 'Human Diseases + Nutrition',      status: 'Weak',     impact: 'Hurting score' },
+  { name: 'Chemistry',        acc: 38, attempted:  55, target: 50, need: 100, focus: 'Periodic Table + Basic Reactions',status: 'Critical', impact: 'Hurting score' },
+  { name: 'Physics',          acc: 55, attempted:  88, target: 65, need: 70,  focus: 'Laws of Motion + Electricity',    status: 'Improve',  impact: 'Hurting score' },
+  { name: 'Geography',        acc: 74, attempted: 112, target: 82, need: 35,  focus: 'Indian Rivers + Climate',         status: 'Strong',   impact: 'Helping score' },
+  { name: 'Economy',          acc: 59, attempted:  70, target: 68, need: 65,  focus: 'Budget + RBI Functions',          status: 'Improve',  impact: 'Hurting score' },
+  { name: 'Static GK',        acc: 68, attempted:  90, target: 76, need: 45,  focus: 'State Capitals + Important Days', status: 'Good',     impact: 'Helping score' },
+];
+const STATUS_COLOR = { Strong: '#14B8A6', Good: '#6366F1', Improve: '#F59E0B', Weak: '#FF6B16', Critical: '#EF4444' };
+const STATUS_BG    = { Strong: 'rgba(20,184,166,0.15)', Good: 'rgba(99,102,241,0.15)', Improve: 'rgba(245,158,11,0.15)', Weak: 'rgba(255,107,22,0.15)', Critical: 'rgba(239,68,68,0.15)' };
+
+// ── Topic data (static) ──────────────────────────────────────────────────
+const TOPICS = [
+  { subject: 'Polity',        name: 'Judiciary',              acc: 56, attempted: 38, tags: ['Improve Fast', 'High SSC Weightage'] },
+  { subject: 'Polity',        name: 'Fundamental Rights',     acc: 48, attempted: 42, tags: ['Weak Topics',  'High SSC Weightage'] },
+  { subject: 'Polity',        name: 'Directive Principles',   acc: 52, attempted: 28, tags: ['Improve Fast'] },
+  { subject: 'Modern History',name: 'Indian Natl. Congress',  acc: 58, attempted: 31, tags: ['Improve Fast', 'High SSC Weightage'] },
+  { subject: 'Medieval History',name:'Delhi Sultanate',       acc: 44, attempted: 22, tags: ['Weak Topics'] },
+  { subject: 'Biology',       name: 'Human Diseases',         acc: 41, attempted: 34, tags: ['Weak Topics',  'High SSC Weightage'] },
+  { subject: 'Biology',       name: 'Photosynthesis',         acc: 82, attempted: 45, tags: ['Strong Topics'] },
+  { subject: 'Geography',     name: 'Indian Rivers',          acc: 76, attempted: 52, tags: ['Strong Topics', 'High SSC Weightage'] },
+  { subject: 'Economy',       name: 'Budget & Fiscal Policy', acc: 54, attempted: 29, tags: ['Improve Fast', 'High SSC Weightage'] },
+  { subject: 'Medieval History',name:'Mughal Empire',         acc: 43, attempted: 18, tags: ['Weak Topics'] },
+  { subject: 'Polity',        name: 'Indian Constitution',    acc: 79, attempted: 61, tags: ['Strong Topics', 'High SSC Weightage'] },
+  { subject: 'Chemistry',     name: 'Periodic Table',         acc: 35, attempted: 24, tags: ['Weak Topics'] },
+  { subject: 'Physics',       name: 'Laws of Motion',         acc: 53, attempted: 33, tags: ['Improve Fast'] },
+  { subject: 'Geography',     name: 'Climate of India',       acc: 71, attempted: 47, tags: ['Strong Topics', 'High SSC Weightage'] },
+];
+
+const TAG_COLOR = {
+  'Improve Fast':       { color: '#F59E0B', bg: 'rgba(245,158,11,0.15)' },
+  'Weak Topics':        { color: '#EF4444', bg: 'rgba(239,68,68,0.15)'  },
+  'Strong Topics':      { color: '#14B8A6', bg: 'rgba(20,184,166,0.15)' },
+  'High SSC Weightage': { color: '#6366F1', bg: 'rgba(99,102,241,0.15)' },
+};
+
 // ── Main page ────────────────────────────────────────────────────────────
 export default function AnalysisPage() {
   const { data: session, status } = useSession();
@@ -69,6 +110,8 @@ export default function AnalysisPage() {
   const [ctaLoading,       setCtaLoading]       = useState(false);
   const [ctaError,         setCtaError]         = useState('');
   const [showSignIn,       setShowSignIn]       = useState(false);
+  const [selectedSubject,  setSelectedSubject]  = useState(null);
+  const [activeFilter,     setActiveFilter]     = useState('Improve Fast');
 
   const practiceGapRef = useRef(null);
   const planRef        = useRef(null);
@@ -175,6 +218,45 @@ export default function AnalysisPage() {
     <>
       <Head><title>AI Analysis — SSC GK Score Booster</title></Head>
 
+      {/* ── Fixed Top Bar — matches dashboard header exactly ─────── */}
+      <div
+        className="sticky top-0 z-50 px-4 flex items-center justify-between"
+        style={{
+          height: '58px',
+          background: 'rgba(15,32,52,0.88)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+          border: '1px solid rgba(20,184,166,0.18)',
+          borderTop: 'none',
+          borderLeft: 'none',
+          borderRight: 'none',
+          borderRadius: '0 0 22px 22px',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.22)',
+        }}
+      >
+        {/* Left: icon + title */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-[11px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
+              <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
+              <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+            </svg>
+          </div>
+          <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center text-white">
+            AI GK Analysis
+          </span>
+        </div>
+
+        {/* Right: lock icon */}
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke={TEXT_MUT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+
       <div style={{
         minHeight: '100vh',
         background: 'var(--bg-app)',
@@ -182,193 +264,325 @@ export default function AnalysisPage() {
         boxSizing: 'border-box',
       }}>
 
-        {/* ── Card 1: Page Header ────────────────────────────────────── */}
+        {/* ── Card 0: Personalized Identity Card ───────────────────── */}
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginBottom: 20,
+          ...card,
+          marginBottom: 16,
+          padding: '14px 16px',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* BrainCircuit icon */}
-            <div style={{
-              width: 40, height: 40, borderRadius: 12,
-              background: ORANGE_DIM,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                stroke={ORANGE} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
-                <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
-                <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
-              </svg>
+          {/* SAMPLE ANALYSIS label */}
+          <div className="font-sans" style={{ fontSize: 10, fontWeight: 700, color: TEXT_MUT, letterSpacing: '0.08em', marginBottom: 12 }}>
+            SAMPLE ANALYSIS
+          </div>
+
+          {/* Top row: avatar + name */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* Avatar — static demo photo */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <img
+                src="/sakshi.png"
+                alt="Sakshi"
+                style={{ width: 48, height: 48, borderRadius: 99, objectFit: 'cover', display: 'block' }}
+              />
+              {/* Coin badge */}
+              <div style={{
+                position: 'absolute', bottom: -2, right: -2,
+                width: 18, height: 18, borderRadius: 99,
+                background: BG_CARD,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ fontSize: 11 }}>🪙</span>
+              </div>
             </div>
-            <div>
+
+            {/* Name + subtitle */}
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className="font-display" style={{ fontSize: 18, fontWeight: 800, color: TEXT_PRI }}>
-                  AI GK Analysis
+                <span className="font-display" style={{ fontSize: 15, fontWeight: 800, color: TEXT_PRI }}>
+                  Sakshi&apos;s Analysis
                 </span>
                 <span style={{
                   fontSize: 10, fontWeight: 700, color: GOLD,
                   background: GOLD_DIM, borderRadius: 99,
-                  padding: '2px 8px', border: `1px solid ${GOLD}40`,
+                  padding: '2px 7px', flexShrink: 0,
                 }}>
-                  PREMIUM PREVIEW
+                  Demo
                 </span>
+              </div>
+              <div className="font-sans" style={{ fontSize: 12, color: TEXT_MUT, marginTop: 3 }}>
+                Rank #18 · 7-day active learner
               </div>
             </div>
           </div>
-          {/* Decorative lock icon */}
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-            stroke={TEXT_MUT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
-        </div>
 
-        {/* ── Card 2: Hero / Sample Report ──────────────────────────── */}
-        <div style={{ ...card, padding: '14px 18px' }}>
-          <Badge>📋 Sample Report</Badge>
-          <h2 className="font-display" style={{
-            fontSize: 18, fontWeight: 800, color: TEXT_PRI,
-            margin: '10px 0 6px', lineHeight: 1.3,
-          }}>
-            Know what to revise next
-          </h2>
-          <p className="font-sans" style={{ fontSize: 13, color: TEXT_SEC, lineHeight: 1.5, margin: '0 0 12px' }}>
-            Sample AI report based on :-
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {['3,000 Qs', '4 Subjects', '20 Topics'].map((chip, i) => (
-              <span key={chip} style={{
-                fontSize: 12, fontWeight: 700, color: ORANGE,
-                background: ORANGE_DIM, borderRadius: 99,
-                padding: '4px 10px', whiteSpace: 'nowrap',
+          {/* Stat mini-cards */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+            {[
+              { icon: '🏆', label: 'QUIZZES',   value: '42'    },
+              { icon: '🎯', label: 'QUESTIONS', value: '720'   },
+              { icon: '🪙', label: 'COINS',     value: '1,840' },
+            ].map(({ icon, label, value }) => (
+              <div key={label} style={{
+                flex: 1, background: BG_DEEP, borderRadius: 12,
+                padding: '10px 10px 11px',
+                border: `1px solid ${BORDER}`,
+                display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
               }}>
-                {chip}
-              </span>
+                <div className="font-sans" style={{ fontSize: 10, fontWeight: 700, color: ORANGE, letterSpacing: '0.04em', marginBottom: 6, whiteSpace: 'nowrap' }}>
+                  {icon} {label}
+                </div>
+                <div className="font-display" style={{ fontSize: 18, fontWeight: 800, color: TEXT_PRI, lineHeight: 1 }}>
+                  {value}
+                </div>
+              </div>
             ))}
           </div>
-        </div>
 
-        {/* ── Card 3: GK Readiness ──────────────────────────────────── */}
-        <div style={card}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <span className="font-display" style={{ fontSize: 15, fontWeight: 700, color: TEXT_PRI }}>
-              GK Readiness
-            </span>
-            <Badge color={GOLD} bg={GOLD_DIM}>Needs Focus</Badge>
-          </div>
+          {/* Divider */}
+          <div style={{ height: 1, background: BORDER, margin: '12px 0' }} />
 
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
-            <span className="font-display" style={{ fontSize: 36, fontWeight: 900, color: ORANGE, lineHeight: 1 }}>
-              58
-            </span>
-            <span className="font-sans" style={{ fontSize: 16, color: TEXT_SEC }}>/ 100</span>
-          </div>
-
-          <ProgressBar pct={58} />
-
-          <p className="font-sans" style={{ fontSize: 13, color: TEXT_SEC, marginTop: 12, lineHeight: 1.5 }}>
-            Your consistency is good, but repeated Polity and Science mistakes are limiting score growth.
+          {/* Curiosity teaser copy */}
+          <p className="font-display" style={{ fontSize: 14, fontWeight: 800, color: TEXT_PRI, lineHeight: 1.4, marginBottom: 6, margin: '0 0 6px' }}>
+            Imagine seeing this for your own quiz history.
+          </p>
+          <p className="font-sans" style={{ fontSize: 12, color: TEXT_SEC, lineHeight: 1.55, margin: 0 }}>
+            Know your weak topics, strongest subjects, and exactly what to practice next.
           </p>
         </div>
 
-        {/* ── Card 4: Weak Topic Priority ───────────────────────────── */}
-        <div style={card}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke={GOLD} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-            <span className="font-display" style={{ fontSize: 15, fontWeight: 700, color: TEXT_PRI }}>
-              Weak Topic Priority
+        {/* ── Subject Health Carousel ───────────────────────────────── */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, padding: '0 2px' }}>
+            <span className="font-display" style={{ fontSize: 14, fontWeight: 700, color: TEXT_PRI }}>
+              Subject Health
+            </span>
+            <span className="font-sans" style={{ fontSize: 11, color: TEXT_MUT }}>
+              Tap a subject →
             </span>
           </div>
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6, scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {SUBJECTS.map(({ name, acc, status, impact }) => {
+              const color      = STATUS_COLOR[status];
+              const bgCol      = STATUS_BG[status];
+              const isSelected = selectedSubject === name;
+              return (
+                <div
+                  key={name}
+                  onClick={() => setSelectedSubject(isSelected ? null : name)}
+                  style={{
+                    flexShrink: 0, width: 120,
+                    background: isSelected ? 'rgba(255,107,22,0.08)' : BG_CARD,
+                    border: `1px solid ${isSelected ? ORANGE : BORDER}`,
+                    borderRadius: 14, padding: '12px 12px 11px',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s ease, background 0.15s ease',
+                    display: 'flex', flexDirection: 'column',
+                  }}
+                >
+                  {/* Subject name — always 1 line, truncated */}
+                  <div className="font-display" style={{
+                    fontSize: 13, fontWeight: 700, color: TEXT_PRI,
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    marginBottom: 8,
+                  }}>
+                    {name}
+                  </div>
+                  {/* Accuracy */}
+                  <div className="font-display" style={{ fontSize: 22, fontWeight: 900, color, lineHeight: 1, marginBottom: 6 }}>
+                    {acc}%
+                  </div>
+                  {/* Status badge */}
+                  <div style={{ marginBottom: 7 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color, background: bgCol, borderRadius: 99, padding: '2px 8px' }}>
+                      {status}
+                    </span>
+                  </div>
+                  {/* Impact line */}
+                  <div className="font-sans" style={{ fontSize: 10, color: impact === 'Helping score' ? '#14B8A6' : '#EF4444', lineHeight: 1.3, display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <span style={{ flexShrink: 0 }}>{impact === 'Helping score' ? '↑' : '↓'}</span>
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{impact}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
-          {[
-            { subject: 'Polity',  sub: 'Fundamental Rights', acc: '38%', level: 'Revise First', levelColor: '#EF4444', levelBg: RED_DIM  },
-            { subject: 'Science', sub: 'Biology Basics',     acc: '42%', level: 'Revise First', levelColor: '#EF4444', levelBg: RED_DIM  },
-            { subject: 'History', sub: 'Modern India',       acc: '56%', level: 'Revise Soon',  levelColor: GOLD,      levelBg: GOLD_DIM },
-          ].map(({ subject, sub, acc, level, levelColor, levelBg }, i) => (
-            <div key={subject} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: BG_DEEP, borderRadius: 12, padding: '12px 14px',
-              marginBottom: i < 2 ? 8 : 0, border: `1px solid ${BORDER}`,
+        {/* ── Selected Subject Summary Card ─────────────────────────── */}
+        {(() => {
+          const subj = SUBJECTS.find(s => s.name === selectedSubject);
+          if (!subj) return null;
+          const color = STATUS_COLOR[subj.status];
+          const bgCol = STATUS_BG[subj.status];
+          return (
+            <div style={{
+              ...card,
+              border: `1px solid ${color}40`,
+              background: 'linear-gradient(135deg, #1E3554 0%, #172D47 100%)',
+              marginBottom: 16,
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke={levelColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                </svg>
-                <div>
-                  <div className="font-sans" style={{ fontSize: 14, fontWeight: 600, color: TEXT_PRI }}>
-                    {subject}
-                  </div>
-                  <div className="font-sans" style={{ fontSize: 11, color: TEXT_MUT, marginTop: 1 }}>
-                    {sub} · {acc} accuracy
-                  </div>
-                </div>
-              </div>
-              <Badge color={levelColor} bg={levelBg}>{level}</Badge>
-            </div>
-          ))}
-        </div>
-
-        {/* ── Card 5: Practice Gap ──────────────────────────────────── */}
-        <div ref={practiceGapRef} style={card}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-            <span className="font-sans" style={{ fontSize: 16 }}>📊</span>
-            <span className="font-display" style={{ fontSize: 15, fontWeight: 700, color: TEXT_PRI }}>
-              Practice Gap
-            </span>
-          </div>
-          <p className="font-sans" style={{ fontSize: 12, color: TEXT_MUT, lineHeight: 1.5, marginBottom: 18 }}>
-            Compare your practice pattern with top performers — not to feel behind, but to know what to improve next.
-          </p>
-
-          {[
-            { label: 'Questions',           youVal: '720',  youPct: 47, topVal: '1,536', topPct: 100 },
-            { label: 'Practice Days (7d)',  youVal: '3/7',  youPct: 43, topVal: '6/7',   topPct: 86  },
-            { label: 'Weak-Topic Qs',       youVal: '40',   youPct: 22, topVal: '180',   topPct: 100 },
-          ].map(({ label, youVal, youPct, topVal, topPct }) => (
-            <div key={label} style={{ marginBottom: 16 }}>
-              <div className="font-sans" style={{ fontSize: 12, color: TEXT_SEC, fontWeight: 600, marginBottom: 8 }}>
-                {label}
-              </div>
-              {/* You row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 5 }}>
-                <span className="font-sans" style={{ fontSize: 11, color: TEXT_MUT, width: 52, flexShrink: 0 }}>You</span>
-                <div style={{ flex: 1 }}>
-                  <ProgressBar pct={youPct} color={ORANGE} height={7} />
-                </div>
-                <span className="font-sans" style={{ fontSize: 12, fontWeight: 700, color: TEXT_PRI, width: 40, textAlign: 'right', flexShrink: 0 }}>
-                  {youVal}
+              {/* Subject name + badge */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <span className="font-display" style={{ fontSize: 16, fontWeight: 800, color: TEXT_PRI }}>
+                  {subj.name}
+                </span>
+                <span style={{ fontSize: 10, fontWeight: 700, color, background: bgCol, borderRadius: 99, padding: '3px 10px' }}>
+                  {subj.status}
                 </span>
               </div>
-              {/* Top 3 Avg row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span className="font-sans" style={{ fontSize: 11, color: TEXT_MUT, width: 52, flexShrink: 0 }}>Top 3 Avg</span>
-                <div style={{ flex: 1 }}>
-                  <ProgressBar pct={topPct} color="rgba(99,102,241,0.55)" height={7} />
-                </div>
-                <span className="font-sans" style={{ fontSize: 12, fontWeight: 700, color: TEXT_SEC, width: 40, textAlign: 'right', flexShrink: 0 }}>
-                  {topVal}
-                </span>
-              </div>
-            </div>
-          ))}
 
-          {/* Mentor note */}
-          <div style={{
-            background: BG_DEEP, borderRadius: 12, padding: '12px 14px',
-            border: `1px solid ${BORDER}`, marginTop: 4,
-          }}>
-            <p className="font-sans" style={{ fontSize: 12, color: TEXT_SEC, lineHeight: 1.55, margin: 0 }}>
-              💡 Your biggest gap is focused practice. Start with 2 weak-topic quizzes daily.
-            </p>
-          </div>
+              {/* Accuracy → Target */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <span className="font-display" style={{ fontSize: 24, fontWeight: 900, color, lineHeight: 1 }}>
+                  {subj.acc}%
+                </span>
+                <span className="font-sans" style={{ fontSize: 13, color: TEXT_MUT }}>accuracy</span>
+                <span className="font-sans" style={{ fontSize: 13, color: TEXT_MUT }}>→</span>
+                <span className="font-sans" style={{ fontSize: 13, fontWeight: 700, color: TEAL }}>Target {subj.target}%</span>
+              </div>
+
+              {/* Need + Focus rows */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="font-sans" style={{ fontSize: 12, fontWeight: 700, color: TEXT_MUT, width: 48, flexShrink: 0 }}>Need:</span>
+                  <span className="font-sans" style={{ fontSize: 12, color: TEXT_SEC }}>{subj.need} more questions</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="font-sans" style={{ fontSize: 12, fontWeight: 700, color: TEXT_MUT, width: 48, flexShrink: 0 }}>Focus:</span>
+                  <span className="font-sans" style={{ fontSize: 12, color: TEXT_SEC }}>{subj.focus}</span>
+                </div>
+              </div>
+
+              {/* CTA button */}
+              <button
+                onClick={() => router.push(`/quiz-setup?subject=${encodeURIComponent(subj.name)}&topic=All&count=25`)}
+                style={{
+                  width: '100%', padding: '12px 0',
+                  borderRadius: 12,
+                  background: color,
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: 14, fontWeight: 800,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  transition: 'opacity 0.15s ease',
+                }}
+                onPointerDown={e => { e.currentTarget.style.opacity = '0.8'; }}
+                onPointerUp={e => { e.currentTarget.style.opacity = '1'; }}
+                onPointerLeave={e => { e.currentTarget.style.opacity = '1'; }}
+              >
+                Practice {subj.name} →
+              </button>
+            </div>
+          );
+        })()}
+
+        {/* ── Topic Filter Chips ────────────────────────────────────── */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          {['Improve Fast', 'Weak Topics', 'Strong Topics', 'High SSC Weightage'].map(filter => {
+            const active = activeFilter === filter;
+            return (
+              <button
+                key={filter}
+                onClick={() => setActiveFilter(filter)}
+                style={{
+                  flexShrink: 0,
+                  padding: '7px 14px',
+                  borderRadius: 99,
+                  border: `1px solid ${active ? ORANGE : BORDER}`,
+                  background: active ? ORANGE : BG_CARD,
+                  color: active ? '#fff' : TEXT_SEC,
+                  fontSize: 12,
+                  fontWeight: active ? 700 : 500,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  whiteSpace: 'nowrap',
+                  transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
+                }}
+              >
+                {filter}
+              </button>
+            );
+          })}
         </div>
+
+        {/* ── Topic Cards ───────────────────────────────────────────── */}
+        {(() => {
+          const filtered = TOPICS.filter(t => t.tags.includes(activeFilter));
+          if (filtered.length === 0) return null;
+          return (
+            <div style={{ marginBottom: 16 }}>
+              {filtered.map(({ subject, name, acc, attempted, tags }) => (
+                <div key={name} style={{
+                  ...card,
+                  marginBottom: 10,
+                  padding: '14px 16px',
+                }}>
+                  {/* Topic name + accuracy row */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div>
+                      <div className="font-display" style={{ fontSize: 14, fontWeight: 800, color: TEXT_PRI, marginBottom: 3 }}>
+                        {name}
+                      </div>
+                      <div className="font-sans" style={{ fontSize: 12, color: TEXT_MUT }}>
+                        <span style={{ color: acc >= 70 ? '#14B8A6' : acc >= 55 ? '#F59E0B' : '#EF4444', fontWeight: 700 }}>
+                          {acc}%
+                        </span>
+                        {' accuracy · '}{attempted} questions attempted
+                      </div>
+                    </div>
+                    {/* Accuracy ring */}
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 99, flexShrink: 0,
+                      background: `conic-gradient(${acc >= 70 ? '#14B8A6' : acc >= 55 ? '#F59E0B' : '#EF4444'} ${acc * 3.6}deg, #1a2e44 0deg)`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 99, background: BG_CARD, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span className="font-sans" style={{ fontSize: 9, fontWeight: 700, color: TEXT_SEC }}>{acc}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+                    {tags.map(tag => (
+                      <span key={tag} style={{
+                        fontSize: 10, fontWeight: 700,
+                        color: TAG_COLOR[tag].color,
+                        background: TAG_COLOR[tag].bg,
+                        borderRadius: 99, padding: '2px 8px',
+                      }}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* CTA button */}
+                  <button
+                    onClick={() => router.push(`/quiz-setup?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(name)}&count=25`)}
+                    style={{
+                      width: '100%', padding: '11px 0',
+                      borderRadius: 12,
+                      background: ORANGE_DIM,
+                      border: `1px solid ${ORANGE}40`,
+                      color: ORANGE,
+                      fontSize: 13, fontWeight: 800,
+                      cursor: 'pointer', fontFamily: 'inherit',
+                      transition: 'background 0.15s ease',
+                    }}
+                    onPointerDown={e => { e.currentTarget.style.background = `rgba(255,107,22,0.25)`; }}
+                    onPointerUp={e => { e.currentTarget.style.background = ORANGE_DIM; }}
+                    onPointerLeave={e => { e.currentTarget.style.background = ORANGE_DIM; }}
+                  >
+                    Practice 25 Questions →
+                  </button>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
+
+
 
         {/* ── Inline CTA: after Practice Gap ───────────────────────── */}
         {!interestRecorded && (
@@ -406,109 +620,189 @@ export default function AnalysisPage() {
               onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
               onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
             >
-              {ctaLoading ? 'Recording…' : 'I Want My GK Analysis →'}
+              {ctaLoading ? 'Recording…' : 'Unlock My Personal Analysis →'}
             </button>
           </div>
         )}
 
-        {/* ── Card 6: Mistake Pattern ───────────────────────────────── */}
-        <div style={card}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
-            <span className="font-sans" style={{ fontSize: 16 }}>🔍</span>
-            <span className="font-display" style={{ fontSize: 15, fontWeight: 700, color: TEXT_PRI }}>
-              Mistake Pattern
-            </span>
-          </div>
 
-          {[
-            { label: 'Forgotten facts',   pct: 31 },
-            { label: 'Concept gaps',      pct: 27 },
-            { label: 'Confusing options', pct: 19 },
-          ].map(({ label, pct }, i) => (
-            <div key={label} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              marginBottom: i < 2 ? 10 : 0,
-            }}>
-              <span className="font-sans" style={{ fontSize: 13, color: TEXT_SEC }}>{label}</span>
-              <span className="font-sans" style={{ fontSize: 13, fontWeight: 700, color: ORANGE }}>{pct}%</span>
+        {/* ── AI Personal Analysis — Premium Card ───────────────────── */}
+        <div style={{
+          background: 'linear-gradient(140deg, #0e2440 0%, #0d1b2e 100%)',
+          border: '1px solid rgba(20,184,166,0.4)',
+          borderRadius: 20,
+          padding: '20px 18px 18px',
+          marginBottom: 16,
+          boxShadow: '0 0 28px rgba(20,184,166,0.12), 0 4px 20px rgba(0,0,0,0.35)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: 99, background: 'rgba(20,184,166,0.08)', filter: 'blur(24px)', pointerEvents: 'none' }} />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+            <span style={{ fontSize: 9, fontWeight: 700, color: TEAL, background: 'rgba(20,184,166,0.15)', border: '1px solid rgba(20,184,166,0.3)', borderRadius: 99, padding: '3px 10px', letterSpacing: '0.06em' }}>PREMIUM AI</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: 'rgba(20,184,166,0.15)', border: '1px solid rgba(20,184,166,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(20,184,166,0.2)' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
+                <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
+                <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+              </svg>
             </div>
-          ))}
-
-          <div style={{
-            marginTop: 12,
-            display: 'flex', alignItems: 'center', gap: 6,
-          }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-              stroke={GOLD} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-            <span className="font-sans" style={{ fontSize: 12, color: GOLD, fontWeight: 600 }}>
-              +2 more patterns in full report
-            </span>
+            <span className="font-display" style={{ fontSize: 17, fontWeight: 900, color: TEXT_PRI }}>Personal AI Analysis</span>
           </div>
-        </div>
-
-        {/* ── Card 7: Score Opportunity ─────────────────────────────── */}
-        <div style={{ ...card, textAlign: 'center', padding: '24px 20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 12 }}>
-            <span className="font-sans" style={{ fontSize: 16 }}>💡</span>
-            <span className="font-display" style={{ fontSize: 15, fontWeight: 700, color: TEXT_PRI }}>
-              Score Opportunity
-            </span>
-          </div>
-          <div className="font-display" style={{
-            fontSize: 48, fontWeight: 900, color: ORANGE,
-            lineHeight: 1, marginBottom: 10,
-          }}>
-            18–25
-          </div>
-          <div className="font-sans" style={{ fontSize: 13, color: ORANGE, fontWeight: 600, marginBottom: 8 }}>
-            marks recoverable
-          </div>
-          <p className="font-sans" style={{ fontSize: 13, color: TEXT_MUT, lineHeight: 1.5 }}>
-            Estimated score improvement by fixing repeated GK mistakes.
+          <p className="font-sans" style={{ fontSize: 13, color: TEXT_SEC, lineHeight: 1.6, margin: '0 0 18px' }}>
+            See how AI identifies your weak areas and suggests what to practice next.
           </p>
+          <button onClick={() => router.push('/personal-ai-analysis')} className="btn-daily-pulse" style={{ width: '100%', padding: '13px 0', borderRadius: 12, background: TEAL, border: 'none', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Tap to Preview →
+          </button>
         </div>
 
-        {/* ── Card 8: 7-Day Focus Plan ──────────────────────────────── */}
-        <div ref={planRef} style={card}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
-            <span className="font-sans" style={{ fontSize: 16 }}>📅</span>
-            <span className="font-display" style={{ fontSize: 15, fontWeight: 700, color: TEXT_PRI }}>
-              7-Day Focus Plan
+        {/* ── Advanced Insights Carousel ────────────────────────────── */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, padding: '0 2px' }}>
+            <span className="font-display" style={{ fontSize: 14, fontWeight: 700, color: TEXT_PRI }}>
+              Advanced Insights
             </span>
+            <span className="font-sans" style={{ fontSize: 11, color: TEXT_MUT }}>Swipe →</span>
           </div>
 
-          {[
-            { days: 'Day 1–2', task: 'Polity weak topics'              },
-            { days: 'Day 3–4', task: 'Science + Biology basics'        },
-            { days: 'Day 5–7', task: 'Wrong questions + mixed weak quiz' },
-          ].map(({ days, task }, i) => (
-            <div key={days} style={{
-              display: 'flex', alignItems: 'flex-start', gap: 12,
-              marginBottom: i < 2 ? 14 : 0,
-            }}>
-              {/* Outline checkmark */}
-              <div style={{
-                width: 22, height: 22, flexShrink: 0, borderRadius: 99,
-                border: `1.5px solid ${ORANGE}50`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginTop: 1,
+          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', paddingBottom: 4 }}>
+            {[
+              {
+                icon: '📊',
+                title: 'Practice Gap',
+                body: 'Aman practiced 720 questions. Top learners practice 1,500+.',
+                cta: 'Practice More',
+                color: '#6366F1',
+                bg: 'rgba(99,102,241,0.12)',
+                route: `/quiz-setup?subject=Polity&topic=All&count=25`,
+              },
+              {
+                icon: '🔍',
+                title: 'Mistake Pattern',
+                body: 'Most mistakes are coming from Biology and Chemistry.',
+                cta: 'Fix Weak Topics',
+                color: '#EF4444',
+                bg: 'rgba(239,68,68,0.10)',
+                route: `/quiz-setup?subject=Biology&topic=Human Diseases&count=25`,
+              },
+              {
+                icon: '📅',
+                title: '7-Day Focus Plan',
+                body: 'Practice 2 weak topics daily for 7 days to recover 18–25 marks.',
+                cta: 'Start Plan',
+                color: ORANGE,
+                bg: ORANGE_DIM,
+                route: `/quiz-setup?subject=Polity&topic=Fundamental Rights&count=25`,
+              },
+            ].map(({ icon, title, body, cta, color, bg, route }) => (
+              <div key={title} style={{
+                flexShrink: 0,
+                width: 240,
+                background: BG_CARD,
+                border: `1px solid ${BORDER}`,
+                borderRadius: 18,
+                padding: '16px 16px 14px',
+                display: 'flex',
+                flexDirection: 'column',
               }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
-                  stroke={ORANGE} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </div>
-              <div>
-                <span className="font-sans" style={{ fontSize: 12, fontWeight: 700, color: ORANGE }}>{days}</span>
-                <p className="font-sans" style={{ fontSize: 13, color: TEXT_PRI, margin: '2px 0 0', lineHeight: 1.4 }}>
-                  {task}
+                {/* Icon + title */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
+                    {icon}
+                  </div>
+                  <span className="font-display" style={{ fontSize: 14, fontWeight: 800, color: TEXT_PRI }}>
+                    {title}
+                  </span>
+                </div>
+
+                {/* Body */}
+                <p className="font-sans" style={{ fontSize: 12, color: TEXT_SEC, lineHeight: 1.55, margin: '0 0 14px', flex: 1 }}>
+                  {body}
                 </p>
+
+                {/* CTA */}
+                <button
+                  onClick={() => router.push(route)}
+                  style={{
+                    width: '100%', padding: '9px 0',
+                    borderRadius: 10,
+                    background: bg,
+                    border: `1px solid ${color}40`,
+                    color, fontSize: 12, fontWeight: 800,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    transition: 'opacity 0.15s ease',
+                  }}
+                  onPointerDown={e => { e.currentTarget.style.opacity = '0.75'; }}
+                  onPointerUp={e => { e.currentTarget.style.opacity = '1'; }}
+                  onPointerLeave={e => { e.currentTarget.style.opacity = '1'; }}
+                >
+                  {cta} →
+                </button>
               </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Locked Personal Insight Card ──────────────────────────── */}
+        <div style={{
+          ...card,
+          position: 'relative',
+          overflow: 'hidden',
+          border: `1px solid rgba(255,107,22,0.25)`,
+          marginBottom: 16,
+        }}>
+          {/* Blurred content behind */}
+          <div style={{ filter: 'blur(4px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.45 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <div style={{ width: 8, height: 8, borderRadius: 99, background: '#EF4444', flexShrink: 0 }} />
+              <span className="font-sans" style={{ fontSize: 13, color: TEXT_SEC }}>Repeated mistake topic #1</span>
+              <span className="font-sans" style={{ fontSize: 13, fontWeight: 700, color: '#EF4444' }}>38%</span>
             </div>
-          ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <div style={{ width: 8, height: 8, borderRadius: 99, background: '#EF4444', flexShrink: 0 }} />
+              <span className="font-sans" style={{ fontSize: 13, color: TEXT_SEC }}>Repeated mistake topic #2</span>
+              <span className="font-sans" style={{ fontSize: 13, fontWeight: 700, color: '#EF4444' }}>42%</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 8, height: 8, borderRadius: 99, background: GOLD, flexShrink: 0 }} />
+              <span className="font-sans" style={{ fontSize: 13, color: TEXT_SEC }}>Repeated mistake topic #3</span>
+              <span className="font-sans" style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>51%</span>
+            </div>
+          </div>
+
+          {/* Lock overlay */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(11,22,38,0.72)',
+            backdropFilter: 'blur(2px)',
+            padding: '16px 20px',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 99, marginBottom: 10,
+              background: ORANGE_DIM,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke={ORANGE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+            <div className="font-display" style={{ fontSize: 14, fontWeight: 800, color: TEXT_PRI, marginBottom: 6 }}>
+              Your Personal Insight is Locked
+            </div>
+            <p className="font-sans" style={{ fontSize: 12, color: TEXT_SEC, lineHeight: 1.5, margin: 0 }}>
+              &ldquo;You may be losing marks in 3 repeated topics.&rdquo;
+              <br />
+              <span style={{ color: TEXT_MUT }}>Unlock personal analysis to see them.</span>
+            </p>
+          </div>
         </div>
 
         {/* ── Card 9: Premium CTA ───────────────────────────────────── */}
@@ -632,9 +926,23 @@ export default function AnalysisPage() {
                 Want this for your own quiz history?
               </div>
 
-              <p className="font-sans" style={{ fontSize: 13, color: TEXT_SEC, lineHeight: 1.5, marginBottom: 16 }}>
-                Join the interest list for personalised weak-topic detection and AI study plan.
+              <p className="font-sans" style={{ fontSize: 13, color: TEXT_SEC, lineHeight: 1.5, marginBottom: 12 }}>
+                Personal AI analysis will use your quiz history to show weak topics, strong topics, and what to practice next.
               </p>
+
+              {/* Social proof */}
+              <div style={{
+                display: 'flex', alignItems: 'flex-start', gap: 8,
+                background: 'rgba(255,255,255,0.04)',
+                border: `1px solid ${BORDER}`,
+                borderRadius: 10, padding: '9px 12px',
+                marginBottom: 16,
+              }}>
+                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>💬</span>
+                <p className="font-sans" style={{ fontSize: 12, color: TEXT_MUT, lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
+                  Students who practice with topic-level insights improve faster than random practice.
+                </p>
+              </div>
 
               {ctaError && (
                 <p className="font-sans" style={{ fontSize: 12, color: '#EF4444', marginBottom: 10 }}>
@@ -657,11 +965,11 @@ export default function AnalysisPage() {
                 onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
                 onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
               >
-                {ctaLoading ? 'Recording…' : 'I Want My GK Analysis →'}
+                {ctaLoading ? 'Recording…' : 'Unlock My Personal Analysis →'}
               </button>
 
               <p className="font-sans" style={{ fontSize: 11, color: TEXT_MUT, textAlign: 'center', marginTop: 10 }}>
-                No payment now. Only interest validation.
+                No payment now. Join interest list only.
               </p>
             </div>
           )}
