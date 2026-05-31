@@ -13,8 +13,8 @@ const ANIM_STYLE = `
     100% { transform: rotate(0deg); }
   }
   @keyframes tooltipIn {
-    from { opacity: 0; transform: translateY(-4px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: scale(0.92) translateY(-6px); transform-origin: top right; }
+    to   { opacity: 1; transform: scale(1) translateY(0);   transform-origin: top right; }
   }
 `;
 
@@ -97,54 +97,57 @@ export default function WhatsAppBell() {
           </svg>
         </button>
 
-        {/* Coach mark tooltip */}
+        {/* Coach mark tooltip — cloud message bubble */}
         {mounted && showTooltip && (
           <div
+            onClick={handleBellTap}
             style={{
               position: 'absolute',
-              top: 'calc(100% + 10px)',
-              right: 0,
-              width: 220,
-              background: 'linear-gradient(135deg, #1E3554 0%, #172D47 100%)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderTop: '1px solid rgba(255,255,255,0.20)',
-              borderRadius: 12,
-              padding: '10px 13px 11px',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
+              top: 'calc(100% + 12px)',
+              right: -4,
+              width: 250,
+              filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.5))',
               animation: 'tooltipIn 0.25s ease both',
               zIndex: 200,
-              pointerEvents: 'none',
-            }}
-          >
-            {/* Arrow border (outline) */}
+              pointerEvents: 'auto',
+              cursor: 'pointer',
+            }}>
+            {/* Bubble tail pointing UP toward the bell */}
             <div style={{
               position: 'absolute',
-              top: -7,
-              right: 13,
+              top: -10,
+              right: 16,
               width: 0,
               height: 0,
-              borderLeft: '7px solid transparent',
-              borderRight: '7px solid transparent',
-              borderBottom: '7px solid rgba(255,255,255,0.20)',
+              borderLeft: '10px solid transparent',
+              borderRight: '10px solid transparent',
+              borderBottom: '10px solid rgba(255,255,255,0.15)',
             }} />
-            {/* Arrow fill */}
             <div style={{
               position: 'absolute',
-              top: -6,
-              right: 13,
+              top: -9,
+              right: 17,
               width: 0,
               height: 0,
-              borderLeft: '7px solid transparent',
-              borderRight: '7px solid transparent',
-              borderBottom: '7px solid #1E3554',
+              borderLeft: '9px solid transparent',
+              borderRight: '9px solid transparent',
+              borderBottom: '9px solid #1E3A5A',
             }} />
 
-            <p style={{ color: '#F0F4F8', fontSize: 13, fontWeight: 700, margin: 0, lineHeight: 1.35 }}>
-              Never miss daily GK quizzes 🔔
-            </p>
-            <p style={{ color: '#64748B', fontSize: 11, margin: '3px 0 0', lineHeight: 1.4 }}>
-              Tap to join WhatsApp updates
-            </p>
+            {/* Bubble body */}
+            <div style={{
+              background: 'linear-gradient(135deg, #1E3A5A 0%, #172D47 100%)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: 16,
+              padding: '12px 14px 13px',
+            }}>
+              <p style={{ color: '#F0F4F8', fontSize: 13, fontWeight: 700, margin: 0, lineHeight: 1.35 }}>
+                Never miss daily GK quizzes 🔔
+              </p>
+              <p style={{ color: '#64748B', fontSize: 11, margin: '4px 0 0', lineHeight: 1.4 }}>
+                Tap to join WhatsApp updates
+              </p>
+            </div>
           </div>
         )}
       </div>
