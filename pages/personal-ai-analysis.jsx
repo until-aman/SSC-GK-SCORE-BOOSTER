@@ -252,18 +252,6 @@ export default function PersonalAIAnalysis() {
           marginBottom: 0,
           position: 'relative',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-              <span className="font-sans" style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: '0.04em' }}>PREMIUM AI FEATURE</span>
-            </div>
-            <div style={{ background: GOLD_DIM, border: `1px solid ${GOLD}50`, borderRadius: 99, padding: '2px 8px' }}>
-              <span className="font-sans" style={{ fontSize: 9, fontWeight: 700, color: GOLD, letterSpacing: '0.05em' }}>COMING SOON</span>
-            </div>
-          </div>
-
           {interestRecorded ? (
             <div style={{ textAlign: 'center', padding: '8px 0' }}>
               <div style={{ width: 48, height: 48, borderRadius: 99, margin: '0 auto 12px', background: 'rgba(20,184,166,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -284,21 +272,40 @@ export default function PersonalAIAnalysis() {
             </div>
           ) : (
             <div>
-              <div className="font-display" style={{ fontSize: 16, fontWeight: 800, color: TEXT_PRI, marginBottom: 10, lineHeight: 1.3 }}>
-                Want this for your own quiz history?
+              <div className="font-display" style={{ fontSize: 16, fontWeight: 800, color: TEXT_PRI, marginBottom: 14, lineHeight: 1.3 }}>
+                Want analysis based on your quiz history?
               </div>
-              <p className="font-sans" style={{ fontSize: 13, color: TEXT_SEC, lineHeight: 1.5, marginBottom: 16 }}>
-                Personal AI analysis will use your quiz history to show weak topics, strong topics, and what to practice next.
-              </p>
+
+              {/* Checklist */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 16 }}>
+                {['Weak topics', 'Strongest subjects', 'Personalized practice plan'].map(item => (
+                  <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                    <div style={{
+                      width: 18, height: 18, borderRadius: 99, flexShrink: 0,
+                      background: 'rgba(20,184,166,0.15)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                        stroke={TEAL} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </div>
+                    <span className="font-sans" style={{ fontSize: 13, color: TEXT_SEC, fontWeight: 600 }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+
               <button
                 onClick={handleCtaClick}
                 disabled={ctaLoading}
                 className={ctaLoading ? '' : 'btn-daily-pulse'}
                 style={{ width: '100%', padding: '15px 0', borderRadius: 14, background: ctaLoading ? 'rgba(255,107,22,0.5)' : ORANGE, color: '#fff', border: 'none', fontSize: 15, fontWeight: 800, cursor: ctaLoading ? 'default' : 'pointer', fontFamily: 'inherit' }}
               >
-                {ctaLoading ? 'Recording…' : 'Unlock My Personal Analysis →'}
+                {ctaLoading ? 'Recording…' : 'Notify Me When Available'}
               </button>
-              <p className="font-sans" style={{ fontSize: 11, color: TEXT_MUT, textAlign: 'center', marginTop: 10 }}>No payment now. Join interest list only.</p>
+              <p className="font-sans" style={{ fontSize: 12, color: TEAL, textAlign: 'center', marginTop: 10, fontWeight: 600 }}>
+                Be among the first users to try it.
+              </p>
             </div>
           )}
         </div>
