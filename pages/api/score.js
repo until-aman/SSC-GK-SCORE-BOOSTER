@@ -1,13 +1,16 @@
 import { getServerSession } from 'next-auth/next';
+import { createHash } from 'crypto';
 import { authOptions } from './auth/[...nextauth]';
 import {
   appendScoreV2,
+  hasDuplicateScore,
   getUserRows,
   findUserRow,
   createDefaultUserRow,
   parseUserRow,
   appendUserRow,
   updateUserCells,
+  updateUserAggregateStats,
   updateLeaderboardCacheRow,
 } from '@/lib/sheets';
 import { getISTDateString, getISTYesterday, computeStreak } from '@/lib/streak';
@@ -27,6 +30,24 @@ function checkRateLimit(email) {
   if (entry.count >= 10) return false;
   entry.count += 1;
   return true;
+}
+
+function generateSessionId() {
+  return `SESSION_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getDuplicateTimeBucket(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value || '');
+  return new Date(Math.round(date.getTime() / 60000) * 60000).toISOString();
+}
+
+function generateDuplicateKey(email, subject, topic, timestamp) {
+  const bucket = getDuplicateTimeBucket(timestamp);
+  return createHash('md5')
+    .update(`${email || ''}|${subject || ''}|${topic || ''}|${bucket}`)
+    .digest('hex')
+    .slice(0, 16);
 }
 
 export default async function handler(req, res) {
@@ -54,6 +75,11 @@ export default async function handler(req, res) {
     subject,
     topic,
     sessionId,
+    clientSessionId,
+    quizMode = 'normal',
+    sourceCollection = '',
+    startedAt = '',
+    timeSpentSeconds = 0,
   } = req.body;
 
   // Validate
@@ -74,12 +100,32 @@ export default async function handler(req, res) {
   if (!topic || typeof topic !== 'string') {
     return res.status(400).json({ error: 'topic is required' });
   }
-  if (!sessionId || typeof sessionId !== 'string') {
-    return res.status(400).json({ error: 'sessionId is required' });
-  }
+  const resolvedSessionId =
+    (typeof sessionId === 'string' && sessionId) ||
+    (typeof clientSessionId === 'string' && clientSessionId) ||
+    generateSessionId();
 
   try {
     const now = new Date();
+    const completedAt = now.toISOString();
+    const serverSavedAt = completedAt;
+    const duplicateCheckKey = generateDuplicateKey(
+      email,
+      subject,
+      topic,
+      startedAt || clientSessionId || resolvedSessionId || completedAt
+    );
+
+    const alreadySaved = await hasDuplicateScore(duplicateCheckKey);
+    if (alreadySaved) {
+      return res.status(200).json({
+        ok: true,
+        success: true,
+        alreadySaved: true,
+        message: 'Already saved',
+      });
+    }
+
     const today = getISTDateString(now);
     const yesterday = getISTYesterday(now);
 
@@ -146,11 +192,20 @@ export default async function handler(req, res) {
       rawScore,
       subject,
       topic,
-      sessionId,
+      sessionId: resolvedSessionId,
       xpEarned,
       isDailyChallenge: subject === 'Daily Challenge' ? 'TRUE' : 'FALSE',
       streakMilestoneBonus: milestoneBonus,
       totalXP: newTotalXP,
+      clientSessionId: clientSessionId || '',
+      duplicateCheckKey,
+      quizMode,
+      sourceCollection,
+      startedAt,
+      completedAt,
+      timeSpentSeconds: Number(timeSpentSeconds) || 0,
+      serverSavedAt,
+      scoreVersion: 'v1',
     });
 
     // Batch update Users row (cols C-G)
@@ -160,6 +215,15 @@ export default async function handler(req, res) {
       streakShieldUsed: false,
       totalXP: newTotalXP,
       level: newLevel,
+    });
+
+    await updateUserAggregateStats(rowIndex, {
+      completedAt,
+      totalQuestions,
+      correctAnswers,
+      incorrectAnswers,
+      skipped,
+      rawScore,
     });
 
     // Invalidate leaderboard cache so rankings reflect new XP immediately

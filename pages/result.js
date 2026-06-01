@@ -99,6 +99,58 @@ function getAIResultKey(sessionId) {
   return `ai_result:${sessionId || 'latest'}`;
 }
 
+function getQuizMode(result, subject) {
+  if (result?.mode === 'daily' || subject === 'Daily Challenge') return 'dailychallenge';
+  if (result?.mode === 'saved') return 'savedrevision';
+  return 'normal';
+}
+
+function buildAttemptAnswers(result) {
+  const questions = Array.isArray(result?.questions) ? result.questions : [];
+  const answers = result?.answers || {};
+
+  return questions.map((question, index) => {
+    const questionId = question.questionId || question.id || `TEMP_${result?.subject || 'Quiz'}_${index + 1}`;
+    const userAnswer = answers[question.id] ?? answers[questionId] ?? '';
+    const isSkipped = !userAnswer || userAnswer === 'SKIPPED';
+    return {
+      questionId,
+      userAnswer: isSkipped ? '' : userAnswer,
+      correctAnswer: question.correctOption || '',
+      isCorrect: !isSkipped && userAnswer === question.correctOption,
+      isSkipped,
+      timeTakenSeconds: Number(question.timeTakenSeconds || 0),
+    };
+  });
+}
+
+async function saveQuizSession(result, routeSessionId) {
+  if (!result) return;
+
+  const subject = result.subject || '';
+  const payload = {
+    clientSessionId: result.clientSessionId || result.sessionId || routeSessionId || crypto.randomUUID(),
+    startedAt: result.startedAt || new Date().toISOString(),
+    subject,
+    topic: result.topic || '',
+    sourceCollection: result.collection || '',
+    quizMode: getQuizMode(result, subject),
+    timeSpentSeconds: Number(result.timeSpentSeconds || 0),
+    answers: buildAttemptAnswers(result),
+  };
+
+  const response = await fetch('/api/quiz-session/complete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw new Error(errorBody?.error?.message || 'Failed to save quiz session');
+  }
+}
+
 
 export default function Result() {
   const { data: session, status } = useSession();
@@ -209,6 +261,10 @@ export default function Result() {
     const { correct, incorrect, skipped, total, score, subject, topic, sessionId } = router.query;
     if (!correct && !result) return;
 
+    const resolvedSubject = subject || result?.subject || '';
+    const resolvedTopic = topic || result?.topic || '';
+    const resolvedSessionId = sessionId || result?.sessionId || result?.clientSessionId || crypto.randomUUID();
+
     setSavingXP(true);
     fetch('/api/score', {
       method: 'POST',
@@ -219,14 +275,22 @@ export default function Result() {
         skipped:          Number(skipped   || result?.skipped          || 0),
         totalQuestions:   Number(total     || result?.totalQuestions   || 0),
         rawScore:         Number(score     || result?.rawScore         || 0),
-        subject:          subject  || result?.subject  || '',
-        topic:            topic    || result?.topic    || '',
-        sessionId:        sessionId || result?.sessionId || crypto.randomUUID(),
-        isDailyChallenge: (subject || result?.subject) === 'Daily Challenge',
+        subject:          resolvedSubject,
+        topic:            resolvedTopic,
+        sessionId:        resolvedSessionId,
+        clientSessionId:  result?.clientSessionId || resolvedSessionId,
+        quizMode:         getQuizMode(result, resolvedSubject),
+        sourceCollection: result?.collection || '',
+        startedAt:        result?.startedAt || '',
+        timeSpentSeconds: Number(result?.timeSpentSeconds || 0),
+        isDailyChallenge: resolvedSubject === 'Daily Challenge',
       }),
     })
       .then(r => r.json())
       .then(data => {
+        saveQuizSession(result, resolvedSessionId).catch(err => {
+          console.warn('[result] quiz session save failed:', err.message);
+        });
         setSavingXP(false);
         if (data.ok) {
           setXPResult(data);
@@ -243,7 +307,12 @@ export default function Result() {
           }
         }
       })
-      .catch(() => { setSavingXP(false); });
+      .catch(() => {
+        saveQuizSession(result, resolvedSessionId).catch(err => {
+          console.warn('[result] quiz session save failed:', err.message);
+        });
+        setSavingXP(false);
+      });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router.isReady, result]);
 
