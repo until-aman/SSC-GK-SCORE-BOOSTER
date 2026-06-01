@@ -362,6 +362,7 @@ export default function QuizSetup() {
       sessionId,
     });
     if (collection !== 'general') params.set('collection', collection);
+    if (!params.get('sourceScreen')) params.set('sourceScreen', 'dashboard');
     router.push(`/quiz?${params.toString()}`);
   }
 

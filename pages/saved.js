@@ -470,7 +470,7 @@ export default function Saved() {
       explanation:   q.explanation || '',
     }));
     try { sessionStorage.setItem('ssc_saved_quiz_questions', JSON.stringify(quizQuestions)); } catch {}
-    router.push(`/quiz?mode=saved&count=${quizQuestions.length}`);
+    router.push(`/quiz?mode=saved&count=${quizQuestions.length}&sourceScreen=saved`);
   }
 
   // ── Stats ─────────────────────────────────────────────────────────────

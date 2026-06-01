@@ -333,6 +333,11 @@ const OPTION_KEYS   = ['optionA', 'optionB', 'optionC', 'optionD'];
 const ACTIVE_QUIZ_SESSION_KEY = 'ssc_active_quiz_session';
 const QUIZ_SESSION_EXPIRY_MS = 60 * 60 * 1000;
 const QUESTION_DURATION_SECONDS = 30;
+const VALID_SOURCE_SCREENS = new Set(['dashboard', 'analysis', 'saved', 'history', 'daily_challenge', 'unknown']);
+
+function normalizeSourceScreen(value) {
+  return VALID_SOURCE_SCREENS.has(value) ? value : 'unknown';
+}
 
 function getAttemptedCount(answers = {}) {
   return Object.keys(answers).length;
@@ -340,6 +345,10 @@ function getAttemptedCount(answers = {}) {
 
 function getAnsweredCount(answers = {}) {
   return Object.values(answers).filter(a => a && a !== 'SKIPPED').length;
+}
+
+function clampTimeTaken(seconds) {
+  return Math.max(0, Math.min(QUESTION_DURATION_SECONDS, Number(seconds) || 0));
 }
 
 function readActiveQuizSession() {
@@ -460,17 +469,19 @@ function getDisplaySubject(subject, collection) {
 export default function Quiz() {
   const router = useRouter();
   const { status } = useSession();
-  const { subject, topic, count, n, sessionId: qSessionId, mode, collection = 'general' } = router.query;
+  const { subject, topic, count, n, sessionId: qSessionId, mode, collection = 'general', sourceScreen: qSourceScreen } = router.query;
   const questionCount = count || n;
   const isSavedMode  = mode === 'saved';
   const isDailyMode  = mode === 'daily';
   const [restoredMeta, setRestoredMeta] = useState(null);
   const effectiveSubject = restoredMeta?.subject || (isSavedMode ? 'Saved' : isDailyMode ? 'Daily Challenge' : subject);
   const effectiveTopic   = restoredMeta?.topic   || (isSavedMode ? 'Mixed'  : isDailyMode ? 'Mixed GK'        : topic);
+  const sourceScreen = normalizeSourceScreen(isDailyMode ? 'daily_challenge' : isSavedMode ? 'saved' : qSourceScreen);
 
   const [questions, setQuestions]       = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers]           = useState({});
+  const [answerTimes, setAnswerTimes]   = useState({});
   const [quizComplete, setQuizComplete] = useState(false);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
@@ -849,11 +860,13 @@ export default function Quiz() {
       topic: effectiveTopic,
       collection,
       mode: mode || 'standard',
+      sourceScreen,
       selectedQuestionCount: questions.length,
       totalQuestions: questions.length,
       questions,
       currentQuestionIndex: currentIndex,
       selectedAnswers: answers,
+      selectedAnswerTimes: answerTimes,
       startedAt: existing?.startedAt || now,
       lastActivityAt: now,
       questionStartedAt,
@@ -863,11 +876,13 @@ export default function Quiz() {
     writeActiveQuizSession(quizSession);
   }, [
     answers,
+    answerTimes,
     collection,
     currentIndex,
     effectiveSubject,
     effectiveTopic,
     mode,
+    sourceScreen,
     questionStartedAt,
     questions,
     quizInProgress,
@@ -890,6 +905,7 @@ export default function Quiz() {
 
   const finishQuiz = useCallback((finalAnswers, options = {}) => {
     if (quizComplete) return;
+    const finalAnswerTimes = options.answerTimes || answerTimes;
     const activeSession = activeSessionRef.current || readActiveQuizSession();
     const startedAtMs = Number(activeSession?.startedAt || Date.now());
     const completedAtMs = Date.now();
@@ -905,6 +921,7 @@ export default function Quiz() {
     // Write base results immediately and navigate without waiting for AI.
     sessionStorage.setItem('quizResult', JSON.stringify({
       subject: effectiveSubject, topic: effectiveTopic, questions, answers: finalAnswers,
+      answerTimes: finalAnswerTimes,
       correct: results.correct, incorrect: results.incorrect, skipped: results.skipped,
       totalQuestions: results.totalQuestions, rawScore: results.rawScore, accuracy: results.accuracy,
       partialAttempt: Boolean(options.partial),
@@ -912,6 +929,7 @@ export default function Quiz() {
       answeredCount,
       collection,
       mode: mode || 'standard',
+      sourceScreen,
       sessionId: clientSessionId,
       clientSessionId,
       startedAt: new Date(startedAtMs).toISOString(),
@@ -923,7 +941,7 @@ export default function Quiz() {
     router.push(
       `/result?subject=${encodeURIComponent(effectiveSubject)}&topic=${encodeURIComponent(effectiveTopic)}&sessionId=${clientSessionId}&correct=${results.correct}&incorrect=${results.incorrect}&skipped=${results.skipped}&total=${results.totalQuestions}&score=${results.rawScore}`
     );
-  }, [questions, sessionId, router, quizComplete, effectiveSubject, effectiveTopic, collection, mode]);
+  }, [questions, sessionId, router, quizComplete, effectiveSubject, effectiveTopic, collection, mode, answerTimes, sourceScreen]);
 
   const requestQuizExit = useCallback((targetUrl = '/dashboard') => {
     if (!quizInProgress || allowQuizExitRef.current) return true;
@@ -981,7 +999,7 @@ export default function Quiz() {
     allowQuizExitRef.current = true;
     setShowExitModal(false);
     if (attemptedCount > 0) {
-      finishQuiz(answers, { partial: true });
+      finishQuiz(answers, { partial: true, answerTimes });
       return;
     }
     activeSessionRef.current = null;
@@ -992,6 +1010,7 @@ export default function Quiz() {
   function showStoredSessionResult(session, options = {}) {
     const storedQuestions = session.questions || [];
     const storedAnswers = session.selectedAnswers || {};
+    const storedAnswerTimes = session.selectedAnswerTimes || {};
     if (!storedQuestions.length) {
       clearActiveQuizSession();
       router.push('/dashboard');
@@ -1017,6 +1036,7 @@ export default function Quiz() {
       topic: storedTopic,
       questions: storedQuestions,
       answers: storedAnswers,
+      answerTimes: storedAnswerTimes,
       correct: results.correct,
       incorrect: results.incorrect,
       skipped: results.skipped,
@@ -1028,6 +1048,7 @@ export default function Quiz() {
       answeredCount: storedAnsweredCount,
       collection: session.collection || 'general',
       mode: session.mode || 'standard',
+      sourceScreen: normalizeSourceScreen(session.sourceScreen),
       sessionId: storedSessionId,
       clientSessionId: storedSessionId,
       startedAt: new Date(startedAtMs).toISOString(),
@@ -1056,6 +1077,7 @@ export default function Quiz() {
 
     const restoredQuestions = session.questions || [];
     const restoredAnswers = { ...(session.selectedAnswers || {}) };
+    const restoredAnswerTimes = { ...(session.selectedAnswerTimes || {}) };
     let restoredIndex = Math.min(session.currentQuestionIndex || 0, Math.max(restoredQuestions.length - 1, 0));
     let restoredQuestionStartedAt = Number(session.questionStartedAt || session.lastActivityAt || Date.now());
     let restoredTimeLeft = Math.ceil(QUESTION_DURATION_SECONDS - ((Date.now() - restoredQuestionStartedAt) / 1000));
@@ -1074,8 +1096,9 @@ export default function Quiz() {
 
     if (!storedAnswerForCurrent && currentQuestion && restoredTimeLeft <= 0) {
       restoredAnswers[currentQuestion.id] = 'SKIPPED';
+      restoredAnswerTimes[currentQuestion.id] = QUESTION_DURATION_SECONDS;
       if (restoredIndex >= restoredQuestions.length - 1) {
-        showStoredSessionResult({ ...session, selectedAnswers: restoredAnswers });
+        showStoredSessionResult({ ...session, selectedAnswers: restoredAnswers, selectedAnswerTimes: restoredAnswerTimes });
         return;
       }
       restoredIndex += 1;
@@ -1087,6 +1110,7 @@ export default function Quiz() {
     const restoredSession = {
       ...session,
       selectedAnswers: restoredAnswers,
+      selectedAnswerTimes: restoredAnswerTimes,
       currentQuestionIndex: restoredIndex,
       questionStartedAt: restoredQuestionStartedAt,
       lastActivityAt: Date.now(),
@@ -1097,6 +1121,7 @@ export default function Quiz() {
     setRestoredMeta({ subject: session.subject, topic: session.topic });
     setQuestions(restoredQuestions);
     setAnswers(restoredAnswers);
+    setAnswerTimes(restoredAnswerTimes);
     setCurrentIndex(restoredIndex);
     setSelectedOption(null);
     setShowFeedback(false);
@@ -1136,7 +1161,7 @@ export default function Quiz() {
     router.replace('/dashboard');
   }
 
-  const persistQuizProgress = useCallback((nextAnswers = answers, nextIndex = currentIndex, nextQuestionStartedAt = questionStartedAt) => {
+  const persistQuizProgress = useCallback((nextAnswers = answers, nextIndex = currentIndex, nextQuestionStartedAt = questionStartedAt, nextAnswerTimes = answerTimes) => {
     if (!questions.length || quizComplete) return;
     const now = Date.now();
     const existing = activeSessionRef.current || readActiveQuizSession();
@@ -1146,11 +1171,13 @@ export default function Quiz() {
       topic: effectiveTopic,
       collection,
       mode: mode || 'standard',
+      sourceScreen,
       selectedQuestionCount: questions.length,
       totalQuestions: questions.length,
       questions,
       currentQuestionIndex: nextIndex,
       selectedAnswers: nextAnswers,
+      selectedAnswerTimes: nextAnswerTimes,
       startedAt: existing?.startedAt || now,
       lastActivityAt: now,
       questionStartedAt: nextQuestionStartedAt,
@@ -1160,58 +1187,66 @@ export default function Quiz() {
     writeActiveQuizSession(quizSession);
   }, [
     answers,
+    answerTimes,
     collection,
     currentIndex,
     effectiveSubject,
     effectiveTopic,
     mode,
+    sourceScreen,
     questionStartedAt,
     questions,
     quizComplete,
     sessionId,
   ]);
 
-  const advanceQuestion = useCallback((newAnswers) => {
+  const advanceQuestion = useCallback((newAnswers, newAnswerTimes = answerTimes) => {
     const next = currentIndex + 1;
-    if (next >= questions.length) { finishQuiz(newAnswers); return; }
-    persistQuizProgress(newAnswers, next, Date.now());
+    if (next >= questions.length) { finishQuiz(newAnswers, { answerTimes: newAnswerTimes }); return; }
+    persistQuizProgress(newAnswers, next, Date.now(), newAnswerTimes);
     setCurrentIndex(next);
     setSelectedOption(null);
     setShowFeedback(false);
-  }, [currentIndex, questions.length, finishQuiz, persistQuizProgress]);
+  }, [answerTimes, currentIndex, questions.length, finishQuiz, persistQuizProgress]);
 
   useEffect(() => {
     if (timeLeft === 0 && !showFeedback && !showExitModal && !quizComplete && questions.length > 0) {
       const q = questions[currentIndex];
       if (!q) return;
       const na = { ...answers, [q.id]: 'SKIPPED' };
+      const nt = { ...answerTimes, [q.id]: QUESTION_DURATION_SECONDS };
       setAnswers(na);
-      advanceQuestion(na);
+      setAnswerTimes(nt);
+      advanceQuestion(na, nt);
     }
-  }, [timeLeft, showFeedback, showExitModal, quizComplete, questions, currentIndex, answers, advanceQuestion]);
+  }, [timeLeft, showFeedback, showExitModal, quizComplete, questions, currentIndex, answers, answerTimes, advanceQuestion]);
 
   function handleOptionSelect(label) {
     if (showFeedback || quizComplete) return;
     const q = questions[currentIndex];
     const na = { ...answers, [q.id]: label };
-    persistQuizProgress(na, currentIndex, questionStartedAt);
+    const nt = { ...answerTimes, [q.id]: clampTimeTaken(QUESTION_DURATION_SECONDS - timeLeft) };
+    persistQuizProgress(na, currentIndex, questionStartedAt, nt);
     setAnswers(na);
+    setAnswerTimes(nt);
     setSelectedOption(label);
     setShowFeedback(true);
     const correct = label === q.correctOption;
     setBulbState(correct ? 'correct' : 'wrong');
     playSound(correct ? 'correct' : 'wrong');
-    setTimeout(() => advanceQuestion(na), 800);
+    setTimeout(() => advanceQuestion(na, nt), 800);
   }
 
   function handleSkip() {
     if (showFeedback || quizComplete) return;
     const q = questions[currentIndex];
     const na = { ...answers, [q.id]: 'SKIPPED' };
-    persistQuizProgress(na, currentIndex, questionStartedAt);
+    const nt = { ...answerTimes, [q.id]: clampTimeTaken(QUESTION_DURATION_SECONDS - timeLeft) };
+    persistQuizProgress(na, currentIndex, questionStartedAt, nt);
     setAnswers(na);
+    setAnswerTimes(nt);
     setBulbState('neutral');
-    advanceQuestion(na);
+    advanceQuestion(na, nt);
   }
 
   if (recoveryPrompt) {

@@ -108,18 +108,20 @@ function getQuizMode(result, subject) {
 function buildAttemptAnswers(result) {
   const questions = Array.isArray(result?.questions) ? result.questions : [];
   const answers = result?.answers || {};
+  const answerTimes = result?.answerTimes || {};
 
   return questions.map((question, index) => {
     const questionId = question.questionId || question.id || `TEMP_${result?.subject || 'Quiz'}_${index + 1}`;
     const userAnswer = answers[question.id] ?? answers[questionId] ?? '';
     const isSkipped = !userAnswer || userAnswer === 'SKIPPED';
+    const timeTakenSeconds = answerTimes[question.id] ?? answerTimes[questionId] ?? question.timeTakenSeconds ?? 0;
     return {
       questionId,
       userAnswer: isSkipped ? '' : userAnswer,
       correctAnswer: question.correctOption || '',
       isCorrect: !isSkipped && userAnswer === question.correctOption,
       isSkipped,
-      timeTakenSeconds: Number(question.timeTakenSeconds || 0),
+      timeTakenSeconds: Number(timeTakenSeconds) || 0,
     };
   });
 }
@@ -136,6 +138,7 @@ async function saveQuizSession(result, routeSessionId) {
     sourceCollection: result.collection || '',
     quizMode: getQuizMode(result, subject),
     timeSpentSeconds: Number(result.timeSpentSeconds || 0),
+    sourceScreen: result.sourceScreen || 'unknown',
     answers: buildAttemptAnswers(result),
   };
 
@@ -448,7 +451,7 @@ export default function Result() {
     const subject = result?.subject || router.query.subject;
     const collection = result?.collection || router.query.collection || 'general';
     if (subject === 'Mixed') {
-      router.push(`/quiz?subject=Mixed&topic=Mixed&count=25&collection=${collection}`);
+      router.push(`/quiz?subject=Mixed&topic=Mixed&count=25&collection=${collection}&sourceScreen=history`);
       return;
     }
     router.push('/dashboard');

@@ -540,7 +540,7 @@ export default function StreakPage() {
           onPointerDown={() => setBtnPress(true)}
           onPointerUp={() => setBtnPress(false)}
           onPointerLeave={() => setBtnPress(false)}
-          onClick={() => router.push('/quiz?mode=daily')}
+          onClick={() => router.push('/quiz?mode=daily&sourceScreen=daily_challenge')}
           style={{
             display: 'block', width: '100%', maxWidth: 430, margin: '0 auto',
             padding: '17px 0', borderRadius: 20, border: 'none', cursor: 'pointer',

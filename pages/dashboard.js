@@ -90,14 +90,14 @@ const LightningSVG = ({ size = 14, color = '#f97316' }) => (
 );
 
 /* Avatar — shows Google photo if available, else gradient initial */
-function Avatar({ imageUrl, name, size = 36 }) {
+function Avatar({ imageUrl, name, size = 36, borderClass = 'border-2 border-white/20' }) {
   const [imgError, setImgError] = useState(false);
   const initial = (name || '?').charAt(0).toUpperCase();
 
   if (imageUrl && !imgError) {
     return (
       <div
-        className="rounded-full overflow-hidden flex-shrink-0 border-2 border-white/20"
+        className={`rounded-full overflow-hidden flex-shrink-0 ${borderClass}`}
         style={{ width: size, height: size }}
       >
         <Image
@@ -114,7 +114,7 @@ function Avatar({ imageUrl, name, size = 36 }) {
   }
   return (
     <div
-      className="rounded-full bg-gradient-to-br from-blue-600 to-[#14B8A6] flex items-center justify-center flex-shrink-0"
+      className={`rounded-full bg-gradient-to-br from-blue-600 to-[#14B8A6] flex items-center justify-center flex-shrink-0 ${borderClass}`}
       style={{ width: size, height: size }}
     >
       <span
@@ -423,11 +423,11 @@ export default function Dashboard() {
       if (total < 10) {
         setLowQModal(subject);
       } else {
-        router.push(`/quiz-setup?subject=${encodeURIComponent(subject)}`);
+        router.push(`/quiz-setup?subject=${encodeURIComponent(subject)}&sourceScreen=dashboard`);
       }
     } catch {
       // On error just navigate — don't block the user
-      router.push(`/quiz-setup?subject=${encodeURIComponent(subject)}`);
+      router.push(`/quiz-setup?subject=${encodeURIComponent(subject)}&sourceScreen=dashboard`);
     } finally {
       setSubjectChecking(null);
     }
@@ -698,6 +698,7 @@ export default function Dashboard() {
 
   const displayName     = isLoggedIn ? (userProfile?.name || session?.user?.name || 'User') : 'Guest';
   const googlePhoto     = session?.user?.image || null;
+  const profileImage    = userProfile?.image || googlePhoto || '';
   const streakCount     = userProfile?.streakCount || 0;
   const lastAttemptDate = userProfile?.lastAttemptDate || '';
   const level           = userProfile?.level || 'Aspirant';
@@ -718,7 +719,7 @@ export default function Dashboard() {
         if (cached) {
           sessionStorage.setItem('dailyChallengeQuestions', JSON.stringify(cached));
         }
-        router.push('/quiz?mode=daily');
+        router.push('/quiz?mode=daily&sourceScreen=daily_challenge');
       }}
       style={{
         margin: '4px 20px 20px',
@@ -821,29 +822,50 @@ export default function Dashboard() {
 
         {/* ── GREETING ── */}
         <div style={{ padding: '18px 20px 8px' }}>
-          <div className="font-display text-[20px] leading-[1.2] font-extrabold" style={{ color: 'var(--text-primary)' }}>
-            Good {timeOfDay},{' '}
-            <span style={{ color: '#14B8A6' }}>
-              {session?.user?.name?.split(' ')[0] || 'Aspirant'} 👋
-            </span>
-          </div>
-          <div className="mt-1">
-            <div className="font-body text-[13px] leading-[1.45] font-medium" style={{ color: 'var(--text-muted)' }}>
-              Keep your streak alive today 🔥
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="font-display text-[20px] leading-[1.2] font-extrabold" style={{ color: 'var(--text-primary)' }}>
+                Good {timeOfDay},{' '}
+                <span style={{ color: '#14B8A6' }}>
+                  {displayName?.split(' ')[0] || 'Aspirant'} 👋
+                </span>
+              </div>
+              <div className="mt-1">
+                <div className="font-body text-[13px] leading-[1.45] font-medium" style={{ color: 'var(--text-muted)' }}>
+                  Keep your streak alive today 🔥
+                </div>
+                <div className="mt-1">
+                  <RefreshStatus
+                    updatedAt={bootstrapUpdatedAt}
+                    isRefreshing={bootstrapRefreshing}
+                    onRefresh={handleBootstrapRefresh}
+                    refreshText={
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                      </svg>
+                    }
+                  />
+                </div>
+              </div>
             </div>
-            <div className="mt-1">
-            <RefreshStatus
-              updatedAt={bootstrapUpdatedAt}
-              isRefreshing={bootstrapRefreshing}
-              onRefresh={handleBootstrapRefresh}
-              refreshText={
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="23 4 23 10 17 10"/>
-                  <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
-                </svg>
-              }
-            />
-            </div>
+
+            <button
+              type="button"
+              onClick={() => router.push('/profile')}
+              aria-label="Open profile"
+              className="flex-shrink-0 transition-transform active:scale-95"
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: '9999px',
+                padding: 3,
+                background: 'linear-gradient(135deg, #FF8A1F 0%, #FF5A00 100%)',
+                boxShadow: '0 0 0 3px rgba(255, 138, 31, 0.14), 0 12px 24px rgba(255, 90, 0, 0.2)',
+              }}
+            >
+              <Avatar imageUrl={profileImage} name={displayName} size={46} borderClass="border-0" />
+            </button>
           </div>
         </div>
 
@@ -978,7 +1000,7 @@ export default function Dashboard() {
             if (cached) {
               sessionStorage.setItem('dailyChallengeQuestions', JSON.stringify(cached));
             }
-            router.push('/quiz?mode=daily');
+            router.push('/quiz?mode=daily&sourceScreen=daily_challenge');
           }}
           style={{
             margin: '16px 20px 20px',
