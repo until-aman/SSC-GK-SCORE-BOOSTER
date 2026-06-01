@@ -36,6 +36,7 @@ export default async function handler(req, res) {
     const sessions = [];
     userScoreRows.forEach(row => {
       const milestoneBonus = Number(row[13]) || 0;
+      const coins = Number(row[11]) || 0;
       sessions.push({
         type: 'quiz',
         timestamp: row[0] || '',
@@ -44,7 +45,7 @@ export default async function handler(req, res) {
         correctAnswers: Number(row[3]) || 0,
         totalQuestions: Number(row[6]) || 0,
         rawScore: parseFloat(row[7]) || 0,
-        xpEarned: Number(row[11]) || 0,
+        coins,
         accuracy: Number(row[6]) > 0
           ? Math.round((Number(row[3]) / Number(row[6])) * 1000) / 10
           : 0,
@@ -53,17 +54,17 @@ export default async function handler(req, res) {
         sessions.push({
           type: 'milestone',
           timestamp: row[0] || '',
-          xpEarned: milestoneBonus,
-          milestoneLabel: MILESTONE_LABEL_MAP[milestoneBonus] || `${milestoneBonus} XP Streak Bonus`,
+          coins: milestoneBonus,
+          milestoneLabel: MILESTONE_LABEL_MAP[milestoneBonus] || `${milestoneBonus} coins streak bonus`,
         });
       }
     });
 
     const allUserRows = await getUserRows();
     const userRow = findUserRow(allUserRows, email);
-    const user = userRow ? parseUserRow(userRow) : { totalXP: 0, level: 'Aspirant' };
+    const user = userRow ? parseUserRow(userRow) : { totalCoins: 0, level: 'Aspirant' };
 
-    const responseData = { sessions, totalXP: user.totalXP, level: user.level };
+    const responseData = { sessions, totalCoins: user.totalCoins, level: user.level };
 
     // Cache the result
     historyCache.set(email, { data: responseData, ts: Date.now() });

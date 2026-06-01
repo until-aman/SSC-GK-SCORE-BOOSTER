@@ -25,7 +25,7 @@ async function fetchProfile(session) {
   return {
     email:           user.email,
     name:            user.name,
-    totalXP:         user.totalXP,
+    totalCoins:      user.totalCoins,
     level:           user.level,
     streakCount:     user.streakCount,
     lastAttemptDate: user.lastAttemptDate,

@@ -24,11 +24,11 @@ async function handleGet(req, res, session) {
         dreamPost: '',
         dreamPostUpdatedAt: null,
         dreamPostUnlockedAt: null,
-        coinsEarned: 0,
+        coins: 0,
       });
     }
 
-    const coinsEarned = Number(userRow[5]) || 0;
+    const coins = Number(userRow[5]) || 0;
     // getUserRows() reads A2:L (cols 0–11). New cols M/N/O (12/13/14)
     // must be read directly. Row in sheet = array index + 2.
     const rowIndex = rows.indexOf(userRow) + 2;
@@ -44,7 +44,7 @@ async function handleGet(req, res, session) {
       dreamPost:           dreamRow[0] || '',
       dreamPostUpdatedAt:  dreamRow[1] || null,
       dreamPostUnlockedAt: dreamRow[2] || null,
-      coinsEarned,
+      coins,
     });
   } catch (err) {
     console.error('[dream-post GET]', err);
@@ -69,7 +69,7 @@ async function handlePost(req, res, session) {
     const userRow = findUserRow(rows, email);
     if (!userRow) return res.status(404).json({ error: 'User not found' });
 
-    const coinsEarned = Number(userRow[5]) || 0;
+    const coins = Number(userRow[5]) || 0;
     const rowIndex = rows.indexOf(userRow) + 2;
 
     const sheets = await getSheetsClient();
@@ -86,7 +86,7 @@ async function handlePost(req, res, session) {
     // Write-once: only set unlockedAt if not already set AND coins >= target
     const newUnlockedAt = existingUnlockedAt
       ? existingUnlockedAt
-      : (coinsEarned >= DREAM_POST_TARGET ? now : null);
+      : (coins >= DREAM_POST_TARGET ? now : null);
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,

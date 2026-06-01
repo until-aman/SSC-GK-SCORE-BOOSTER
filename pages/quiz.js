@@ -1583,7 +1583,7 @@ export default function Quiz() {
 
       {/* Top bar */}
       <div className="px-4 pt-3 flex-shrink-0">
-        {/* Row 1: subject · topic | Q X/Y | ⚡ Earn XP */}
+        {/* Row 1: subject · topic | Q X/Y | earn coins */}
         <div className="h-10 flex items-center justify-between">
           <span className="t-badge font-sans text-slate-400 truncate max-w-[150px]">
             {getDisplaySubject(effectiveSubject, collection)} · {effectiveTopic}

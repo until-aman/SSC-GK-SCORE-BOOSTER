@@ -15,19 +15,19 @@ const CACHE_TTL = 60 * 1000; // 1 minute fallback (cache is also invalidated on 
 let memCache = { data: null, ts: 0 };
 const MEM_CACHE_TTL = 30 * 1000;
 
-// Weekly leaderboard — sum xpEarned (col L = index 11) from score rows
+// Weekly leaderboard — sum coins earned (col L = index 11) from score rows
 function computeWeeklyLeaderboard(scoreRows, publicEmails, imageMap = {}, levelMap = {}) {
   const grouped = {};
 
   scoreRows.forEach(row => {
     const email = row[1];
     if (!email || !publicEmails.has(email)) return;
-    const xp = parseFloat(row[11]) || 0;
+    const coins = parseFloat(row[11]) || 0;
     if (!grouped[email]) {
       grouped[email] = { email, name: row[2] || email, totalScore: 0 };
     }
     if (row[2]) grouped[email].name = row[2];
-    grouped[email].totalScore += xp;
+    grouped[email].totalScore += coins;
   });
 
   return Object.values(grouped)
@@ -42,14 +42,14 @@ function computeWeeklyLeaderboard(scoreRows, publicEmails, imageMap = {}, levelM
     .slice(0, 50);
 }
 
-// All-time leaderboard — use totalXP from Users sheet (col F = index 5)
+// All-time leaderboard — use total coins from Users sheet (col F = index 5)
 function computeAllTimeLeaderboard(userRows, publicEmails, imageMap = {}) {
   return userRows
     .filter(r => r[0] && publicEmails.has(r[0]))
     .map(r => ({
       email:      r[0],
       name:       r[1] || r[0],
-      totalScore: parseInt(r[5]) || 0,   // totalXP
+      totalScore: parseInt(r[5]) || 0,
       level:      r[6] || 'Aspirant',
       image:      imageMap[r[0]] || '',
     }))
@@ -107,7 +107,7 @@ export default async function handler(req, res) {
       const levelMap = {};
       allUserRows.forEach(r => { if (r[0]) levelMap[r[0]] = r[6] || 'Aspirant'; });
 
-      // Weekly: last 7 days — ranked by XP earned this week
+      // Weekly: last 7 days — ranked by coins earned this week
       const weekStart = getISTDateString(new Date(now - 6 * 24 * 60 * 60 * 1000));
       const weeklyRows = allScoreRows.filter(row => {
         if (!row[0]) return false;

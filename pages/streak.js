@@ -9,11 +9,11 @@ const DAY_LABELS  = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 const MILESTONES = [
-  { days: 3,  xp: 15,  label: '3-day',   color: '#f97316', floor: '#92400E' },
-  { days: 7,  xp: 30,  label: '1-week',  color: '#f97316', floor: '#92400E' },
-  { days: 14, xp: 60,  label: '2-week',  color: '#f59e0b', floor: '#78350F' },
-  { days: 30, xp: 150, label: '1-month', color: '#eab308', floor: '#713F12' },
-  { days: 90, xp: 500, label: '3-month', color: '#14B8A6', floor: '#0D4F47' },
+  { days: 3,  coins: 15,  label: '3-day',   color: '#f97316', floor: '#92400E' },
+  { days: 7,  coins: 30,  label: '1-week',  color: '#f97316', floor: '#92400E' },
+  { days: 14, coins: 60,  label: '2-week',  color: '#f59e0b', floor: '#78350F' },
+  { days: 30, coins: 150, label: '1-month', color: '#eab308', floor: '#713F12' },
+  { days: 90, coins: 500, label: '3-month', color: '#14B8A6', floor: '#0D4F47' },
 ];
 
 const LightningSVG = ({ size = 16, color = 'white' }) => (
@@ -217,8 +217,8 @@ export default function StreakPage() {
           {nextMs && (
             <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.48)', marginTop: 10, lineHeight: 1.55 }}>
               {playedToday
-                ? `Practice tomorrow to make it ${streakCount + 1} days and unlock +${nextMs.xp} Coins.`
-                : `Play today to protect your ${streakCount}-day streak and stay on track for +${nextMs.xp} Coins.`
+                ? `Practice tomorrow to make it ${streakCount + 1} days and unlock +${nextMs.coins} coins.`
+                : `Play today to protect your ${streakCount}-day streak and stay on track for +${nextMs.coins} coins.`
               }
             </p>
           )}
@@ -231,7 +231,7 @@ export default function StreakPage() {
                   Next: <span style={{ color: nextMs.color, fontWeight: 700 }}>{nextMs.label} streak</span>
                 </span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: nextMs.color }}>
-                  {daysToNext} day{daysToNext !== 1 ? 's' : ''} away · +{nextMs.xp} Coins
+                  {daysToNext} day{daysToNext !== 1 ? 's' : ''} away · +{nextMs.coins} coins
                 </span>
               </div>
               <div style={{ height: 6, borderRadius: 6, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
@@ -443,7 +443,7 @@ export default function StreakPage() {
                   </p>
                   <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
                     {daysToNext} more active day{daysToNext !== 1 ? 's' : ''} to unlock{' '}
-                    <span style={{ color: nextMs.color, fontWeight: 700 }}>+{nextMs.xp} Coins</span>
+                    <span style={{ color: nextMs.color, fontWeight: 700 }}>+{nextMs.coins} coins</span>
                   </p>
                 </div>
                 <div style={{
@@ -453,7 +453,7 @@ export default function StreakPage() {
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 }}>
                   <p className="font-display font-black" style={{ fontSize: 16, color: nextMs.color, lineHeight: 1 }}>
-                    +{nextMs.xp}
+                    +{nextMs.coins}
                   </p>
                   <p style={{ fontSize: 9, color: nextMs.color, opacity: 0.7, marginTop: 1 }}>Coins</p>
                 </div>
@@ -479,7 +479,7 @@ export default function StreakPage() {
                     <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
                     <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.32)', fontWeight: 400 }}>{m.label} streak</span>
                   </div>
-                  <span className="font-display font-bold" style={{ fontSize: 13, color: 'rgba(255,255,255,0.20)' }}>+{m.xp} Coins</span>
+                  <span className="font-display font-bold" style={{ fontSize: 13, color: 'rgba(255,255,255,0.20)' }}>+{m.coins} coins</span>
                 </div>
               ))}
             </>
@@ -503,7 +503,7 @@ export default function StreakPage() {
                     <span style={{ color: m.color, fontSize: 12, lineHeight: 1 }}>✓</span>
                     <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>{m.label} streak</span>
                   </div>
-                  <span className="font-display font-bold" style={{ fontSize: 13, color: m.color }}>+{m.xp} Coins</span>
+                  <span className="font-display font-bold" style={{ fontSize: 13, color: m.color }}>+{m.coins} coins</span>
                 </div>
               ))}
             </>

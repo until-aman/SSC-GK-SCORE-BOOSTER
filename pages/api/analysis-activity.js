@@ -12,7 +12,7 @@ const activityCache = new Map();
  *
  * Scores columns: A timestamp | B email | C name | D correct | E incorrect |
  * F skipped | G totalQuestions | H rawScore | I subject | J topic | K sessionId |
- * L xpEarned | M isDailyChallenge | N streakBonus | O totalXP
+ * L coins | M isDailyChallenge | N streakBonus | O total coins
  */
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -64,12 +64,12 @@ export default async function handler(req, res) {
       if (r[0] && (!lastQuizAt || new Date(r[0]) > new Date(lastQuizAt))) lastQuizAt = r[0];
     });
 
-    // Coins = totalXP from the Users sheet (the app labels XP as "Coins")
+    // Coins are read from the Users sheet aggregate column.
     let coins = 0;
     try {
       const usersRows = await getUserRows();
       const userRow = findUserRow(usersRows, email);
-      if (userRow) coins = parseUserRow(userRow).totalXP || 0;
+      if (userRow) coins = parseUserRow(userRow).totalCoins || 0;
     } catch { /* coins fall back to 0 */ }
 
     const data = {

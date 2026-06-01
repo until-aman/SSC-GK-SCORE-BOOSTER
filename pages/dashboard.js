@@ -246,12 +246,12 @@ function SocialProofCarousel({ userProfile, topPlayers, isLoggedIn, session, pla
         });
       }
 
-      // ④ XP + level
-      if ((userProfile.totalXP || 0) > 0) {
+      // ④ Coins + level
+      if ((userProfile.totalCoins || 0) > 0) {
         items.push({
-          emoji: '⚡',
-          main:  `${userProfile.totalXP.toLocaleString()} XP · Level: ${userProfile.level || 'Aspirant'}`,
-          sub:   'Every quiz adds Coins — keep stacking',
+          emoji: '🪙',
+          main:  `${userProfile.totalCoins.toLocaleString()} coins · Level: ${userProfile.level || 'Aspirant'}`,
+          sub:   'Every quiz adds coins — keep stacking',
           color: '#06b6d4',
         });
       }
@@ -702,7 +702,7 @@ export default function Dashboard() {
   const streakCount     = userProfile?.streakCount || 0;
   const lastAttemptDate = userProfile?.lastAttemptDate || '';
   const level           = userProfile?.level || 'Aspirant';
-  const totalXP         = userProfile?.totalXP || 0;
+  const totalCoins      = userProfile?.totalCoins ?? 0;
   const playedToday     = lastAttemptDate === getISTDateString();
   const { done, todayIdx } = getStreakDays(streakCount, lastAttemptDate);
 
@@ -871,7 +871,7 @@ export default function Dashboard() {
 
         {/* ── STAT MINI-CARDS (mirrors profile screen layout) ── */}
         <div className="grid grid-cols-3 gap-2 px-4 mb-3">
-          {/* XP → /history */}
+          {/* Coins → /history */}
           <button
             onClick={() => !isGuest && router.push('/history')}
             className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
@@ -879,7 +879,7 @@ export default function Dashboard() {
           >
             <span className="text-lg leading-none mb-0.5">🪙</span>
             <span className="t-stat-sm font-display" style={{ color: '#14B8A6' }}>
-              {isGuest ? '—' : totalXP >= 10000 ? `${(totalXP / 1000).toFixed(1)}k` : totalXP.toLocaleString()}
+              {isGuest ? '—' : totalCoins >= 10000 ? `${(totalCoins / 1000).toFixed(1)}k` : totalCoins.toLocaleString()}
             </span>
             <span className="t-stat-label font-sans text-slate-500">Total Coins</span>
           </button>
@@ -1242,7 +1242,7 @@ export default function Dashboard() {
                         </span>
                       </div>
 
-                      {/* Name + level + XP */}
+                      {/* Name + level + coins */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                           <p className="t-card-subtitle font-display font-bold truncate"
@@ -1268,7 +1268,7 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      {/* XP */}
+                      {/* Coins */}
                       <p className="t-stat-sm font-display"
                         style={{ color: '#FDBA3B', margin: 0, flexShrink: 0 }}>
                         {Math.round(player.totalScore || 0).toLocaleString()} Coins

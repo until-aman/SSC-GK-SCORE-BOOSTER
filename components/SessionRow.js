@@ -17,6 +17,7 @@ function formatDate(timestamp) {
 }
 
 function MilestoneRow({ session: s }) {
+  const coins = s.coins ?? 0;
   return (
     <div className="bg-gradient-to-r from-orange-900/40 to-amber-900/30 border border-orange-500/30 rounded-2xl px-4 py-3.5 mb-2 flex items-center gap-3">
       {/* Trophy icon */}
@@ -34,7 +35,7 @@ function MilestoneRow({ session: s }) {
 
       {/* Right */}
       <div className="flex flex-col items-end gap-0.5">
-        <span className="font-display font-bold text-[15px] text-orange-400">+{s.xpEarned} XP</span>
+        <span className="font-display font-bold text-[15px] text-orange-400">+{coins} coins</span>
         <span className="text-[11px] text-orange-500/70">streak reward</span>
       </div>
     </div>
@@ -45,6 +46,7 @@ export default function SessionRow({ session: s }) {
   if (s.type === 'milestone') return <MilestoneRow session={s} />;
 
   const style = getSubjectStyle(s.subject);
+  const coins = s.coins ?? 0;
   return (
     <div className="rounded-2xl px-4 py-3.5 mb-2 flex items-center gap-3" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
       {/* Subject icon */}
@@ -62,7 +64,7 @@ export default function SessionRow({ session: s }) {
 
       {/* Right */}
       <div className="flex flex-col items-end gap-0.5">
-        <span className="font-display font-bold text-[15px] text-[#14B8A6]">+{s.xpEarned} XP</span>
+        <span className="font-display font-bold text-[15px] text-[#14B8A6]">+{coins} coins</span>
         <span className="text-[11px] text-slate-500">{s.correctAnswers}/{s.totalQuestions} correct</span>
       </div>
     </div>
