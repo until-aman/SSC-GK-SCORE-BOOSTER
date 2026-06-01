@@ -1,7 +1,7 @@
 import { getDailyChallengeEntry, getMixedQuestions, writeDailyChallengeEntry } from '@/lib/sheets';
 
 const CHALLENGE_SIZE = 25;
-const XP_REWARD = 50;
+const COIN_REWARD = 50;
 
 function getISTDateString() {
   return new Date(Date.now() + 5.5 * 60 * 60 * 1000)
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
           dailyCache[today] = savedQuestions;
           dailyMetaCache[today] = {
             challengeId: savedChallenge.challengeId || challengeId,
-            xpReward: savedChallenge.xpReward || XP_REWARD,
+            coinReward: savedChallenge.coinReward || COIN_REWARD,
           };
         }
       }
@@ -73,28 +73,28 @@ export default async function handler(req, res) {
         const sorted = [...allQuestions].sort((a, b) => String(a.id).localeCompare(String(b.id)));
         const selected = seededShuffle(sorted, rand).slice(0, CHALLENGE_SIZE);
         dailyCache[today] = selected;
-        dailyMetaCache[today] = { challengeId, xpReward: XP_REWARD };
+        dailyMetaCache[today] = { challengeId, coinReward: COIN_REWARD };
 
         writeDailyChallengeEntry({
           date: today,
           challengeId,
           questionIds: selected.map(q => q.id),
           totalQuestions: selected.length,
-          xpReward: XP_REWARD,
+          coinReward: COIN_REWARD,
           status: 'Active',
         }).catch(() => {});
       }
     }
 
     const questions = dailyCache[today].slice(0, CHALLENGE_SIZE);
-    const meta = dailyMetaCache[today] || { challengeId, xpReward: XP_REWARD };
+    const meta = dailyMetaCache[today] || { challengeId, coinReward: COIN_REWARD };
 
     return res.status(200).json({
       challengeId: meta.challengeId,
       date: today,
       questions,
       totalQuestions: questions.length,
-      xpReward: meta.xpReward,
+      coinReward: meta.coinReward,
     });
   } catch (err) {
     console.error('[daily-challenge]', err.message);

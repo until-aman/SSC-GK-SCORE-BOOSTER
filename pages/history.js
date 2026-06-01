@@ -21,7 +21,7 @@ export default function HistoryPage() {
   const router = useRouter();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [xpBarWidth, setXpBarWidth] = useState(0);
+  const [coinsBarWidth, setCoinsBarWidth] = useState(0);
   const [showAllSessions, setShowAllSessions] = useState(false);
 
   const isGuest = status === 'unauthenticated';
@@ -47,8 +47,8 @@ export default function HistoryPage() {
     const isMax = !thresh.next;
     const pct = isMax
       ? 100
-      : Math.min(100, ((data.totalXP - thresh.min) / (thresh.max - thresh.min)) * 100);
-    const t = setTimeout(() => setXpBarWidth(pct), 300);
+      : Math.min(100, ((data.totalCoins - thresh.min) / (thresh.max - thresh.min)) * 100);
+    const t = setTimeout(() => setCoinsBarWidth(pct), 300);
     return () => clearTimeout(t);
   }, [data]);
 
@@ -86,7 +86,7 @@ export default function HistoryPage() {
   }
 
   const level = data?.level || 'Aspirant';
-  const totalXP = data?.totalXP || 0;
+  const totalCoins = data?.totalCoins || 0;
   const FILTER_FROM = new Date('2026-05-20T00:00:00+05:30').getTime();
   const sessions = (data?.sessions || []).filter(s => {
     if (!s.timestamp) return false;
@@ -94,7 +94,7 @@ export default function HistoryPage() {
   });
   const thresh = LEVEL_THRESHOLDS[level] || LEVEL_THRESHOLDS.Aspirant;
   const nextLevel = thresh.next;
-  const xpToNext = nextLevel ? thresh.max - totalXP : 0;
+  const coinsToNext = nextLevel ? thresh.max - totalCoins : 0;
 
   return (
     <>
@@ -118,34 +118,34 @@ export default function HistoryPage() {
           </button>
         </div>
 
-        {/* XP Hero card */}
+        {/* Coins Hero card */}
         <div className="mx-4 rounded-3xl px-5 py-5" style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.25)' }}>
           <div className="flex items-end justify-between mb-3">
             <div>
-              <p className="font-display font-black text-4xl text-white leading-none">{totalXP}</p>
-              <p className="font-sans text-sm text-[#14B8A6] mt-0.5">total Coins earned</p>
+              <p className="font-display font-black text-4xl text-white leading-none">{totalCoins}</p>
+              <p className="font-sans text-sm text-[#14B8A6] mt-0.5">total coins earned</p>
             </div>
             <div className="flex flex-col items-end gap-1">
               <span className="bg-white/10 rounded-full px-3 py-1 font-display font-bold text-sm text-white">
                 ⭐ {level}
               </span>
               {nextLevel && (
-                <span className="font-sans text-xs text-slate-400">{xpToNext} Coins to {nextLevel}</span>
+                <span className="font-sans text-xs text-slate-400">{coinsToNext} coins to {nextLevel}</span>
               )}
             </div>
           </div>
 
-          {/* XP progress bar */}
+          {/* Coins progress bar */}
           <div className="h-2 bg-white/10 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-700"
-              style={{ background: 'linear-gradient(90deg, #14B8A6, #2DD4BF)', width: `${xpBarWidth}%` }}
+              style={{ background: 'linear-gradient(90deg, #14B8A6, #2DD4BF)', width: `${coinsBarWidth}%` }}
             />
           </div>
           {nextLevel && (
             <div className="flex justify-between font-sans text-xs text-slate-500 mt-1">
-              <span>{thresh.min} Coins</span>
-              <span>{thresh.max} Coins</span>
+              <span>{thresh.min} coins</span>
+              <span>{thresh.max} coins</span>
             </div>
           )}
         </div>
@@ -197,10 +197,10 @@ export default function HistoryPage() {
           )}
         </div>
 
-        {/* How to earn XP table */}
+        {/* How to earn coins table */}
         <div className="mx-4 mt-5 rounded-2xl overflow-hidden" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="px-4 py-3 border-b border-white/[0.06]">
-            <p className="font-display font-bold text-base text-white">How to earn Coins ⚡</p>
+            <p className="font-display font-bold text-base text-white">How to earn coins ⚡</p>
             <p className="font-sans text-xs text-slate-400 mt-0.5">Earn more by playing consistently</p>
           </div>
           <table className="w-full text-sm">
@@ -212,21 +212,21 @@ export default function HistoryPage() {
             </thead>
             <tbody>
               {[
-                { action: 'Complete a quiz (5+ questions)', xp: '+10', color: 'text-[#14B8A6]' },
-                { action: 'Each correct answer', xp: '+2', color: 'text-[#14B8A6]' },
-                { action: 'First quiz of the day 🌅', xp: '+10', color: 'text-orange-400' },
-                { action: 'Wrong answer', xp: '−0', color: 'text-slate-500' },
-                { action: 'Skipped question', xp: '−0', color: 'text-slate-500' },
+                { action: 'Complete a quiz (5+ questions)', coins: '+10', color: 'text-[#14B8A6]' },
+                { action: 'Each correct answer', coins: '+2', color: 'text-[#14B8A6]' },
+                { action: 'First quiz of the day 🌅', coins: '+10', color: 'text-orange-400' },
+                { action: 'Wrong answer', coins: '−0', color: 'text-slate-500' },
+                { action: 'Skipped question', coins: '−0', color: 'text-slate-500' },
               ].map((row, i, arr) => (
                 <tr key={row.action} className={i < arr.length - 1 ? 'border-b border-white/[0.05]' : ''}>
                   <td className="px-4 py-3 font-sans text-sm text-slate-300">{row.action}</td>
-                  <td className={`px-4 py-3 text-right font-display font-black text-sm ${row.color}`}>{row.xp}</td>
+                  <td className={`px-4 py-3 text-right font-display font-black text-sm ${row.color}`}>{row.coins}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           <div className="px-4 py-3" style={{ background: 'rgba(20,184,166,0.06)', borderTop: '1px solid rgba(20,184,166,0.18)' }}>
-            <p className="font-sans text-xs text-[#14B8A6]">💡 Max Coins per quiz = 10 base + 2×correct + 10 first-of-day bonus</p>
+            <p className="font-sans text-xs text-[#14B8A6]">💡 Coins come from correct answers, accuracy, and completion bonuses.</p>
           </div>
         </div>
 

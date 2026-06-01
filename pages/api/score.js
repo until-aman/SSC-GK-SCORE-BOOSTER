@@ -14,7 +14,7 @@ import {
   updateLeaderboardCacheRow,
 } from '@/lib/sheets';
 import { getISTDateString, getISTYesterday, computeStreak } from '@/lib/streak';
-import { computeXPEarned, computeLevel, STREAK_MILESTONES } from '@/lib/xp';
+import { computeLevel, STREAK_MILESTONES } from '@/lib/coins';
 
 // In-memory rate limit map — resets on cold start
 const rateLimitMap = new Map();
@@ -48,6 +48,13 @@ function generateDuplicateKey(email, subject, topic, timestamp) {
     .update(`${email || ''}|${subject || ''}|${topic || ''}|${bucket}`)
     .digest('hex')
     .slice(0, 16);
+}
+
+function calculateCoins({ correct, accuracy, completionStatus }) {
+  const baseCoins = correct * 2;
+  const accuracyBonus = accuracy >= 80 ? 10 : accuracy >= 60 ? 5 : 0;
+  const completionBonus = completionStatus === 'completed' ? 5 : 0;
+  return baseCoins + accuracyBonus + completionBonus;
 }
 
 export default async function handler(req, res) {
@@ -150,7 +157,7 @@ export default async function handler(req, res) {
     // No extra API call needed — data is already in the user row.
     const isFirstQuizOfDay = !user.lastAttemptDate || user.lastAttemptDate !== today;
 
-    // Compute streak FIRST (needed for milestone XP)
+    // Compute streak first so milestone celebrations still know whether a threshold was crossed.
     const streakResult = computeStreak({
       streakCount:     user.streakCount,
       lastAttemptDate: user.lastAttemptDate,
@@ -158,13 +165,12 @@ export default async function handler(req, res) {
       yesterday,
     });
 
-    // Compute XP — passes old & new streak so milestones are included
-    const xpEarned = computeXPEarned({
-      correctAnswers,
-      totalQuestions,
-      isFirstQuizOfDay,
-      oldStreak: user.streakCount,
-      newStreak: streakResult.streakCount,
+    // Coins use the single server-side formula.
+    const accuracy = totalQuestions ? (correctAnswers / totalQuestions) * 100 : 0;
+    const coins = calculateCoins({
+      correct: correctAnswers,
+      accuracy,
+      completionStatus: 'completed',
     });
 
     // Check if a streak milestone was just crossed (for UI celebration)
@@ -177,8 +183,8 @@ export default async function handler(req, res) {
     const milestoneBonus = milestoneCrossed ? milestoneCrossed.bonus : 0;
 
     // Compute totals BEFORE writing to sheet
-    const newTotalXP = user.totalXP + xpEarned;
-    const newLevel = computeLevel(newTotalXP);
+    const newTotalCoins = user.totalCoins + coins;
+    const newLevel = computeLevel(newTotalCoins);
 
     // Append score row
     await appendScoreV2({
@@ -193,10 +199,10 @@ export default async function handler(req, res) {
       subject,
       topic,
       sessionId: resolvedSessionId,
-      xpEarned,
+      coins,
       isDailyChallenge: subject === 'Daily Challenge' ? 'TRUE' : 'FALSE',
       streakMilestoneBonus: milestoneBonus,
-      totalXP: newTotalXP,
+      totalCoins: newTotalCoins,
       clientSessionId: clientSessionId || '',
       duplicateCheckKey,
       quizMode,
@@ -213,7 +219,7 @@ export default async function handler(req, res) {
       streakCount: streakResult.streakCount,
       lastAttemptDate: today,
       streakShieldUsed: false,
-      totalXP: newTotalXP,
+      totalCoins: newTotalCoins,
       level: newLevel,
     });
 
@@ -226,7 +232,7 @@ export default async function handler(req, res) {
       rawScore,
     });
 
-    // Invalidate leaderboard cache so rankings reflect new XP immediately
+    // Invalidate leaderboard cache so rankings reflect new coins immediately.
     updateLeaderboardCacheRow('', '', '').catch(() => {});
 
     let profileSnapshot = null;
@@ -234,7 +240,7 @@ export default async function handler(req, res) {
       profileSnapshot = {
         name:            user.name || session.user.name || '',
         email,
-        totalXP:         newTotalXP,
+        totalCoins:      newTotalCoins,
         level:           newLevel,
         streakCount:     streakResult.streakCount,
         lastAttemptDate: today,
@@ -246,8 +252,8 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       ok: true,
-      xpEarned,
-      totalXP: newTotalXP,
+      coins,
+      totalCoins: newTotalCoins,
       level: newLevel,
       streakCount: streakResult.streakCount,
       lastAttemptDate: today,

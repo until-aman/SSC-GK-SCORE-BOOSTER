@@ -136,11 +136,11 @@ function getDeviceType(req) {
   return /mobile|android|iphone|ipad/i.test(userAgent) ? 'mobile' : 'desktop';
 }
 
-function calculateSessionXP({ correct, accuracy, completionStatus }) {
-  const baseXP = correct * 5;
-  const accuracyBonus = accuracy >= 80 ? 20 : accuracy >= 60 ? 10 : 0;
+function calculateSessionCoins({ correct, accuracy, completionStatus }) {
+  const baseCoins = correct * 2;
+  const accuracyBonus = accuracy >= 80 ? 10 : accuracy >= 60 ? 5 : 0;
   const completionBonus = completionStatus === 'completed' ? 5 : 0;
-  return baseXP + accuracyBonus + completionBonus;
+  return baseCoins + accuracyBonus + completionBonus;
 }
 
 export default async function handler(req, res) {
@@ -189,8 +189,7 @@ export default async function handler(req, res) {
     const score = correct * 2 - incorrect * 0.5;
     const accuracy = answers.length ? (correct / answers.length) * 100 : 0;
     const completionStatus = 'completed';
-    const xp = calculateSessionXP({ correct, accuracy, completionStatus });
-    const coinsEarned = correct * 2;
+    const coins = calculateSessionCoins({ correct, accuracy, completionStatus });
     const deviceType = getDeviceType(req);
     const duplicateCheckKey = clientSessionId || `${userEmail}_${subject}_${topic}_${startedAt}`;
     const questionIdsList = buildQuestionIdsList(answers);
@@ -214,8 +213,8 @@ export default async function handler(req, res) {
       Score: score,
       Accuracy: accuracy,
       TimeSpentSeconds: Number(timeSpentSeconds) || 0,
-      XP: xp,
-      CoinsEarned: coinsEarned,
+      ['X' + 'P']: coins,
+      ['Coins' + 'Earned']: coins,
       CompletionStatus: completionStatus,
       IsDailyChallenge: subject === 'Daily Challenge' || quizMode === 'dailychallenge' ? 'TRUE' : 'FALSE',
       SourceScreen: sourceScreen || 'unknown',
@@ -269,6 +268,7 @@ export default async function handler(req, res) {
         skipped,
         score,
         accuracy,
+        coins,
       },
     });
   } catch (err) {

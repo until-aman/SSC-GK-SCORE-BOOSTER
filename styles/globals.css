@@ -211,7 +211,7 @@ html {
   from { transform: translateY(80px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
-.xp-toast { animation: slideUpToast 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.coins-toast { animation: slideUpToast 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
 
 @keyframes breatheOrange {
   0%,100% { box-shadow: 0 0 16px rgba(249,115,22,0.3); }
@@ -417,13 +417,13 @@ button, a {
   transform-origin: center bottom;
 }
 
-/* ── XP burst pop (result page) ── */
-@keyframes xpBurst {
+/* ── Coins burst pop (result page) ── */
+@keyframes coinsBurst {
   0%   { transform: scale(0.4) translateY(12px); opacity: 0; }
   60%  { transform: scale(1.15) translateY(-4px); opacity: 1; }
   100% { transform: scale(1) translateY(0);       opacity: 1; }
 }
-.xp-burst { animation: xpBurst 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.coins-burst { animation: coinsBurst 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 
 /* ── Staggered card entrance ── */
 @keyframes cardSlideUp {
@@ -546,7 +546,7 @@ button, a {
     letter-spacing: 0.02em;
   }
 
-  /* 9a ─ Large Stat (score, XP, accuracy) */
+  /* 9a ─ Large Stat (score, coins, accuracy) */
   .t-stat-lg {
     font-family: 'Nunito', sans-serif;
     font-size: 28px;

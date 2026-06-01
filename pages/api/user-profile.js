@@ -61,7 +61,7 @@ export default async function handler(req, res) {
       return res.status(200).json({
         email: user.email,
         name: user.name,
-        totalXP: user.totalXP,
+        totalCoins: user.totalCoins,
         level: user.level,
         streakCount: user.streakCount,
         lastAttemptDate: user.lastAttemptDate,
@@ -94,7 +94,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       email: user.email,
       name: user.name,
-      totalXP: user.totalXP,
+      totalCoins: user.totalCoins,
       level: user.level,
       streakCount: user.streakCount,
       lastAttemptDate: user.lastAttemptDate,

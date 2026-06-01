@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import XPToast from '@/components/XPToast';
+import CoinsToast from '@/components/CoinsToast';
 import Confetti from '@/components/Confetti';
 
 import GoogleSignInCard from '@/components/GoogleSignInCard';
@@ -166,9 +166,9 @@ export default function Result() {
   const [aiAnalysis, setAiAnalysis]           = useState(null);
   const [aiLoading, setAiLoading]             = useState(false);
   const [aiError, setAiError]                 = useState('');
-  const [xpResult, setXPResult]               = useState(null);
-  const [savingXP, setSavingXP]               = useState(false);
-  const [showXPToast, setShowXPToast]         = useState(false);
+  const [coinsResult, setCoinsResult]         = useState(null);
+  const [savingCoins, setSavingCoins]         = useState(false);
+  const [showCoinsToast, setShowCoinsToast]   = useState(false);
   const [loadingDetailed, setLoadingDetailed] = useState(false);
   const [topPerformers, setTopPerformers]     = useState([]);
   const [feedback, setFeedback]               = useState('');
@@ -268,7 +268,7 @@ export default function Result() {
     const resolvedTopic = topic || result?.topic || '';
     const resolvedSessionId = sessionId || result?.sessionId || result?.clientSessionId || crypto.randomUUID();
 
-    setSavingXP(true);
+    setSavingCoins(true);
     fetch('/api/score', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -294,16 +294,16 @@ export default function Result() {
         saveQuizSession(result, resolvedSessionId).catch(err => {
           console.warn('[result] quiz session save failed:', err.message);
         });
-        setSavingXP(false);
+        setSavingCoins(false);
         if (data.ok) {
-          setXPResult(data);
+          setCoinsResult(data);
           patchProfileCaches(data.profileSnapshot);
           if (!leaderboardRefreshedAfterScoreRef.current) {
             leaderboardRefreshedAfterScoreRef.current = true;
             loadWeeklyLeaderboard({ forceRefresh: true, background: true });
           }
-          setShowXPToast(true);
-          setTimeout(() => setShowXPToast(false), 4000);
+          setShowCoinsToast(true);
+          setTimeout(() => setShowCoinsToast(false), 4000);
           if (data.accuracy >= 85) {
             setShowConfetti(true);
             setTimeout(() => setShowConfetti(false), 3500);
@@ -314,7 +314,7 @@ export default function Result() {
         saveQuizSession(result, resolvedSessionId).catch(err => {
           console.warn('[result] quiz session save failed:', err.message);
         });
-        setSavingXP(false);
+        setSavingCoins(false);
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router.isReady, result]);
@@ -383,7 +383,7 @@ export default function Result() {
     : -1;
 
   useEffect(() => {
-    if (!result || !result.xpEarned || result.xpEarned <= 0) return;
+    if (!result || result.rawScore <= 0) return;
 
     const canvas = document.getElementById('confetti-canvas');
     if (!canvas) return;
@@ -515,15 +515,15 @@ export default function Result() {
 
       <Confetti active={showConfetti} intensity="grand" />
 
-      {xpResult && (
-        <XPToast
-          visible={showXPToast}
-          xpEarned={xpResult.xpEarned}
-          totalXP={xpResult.totalXP}
-          level={xpResult.level}
-          streakCount={xpResult.streakCount}
-          isFirstQuizOfDay={xpResult.isFirstQuizOfDay}
-          streakMilestone={xpResult.streakMilestone}
+      {coinsResult && (
+        <CoinsToast
+          visible={showCoinsToast}
+          coins={coinsResult.coins ?? 0}
+          totalCoins={coinsResult.totalCoins ?? 0}
+          level={coinsResult.level}
+          streakCount={coinsResult.streakCount}
+          isFirstQuizOfDay={coinsResult.isFirstQuizOfDay}
+          streakMilestone={coinsResult.streakMilestone}
         />
       )}
 
@@ -532,7 +532,7 @@ export default function Result() {
         @keyframes stripIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
         @keyframes proofFade { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
         .card-in     { animation: cardIn  350ms cubic-bezier(0.22,1,0.36,1) both; }
-        .xp-strip-in { animation: stripIn 300ms cubic-bezier(0.22,1,0.36,1) 100ms both; }
+        .coins-strip-in { animation: stripIn 300ms cubic-bezier(0.22,1,0.36,1) 100ms both; }
         .pyq-in      { animation: stripIn 300ms cubic-bezier(0.22,1,0.36,1) 160ms both; }
         .mentor-in   { animation: stripIn 300ms cubic-bezier(0.22,1,0.36,1) 220ms both; }
         .champs-in   { animation: stripIn 300ms cubic-bezier(0.22,1,0.36,1) 280ms both; }
@@ -658,23 +658,23 @@ export default function Result() {
           );
         })()}
 
-        {/* ── 2. XP + STREAK STRIP ── */}
-        {savingXP && !xpResult && (
+        {/* ── 2. COINS + STREAK STRIP ── */}
+        {savingCoins && !coinsResult && (
           <div style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.22)', borderRadius: 20, padding: 16, display: 'flex', alignItems: 'center', gap: 10, borderLeft: '4px solid #14B8A6' }}>
             <Loader size="sm" />
             <span style={{ fontSize: 13, color: '#14B8A6', fontWeight: 600 }}>Saving your Coins…</span>
           </div>
         )}
-        {xpResult && (
-          <div className="xp-strip-in" style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.22)', borderRadius: 20, padding: 16, borderLeft: '4px solid #14B8A6' }}>
+        {coinsResult && (
+          <div className="coins-strip-in" style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.22)', borderRadius: 20, padding: 16, borderLeft: '4px solid #14B8A6' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC' }}>+{xpResult.xpEarned} XP earned</span>
-              {xpResult.streakCount > 0 && (
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#FDBA74' }}>🔥 {xpResult.streakCount} day streak</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC' }}>+{coinsResult.coins ?? 0} coins</span>
+              {coinsResult.streakCount > 0 && (
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#FDBA74' }}>🔥 {coinsResult.streakCount} day streak</span>
               )}
             </div>
             <p style={{ fontSize: 12, color: '#93A4BC' }}>
-              Level: {xpResult.level} · {xpResult.totalXP} XP total
+              Level: {coinsResult.level} · {coinsResult.totalCoins ?? 0} coins total
             </p>
           </div>
         )}
@@ -896,7 +896,7 @@ export default function Result() {
                       </span>
                     </div>
 
-                    {/* Name + level + XP */}
+                    {/* Name + level + coins */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         <p className="font-display font-bold truncate"
@@ -923,7 +923,7 @@ export default function Result() {
                       </div>
                     </div>
 
-                    {/* XP */}
+                      {/* Coins */}
                     <p className="font-display font-bold"
                       style={{ fontSize: 17, color: '#FDBA3B', margin: 0, flexShrink: 0 }}>
                       {Math.round(player.totalScore || 0).toLocaleString()} Coins

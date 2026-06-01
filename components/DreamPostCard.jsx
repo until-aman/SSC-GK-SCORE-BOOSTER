@@ -26,7 +26,7 @@ function getMotivationalMessage(progressPercent, dreamPost) {
   return `Your journey has started. Practice daily and build momentum toward your ${post} goal.`;
 }
 
-export default function DreamPostCard({ coinsEarned }) {
+export default function DreamPostCard({ coins }) {
   const [dreamPost, setDreamPost]                     = useState('');
   const [dreamPostUnlockedAt, setDreamPostUnlockedAt] = useState(null);
   const [isEditing, setIsEditing]                     = useState(false);
@@ -113,7 +113,7 @@ export default function DreamPostCard({ coinsEarned }) {
   }
 
   const isUnlocked      = !!dreamPostUnlockedAt;
-  const displayCoins    = isUnlocked ? DREAM_POST_TARGET : coinsEarned;
+  const displayCoins    = isUnlocked ? DREAM_POST_TARGET : coins;
   const progressPercent = Math.min(100, (displayCoins / DREAM_POST_TARGET) * 100);
 
   /* ── State 1: Loading ──────────────────────────────────────────── */
@@ -299,7 +299,7 @@ export default function DreamPostCard({ coinsEarned }) {
 
       {/* Coins to unlock */}
       <p className="text-[#7A8FA6] text-xs mt-3">
-        {Math.max(0, DREAM_POST_TARGET - coinsEarned).toLocaleString()} coins to unlock your tag
+        {Math.max(0, DREAM_POST_TARGET - coins).toLocaleString()} coins to unlock your tag
       </p>
 
     </div>

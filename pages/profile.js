@@ -32,7 +32,6 @@ export default function Profile() {
   const router = useRouter();
   const [profile, setProfile]       = useState(null);
   const [loading, setLoading]       = useState(true);
-  const [xpBarWidth, setXpBarWidth] = useState(0);
   const [levelModal, setLevelModal] = useState(false);
 
   const isGuest    = typeof window !== 'undefined' ? isGuestMode() : false;
@@ -51,21 +50,9 @@ export default function Profile() {
       .catch(() => setLoading(false));
   }, [isLoggedIn]);
 
-  useEffect(() => {
-    if (!profile) return;
-    const thresh = LEVEL_THRESHOLDS[profile.level] || LEVEL_THRESHOLDS.Aspirant;
-    const isMax = !thresh.next;
-    const pct = isMax ? 100 : Math.min(100, ((profile.totalXP - thresh.min) / (thresh.max - thresh.min)) * 100);
-    const t = setTimeout(() => setXpBarWidth(pct), 200);
-    return () => clearTimeout(t);
-  }, [profile]);
-
   const level      = profile?.level || 'Aspirant';
-  const totalXP    = profile?.totalXP || 0;
+  const totalCoins = profile?.totalCoins || 0;
   const streak     = profile?.streakCount || 0;
-  const thresh     = LEVEL_THRESHOLDS[level] || LEVEL_THRESHOLDS.Aspirant;
-  const nextLevel  = thresh.next;
-  const xpToNext   = nextLevel ? thresh.max - totalXP : 0;
 
   let memberSince = '';
   if (profile?.createdAt) {
@@ -155,7 +142,7 @@ export default function Profile() {
                 )}
                 {isLoggedIn && (
                   <span className="t-badge" style={{ background: 'rgba(253,186,59,0.10)', border: '1px solid rgba(253,186,59,0.2)', color: '#FDBA3B', borderRadius: 999, padding: '2px 10px' }}>
-                    🪙 {totalXP.toLocaleString()} XP
+                    🪙 {totalCoins.toLocaleString()} coins
                   </span>
                 )}
               </div>
@@ -164,14 +151,14 @@ export default function Profile() {
 
           {/* Stats row */}
           <div className="grid grid-cols-3 gap-2 mt-3">
-            {/* XP → XP History */}
+            {/* Coins → Coins History */}
             <button
               onClick={() => !isGuest && router.push('/history')}
               className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
               style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.20)' }}
             >
               <span className="text-lg leading-none mb-0.5">🪙</span>
-              <span className="t-stat-sm font-display" style={{ color: '#14B8A6' }}>{isGuest ? '—' : totalXP.toLocaleString()}</span>
+              <span className="t-stat-sm font-display" style={{ color: '#14B8A6' }}>{isGuest ? '—' : totalCoins.toLocaleString()}</span>
               <span className="t-stat-label font-sans text-slate-500">Total Coins</span>
             </button>
 
@@ -200,7 +187,7 @@ export default function Profile() {
 
           {/* ── Dream Post Card ── */}
           {session && (
-            <DreamPostCard coinsEarned={totalXP} />
+            <DreamPostCard coins={totalCoins} />
           )}
 
           {/* ── Achievements ── */}
@@ -208,8 +195,8 @@ export default function Profile() {
             const achievementsList = [
               // Unlocked based on real profile data
               { icon: '🔥', label: '1-Day\nStreak',      color: '#f97316', glow: 'rgba(249,115,22,0.22)',  unlocked: !isGuest && streak >= 1  },
-              { icon: '🧠', label: 'GK\nStarter',         color: '#22d3ee', glow: 'rgba(34,211,238,0.22)',  unlocked: !isGuest && totalXP > 0  },
-              { icon: '⚡', label: 'Daily\nChallenger',   color: '#a78bfa', glow: 'rgba(167,139,250,0.22)', unlocked: !isGuest && totalXP >= 50 },
+              { icon: '🧠', label: 'GK\nStarter',         color: '#22d3ee', glow: 'rgba(34,211,238,0.22)',  unlocked: !isGuest && totalCoins > 0  },
+              { icon: '⚡', label: 'Daily\nChallenger',   color: '#a78bfa', glow: 'rgba(167,139,250,0.22)', unlocked: !isGuest && totalCoins >= 50 },
               { icon: '🌟', label: '3-Day\nStreak',       color: '#fbbf24', glow: 'rgba(251,191,36,0.22)',  unlocked: !isGuest && streak >= 3  },
               { icon: '🔥', label: '7-Day\nStreak',       color: '#f97316', glow: 'rgba(249,115,22,0.22)',  unlocked: !isGuest && streak >= 7  },
               { icon: '🏆', label: 'Champion',            color: '#fbbf24', glow: 'rgba(251,191,36,0.22)',  unlocked: !isGuest && ['Champion','Legend'].includes(level) },
@@ -291,7 +278,7 @@ export default function Profile() {
               <ChevronSVG />
             </button>
 
-            {/* XP History */}
+            {/* Coins History */}
             <button
               onClick={() => router.push('/history')}
               className="w-full rounded-2xl px-4 py-4 flex items-center gap-3 active:scale-[0.98] transition-transform" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}
@@ -351,7 +338,7 @@ export default function Profile() {
             <div className="flex flex-col gap-2">
               {Object.entries(LEVEL_THRESHOLDS).map(([lvl, { min, max, next }]) => {
                 const isCurrent = lvl === level;
-                const isUnlocked = totalXP >= min;
+                const isUnlocked = totalCoins >= min;
                 return (
                   <div
                     key={lvl}
