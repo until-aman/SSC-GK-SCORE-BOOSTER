@@ -332,7 +332,7 @@ const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 const OPTION_KEYS   = ['optionA', 'optionB', 'optionC', 'optionD'];
 const ACTIVE_QUIZ_SESSION_KEY = 'ssc_active_quiz_session';
 const QUIZ_SESSION_EXPIRY_MS = 60 * 60 * 1000;
-const QUESTION_DURATION_SECONDS = 20;
+const QUESTION_DURATION_SECONDS = 30;
 
 function getAttemptedCount(answers = {}) {
   return Object.keys(answers).length;
@@ -371,13 +371,13 @@ function touchActiveQuizSession() {
   writeActiveQuizSession({ ...session, lastActivityAt: Date.now() });
 }
 
-function TimerRing({ timeLeft, duration = 20 }) {
+function TimerRing({ timeLeft, duration = QUESTION_DURATION_SECONDS }) {
   const SIZE   = 52;
   const RADIUS = 20;
   const CIRC   = 2 * Math.PI * RADIUS;
   const offset = CIRC * (1 - timeLeft / duration);
 
-  const color = timeLeft >= 11 ? '#14B8A6'   // teal   20–11 s
+  const color = timeLeft >= 11 ? '#14B8A6'   // teal   30–11 s
     : timeLeft >= 6            ? '#F59E0B'   // gold   10–6 s
     :                            '#EF4444';  // red     5–0 s
 
@@ -480,7 +480,7 @@ export default function Quiz() {
   const [showLoadingRetry, setShowLoadingRetry] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [timeLeft, setTimeLeft]         = useState(20);
+  const [timeLeft, setTimeLeft]         = useState(QUESTION_DURATION_SECONDS);
   const [questionStartedAt, setQuestionStartedAt] = useState(Date.now());
   const [sessionId, setSessionId]       = useState('');
   const [bulbState, setBulbState]       = useState('neutral'); // 'neutral' | 'correct' | 'wrong'
@@ -890,6 +890,10 @@ export default function Quiz() {
 
   const finishQuiz = useCallback((finalAnswers, options = {}) => {
     if (quizComplete) return;
+    const activeSession = activeSessionRef.current || readActiveQuizSession();
+    const startedAtMs = Number(activeSession?.startedAt || Date.now());
+    const completedAtMs = Date.now();
+    const clientSessionId = activeSession?.quizSessionId || sessionId || crypto.randomUUID();
     allowQuizExitRef.current = true;
     activeSessionRef.current = null;
     clearActiveQuizSession();
@@ -907,13 +911,19 @@ export default function Quiz() {
       attemptedCount,
       answeredCount,
       collection,
+      mode: mode || 'standard',
+      sessionId: clientSessionId,
+      clientSessionId,
+      startedAt: new Date(startedAtMs).toISOString(),
+      completedAt: new Date(completedAtMs).toISOString(),
+      timeSpentSeconds: Math.max(0, Math.round((completedAtMs - startedAtMs) / 1000)),
       aiData: null,
     }));
 
     router.push(
-      `/result?subject=${encodeURIComponent(effectiveSubject)}&topic=${encodeURIComponent(effectiveTopic)}&sessionId=${sessionId}&correct=${results.correct}&incorrect=${results.incorrect}&skipped=${results.skipped}&total=${results.totalQuestions}&score=${results.rawScore}`
+      `/result?subject=${encodeURIComponent(effectiveSubject)}&topic=${encodeURIComponent(effectiveTopic)}&sessionId=${clientSessionId}&correct=${results.correct}&incorrect=${results.incorrect}&skipped=${results.skipped}&total=${results.totalQuestions}&score=${results.rawScore}`
     );
-  }, [questions, sessionId, router, quizComplete, effectiveSubject, effectiveTopic, collection]);
+  }, [questions, sessionId, router, quizComplete, effectiveSubject, effectiveTopic, collection, mode]);
 
   const requestQuizExit = useCallback((targetUrl = '/dashboard') => {
     if (!quizInProgress || allowQuizExitRef.current) return true;
@@ -999,6 +1009,8 @@ export default function Quiz() {
     const storedSubject = session.subject || effectiveSubject || 'Quiz';
     const storedTopic = session.topic || effectiveTopic || 'Mixed';
     const storedSessionId = session.quizSessionId || sessionId || crypto.randomUUID();
+    const startedAtMs = Number(session.startedAt || Date.now());
+    const completedAtMs = Date.now();
 
     sessionStorage.setItem('quizResult', JSON.stringify({
       subject: storedSubject,
@@ -1015,6 +1027,12 @@ export default function Quiz() {
       attemptedCount: storedAttemptedCount,
       answeredCount: storedAnsweredCount,
       collection: session.collection || 'general',
+      mode: session.mode || 'standard',
+      sessionId: storedSessionId,
+      clientSessionId: storedSessionId,
+      startedAt: new Date(startedAtMs).toISOString(),
+      completedAt: new Date(completedAtMs).toISOString(),
+      timeSpentSeconds: Math.max(0, Math.round((completedAtMs - startedAtMs) / 1000)),
       aiData: null,
     }));
 
@@ -1571,7 +1589,7 @@ export default function Quiz() {
         className="flex items-center gap-3 px-4 py-2 flex-shrink-0"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
       >
-        <TimerRing timeLeft={timeLeft} duration={20} />
+        <TimerRing timeLeft={timeLeft} duration={QUESTION_DURATION_SECONDS} />
 
         <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
 
