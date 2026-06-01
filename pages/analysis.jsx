@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import WhatsAppBell from '@/components/WhatsAppBell';
 
 // ── Design tokens (match existing app) ──────────────────────────────────
 const ORANGE     = '#FF6B16';
@@ -110,8 +111,9 @@ export default function AnalysisPage() {
   const [ctaLoading,       setCtaLoading]       = useState(false);
   const [ctaError,         setCtaError]         = useState('');
   const [showSignIn,       setShowSignIn]       = useState(false);
-  const [selectedSubject,  setSelectedSubject]  = useState(null);
+  const [selectedSubject,  setSelectedSubject]  = useState(SUBJECTS[0].name);
   const [activeFilter,     setActiveFilter]     = useState('Improve Fast');
+  const [showAllTopics,    setShowAllTopics]    = useState(false);
 
   const practiceGapRef = useRef(null);
   const planRef        = useRef(null);
@@ -249,12 +251,8 @@ export default function AnalysisPage() {
           </span>
         </div>
 
-        {/* Right: lock icon */}
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-          stroke={TEXT_MUT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
+        {/* Right: WhatsApp bell */}
+        <WhatsAppBell />
       </div>
 
       <div style={{
@@ -315,50 +313,65 @@ export default function AnalysisPage() {
             </div>
           </div>
 
-          {/* Stat mini-cards */}
+          {/* Metric tiles */}
           <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
             {[
-              { icon: '🏆', label: 'QUIZZES',   value: '42'    },
-              { icon: '🎯', label: 'QUESTIONS', value: '720'   },
-              { icon: '🪙', label: 'COINS',     value: '1,840' },
-            ].map(({ icon, label, value }) => (
+              { icon: '🏆', value: '42',   label: 'Quizzes'   },
+              { icon: '🎯', value: '720',  label: 'Questions' },
+              { icon: '🪙', value: '1.8K', label: 'Coins'     },
+            ].map(({ icon, value, label }) => (
               <div key={label} style={{
-                flex: 1, background: BG_DEEP, borderRadius: 12,
-                padding: '10px 10px 11px',
+                flex: 1,
+                background: BG_DEEP,
                 border: `1px solid ${BORDER}`,
-                display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                borderRadius: 12,
+                padding: '10px 8px',
+                textAlign: 'center',
               }}>
-                <div className="font-sans" style={{ fontSize: 10, fontWeight: 700, color: ORANGE, letterSpacing: '0.04em', marginBottom: 6, whiteSpace: 'nowrap' }}>
-                  {icon} {label}
-                </div>
-                <div className="font-display" style={{ fontSize: 18, fontWeight: 800, color: TEXT_PRI, lineHeight: 1 }}>
-                  {value}
-                </div>
+                <div style={{ fontSize: 15, marginBottom: 3 }}>{icon}</div>
+                <div className="font-display" style={{ fontSize: 18, fontWeight: 900, color: TEXT_PRI, lineHeight: 1 }}>{value}</div>
+                <div className="font-sans" style={{ fontSize: 10, color: TEXT_MUT, marginTop: 3 }}>{label}</div>
               </div>
             ))}
           </div>
 
           {/* Divider */}
-          <div style={{ height: 1, background: BORDER, margin: '12px 0' }} />
+          <div style={{ height: 1, background: BORDER, margin: '14px 0 12px' }} />
 
-          {/* Curiosity teaser copy */}
-          <p className="font-display" style={{ fontSize: 14, fontWeight: 800, color: TEXT_PRI, lineHeight: 1.4, marginBottom: 6, margin: '0 0 6px' }}>
-            Imagine seeing this for your own quiz history.
-          </p>
-          <p className="font-sans" style={{ fontSize: 12, color: TEXT_SEC, lineHeight: 1.55, margin: 0 }}>
-            Know your weak topics, strongest subjects, and exactly what to practice next.
-          </p>
+          {/* Insight chips */}
+          <div className="font-sans" style={{ fontSize: 12, fontWeight: 700, color: TEXT_SEC, marginBottom: 10 }}>
+            Your analysis will show:
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[
+              { icon: '⚠️', label: 'Weak Topics'       },
+              { icon: '🚀', label: 'Fast Improvements' },
+              { icon: '🎯', label: 'Practice Plan'     },
+            ].map(({ icon, label }) => (
+              <span key={label} className="font-sans" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                fontSize: 10, fontWeight: 600, color: TEXT_PRI,
+                background: 'rgba(255,107,22,0.1)',
+                border: `1px solid ${ORANGE}33`,
+                borderRadius: 99, padding: '5px 8px',
+                whiteSpace: 'nowrap',
+              }}>
+                <span style={{ fontSize: 10 }}>{icon}</span>
+                {label}
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* ── Subject Health Carousel ───────────────────────────────── */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, padding: '0 2px' }}>
-            <span className="font-display" style={{ fontSize: 14, fontWeight: 700, color: TEXT_PRI }}>
+          <div style={{ marginBottom: 12, padding: '0 2px' }}>
+            <div className="font-display" style={{ fontSize: 14, fontWeight: 700, color: TEXT_PRI, marginBottom: 4 }}>
               Subject Health
-            </span>
-            <span className="font-sans" style={{ fontSize: 11, color: TEXT_MUT }}>
-              Tap a subject →
-            </span>
+            </div>
+            <div className="font-sans" style={{ fontSize: 12, color: TEXT_MUT }}>
+              Showing analysis for: <span style={{ fontWeight: 700, color: ORANGE }}>{selectedSubject}</span>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6, scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {SUBJECTS.map(({ name, acc, status, impact }) => {
@@ -368,7 +381,7 @@ export default function AnalysisPage() {
               return (
                 <div
                   key={name}
-                  onClick={() => setSelectedSubject(isSelected ? null : name)}
+                  onClick={() => setSelectedSubject(name)}
                   style={{
                     flexShrink: 0, width: 120,
                     background: isSelected ? 'rgba(255,107,22,0.08)' : BG_CARD,
@@ -391,6 +404,22 @@ export default function AnalysisPage() {
                   <div className="font-display" style={{ fontSize: 22, fontWeight: 900, color, lineHeight: 1, marginBottom: 6 }}>
                     {acc}%
                   </div>
+                  {/* Selected pill */}
+                  {isSelected && (
+                    <div style={{ marginBottom: 7 }}>
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 3,
+                        fontSize: 9, fontWeight: 800, color: '#fff',
+                        background: ORANGE, borderRadius: 99, padding: '2px 8px',
+                        letterSpacing: '0.03em',
+                      }}>
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Selected
+                      </span>
+                    </div>
+                  )}
                   {/* Status badge */}
                   <div style={{ marginBottom: 7 }}>
                     <span style={{ fontSize: 10, fontWeight: 700, color, background: bgCol, borderRadius: 99, padding: '2px 8px' }}>
@@ -415,16 +444,30 @@ export default function AnalysisPage() {
           const color = STATUS_COLOR[subj.status];
           const bgCol = STATUS_BG[subj.status];
           return (
+            <>
+            {/* Connector line from carousel to detail card */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: -8, marginBottom: 4 }}>
+              <div style={{
+                width: 2, height: 18,
+                background: `linear-gradient(to bottom, ${color}55, ${color})`,
+                borderRadius: 99,
+                boxShadow: `0 0 8px ${color}66`,
+              }} />
+              <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={{ marginTop: -1 }}>
+                <path d="M1 1l5 5 5-5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
             <div style={{
               ...card,
               border: `1px solid ${color}40`,
               background: 'linear-gradient(135deg, #1E3554 0%, #172D47 100%)',
               marginBottom: 16,
+              boxShadow: `0 0 20px ${color}22`,
             }}>
               {/* Subject name + badge */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <span className="font-display" style={{ fontSize: 16, fontWeight: 800, color: TEXT_PRI }}>
-                  {subj.name}
+                  {subj.name} Practice Plan
                 </span>
                 <span style={{ fontSize: 10, fontWeight: 700, color, background: bgCol, borderRadius: 99, padding: '3px 10px' }}>
                   {subj.status}
@@ -473,6 +516,7 @@ export default function AnalysisPage() {
                 Practice {subj.name} →
               </button>
             </div>
+            </>
           );
         })()}
 
@@ -483,7 +527,7 @@ export default function AnalysisPage() {
             return (
               <button
                 key={filter}
-                onClick={() => setActiveFilter(filter)}
+                onClick={() => { setActiveFilter(filter); setShowAllTopics(false); }}
                 style={{
                   flexShrink: 0,
                   padding: '7px 14px',
@@ -509,9 +553,11 @@ export default function AnalysisPage() {
         {(() => {
           const filtered = TOPICS.filter(t => t.tags.includes(activeFilter));
           if (filtered.length === 0) return null;
+          const visible = showAllTopics ? filtered : filtered.slice(0, 3);
+          const hiddenCount = filtered.length - visible.length;
           return (
             <div style={{ marginBottom: 16 }}>
-              {filtered.map(({ subject, name, acc, attempted, tags }) => (
+              {visible.map(({ subject, name, acc, attempted, tags }) => (
                 <div key={name} style={{
                   ...card,
                   marginBottom: 10,
@@ -532,51 +578,75 @@ export default function AnalysisPage() {
                     </div>
                     {/* Accuracy ring */}
                     <div style={{
-                      width: 40, height: 40, borderRadius: 99, flexShrink: 0,
+                      width: 32, height: 32, borderRadius: 99, flexShrink: 0,
                       background: `conic-gradient(${acc >= 70 ? '#14B8A6' : acc >= 55 ? '#F59E0B' : '#EF4444'} ${acc * 3.6}deg, #1a2e44 0deg)`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <div style={{ width: 28, height: 28, borderRadius: 99, background: BG_CARD, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span className="font-sans" style={{ fontSize: 9, fontWeight: 700, color: TEXT_SEC }}>{acc}%</span>
+                      <div style={{ width: 23, height: 23, borderRadius: 99, background: BG_CARD, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span className="font-sans" style={{ fontSize: 8, fontWeight: 700, color: TEXT_SEC }}>{acc}%</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Tags */}
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-                    {tags.map(tag => (
-                      <span key={tag} style={{
-                        fontSize: 10, fontWeight: 700,
-                        color: TAG_COLOR[tag].color,
-                        background: TAG_COLOR[tag].bg,
-                        borderRadius: 99, padding: '2px 8px',
-                      }}>
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+                  {/* Tags + compact CTA */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
+                      {tags.map(tag => (
+                        <span key={tag} style={{
+                          fontSize: 10, fontWeight: 700,
+                          color: TAG_COLOR[tag].color,
+                          background: TAG_COLOR[tag].bg,
+                          borderRadius: 99, padding: '2px 8px',
+                        }}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
 
-                  {/* CTA button */}
-                  <button
-                    onClick={() => router.push(`/quiz-setup?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(name)}&count=25`)}
-                    style={{
-                      width: '100%', padding: '11px 0',
-                      borderRadius: 12,
-                      background: ORANGE_DIM,
-                      border: `1px solid ${ORANGE}40`,
-                      color: ORANGE,
-                      fontSize: 13, fontWeight: 800,
-                      cursor: 'pointer', fontFamily: 'inherit',
-                      transition: 'background 0.15s ease',
-                    }}
-                    onPointerDown={e => { e.currentTarget.style.background = `rgba(255,107,22,0.25)`; }}
-                    onPointerUp={e => { e.currentTarget.style.background = ORANGE_DIM; }}
-                    onPointerLeave={e => { e.currentTarget.style.background = ORANGE_DIM; }}
-                  >
-                    Practice 25 Questions →
-                  </button>
+                    {/* Compact CTA button */}
+                    <button
+                      onClick={() => router.push(`/quiz-setup?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(name)}&count=25`)}
+                      style={{
+                        flexShrink: 0,
+                        background: ORANGE,
+                        border: 'none',
+                        borderRadius: 99,
+                        padding: '6px 13px',
+                        color: '#fff', fontSize: 12, fontWeight: 800,
+                        cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                        transition: 'opacity 0.15s ease',
+                      }}
+                      onPointerDown={e => { e.currentTarget.style.opacity = '0.8'; }}
+                      onPointerUp={e => { e.currentTarget.style.opacity = '1'; }}
+                      onPointerLeave={e => { e.currentTarget.style.opacity = '1'; }}
+                    >
+                      Practice 25Q →
+                    </button>
+                  </div>
                 </div>
               ))}
+
+              {/* View More Topics */}
+              {!showAllTopics && hiddenCount > 0 && (
+                <button
+                  onClick={() => setShowAllTopics(true)}
+                  style={{
+                    width: '100%', padding: '12px 0',
+                    borderRadius: 12,
+                    background: 'transparent',
+                    border: `1px dashed ${BORDER}`,
+                    color: TEXT_SEC,
+                    fontSize: 13, fontWeight: 700,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    transition: 'background 0.15s ease, color 0.15s ease',
+                  }}
+                  onPointerDown={e => { e.currentTarget.style.color = TEXT_PRI; }}
+                  onPointerUp={e => { e.currentTarget.style.color = TEXT_SEC; }}
+                  onPointerLeave={e => { e.currentTarget.style.color = TEXT_SEC; }}
+                >
+                  View More Topics ({hiddenCount}) →
+                </button>
+              )}
             </div>
           );
         })()}
@@ -584,46 +654,6 @@ export default function AnalysisPage() {
 
 
 
-        {/* ── Inline CTA: after Practice Gap ───────────────────────── */}
-        {!interestRecorded && (
-          <div style={{
-            ...card,
-            background: 'linear-gradient(135deg, #1E3554 0%, #172D47 100%)',
-            border: `1px solid ${ORANGE}30`,
-            padding: '16px 18px',
-          }}>
-            <p className="font-sans" style={{
-              fontSize: 13, color: TEXT_SEC, lineHeight: 1.45,
-              margin: '0 0 12px',
-            }}>
-              Want this analysis for your own quiz history?
-            </p>
-            <button
-              onClick={handleCtaClick}
-              disabled={ctaLoading}
-              className={ctaLoading ? '' : 'btn-daily-pulse'}
-              style={{
-                width: '100%',
-                padding: '15px 0',
-                borderRadius: 14,
-                background: ctaLoading ? 'rgba(255,107,22,0.5)' : ORANGE,
-                color: '#fff',
-                border: 'none',
-                fontSize: 15,
-                fontWeight: 800,
-                cursor: ctaLoading ? 'default' : 'pointer',
-                fontFamily: 'inherit',
-                transition: 'transform 150ms ease',
-                opacity: ctaLoading ? 0.6 : 1,
-              }}
-              onPointerDown={e => { if (!ctaLoading) e.currentTarget.style.transform = 'scale(0.98)'; }}
-              onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-              onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-            >
-              {ctaLoading ? 'Recording…' : 'Unlock My Personal Analysis →'}
-            </button>
-          </div>
-        )}
 
 
         {/* ── AI Personal Analysis — Premium Card ───────────────────── */}
@@ -638,172 +668,40 @@ export default function AnalysisPage() {
           overflow: 'hidden',
         }}>
           <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: 99, background: 'rgba(20,184,166,0.08)', filter: 'blur(24px)', pointerEvents: 'none' }} />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-            <span style={{ fontSize: 9, fontWeight: 700, color: TEAL, background: 'rgba(20,184,166,0.15)', border: '1px solid rgba(20,184,166,0.3)', borderRadius: 99, padding: '3px 10px', letterSpacing: '0.06em' }}>PREMIUM AI</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: 'rgba(20,184,166,0.15)', border: '1px solid rgba(20,184,166,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(20,184,166,0.2)' }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, background: 'rgba(20,184,166,0.15)', border: '1px solid rgba(20,184,166,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(20,184,166,0.2)' }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
                 <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
                 <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
               </svg>
             </div>
-            <span className="font-display" style={{ fontSize: 17, fontWeight: 900, color: TEXT_PRI }}>Personal AI Analysis</span>
+            <span className="font-display" style={{ fontSize: 16, fontWeight: 900, color: TEXT_PRI, flex: 1 }}>AI Detailed Analysis</span>
+            <span style={{ fontSize: 9, fontWeight: 700, color: TEAL, background: 'rgba(20,184,166,0.15)', border: '1px solid rgba(20,184,166,0.3)', borderRadius: 99, padding: '3px 10px', letterSpacing: '0.06em', flexShrink: 0 }}>PREMIUM AI</span>
           </div>
-          <p className="font-sans" style={{ fontSize: 13, color: TEXT_SEC, lineHeight: 1.6, margin: '0 0 18px' }}>
-            See how AI identifies your weak areas and suggests what to practice next.
-          </p>
-          <button onClick={() => router.push('/personal-ai-analysis')} className="btn-daily-pulse" style={{ width: '100%', padding: '13px 0', borderRadius: 12, background: TEAL, border: 'none', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-            Tap to Preview →
-          </button>
-        </div>
-
-        {/* ── Advanced Insights Carousel ────────────────────────────── */}
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, padding: '0 2px' }}>
-            <span className="font-display" style={{ fontSize: 14, fontWeight: 700, color: TEXT_PRI }}>
-              Advanced Insights
-            </span>
-            <span className="font-sans" style={{ fontSize: 11, color: TEXT_MUT }}>Swipe →</span>
-          </div>
-
-          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', paddingBottom: 4 }}>
-            {[
-              {
-                icon: '📊',
-                title: 'Practice Gap',
-                body: 'Aman practiced 720 questions. Top learners practice 1,500+.',
-                cta: 'Practice More',
-                color: '#6366F1',
-                bg: 'rgba(99,102,241,0.12)',
-                route: `/quiz-setup?subject=Polity&topic=All&count=25`,
-              },
-              {
-                icon: '🔍',
-                title: 'Mistake Pattern',
-                body: 'Most mistakes are coming from Biology and Chemistry.',
-                cta: 'Fix Weak Topics',
-                color: '#EF4444',
-                bg: 'rgba(239,68,68,0.10)',
-                route: `/quiz-setup?subject=Biology&topic=Human Diseases&count=25`,
-              },
-              {
-                icon: '📅',
-                title: '7-Day Focus Plan',
-                body: 'Practice 2 weak topics daily for 7 days to recover 18–25 marks.',
-                cta: 'Start Plan',
-                color: ORANGE,
-                bg: ORANGE_DIM,
-                route: `/quiz-setup?subject=Polity&topic=Fundamental Rights&count=25`,
-              },
-            ].map(({ icon, title, body, cta, color, bg, route }) => (
-              <div key={title} style={{
-                flexShrink: 0,
-                width: 240,
-                background: BG_CARD,
-                border: `1px solid ${BORDER}`,
-                borderRadius: 18,
-                padding: '16px 16px 14px',
-                display: 'flex',
-                flexDirection: 'column',
-              }}>
-                {/* Icon + title */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
-                    {icon}
-                  </div>
-                  <span className="font-display" style={{ fontSize: 14, fontWeight: 800, color: TEXT_PRI }}>
-                    {title}
-                  </span>
+          {/* Checklist of what's inside */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 18 }}>
+            {['Practice Gap', 'Mistake Patterns', '7-Day Focus Plan'].map(item => (
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                <div style={{
+                  width: 18, height: 18, borderRadius: 99, flexShrink: 0,
+                  background: 'rgba(20,184,166,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                    stroke={TEAL} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
                 </div>
-
-                {/* Body */}
-                <p className="font-sans" style={{ fontSize: 12, color: TEXT_SEC, lineHeight: 1.55, margin: '0 0 14px', flex: 1 }}>
-                  {body}
-                </p>
-
-                {/* CTA */}
-                <button
-                  onClick={() => router.push(route)}
-                  style={{
-                    width: '100%', padding: '9px 0',
-                    borderRadius: 10,
-                    background: bg,
-                    border: `1px solid ${color}40`,
-                    color, fontSize: 12, fontWeight: 800,
-                    cursor: 'pointer', fontFamily: 'inherit',
-                    transition: 'opacity 0.15s ease',
-                  }}
-                  onPointerDown={e => { e.currentTarget.style.opacity = '0.75'; }}
-                  onPointerUp={e => { e.currentTarget.style.opacity = '1'; }}
-                  onPointerLeave={e => { e.currentTarget.style.opacity = '1'; }}
-                >
-                  {cta} →
-                </button>
+                <span className="font-sans" style={{ fontSize: 13, color: TEXT_SEC, fontWeight: 600 }}>{item}</span>
               </div>
             ))}
           </div>
+          <button onClick={() => router.push('/personal-ai-analysis')} style={{ background: 'none', border: 'none', padding: '4px 0', color: TEAL, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            View Detailed Analysis →
+          </button>
         </div>
 
-        {/* ── Locked Personal Insight Card ──────────────────────────── */}
-        <div style={{
-          ...card,
-          position: 'relative',
-          overflow: 'hidden',
-          border: `1px solid rgba(255,107,22,0.25)`,
-          marginBottom: 16,
-        }}>
-          {/* Blurred content behind */}
-          <div style={{ filter: 'blur(4px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.45 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <div style={{ width: 8, height: 8, borderRadius: 99, background: '#EF4444', flexShrink: 0 }} />
-              <span className="font-sans" style={{ fontSize: 13, color: TEXT_SEC }}>Repeated mistake topic #1</span>
-              <span className="font-sans" style={{ fontSize: 13, fontWeight: 700, color: '#EF4444' }}>38%</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <div style={{ width: 8, height: 8, borderRadius: 99, background: '#EF4444', flexShrink: 0 }} />
-              <span className="font-sans" style={{ fontSize: 13, color: TEXT_SEC }}>Repeated mistake topic #2</span>
-              <span className="font-sans" style={{ fontSize: 13, fontWeight: 700, color: '#EF4444' }}>42%</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: 99, background: GOLD, flexShrink: 0 }} />
-              <span className="font-sans" style={{ fontSize: 13, color: TEXT_SEC }}>Repeated mistake topic #3</span>
-              <span className="font-sans" style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>51%</span>
-            </div>
-          </div>
-
-          {/* Lock overlay */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(11,22,38,0.72)',
-            backdropFilter: 'blur(2px)',
-            padding: '16px 20px',
-            textAlign: 'center',
-          }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 99, marginBottom: 10,
-              background: ORANGE_DIM,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke={ORANGE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-            </div>
-            <div className="font-display" style={{ fontSize: 14, fontWeight: 800, color: TEXT_PRI, marginBottom: 6 }}>
-              Your Personal Insight is Locked
-            </div>
-            <p className="font-sans" style={{ fontSize: 12, color: TEXT_SEC, lineHeight: 1.5, margin: 0 }}>
-              &ldquo;You may be losing marks in 3 repeated topics.&rdquo;
-              <br />
-              <span style={{ color: TEXT_MUT }}>Unlock personal analysis to see them.</span>
-            </p>
-          </div>
-        </div>
 
         {/* ── Card 9: Premium CTA ───────────────────────────────────── */}
         <div style={{
@@ -899,49 +797,27 @@ export default function AnalysisPage() {
           ) : (
             /* ── State A: default CTA ────────────────────────────── */
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                    stroke={GOLD} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                  <span className="font-sans" style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: '0.04em' }}>
-                    PREMIUM AI FEATURE
-                  </span>
-                </div>
-                <div style={{
-                  background: GOLD_DIM,
-                  border: `1px solid ${GOLD}50`,
-                  borderRadius: 99,
-                  padding: '2px 8px',
-                }}>
-                  <span className="font-sans" style={{ fontSize: 9, fontWeight: 700, color: GOLD, letterSpacing: '0.05em' }}>
-                    COMING SOON
-                  </span>
-                </div>
+              <div className="font-display" style={{ fontSize: 16, fontWeight: 800, color: TEXT_PRI, marginBottom: 14, lineHeight: 1.3 }}>
+                Want analysis based on your quiz history?
               </div>
 
-              <div className="font-display" style={{ fontSize: 16, fontWeight: 800, color: TEXT_PRI, marginBottom: 10, lineHeight: 1.3 }}>
-                Want this for your own quiz history?
-              </div>
-
-              <p className="font-sans" style={{ fontSize: 13, color: TEXT_SEC, lineHeight: 1.5, marginBottom: 12 }}>
-                Personal AI analysis will use your quiz history to show weak topics, strong topics, and what to practice next.
-              </p>
-
-              {/* Social proof */}
-              <div style={{
-                display: 'flex', alignItems: 'flex-start', gap: 8,
-                background: 'rgba(255,255,255,0.04)',
-                border: `1px solid ${BORDER}`,
-                borderRadius: 10, padding: '9px 12px',
-                marginBottom: 16,
-              }}>
-                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>💬</span>
-                <p className="font-sans" style={{ fontSize: 12, color: TEXT_MUT, lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
-                  Students who practice with topic-level insights improve faster than random practice.
-                </p>
+              {/* Checklist */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 16 }}>
+                {['Weak topics', 'Strongest subjects', 'Personalized practice plan'].map(item => (
+                  <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                    <div style={{
+                      width: 18, height: 18, borderRadius: 99, flexShrink: 0,
+                      background: 'rgba(20,184,166,0.15)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                        stroke={TEAL} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </div>
+                    <span className="font-sans" style={{ fontSize: 13, color: TEXT_SEC, fontWeight: 600 }}>{item}</span>
+                  </div>
+                ))}
               </div>
 
               {ctaError && (
@@ -965,11 +841,11 @@ export default function AnalysisPage() {
                 onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
                 onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
               >
-                {ctaLoading ? 'Recording…' : 'Unlock My Personal Analysis →'}
+                {ctaLoading ? 'Recording…' : 'Notify Me When Available'}
               </button>
 
-              <p className="font-sans" style={{ fontSize: 11, color: TEXT_MUT, textAlign: 'center', marginTop: 10 }}>
-                No payment now. Join interest list only.
+              <p className="font-sans" style={{ fontSize: 12, color: TEAL, textAlign: 'center', marginTop: 10, fontWeight: 600 }}>
+                Be among the first users to try it.
               </p>
             </div>
           )}
