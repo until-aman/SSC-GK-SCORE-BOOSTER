@@ -113,6 +113,36 @@ function validateAnswer(answer) {
   return Number.isFinite(timeTaken) && timeTaken >= 0 && timeTaken <= 35;
 }
 
+function buildQuestionIdsList(answers) {
+  return answers.map(answer => String(answer.questionId || '').trim()).join(',');
+}
+
+function buildAnswersSummaryJSON(answers) {
+  return JSON.stringify(answers.map(answer => {
+    const isSkipped = Boolean(answer.isSkipped);
+    const item = {
+      q: answer.questionId,
+      a: isSkipped ? null : (answer.userAnswer || null),
+      ok: !isSkipped && Boolean(answer.isCorrect),
+      s: Number(answer.timeTakenSeconds) || 0,
+    };
+    if (isSkipped) item.skip = true;
+    return item;
+  }));
+}
+
+function getDeviceType(req) {
+  const userAgent = req.headers['user-agent'] || '';
+  return /mobile|android|iphone|ipad/i.test(userAgent) ? 'mobile' : 'desktop';
+}
+
+function calculateSessionXP({ correct, accuracy, completionStatus }) {
+  const baseXP = correct * 5;
+  const accuracyBonus = accuracy >= 80 ? 20 : accuracy >= 60 ? 10 : 0;
+  const completionBonus = completionStatus === 'completed' ? 5 : 0;
+  return baseXP + accuracyBonus + completionBonus;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed' } });
@@ -132,8 +162,7 @@ export default async function handler(req, res) {
     quizMode = 'normal',
     timeSpentSeconds = 0,
     answers = [],
-    sourceScreen = '',
-    deviceType = '',
+    sourceScreen = 'unknown',
   } = req.body || {};
 
   if (!Array.isArray(answers) || answers.length === 0 || !answers.every(validateAnswer)) {
@@ -159,7 +188,13 @@ export default async function handler(req, res) {
     const incorrect = answers.length - correct - skipped;
     const score = correct * 2 - incorrect * 0.5;
     const accuracy = answers.length ? (correct / answers.length) * 100 : 0;
+    const completionStatus = 'completed';
+    const xp = calculateSessionXP({ correct, accuracy, completionStatus });
+    const coinsEarned = correct * 2;
+    const deviceType = getDeviceType(req);
     const duplicateCheckKey = clientSessionId || `${userEmail}_${subject}_${topic}_${startedAt}`;
+    const questionIdsList = buildQuestionIdsList(answers);
+    const answersSummaryJSON = buildAnswersSummaryJSON(answers);
 
     await appendHeaderRow(sheets, 'QuizSessions', {
       SessionId: sessionId,
@@ -179,16 +214,18 @@ export default async function handler(req, res) {
       Score: score,
       Accuracy: accuracy,
       TimeSpentSeconds: Number(timeSpentSeconds) || 0,
-      XP: '',
-      CoinsEarned: '',
-      CompletionStatus: 'completed',
+      XP: xp,
+      CoinsEarned: coinsEarned,
+      CompletionStatus: completionStatus,
       IsDailyChallenge: subject === 'Daily Challenge' || quizMode === 'dailychallenge' ? 'TRUE' : 'FALSE',
-      SourceScreen: sourceScreen,
+      SourceScreen: sourceScreen || 'unknown',
       DeviceType: deviceType,
       AppVersion: appVersion,
       ClientSessionId: clientSessionId,
       ServerSavedAt: serverSavedAt,
       DuplicateCheckKey: duplicateCheckKey,
+      QuestionIdsList: questionIdsList,
+      AnswersSummaryJSON: answersSummaryJSON,
     });
 
     const attemptedAt = completedAt;
@@ -217,9 +254,11 @@ export default async function handler(req, res) {
       };
     });
 
-    appendHeaderRows(sheets, 'AttemptAnswers', attemptRows).catch(err => {
+    try {
+      await appendHeaderRows(sheets, 'AttemptAnswers', attemptRows);
+    } catch (err) {
       console.error('[quiz-session/complete] AttemptAnswers write failed:', err.message);
-    });
+    }
 
     return res.status(200).json({
       success: true,

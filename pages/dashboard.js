@@ -423,11 +423,11 @@ export default function Dashboard() {
       if (total < 10) {
         setLowQModal(subject);
       } else {
-        router.push(`/quiz-setup?subject=${encodeURIComponent(subject)}`);
+        router.push(`/quiz-setup?subject=${encodeURIComponent(subject)}&sourceScreen=dashboard`);
       }
     } catch {
       // On error just navigate — don't block the user
-      router.push(`/quiz-setup?subject=${encodeURIComponent(subject)}`);
+      router.push(`/quiz-setup?subject=${encodeURIComponent(subject)}&sourceScreen=dashboard`);
     } finally {
       setSubjectChecking(null);
     }
@@ -718,7 +718,7 @@ export default function Dashboard() {
         if (cached) {
           sessionStorage.setItem('dailyChallengeQuestions', JSON.stringify(cached));
         }
-        router.push('/quiz?mode=daily');
+        router.push('/quiz?mode=daily&sourceScreen=daily_challenge');
       }}
       style={{
         margin: '4px 20px 20px',
@@ -978,7 +978,7 @@ export default function Dashboard() {
             if (cached) {
               sessionStorage.setItem('dailyChallengeQuestions', JSON.stringify(cached));
             }
-            router.push('/quiz?mode=daily');
+            router.push('/quiz?mode=daily&sourceScreen=daily_challenge');
           }}
           style={{
             margin: '16px 20px 20px',

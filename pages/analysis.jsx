@@ -727,7 +727,7 @@ export default function AnalysisPage() {
                         </div>
 
                         <button
-                          onClick={() => router.push(`/quiz-setup?subject=${encodeURIComponent(selected.name)}&topic=${encodeURIComponent(selected.focusTopics[0])}&count=25`)}
+                          onClick={() => router.push(`/quiz-setup?subject=${encodeURIComponent(selected.name)}&topic=${encodeURIComponent(selected.focusTopics[0])}&count=25&sourceScreen=analysis`)}
                           style={{ width: '100%', padding: '13px 0', borderRadius: 12, background: st.color, border: 'none', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 150ms ease' }}
                           onPointerDown={e => { e.currentTarget.style.opacity = '0.8'; }}
                           onPointerUp={e => { e.currentTarget.style.opacity = '1'; }}
@@ -804,7 +804,7 @@ export default function AnalysisPage() {
                                   ))}
                                 </div>
                                 <button
-                                  onClick={() => router.push(`/quiz-setup?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(name)}&count=25`)}
+                                  onClick={() => router.push(`/quiz-setup?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(name)}&count=25&sourceScreen=analysis`)}
                                   style={{ flexShrink: 0, background: ORANGE, border: 'none', borderRadius: 99, padding: '6px 13px', color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'opacity 150ms ease' }}
                                   onPointerDown={e => { e.currentTarget.style.opacity = '0.8'; }}
                                   onPointerUp={e => { e.currentTarget.style.opacity = '1'; }}

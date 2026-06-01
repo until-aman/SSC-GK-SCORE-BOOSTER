@@ -406,7 +406,7 @@ export default function SubjectsPage() {
             onClick={() => {
               navigator.vibrate?.(10);
               const col = router.query.collection || 'general';
-              router.push(`/quiz?subject=Mixed&topic=Mixed&count=25&collection=${col}`);
+              router.push(`/quiz?subject=Mixed&topic=Mixed&count=25&collection=${col}&sourceScreen=dashboard`);
             }}
             className="w-full active:scale-[0.98] transition-transform"
             style={{
@@ -587,7 +587,7 @@ export default function SubjectsPage() {
             onClick={() => {
               if (!selected) return;
               const col = router.query.collection || 'general';
-              router.push(`/quiz-setup?subject=${encodeURIComponent(selected)}&collection=${encodeURIComponent(col)}`);
+              router.push(`/quiz-setup?subject=${encodeURIComponent(selected)}&collection=${encodeURIComponent(col)}&sourceScreen=dashboard`);
             }}
             disabled={!selected || displayCounts === null}
             className={selected ? 'active:scale-[0.98]' : ''}
