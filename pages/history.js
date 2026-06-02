@@ -240,7 +240,7 @@ function HistoryGuestState() {
         <div style={{ minHeight: '100vh', background: 'var(--bg-app)', padding: '22px 16px 110px', boxSizing: 'border-box' }}>
 
         <section className="history-benefit-strip mb-[18px]">
-          Review quizzes, revise mistakes, track rewards, and continue where you left off.
+          Review &middot; Revise &middot; Re-attempt &middot; Track
         </section>
 
         <section className="history-guest-card mb-[18px]">
