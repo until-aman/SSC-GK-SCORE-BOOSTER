@@ -119,7 +119,7 @@ export default function BottomNav() {
             width: '100%',
           }}>
             {items.map(({ Icon, route, label }) => {
-              const active = path === route;
+              const active = route === '/history' ? path === route || path.startsWith('/history/') : path === route;
               const isPressed = pressed === route;
               const isAnalysis = route === '/analysis';
 

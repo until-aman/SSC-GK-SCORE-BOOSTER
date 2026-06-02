@@ -12,6 +12,8 @@ const BOTTOM_NAV_ROUTES = [
   '/leaderboard',
   '/analysis',
   '/history',
+  '/history/quizzes',
+  '/history/saved',
   '/saved',
   '/profile',
   '/result',
