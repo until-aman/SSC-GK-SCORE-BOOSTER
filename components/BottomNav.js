@@ -18,9 +18,10 @@ const TrophyIcon = ({ color }) => (
   </svg>
 );
 
-const BookmarkIcon = ({ color }) => (
+const ClockIcon = ({ color }) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+    <circle cx="12" cy="12" r="9"/>
+    <polyline points="12 7 12 12 15 15"/>
   </svg>
 );
 
@@ -70,7 +71,7 @@ export default function BottomNav() {
     { Icon: HomeIcon,         route: '/dashboard',   label: 'Home'     },
     { Icon: TrophyIcon,       route: '/leaderboard', label: 'Rank'     },
     { Icon: BrainCircuitIcon, route: '/analysis',    label: 'Analysis' },
-    { Icon: BookmarkIcon,     route: '/saved',        label: 'Saved'    },
+    { Icon: ClockIcon,        route: '/history',      label: 'History'  },
     { Icon: PersonIcon,       route: '/profile',      label: 'Profile'  },
   ];
 

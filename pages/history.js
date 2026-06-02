@@ -1,247 +1,395 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import BackButton from '@/components/BackButton';
 import GoogleSignInCard from '@/components/GoogleSignInCard';
-import SessionRow from '@/components/SessionRow';
 import Loader from '@/components/ui/Loader';
 
-const LEVEL_THRESHOLDS = {
-  Aspirant: { min: 0,    max: 200,  next: 'Scholar' },
-  Scholar:  { min: 200,  max: 600,  next: 'Expert' },
-  Expert:   { min: 600,  max: 1500, next: 'Champion' },
-  Champion: { min: 1500, max: 3000, next: 'Legend' },
-  Legend:   { min: 3000, max: 3000, next: null },
+const FILTERS = [
+  { key: 'all', label: 'All', query: {} },
+  { key: '7d', label: '7 Days', query: { dateRange: '7d' } },
+  { key: '30d', label: '30 Days', query: { dateRange: '30d' } },
+  { key: 'weak', label: 'Weak', query: { status: 'weak' } },
+  { key: 'wrong_skipped', label: 'Wrong + Skipped', query: { answerType: 'wrong_skipped' } },
+  { key: 'daily', label: 'Daily Challenge', query: { quizMode: 'daily_challenge' } },
+];
+
+const BADGE_COLORS = {
+  green: ['#22C55E', 'rgba(34,197,94,0.12)'],
+  amber: ['#F59E0B', 'rgba(245,158,11,0.12)'],
+  red: ['#EF4444', 'rgba(239,68,68,0.12)'],
+  blue: ['#38BDF8', 'rgba(56,189,248,0.12)'],
+  purple: ['#A78BFA', 'rgba(167,139,250,0.14)'],
+  orange: ['#FF7A1A', 'rgba(255,122,26,0.14)'],
 };
 
+function qs(query) {
+  const params = new URLSearchParams({ page: '1', limit: '10', ...query });
+  return params.toString();
+}
+
+function formatDate(value) {
+  if (!value) return 'Recently';
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return 'Recently';
+  const diff = Date.now() - date.getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return `Today, ${date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+}
+
+function CountUp({ value, suffix = '' }) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const target = Number(value) || 0;
+    const start = performance.now();
+    let raf;
+    function tick(now) {
+      const pct = Math.min(1, (now - start) / 800);
+      setDisplay(Math.round(target * (1 - Math.pow(1 - pct, 3))));
+      if (pct < 1) raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return <>{display}{suffix}</>;
+}
+
+function AccuracyRing({ accuracy }) {
+  const pct = Math.max(0, Math.min(100, Number(accuracy) || 0));
+  const color = pct >= 75 ? '#22C55E' : pct >= 50 ? '#F59E0B' : '#F97316';
+  const radius = 17;
+  const circ = 2 * Math.PI * radius;
+  return (
+    <svg width="42" height="42" viewBox="0 0 42 42" style={{ transform: 'rotate(-90deg)' }}>
+      <circle cx="21" cy="21" r={radius} fill="none" stroke="rgba(255,255,255,0.09)" strokeWidth="4" />
+      <circle cx="21" cy="21" r={radius} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={circ * (1 - pct / 100)} />
+      <text x="21" y="24" textAnchor="middle" fill="#F8FAFC" fontSize="10" fontWeight="800" transform="rotate(90 21 21)">{Math.round(pct)}%</text>
+    </svg>
+  );
+}
+
+function QuizCard({ session, onReview, onPractice, onFull }) {
+  const hasMistakes = session.incorrect > 0 || session.skipped > 0;
+  const colors = BADGE_COLORS[session.badgeTone] || BADGE_COLORS.amber;
+  return (
+    <div className="history-card">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="min-w-0">
+          <p className="font-display font-bold text-white text-[15px] truncate">{session.subject} <span className="text-slate-500">•</span> {session.topic}</p>
+          <p className="font-sans text-xs text-slate-500 mt-0.5">{formatDate(session.completedAt)}</p>
+        </div>
+        <span className="badge" style={{ color: colors[0], background: colors[1], borderColor: `${colors[0]}55` }}>{session.badge}</span>
+      </div>
+
+      <div className="flex items-center gap-4 mb-3">
+        <AccuracyRing accuracy={session.accuracy} />
+        <div>
+          <p className="font-display font-black text-2xl text-white">{session.score} <span className="text-sm text-slate-500">/ {session.questionCount * 2}</span></p>
+          <p className="font-sans text-xs text-slate-500">Score</p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between text-sm mb-4">
+        <div className="flex items-center gap-3">
+          <span className="text-emerald-400 font-bold">✓{session.correct}</span>
+          <span className="text-red-300 font-bold">✕{session.incorrect}</span>
+          <span className="text-amber-300 font-bold">↷{session.skipped}</span>
+        </div>
+        <span className="text-orange-300 font-black">+{session.coinsEarned} Coins</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <button onClick={() => hasMistakes ? onPractice(session) : onReview(session)} className="primary-btn">
+          {hasMistakes ? 'Practice Mistakes ->' : 'Review'}
+        </button>
+        <button onClick={() => hasMistakes ? onReview(session) : onFull(session)} className="secondary-btn">
+          {hasMistakes ? 'Review' : 'Re-attempt'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EmptyPanel({ title, body, action, onClick }) {
+  return (
+    <div className="empty-panel">
+      <p className="font-display font-bold text-white">{title}</p>
+      <p className="font-sans text-sm text-slate-400 mt-1 mb-4">{body}</p>
+      <button onClick={onClick} className="primary-btn inline-flex px-5">{action}</button>
+    </div>
+  );
+}
+
+function ReattemptModal({ modal, onClose, onConfirm, busy }) {
+  if (!modal) return null;
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center px-5" style={{ background: 'rgba(0,0,0,0.68)' }}>
+      <div className="w-full max-w-[360px] rounded-[22px] p-5" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.10)' }}>
+        <h2 className="font-display text-xl font-black text-white mb-2">{modal.title}</h2>
+        <p className="text-sm text-slate-300 font-semibold">{modal.session?.subject} • {modal.session?.topic}</p>
+        <p className="text-sm text-slate-500 mt-1 mb-5">{modal.body}</p>
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={onClose} className="secondary-btn" disabled={busy}>Cancel</button>
+          <button onClick={onConfirm} className="primary-btn" disabled={busy}>{busy ? 'Starting...' : modal.confirm}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function HistoryPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
-  const [data, setData] = useState(null);
+  const savedRef = useRef(null);
+  const [landing, setLanding] = useState(null);
+  const [expanded, setExpanded] = useState(false);
+  const [expandedSessions, setExpandedSessions] = useState([]);
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [filterResult, setFilterResult] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [coinsBarWidth, setCoinsBarWidth] = useState(0);
-  const [showAllSessions, setShowAllSessions] = useState(false);
+  const [error, setError] = useState('');
+  const [modal, setModal] = useState(null);
+  const [starting, setStarting] = useState(false);
 
   const isGuest = status === 'unauthenticated';
 
-  const fetchHistory = useCallback(() => {
+  async function loadLanding() {
     setLoading(true);
-    fetch('/api/score-history')
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
+    setError('');
+    try {
+      const res = await fetch('/api/history/landing');
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
+      setLanding(data.data);
+    } catch {
+      setError("Couldn't load history. Check connection.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (status === 'loading') return;
     if (isGuest) { setLoading(false); return; }
-    fetchHistory();
-  }, [status, isGuest, fetchHistory]);
+    loadLanding();
+  }, [status, isGuest]);
 
   useEffect(() => {
-    if (!data) return;
-    const level = data.level || 'Aspirant';
-    const thresh = LEVEL_THRESHOLDS[level] || LEVEL_THRESHOLDS.Aspirant;
-    const isMax = !thresh.next;
-    const pct = isMax
-      ? 100
-      : Math.min(100, ((data.totalCoins - thresh.min) / (thresh.max - thresh.min)) * 100);
-    const t = setTimeout(() => setCoinsBarWidth(pct), 300);
-    return () => clearTimeout(t);
-  }, [data]);
+    if (router.query.section === 'saved' && savedRef.current) {
+      savedRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [router.query.section, landing]);
+
+  async function loadExpanded() {
+    if (expanded) {
+      setExpanded(false);
+      return;
+    }
+    const res = await fetch('/api/history/quizzes?page=1&limit=10');
+    const data = await res.json();
+    setExpandedSessions(data.data?.sessions || []);
+    setExpanded(true);
+  }
+
+  async function selectFilter(filter) {
+    setActiveFilter(filter.key);
+    const res = await fetch(`/api/history/quizzes?${qs(filter.query)}`);
+    const data = await res.json();
+    setFilterResult(data.data || null);
+  }
+
+  function openReview(session) {
+    router.push(`/history/session/${session.sessionId}`);
+  }
+
+  function openPractice(session) {
+    setModal({
+      type: 'session_mistakes',
+      session,
+      title: 'Practice your mistakes?',
+      body: `${session.incorrect + session.skipped} wrong + skipped questions. Your old result stays saved.`,
+      confirm: 'Start Practice ->',
+    });
+  }
+
+  function openFull(session) {
+    setModal({
+      type: 'session_full',
+      session,
+      title: 'Re-attempt this quiz?',
+      body: `${session.questionCount} questions. This creates a new quiz session.`,
+      confirm: 'Start Re-attempt ->',
+    });
+  }
+
+  async function confirmReattempt() {
+    if (!modal) return;
+    setStarting(true);
+    try {
+      const res = await fetch('/api/history/reattempt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceType: modal.type, sessionId: modal.session.sessionId }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
+      const payload = data.data;
+      sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
+        questions: payload.questions,
+        quizMode: payload.quizMode,
+        parentSessionId: payload.parentSessionId,
+        attemptNumber: (modal.session.attemptNumber || 1) + 1,
+        subject: payload.subject,
+        topic: payload.topic,
+        sourceCollection: payload.sourceCollection,
+      }));
+      router.push(`/quiz?mode=history&count=${payload.questionCount}&sourceScreen=history`);
+    } catch {
+      setStarting(false);
+    }
+  }
+
+  const summary = landing?.summary || {};
+  const allZero = summary.totalQuizzes === 0 && summary.totalQuestions === 0 && summary.savedCount === 0;
+  const visibleLatest = expanded ? expandedSessions : (landing?.latestQuizzes || []);
+  const selectedFilter = FILTERS.find(item => item.key === activeFilter) || FILTERS[0];
+  const filteredSessions = filterResult?.sessions || [];
+  const filterWrongSkipped = filterResult?.filterSummary?.totalWrongSkipped || 0;
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-10">
-        <div className="flex items-center gap-3 mb-6">
-          <BackButton />
-          <h1 className="font-display font-bold text-[20px] text-white">Coins History</h1>
-        </div>
-        <Loader card size="md" label="Fetching your Coins history…" />
+      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-8 pb-24">
+        <Head><title>History - SSC GK Score Booster</title></Head>
+        <h1 className="t-page-title font-display text-white mb-1">My History</h1>
+        <p className="t-page-subtitle text-slate-400 mb-5">Review quizzes, revise mistakes, and re-attempt weak areas.</p>
+        <Loader card size="md" label="Loading history..." />
       </div>
     );
   }
 
   if (isGuest) {
     return (
-      <>
-        <Head><title>Coins History — SSC GK Score Booster</title></Head>
-        <div className="min-h-screen [background:var(--bg-app)] pb-10">
-          <div className="px-4 pt-10 pb-4 flex items-center gap-3">
-            <BackButton />
-            <h1 className="font-display font-black text-xl text-white">Coins History</h1>
-          </div>
-          <GoogleSignInCard
-            className="mx-4 mt-8"
-            title="Track Your Progress"
-            subtitle="Login to save your Coins, track streaks, and see your full quiz history."
-            buttonText="Sign in"
-            callbackUrl="/dashboard"
-          />
-        </div>
-      </>
+      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-8 pb-24">
+        <Head><title>History - SSC GK Score Booster</title></Head>
+        <h1 className="t-page-title font-display text-white mb-1">My History</h1>
+        <p className="t-page-subtitle text-slate-400 mb-5">Sign in to see your history.</p>
+        <GoogleSignInCard title="Sign in to see your history" subtitle="Review quizzes, mistakes, saved questions and Coins." buttonText="Continue with Google" callbackUrl="/history" />
+      </div>
     );
   }
 
-  const level = data?.level || 'Aspirant';
-  const totalCoins = data?.totalCoins || 0;
-  const FILTER_FROM = new Date('2026-05-20T00:00:00+05:30').getTime();
-  const sessions = (data?.sessions || []).filter(s => {
-    if (!s.timestamp) return false;
-    return new Date(s.timestamp).getTime() >= FILTER_FROM;
-  });
-  const thresh = LEVEL_THRESHOLDS[level] || LEVEL_THRESHOLDS.Aspirant;
-  const nextLevel = thresh.next;
-  const coinsToNext = nextLevel ? thresh.max - totalCoins : 0;
-
   return (
     <>
-      <Head><title>Coins History — SSC GK Score Booster</title></Head>
-      <div className="min-h-screen [background:var(--bg-app)] pb-10">
-
-        {/* Header */}
-        <div className="px-4 pt-10 pb-4 flex items-center gap-3">
-          <BackButton />
-          <h1 className="font-display font-bold text-[20px] text-white flex-1">Coins History</h1>
-          <button
-            onClick={fetchHistory}
-            className="w-9 h-9 flex items-center justify-center rounded-full active:scale-90 transition-transform"
-            style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.10)' }}
-            title="Refresh"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="23 4 23 10 17 10"/>
-              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
-            </svg>
-          </button>
+      <Head><title>History - SSC GK Score Booster</title></Head>
+      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-8 pb-28">
+        <style>{`
+          .history-card,.empty-panel{background:#172D47;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;margin-bottom:12px}
+          .stat-card{background:#172D47;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px}
+          .badge{border:1px solid;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:800;white-space:nowrap}
+          .primary-btn{border:0;border-radius:14px;background:linear-gradient(135deg,#FF7A1A,#FF4D00);color:white;font-size:13px;font-weight:800;padding:11px 12px;text-align:center;cursor:pointer}
+          .secondary-btn{border:1px solid rgba(148,163,184,.16);border-radius:14px;background:rgba(255,255,255,.04);color:#CBD5E1;font-size:13px;font-weight:800;padding:11px 12px;text-align:center;cursor:pointer}
+          .chip{border:1px solid rgba(148,163,184,.16);border-radius:999px;background:#172D47;color:#94A3B8;font-size:12px;font-weight:800;padding:8px 13px;white-space:nowrap}
+          .chip.active{background:rgba(255,122,26,.16);border-color:rgba(255,122,26,.45);color:#FDBA74}
+        `}</style>
+        <div className="mb-5">
+          <h1 className="t-page-title font-display text-white">My History</h1>
+          <p className="t-page-subtitle text-slate-400">Review quizzes, revise mistakes, and re-attempt weak areas.</p>
         </div>
 
-        {/* Coins Hero card */}
-        <div className="mx-4 rounded-3xl px-5 py-5" style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.25)' }}>
-          <div className="flex items-end justify-between mb-3">
-            <div>
-              <p className="font-display font-black text-4xl text-white leading-none">{totalCoins}</p>
-              <p className="font-sans text-sm text-[#14B8A6] mt-0.5">total coins earned</p>
-            </div>
-            <div className="flex flex-col items-end gap-1">
-              <span className="bg-white/10 rounded-full px-3 py-1 font-display font-bold text-sm text-white">
-                ⭐ {level}
-              </span>
-              {nextLevel && (
-                <span className="font-sans text-xs text-slate-400">{coinsToNext} coins to {nextLevel}</span>
-              )}
-            </div>
-          </div>
-
-          {/* Coins progress bar */}
-          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{ background: 'linear-gradient(90deg, #14B8A6, #2DD4BF)', width: `${coinsBarWidth}%` }}
-            />
-          </div>
-          {nextLevel && (
-            <div className="flex justify-between font-sans text-xs text-slate-500 mt-1">
-              <span>{thresh.min} coins</span>
-              <span>{thresh.max} coins</span>
-            </div>
-          )}
-        </div>
-
-        {/* Session list */}
-        <div className="mx-4 mt-4">
-          {sessions.length === 0 ? (
-            <div className="rounded-2xl p-8 flex flex-col items-center gap-4 text-center" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <span className="text-4xl">🎯</span>
-              <p className="font-display font-bold text-base text-white">No quizzes yet</p>
-              <p className="font-sans font-medium text-sm text-slate-400">Complete a quiz to start earning Coins and building your history.</p>
-              <button
-                onClick={() => router.push('/dashboard')}
-                className="text-white rounded-2xl py-3 px-6 font-display font-bold text-sm active:scale-[0.98] transition-transform"
-                style={{ background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)', boxShadow: '0 4px 12px rgba(255,107,22,0.30)' }}
-              >
-                Play Now →
-              </button>
-            </div>
-          ) : (
-            <>
-              <p className="font-display font-bold text-base text-white mb-3">
-                Recent Sessions
-                <span className="font-normal font-sans text-xs text-slate-500 ml-2">last {sessions.length}</span>
-              </p>
-              {(showAllSessions ? sessions : sessions.slice(0, 3)).map((s, i) => (
-                <SessionRow key={`${s.timestamp}-${i}`} session={s} />
-              ))}
-
-              {sessions.length > 3 && (
-                <button
-                  onClick={() => setShowAllSessions(v => !v)}
-                  className="w-full flex items-center justify-center gap-2 py-3 mt-1 rounded-2xl active:scale-[0.98] transition-transform"
-                  style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}
-                >
-                  <span className="font-display font-bold text-sm text-[#14B8A6]">
-                    {showAllSessions ? 'Collapse history' : 'View full history'}
-                  </span>
-                  <svg
-                    width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="#14B8A6" strokeWidth="2.5" strokeLinecap="round"
-                    className={`transition-transform duration-300 ${showAllSessions ? 'rotate-180' : ''}`}
-                  >
-                    <path d="M6 9l6 6 6-6"/>
-                  </svg>
-                </button>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* How to earn coins table */}
-        <div className="mx-4 mt-5 rounded-2xl overflow-hidden" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <div className="px-4 py-3 border-b border-white/[0.06]">
-            <p className="font-display font-bold text-base text-white">How to earn coins ⚡</p>
-            <p className="font-sans text-xs text-slate-400 mt-0.5">Earn more by playing consistently</p>
-          </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/[0.06]">
-                <th className="px-4 py-2.5 text-left font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">Action</th>
-                <th className="px-4 py-2.5 text-right font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">Coins</th>
-              </tr>
-            </thead>
-            <tbody>
+        {error ? (
+          <EmptyPanel title="Couldn't load history" body="Check connection." action="Retry" onClick={loadLanding} />
+        ) : allZero ? (
+          <EmptyPanel title="No quiz history yet." body="Attempt your first quiz and your progress will appear here." action="Start Daily Challenge" onClick={() => router.push('/quiz?mode=daily')} />
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3 mb-5">
               {[
-                { action: 'Complete a quiz (5+ questions)', coins: '+10', color: 'text-[#14B8A6]' },
-                { action: 'Each correct answer', coins: '+2', color: 'text-[#14B8A6]' },
-                { action: 'First quiz of the day 🌅', coins: '+10', color: 'text-orange-400' },
-                { action: 'Wrong answer', coins: '−0', color: 'text-slate-500' },
-                { action: 'Skipped question', coins: '−0', color: 'text-slate-500' },
-              ].map((row, i, arr) => (
-                <tr key={row.action} className={i < arr.length - 1 ? 'border-b border-white/[0.05]' : ''}>
-                  <td className="px-4 py-3 font-sans text-sm text-slate-300">{row.action}</td>
-                  <td className={`px-4 py-3 text-right font-display font-black text-sm ${row.color}`}>{row.coins}</td>
-                </tr>
+                ['Quizzes', summary.totalQuizzes],
+                ['Questions', summary.totalQuestions],
+                ['Accuracy', summary.overallAccuracy, '%'],
+                ['Saved', summary.savedCount],
+              ].map(([label, value, suffix]) => (
+                <div key={label} className="stat-card">
+                  <p className="font-display font-black text-2xl text-white"><CountUp value={value} suffix={suffix || ''} /></p>
+                  <p className="font-sans text-xs text-slate-500 mt-1">{label}</p>
+                </div>
               ))}
-            </tbody>
-          </table>
-          <div className="px-4 py-3" style={{ background: 'rgba(20,184,166,0.06)', borderTop: '1px solid rgba(20,184,166,0.18)' }}>
-            <p className="font-sans text-xs text-[#14B8A6]">💡 Coins come from correct answers, accuracy, and completion bonuses.</p>
-          </div>
-        </div>
+            </div>
 
-        {/* CTA */}
-        <div className="mx-4 mt-4">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="w-full py-4 text-white rounded-2xl font-display font-bold text-base active:scale-[0.98] transition-transform"
-            style={{ background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)', boxShadow: '0 4px 14px rgba(255,107,22,0.30)' }}
-          >
-            Practice Now →
-          </button>
-        </div>
+            <section className="mb-5">
+              <h2 className="font-display text-lg font-black text-white">Latest Quiz History</h2>
+              <p className="font-sans text-sm text-slate-500 mb-3">Your recent practice sessions</p>
+              {visibleLatest.map(item => <QuizCard key={item.sessionId} session={item} onReview={openReview} onPractice={openPractice} onFull={openFull} />)}
+              {(landing?.latestQuizzes || []).length > 0 && (
+                <button onClick={loadExpanded} className="secondary-btn w-full">{expanded ? 'Show Less' : 'View More Quizzes -&gt;'}</button>
+              )}
+            </section>
 
+            <section className="mb-5">
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
+                {FILTERS.map(filter => (
+                  <button key={filter.key} onClick={() => selectFilter(filter)} className={`chip ${activeFilter === filter.key ? 'active' : ''}`}>{filter.label}</button>
+                ))}
+              </div>
+              {filterResult && (
+                <>
+                  <div className="history-card">
+                    <p className="text-sm font-bold text-white">{selectedFilter.label} practice</p>
+                    <p className="text-xs text-slate-500">{filterResult.filterSummary.quizCount} quizzes found · {filterWrongSkipped} wrong/skipped questions</p>
+                    {filterWrongSkipped > 0 && <button className="primary-btn mt-3 w-full" onClick={() => filteredSessions[0] && openPractice(filteredSessions[0])}>Practice {filterWrongSkipped} Mistakes -&gt;</button>}
+                  </div>
+                  {filteredSessions.length === 0 ? (
+                    <EmptyPanel title="No quizzes found." body="Try different filters." action="Reset Filters" onClick={() => { setFilterResult(null); setActiveFilter('all'); }} />
+                  ) : filteredSessions.map(item => <QuizCard key={item.sessionId} session={item} onReview={openReview} onPractice={openPractice} onFull={openFull} />)}
+                </>
+              )}
+            </section>
+
+            <section className="mb-5">
+              <h2 className="font-display text-lg font-black text-white">Repeated Mistakes</h2>
+              <p className="font-sans text-sm text-slate-500 mb-3">Questions you got wrong more than once</p>
+              {(landing?.repeatedMistakesPreview || []).length ? landing.repeatedMistakesPreview.map(item => (
+                <div key={item.questionId} className="history-card">
+                  <p className="text-xs font-bold text-teal-400">{item.subject} • {item.topic}</p>
+                  <p className="text-sm font-semibold text-white my-3">"{item.questionPreview}"</p>
+                  <p className="text-sm text-red-300 font-bold">Wrong {item.wrongCount}x <span className="text-amber-300 ml-2">Skipped {item.skippedCount}x</span></p>
+                  <p className="text-xs text-red-200 mt-1">Repeated Mistake</p>
+                </div>
+              )) : <EmptyPanel title="No repeated mistakes yet." body="Good work - keep practicing to build your history." action="Start Quiz" onClick={() => router.push('/dashboard')} />}
+              {(landing?.repeatedMistakesPreview || []).length > 0 && <button className="primary-btn w-full" onClick={() => router.push('/dashboard')}>Practice All Repeated Mistakes -&gt;</button>}
+            </section>
+
+            <section ref={savedRef} className="mb-5">
+              <h2 className="font-display text-lg font-black text-white">Saved for Revision</h2>
+              <p className="font-sans text-sm text-slate-500 mb-3">Questions you bookmarked</p>
+              {(landing?.savedPreview || []).length ? landing.savedPreview.map(item => (
+                <div key={item.questionId} className="history-card">
+                  <div className="flex justify-between gap-3">
+                    <p className="text-xs font-bold text-teal-400">{item.subject} • {item.topic}</p>
+                    <p className="text-xs text-slate-500">{formatDate(item.savedAt)}</p>
+                  </div>
+                  <p className="text-sm font-semibold text-white my-3">"{item.questionPreview}"</p>
+                  <p className="text-xs text-slate-400">Wrong {item.wrongCount}x · Skipped {item.skippedCount}x</p>
+                </div>
+              )) : <EmptyPanel title="No saved questions." body="Bookmark tough ones while reviewing." action="Start Practice" onClick={() => router.push('/dashboard')} />}
+              {(landing?.savedPreview || []).length > 0 && <button className="secondary-btn w-full" onClick={() => router.push('/history?section=saved')}>View All Saved Questions -&gt;</button>}
+            </section>
+
+            <section>
+              <h2 className="font-display text-lg font-black text-white mb-3">Coins Earned</h2>
+              <div className="history-card">
+                <p className="font-display font-black text-2xl text-white">Total Coins: {summary.totalCoins}</p>
+                <p className="font-sans text-sm text-orange-300 mt-1">This week: +{summary.weeklyCoins}</p>
+                <button className="secondary-btn mt-4 w-full opacity-50" title="Coming soon" disabled>View History -&gt;</button>
+              </div>
+            </section>
+          </>
+        )}
       </div>
+      <ReattemptModal modal={modal} onClose={() => setModal(null)} onConfirm={confirmReattempt} busy={starting} />
     </>
   );
 }

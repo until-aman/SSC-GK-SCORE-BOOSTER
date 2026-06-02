@@ -100,6 +100,7 @@ function getAIResultKey(sessionId) {
 }
 
 function getQuizMode(result, subject) {
+  if (result?.quizMode) return result.quizMode;
   if (result?.mode === 'daily' || subject === 'Daily Challenge') return 'dailychallenge';
   if (result?.mode === 'saved') return 'savedrevision';
   return 'normal';
@@ -148,9 +149,22 @@ async function saveQuizSession(result, routeSessionId) {
     body: JSON.stringify(payload),
   });
 
+  const responseBody = await response.json().catch(() => ({}));
+
   if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    throw new Error(errorBody?.error?.message || 'Failed to save quiz session');
+    throw new Error(responseBody?.error?.message || 'Failed to save quiz session');
+  }
+
+  if (result.isRetry && result.parentSessionId) {
+    await fetch('/api/history/retry-metadata', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientSessionId: payload.clientSessionId,
+        parentSessionId: result.parentSessionId,
+        attemptNumber: result.attemptNumber || 2,
+      }),
+    }).catch(() => {});
   }
 }
 

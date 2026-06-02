@@ -472,11 +472,13 @@ export default function Quiz() {
   const { subject, topic, count, n, sessionId: qSessionId, mode, collection = 'general', sourceScreen: qSourceScreen } = router.query;
   const questionCount = count || n;
   const isSavedMode  = mode === 'saved';
+  const isHistoryMode = mode === 'history';
   const isDailyMode  = mode === 'daily';
   const [restoredMeta, setRestoredMeta] = useState(null);
-  const effectiveSubject = restoredMeta?.subject || (isSavedMode ? 'Saved' : isDailyMode ? 'Daily Challenge' : subject);
-  const effectiveTopic   = restoredMeta?.topic   || (isSavedMode ? 'Mixed'  : isDailyMode ? 'Mixed GK'        : topic);
-  const sourceScreen = normalizeSourceScreen(isDailyMode ? 'daily_challenge' : isSavedMode ? 'saved' : qSourceScreen);
+  const [historyMeta, setHistoryMeta] = useState(null);
+  const effectiveSubject = restoredMeta?.subject || historyMeta?.subject || (isSavedMode ? 'Saved' : isDailyMode ? 'Daily Challenge' : subject);
+  const effectiveTopic   = restoredMeta?.topic   || historyMeta?.topic   || (isSavedMode ? 'Mixed'  : isDailyMode ? 'Mixed GK'        : topic);
+  const sourceScreen = normalizeSourceScreen(isDailyMode ? 'daily_challenge' : isSavedMode ? 'saved' : isHistoryMode ? 'history' : qSourceScreen);
 
   const [questions, setQuestions]       = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -515,8 +517,8 @@ export default function Quiz() {
 
   useEffect(() => {
     if (!router.isReady) return;
-    if (!isSavedMode && mode !== 'daily' && (!subject || !topic || !questionCount)) router.replace('/dashboard');
-  }, [router.isReady, subject, topic, questionCount, isSavedMode, mode, router]);
+    if (!isSavedMode && !isHistoryMode && mode !== 'daily' && (!subject || !topic || !questionCount)) router.replace('/dashboard');
+  }, [router.isReady, subject, topic, questionCount, isSavedMode, isHistoryMode, mode, router]);
 
   useEffect(() => {
     if (!router.isReady || recoveryChecked) return;
@@ -707,6 +709,25 @@ export default function Quiz() {
       } catch { setError('fetch-failed'); setLoading(false); }
       return;
     }
+    if (isHistoryMode) {
+      try {
+        const payload = JSON.parse(sessionStorage.getItem('ssc_history_quiz_questions') || 'null');
+        const historyQuestions = Array.isArray(payload) ? payload : payload?.questions;
+        if (!historyQuestions?.length) { setError('no-questions'); setLoading(false); return; }
+        setHistoryMeta({
+          quizMode: payload.quizMode || 'reattempt_mistakes',
+          parentSessionId: payload.parentSessionId || '',
+          isRetry: true,
+          attemptNumber: Number(payload.attemptNumber) || 2,
+          subject: payload.subject || 'History',
+          topic: payload.topic || 'Re-attempt',
+          sourceCollection: payload.sourceCollection || 'general',
+        });
+        setQuestions(shuffle(historyQuestions));
+        setLoading(false);
+      } catch { setError('fetch-failed'); setLoading(false); }
+      return;
+    }
     if (!subject || !topic || !questionCount) return;
     setLoading(true);
     setError(null);
@@ -832,7 +853,7 @@ export default function Quiz() {
 
     fetchWithRetry(3);
     })();
-  }, [router.isReady, subject, topic, questionCount, collection, isSavedMode, mode, recoveryChecked, recoveryPrompt, retryCount]);
+  }, [router.isReady, subject, topic, questionCount, collection, isSavedMode, isHistoryMode, mode, recoveryChecked, recoveryPrompt, retryCount]);
 
   useEffect(() => {
     if (!loading || error || mode === 'daily') return;
@@ -860,6 +881,7 @@ export default function Quiz() {
       topic: effectiveTopic,
       collection,
       mode: mode || 'standard',
+      historyMeta,
       sourceScreen,
       selectedQuestionCount: questions.length,
       totalQuestions: questions.length,
@@ -882,6 +904,7 @@ export default function Quiz() {
     effectiveSubject,
     effectiveTopic,
     mode,
+    historyMeta,
     sourceScreen,
     questionStartedAt,
     questions,
@@ -929,6 +952,10 @@ export default function Quiz() {
       answeredCount,
       collection,
       mode: mode || 'standard',
+      quizMode: historyMeta?.quizMode || null,
+      parentSessionId: historyMeta?.parentSessionId || '',
+      isRetry: Boolean(historyMeta?.isRetry),
+      attemptNumber: historyMeta?.attemptNumber || 1,
       sourceScreen,
       sessionId: clientSessionId,
       clientSessionId,
@@ -941,7 +968,7 @@ export default function Quiz() {
     router.push(
       `/result?subject=${encodeURIComponent(effectiveSubject)}&topic=${encodeURIComponent(effectiveTopic)}&sessionId=${clientSessionId}&correct=${results.correct}&incorrect=${results.incorrect}&skipped=${results.skipped}&total=${results.totalQuestions}&score=${results.rawScore}`
     );
-  }, [questions, sessionId, router, quizComplete, effectiveSubject, effectiveTopic, collection, mode, answerTimes, sourceScreen]);
+  }, [questions, sessionId, router, quizComplete, effectiveSubject, effectiveTopic, collection, mode, answerTimes, sourceScreen, historyMeta]);
 
   const requestQuizExit = useCallback((targetUrl = '/dashboard') => {
     if (!quizInProgress || allowQuizExitRef.current) return true;
@@ -1048,6 +1075,10 @@ export default function Quiz() {
       answeredCount: storedAnsweredCount,
       collection: session.collection || 'general',
       mode: session.mode || 'standard',
+      quizMode: session.historyMeta?.quizMode || null,
+      parentSessionId: session.historyMeta?.parentSessionId || '',
+      isRetry: Boolean(session.historyMeta?.isRetry),
+      attemptNumber: session.historyMeta?.attemptNumber || 1,
       sourceScreen: normalizeSourceScreen(session.sourceScreen),
       sessionId: storedSessionId,
       clientSessionId: storedSessionId,
