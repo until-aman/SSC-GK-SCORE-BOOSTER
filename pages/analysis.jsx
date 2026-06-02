@@ -150,7 +150,6 @@ export default function AnalysisPage() {
   const [ctaLoading,       setCtaLoading]       = useState(false);
   const [ctaError,         setCtaError]         = useState('');
   const [showSignIn,       setShowSignIn]       = useState(false);
-  const [lockedAnalysisFeature, setLockedAnalysisFeature] = useState(null);
 
   const planRef       = useRef(null);
   const autoCallFired = useRef(false);
@@ -278,34 +277,10 @@ export default function AnalysisPage() {
     const LucideZap      = () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>);
 
     const benefits = [
-      {
-        Icon: LucideBarChart,
-        title: 'Subject Health',
-        unlockTitle: 'Unlock Subject Health',
-        unlockBody: 'Sign in to see your strong and weak GK subjects based on your quiz history.',
-        unlockNote: 'Free \u2022 No payment \u2022 Uses your real practice data',
-      },
-      {
-        Icon: LucideTarget,
-        title: 'Practice Plan',
-        unlockTitle: 'Unlock Practice Plan',
-        unlockBody: 'Sign in to get a focused practice plan based on your mistakes and skipped questions.',
-        unlockNote: 'Free \u2022 No payment \u2022 Built from your quiz history',
-      },
-      {
-        Icon: LucideTrending,
-        title: 'Topic Intelligence',
-        unlockTitle: 'Unlock Topic Intelligence',
-        unlockBody: 'Sign in to discover weak topics, repeated mistakes, and high-priority revision areas.',
-        unlockNote: 'Free \u2022 No payment \u2022 Helps you revise smarter',
-      },
-      {
-        Icon: LucideZap,
-        title: 'Marks Recovery',
-        unlockTitle: 'Unlock Marks Recovery',
-        unlockBody: 'Sign in to find where you are losing marks and which topics can improve your score fastest.',
-        unlockNote: 'Free \u2022 No payment \u2022 Based on your actual attempts',
-      },
+      { Icon: LucideBarChart, title: 'Subject Health'     },
+      { Icon: LucideTarget,   title: 'Practice Plan'      },
+      { Icon: LucideTrending, title: 'Topic Intelligence' },
+      { Icon: LucideZap,      title: 'Marks Recovery'     },
     ];
 
     return (
@@ -362,18 +337,10 @@ export default function AnalysisPage() {
           {/* Section 3 — Compact benefit list rows (one card, settings-menu style) */}
           <div style={{ ...card, padding: '4px 16px', marginBottom: 18 }}>
             {benefits.map(({ Icon, title }, i) => (
-              <button key={title} type="button" onClick={() => setLockedAnalysisFeature(benefits[i])} style={{
+              <div key={title} style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '13px 0',
-                width: '100%',
-                background: 'transparent',
-                borderLeft: 0,
-                borderRight: 0,
-                borderTop: 0,
                 borderBottom: i < benefits.length - 1 ? `1px solid ${BORDER}` : 'none',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontFamily: 'inherit',
               }}>
                 <div style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0, background: ORANGE_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Icon />
@@ -382,7 +349,7 @@ export default function AnalysisPage() {
                   {title}
                 </span>
                 <span style={{ fontSize: 16, color: TEXT_MUT, flexShrink: 0 }}>→</span>
-              </button>
+              </div>
             ))}
           </div>
 
@@ -437,104 +404,26 @@ export default function AnalysisPage() {
             </div>
           </div>
 
-        </div>
-        {lockedAnalysisFeature && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="analysis-unlock-title"
-            onClick={() => setLockedAnalysisFeature(null)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 80,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 24,
-              background: 'rgba(4,12,24,0.72)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-            }}
-          >
-            <div
-              onClick={(event) => event.stopPropagation()}
+          {/* Section 5 — Sign-in CTA (button + trust line only) */}
+          <div style={{ ...card, marginBottom: 0, textAlign: 'center', padding: '18px 20px' }}>
+            <button
+              onClick={() => signIn('google', { callbackUrl: '/analysis' })}
               style={{
-                position: 'relative',
-                width: 'min(100%, 360px)',
-                background: BG_CARD,
-                border: `1px solid ${BORDER}`,
-                borderRadius: 20,
-                padding: '24px 20px 20px',
-                textAlign: 'center',
-                boxShadow: '0 24px 70px rgba(0,0,0,0.46)',
+                width: '100%', padding: '14px 0', borderRadius: 14,
+                background: '#FFFFFF', color: '#0F172A', border: 'none',
+                fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}
             >
-              <button
-                type="button"
-                aria-label="Close"
-                onClick={() => setLockedAnalysisFeature(null)}
-                style={{
-                  position: 'absolute',
-                  top: 10,
-                  right: 10,
-                  width: 34,
-                  height: 34,
-                  borderRadius: 12,
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.04)',
-                  color: TEXT_MUT,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 22,
-                  lineHeight: 1,
-                  cursor: 'pointer',
-                }}
-              >
-                &times;
-              </button>
-              <div style={{ width: 46, height: 46, borderRadius: 14, margin: '0 auto 14px', background: ORANGE_DIM, color: ORANGE, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <BrainSVG size={22} color={ORANGE} />
-              </div>
-              <h2 id="analysis-unlock-title" className="font-display" style={{ fontSize: 19, fontWeight: 900, lineHeight: 1.2, color: TEXT_PRI, margin: 0 }}>
-                {lockedAnalysisFeature.unlockTitle}
-              </h2>
-              <p className="font-sans" style={{ fontSize: 13, lineHeight: 1.6, color: TEXT_SEC, margin: '12px 0 0' }}>
-                {lockedAnalysisFeature.unlockBody}
-              </p>
-              <button
-                onClick={() => {
-                  document.cookie = 'userMode=; path=/; max-age=0';
-                  signIn('google', { callbackUrl: '/analysis' });
-                }}
-                style={{
-                  width: '100%',
-                  padding: '14px 0',
-                  borderRadius: 14,
-                  background: '#FFFFFF',
-                  color: '#0F172A',
-                  border: 'none',
-                  fontSize: 15,
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  marginTop: 20,
-                }}
-              >
-                <GoogleSVG />
-                Continue with Google
-              </button>
-              <p className="font-sans" style={{ fontSize: 11, color: TEXT_MUT, margin: '12px 0 0' }}>
-                {lockedAnalysisFeature.unlockNote}
-              </p>
-            </div>
+              <GoogleSVG />
+              Continue with Google
+            </button>
+            <p className="font-sans" style={{ fontSize: 11, color: TEXT_MUT, marginTop: 12 }}>
+              Free · No payment · Takes 5 seconds
+            </p>
           </div>
-        )}
+
+        </div>
       </>
     );
   }

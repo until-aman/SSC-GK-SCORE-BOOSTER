@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import HistoryTopBar from '@/components/HistoryTopBar';
 import Loader from '@/components/ui/Loader';
 
 const FALLBACK_SUMMARY = {
@@ -35,10 +34,6 @@ const historyFeatures = [
   {
     title: 'Quiz History',
     body: 'Review attempted quizzes and re-attempt weak areas.',
-    route: '/history/quizzes',
-    unlockTitle: 'Unlock Quiz History',
-    unlockBody: 'Sign in to review your attempted quizzes and re-attempt mistakes.',
-    unlockNote: 'Free \u2022 No payment \u2022 Saves progress across devices',
     icon: (
       <>
         <rect x="5" y="4" width="14" height="16" rx="2" />
@@ -51,10 +46,6 @@ const historyFeatures = [
   {
     title: 'Saved Questions',
     body: 'Revise bookmarked questions topic-wise.',
-    route: '/history/saved',
-    unlockTitle: 'Unlock Saved Questions',
-    unlockBody: 'Sign in to revise your bookmarked questions across devices.',
-    unlockNote: 'Free \u2022 Keeps your revision list safe',
     icon: (
       <>
         <path d="M6 4h12v17l-6-3-6 3V4z" />
@@ -64,10 +55,6 @@ const historyFeatures = [
   {
     title: 'Repeated Mistakes',
     body: 'See which questions you keep getting wrong.',
-    route: '/history/mistakes',
-    unlockTitle: 'Unlock Repeated Mistakes',
-    unlockBody: 'Sign in to see questions you got wrong multiple times and practice them again.',
-    unlockNote: 'Free \u2022 Helps you revise smarter',
     icon: (
       <>
         <path d="M12 9v4" />
@@ -79,10 +66,6 @@ const historyFeatures = [
   {
     title: 'Coins History',
     body: 'Track quiz rewards and bonuses.',
-    route: '/history/coins',
-    unlockTitle: 'Unlock Coins History',
-    unlockBody: 'Sign in to track your rewards and quiz activity.',
-    unlockNote: 'Free \u2022 Saves your rewards history',
     icon: (
       <>
         <circle cx="12" cy="12" r="8" />
@@ -95,10 +78,6 @@ const historyFeatures = [
   {
     title: 'Streak History',
     body: 'Monitor your practice consistency.',
-    route: '/streak',
-    unlockTitle: 'Unlock Streak History',
-    unlockBody: 'Sign in to track your daily practice consistency.',
-    unlockNote: 'Free \u2022 Keeps your streak safe',
     icon: (
       <>
         <path d="M8 14a4 4 0 1 0 8 0c0-3-4-4-2.5-9C10 7 8 10 8 14z" />
@@ -126,17 +105,15 @@ const HistoryHeaderIcon = () => (
 );
 
 function HistoryGuestState() {
-  const [lockedFeature, setLockedFeature] = useState(null);
-
-  function handleSignIn(feature) {
+  function handleSignIn() {
     document.cookie = 'userMode=; path=/; max-age=0';
-    signIn('google', { callbackUrl: feature?.route || '/history' });
+    signIn('google', { callbackUrl: '/history' });
   }
 
   return (
     <>
       <Head><title>History - SSC GK Score Booster</title></Head>
-      <div className="min-h-screen [background:var(--bg-app)]">
+      <div className="min-h-screen [background:var(--bg-app)] pb-24">
         <style>{`
           .history-guest-card {
             background: ${BG_CARD};
@@ -148,19 +125,15 @@ function HistoryGuestState() {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
             background: ${BG_DEEP};
             border: 1px solid ${BORDER};
             border-radius: 999px;
             padding: 9px 14px;
-            flex-wrap: wrap;
-          }
-          .history-benefit-strip span {
             color: ${TEXT_SEC};
             font-size: 12px;
-          }
-          .history-benefit-separator {
-            color: ${TEXT_MUT};
+            font-weight: 800;
+            line-height: 1.35;
+            text-align: center;
           }
           .history-feature-row {
             display: flex;
@@ -168,17 +141,6 @@ function HistoryGuestState() {
             gap: 12px;
             padding: 13px 0;
             border-bottom: 1px solid ${BORDER};
-            width: 100%;
-            background: transparent;
-            border-left: 0;
-            border-right: 0;
-            border-top: 0;
-            cursor: pointer;
-            text-align: left;
-            font-family: inherit;
-          }
-          .history-feature-row:active {
-            transform: scale(.99);
           }
           .history-feature-row:last-child {
             border-bottom: none;
@@ -201,12 +163,10 @@ function HistoryGuestState() {
           }
           .history-preview-shell {
             position: relative;
-            height: 360px;
-            margin-top: auto;
+            height: 240px;
             overflow: hidden;
             border-radius: 18px;
             background: transparent;
-            flex: 0 0 auto;
           }
           .history-preview-blur {
             filter: blur(6px);
@@ -250,72 +210,6 @@ function HistoryGuestState() {
           .history-google-btn:active {
             transform: scale(.98);
           }
-          .history-modal-backdrop {
-            position: fixed;
-            inset: 0;
-            z-index: 80;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            background: rgba(4, 12, 24, .72);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-          }
-          .history-modal-card {
-            position: relative;
-            width: min(100%, 360px);
-            background: ${BG_CARD};
-            border: 1px solid ${BORDER};
-            border-radius: 20px;
-            padding: 24px 20px 20px;
-            text-align: center;
-            box-shadow: 0 24px 70px rgba(0,0,0,.46);
-          }
-          .history-modal-close {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 34px;
-            height: 34px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,.08);
-            background: rgba(255,255,255,.04);
-            color: ${TEXT_MUT};
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            line-height: 1;
-            cursor: pointer;
-          }
-          .history-modal-close:active {
-            transform: scale(.96);
-          }
-          .history-modal-lock {
-            width: 46px;
-            height: 46px;
-            border-radius: 14px;
-            margin: 0 auto 14px;
-            background: ${ORANGE_DIM};
-            color: ${ORANGE};
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          .history-guest-content {
-            background: var(--bg-app);
-            min-height: calc(100dvh - 58px);
-            display: flex;
-            flex-direction: column;
-            padding: 22px 16px calc(94px + env(safe-area-inset-bottom));
-            box-sizing: border-box;
-          }
-          @media (max-height: 700px) {
-            .history-preview-shell {
-              height: 300px;
-            }
-          }
         `}</style>
 
         <div
@@ -343,29 +237,23 @@ function HistoryGuestState() {
           </div>
         </div>
 
-        <div className="history-guest-content">
+        <div style={{ minHeight: '100vh', background: 'var(--bg-app)', padding: '22px 16px 110px', boxSizing: 'border-box' }}>
 
         <section className="history-benefit-strip mb-[18px]">
-          <span>Review</span>
-          <span className="history-benefit-separator">&middot;</span>
-          <span>Revise</span>
-          <span className="history-benefit-separator">&middot;</span>
-          <span>Re-attempt</span>
-          <span className="history-benefit-separator">&middot;</span>
-          <span>Track</span>
+          Review &middot; Revise &middot; Re-attempt &middot; Track
         </section>
 
         <section className="history-guest-card mb-[18px]">
           {historyFeatures.map(feature => (
-            <button key={feature.title} type="button" className="history-feature-row" onClick={() => setLockedFeature(feature)}>
+            <div key={feature.title} className="history-feature-row">
               <FeatureIcon>{feature.icon}</FeatureIcon>
               <span className="font-display min-w-0 flex-1" style={{ fontSize: 14, fontWeight: 800, color: TEXT_PRI }}>{feature.title}</span>
               <span className="history-arrow" aria-hidden="true">&rarr;</span>
-            </button>
+            </div>
           ))}
         </section>
 
-        <section className="history-preview-shell">
+        <section className="history-preview-shell mb-[18px]">
           <div className="history-preview-blur">
             {[
               {
@@ -389,7 +277,7 @@ function HistoryGuestState() {
               {
                 title: 'Rewards',
                 meta: 'Total Coins',
-                body: 'Weekly rewards',
+                body: 'Weekly XP',
                 accent: '#F59E0B',
               },
             ].map(({ title, meta, body, accent }) => (
@@ -420,36 +308,17 @@ function HistoryGuestState() {
           </div>
         </section>
 
+        <section className="history-guest-card text-center" style={{ padding: '18px 20px', marginBottom: 0 }}>
+          <button className="history-google-btn" onClick={handleSignIn}>
+            <GoogleSVG />
+            Continue with Google
+          </button>
+          <p className="font-sans text-[11px] text-slate-500 mt-3">
+            Free &bull; No payment &bull; Saves your progress across devices
+          </p>
+        </section>
         </div>
       </div>
-      {lockedFeature && (
-        <div className="history-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="history-unlock-title" onClick={() => setLockedFeature(null)}>
-          <div className="history-modal-card" onClick={(event) => event.stopPropagation()}>
-            <button type="button" className="history-modal-close" aria-label="Close" onClick={() => setLockedFeature(null)}>
-              &times;
-            </button>
-            <div className="history-modal-lock" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-            </div>
-            <h2 id="history-unlock-title" className="font-display text-[19px] font-black leading-tight text-white">
-              {lockedFeature.unlockTitle}
-            </h2>
-            <p className="font-sans text-[13px] leading-relaxed mt-3" style={{ color: TEXT_SEC }}>
-              {lockedFeature.unlockBody}
-            </p>
-            <button className="history-google-btn mt-5" onClick={() => handleSignIn(lockedFeature)}>
-              <GoogleSVG />
-              Continue with Google
-            </button>
-            <p className="font-sans text-[11px] mt-3" style={{ color: TEXT_MUT }}>
-              {lockedFeature.unlockNote}
-            </p>
-          </div>
-        </div>
-      )}
     </>
   );
 }
@@ -522,12 +391,11 @@ export default function HistoryPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen [background:var(--bg-app)] pb-24">
+      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-8 pb-24">
         <Head><title>History - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="My History" badge="PRACTICE ARCHIVE" icon={<HistoryHeaderIcon />} />
-        <main className="px-4 pt-5">
-          <Loader card size="md" label="Loading history..." />
-        </main>
+        <h1 className="t-page-title font-display text-white mb-1">My History</h1>
+        <p className="t-page-subtitle text-slate-400 mb-5">Your practice archive</p>
+        <Loader card size="md" label="Loading history..." />
       </div>
     );
   }
@@ -556,9 +424,9 @@ export default function HistoryPage() {
       onOpen: () => router.push('/history/mistakes'),
     },
     {
-      title: 'Coins History',
+      title: 'Coins & XP',
       meta: `${summary.totalCoins || 0} coins earned`,
-      body: 'Track quiz rewards and activity.',
+      body: 'Track quiz rewards and XP.',
       onOpen: () => router.push('/history/coins'),
     },
     {
@@ -578,7 +446,7 @@ export default function HistoryPage() {
   return (
     <>
       <Head><title>History - SSC GK Score Booster</title></Head>
-      <div className="min-h-screen [background:var(--bg-app)] pb-28">
+      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-8 pb-28">
         <style>{`
           .history-stat {
             background: #172D47;
@@ -622,15 +490,13 @@ export default function HistoryPage() {
           }
         `}</style>
 
-        <HistoryTopBar title="My History" badge="PRACTICE ARCHIVE" icon={<HistoryHeaderIcon />} />
-
-        <main className="px-4 pt-5">
-          <header className="mb-5">
-            <p className="font-display text-[15px] font-bold text-slate-300">Your practice archive</p>
-            <p className="font-sans text-[13px] leading-relaxed text-slate-500 mt-1">
-              Choose what you want to review or revise.
-            </p>
-          </header>
+        <header className="mb-5">
+          <h1 className="t-page-title font-display text-white">My History</h1>
+          <p className="font-display text-[15px] font-bold text-slate-300 mt-2">Your practice archive</p>
+          <p className="font-sans text-[13px] leading-relaxed text-slate-500 mt-1">
+            Choose what you want to review or revise.
+          </p>
+        </header>
 
         {error ? (
           <div className="history-action-card text-center">
@@ -653,7 +519,6 @@ export default function HistoryPage() {
             </section>
           </>
         )}
-        </main>
       </div>
     </>
   );

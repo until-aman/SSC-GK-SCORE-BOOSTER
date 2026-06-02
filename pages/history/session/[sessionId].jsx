@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import HistoryTopBar from '@/components/HistoryTopBar';
 import Loader from '@/components/ui/Loader';
 
 const FILTERS = ['Wrong + Skipped', 'Wrong', 'Skipped', 'Correct', 'Saved', 'All'];
@@ -14,13 +13,6 @@ const TONES = {
   orange: ['#FDBA74', 'rgba(255,122,26,0.12)'],
   grey: ['#CBD5E1', 'rgba(148,163,184,0.10)'],
 };
-
-const QuizReviewIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 11l3 3L22 4" />
-    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-  </svg>
-);
 
 function formatDate(value) {
   if (!value) return 'Recently';
@@ -258,40 +250,31 @@ export default function SessionReviewPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen [background:var(--bg-app)] pb-24">
+      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-8 pb-24">
         <Head><title>Review Session - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" />
-        <main className="px-4 pt-5">
-          <Loader card size="md" label="Loading review..." />
-        </main>
+        <Loader card size="md" label="Loading review..." />
       </div>
     );
   }
 
   if (status === 'unauthenticated') {
     return (
-      <div className="min-h-screen [background:var(--bg-app)] pb-24">
+      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-8 pb-24">
         <Head><title>Review Session - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" />
-        <main className="px-4 pt-5">
-          <p className="font-display font-bold text-white mb-2">Sign in to see your history.</p>
-          <button className="primary-btn" onClick={() => router.push('/api/auth/signin')}>Continue with Google</button>
-        </main>
+        <p className="font-display font-bold text-white mb-2">Sign in to see your history.</p>
+        <button className="primary-btn" onClick={() => router.push('/api/auth/signin')}>Continue with Google</button>
       </div>
     );
   }
 
   if (error || !session) {
     return (
-      <div className="min-h-screen [background:var(--bg-app)] pb-24">
+      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-8 pb-24">
         <Head><title>Review Session - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" />
-        <main className="px-4 pt-5">
-          <div className="review-card text-center">
-            <p className="font-display font-bold text-white">This session is no longer available.</p>
-            <button className="primary-btn mt-4" onClick={() => router.push('/history')}>Back to History</button>
-          </div>
-        </main>
+        <div className="review-card text-center">
+          <p className="font-display font-bold text-white">This session is no longer available.</p>
+          <button className="primary-btn mt-4" onClick={() => router.push('/history')}>Back to History</button>
+        </div>
       </div>
     );
   }
@@ -301,7 +284,7 @@ export default function SessionReviewPage() {
   return (
     <>
       <Head><title>Review Session - SSC GK Score Booster</title></Head>
-      <div className="min-h-screen [background:var(--bg-app)] pb-36">
+      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-6 pb-36">
         <style>{`
           .review-card{background:#172D47;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;margin-bottom:12px}
           .primary-btn{border:0;border-radius:14px;background:linear-gradient(135deg,#FF7A1A,#FF4D00);color:white;font-size:13px;font-weight:800;padding:11px 12px;text-align:center;cursor:pointer}
@@ -312,8 +295,7 @@ export default function SessionReviewPage() {
           .save-btn{border:1px solid rgba(148,163,184,.14);background:rgba(255,255,255,.04);border-radius:999px;color:#CBD5E1;font-size:12px;font-weight:800;padding:7px 10px}
           .divider{height:1px;background:rgba(255,255,255,.07);margin:14px 0}.mastery{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900}.explain-box{background:rgba(15,23,42,.55);border:1px solid rgba(148,163,184,.10);border-radius:14px;padding:13px;margin-top:12px}
         `}</style>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" />
-        <main className="px-4 pt-5">
+        <button onClick={() => router.push('/history')} className="text-sm font-bold text-slate-400 mb-4">← Back to History</button>
         <header className="mb-4">
           <h1 className="font-display text-xl font-black text-white">{session.subject} • {session.topic}</h1>
           <p className="font-sans text-xs text-slate-500">Attempted {formatDate(session.completedAt)}</p>
@@ -342,7 +324,6 @@ export default function SessionReviewPage() {
         )) : (
           <div className="review-card text-center text-slate-400">No questions in this filter.</div>
         )}
-        </main>
       </div>
 
       {mistakes > 0 && (

@@ -2,18 +2,11 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import HistoryTopBar from '@/components/HistoryTopBar';
+import BackButton from '@/components/BackButton';
 import { getISTDateString } from '@/lib/streak';
 
 const DAY_LABELS  = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-const StreakHistoryIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M8 14a4 4 0 1 0 8 0c0-3-4-4-2.5-9C10 7 8 10 8 14z" />
-    <path d="M12 18a2 2 0 0 0 2-2c0-1.5-2-2-1.2-4.5C11 12.6 10 14 10 16a2 2 0 0 0 2 2z" />
-  </svg>
-);
 
 const MILESTONES = [
   { days: 3,  coins: 15,  label: '3-day',   color: '#f97316', floor: '#92400E' },
@@ -113,12 +106,10 @@ export default function StreakPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen [background:var(--bg-app)] pb-24">
-        <HistoryTopBar title="Streak History" icon={StreakHistoryIcon} />
-        <div className="px-4 pt-5">
-          <div className="skeleton h-36 rounded-3xl mb-4" />
-          <div className="skeleton h-52 rounded-3xl" />
-        </div>
+      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-10">
+        <div className="skeleton h-9 w-48 rounded-xl mb-4" />
+        <div className="skeleton h-36 rounded-3xl mb-4" />
+        <div className="skeleton h-52 rounded-3xl" />
       </div>
     );
   }
@@ -161,10 +152,13 @@ export default function StreakPage() {
       <div className="min-h-screen [background:var(--bg-app)]" style={{ paddingBottom: 100 }}>
 
         {/* ── HEADER ── */}
-        <HistoryTopBar title="Streak History" icon={StreakHistoryIcon} />
+        <div className="px-4 pt-10 pb-3 flex items-center gap-3">
+          <BackButton />
+          <h1 className="font-display font-black text-xl text-white">Streak History</h1>
+        </div>
 
         {/* ── HERO CARD — navy base, orange accent ── */}
-        <div className="mx-4 mt-5" style={{
+        <div className="mx-4" style={{
           background: '#111C2E',
           border: '1px solid rgba(249,115,22,0.22)',
           borderRadius: 24,
