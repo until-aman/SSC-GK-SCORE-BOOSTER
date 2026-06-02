@@ -64,14 +64,24 @@ const historyFeatures = [
     ),
   },
   {
-    title: 'Coins & Streaks',
-    body: 'Track rewards and practice consistency.',
+    title: 'Coins History',
+    body: 'Track quiz rewards and bonuses.',
     icon: (
       <>
         <circle cx="12" cy="12" r="8" />
         <path d="M12 8v8" />
         <path d="M9 10.5A3 3 0 0 1 12 8h2" />
         <path d="M15 13.5A3 3 0 0 1 12 16h-2" />
+      </>
+    ),
+  },
+  {
+    title: 'Streak History',
+    body: 'Monitor your practice consistency.',
+    icon: (
+      <>
+        <path d="M8 14a4 4 0 1 0 8 0c0-3-4-4-2.5-9C10 7 8 10 8 14z" />
+        <path d="M12 18a2 2 0 0 0 2-2c0-1.5-2-2-1.2-4.5C11 12.6 10 14 10 16a2 2 0 0 0 2 2z" />
       </>
     ),
   },
@@ -109,7 +119,7 @@ function HistoryGuestState() {
             background: ${BG_CARD};
             border: 1px solid ${BORDER};
             border-radius: 18px;
-            padding: 4px 16px;
+            padding: 0 20px;
           }
           .history-benefit-strip {
             display: flex;
@@ -128,21 +138,18 @@ function HistoryGuestState() {
           .history-feature-row {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 13px 0;
+            gap: 16px;
+            min-height: 72px;
+            padding: 14px 0;
             border-bottom: 1px solid ${BORDER};
           }
           .history-feature-row:last-child {
             border-bottom: none;
-            padding-bottom: 0;
-          }
-          .history-feature-row:first-child {
-            padding-top: 0;
           }
           .history-feature-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 9px;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
             background: ${ORANGE_DIM};
             color: ${ORANGE};
             display: flex;
@@ -153,6 +160,7 @@ function HistoryGuestState() {
           .history-arrow {
             color: ${TEXT_MUT};
             flex-shrink: 0;
+            margin-left: auto;
           }
           .history-preview-shell {
             position: relative;
@@ -240,7 +248,7 @@ function HistoryGuestState() {
           {historyFeatures.map(feature => (
             <div key={feature.title} className="history-feature-row">
               <FeatureIcon>{feature.icon}</FeatureIcon>
-              <span className="font-display min-w-0 flex-1 text-[14px] font-extrabold" style={{ color: TEXT_PRI }}>{feature.title}</span>
+              <span className="font-display min-w-0 flex-1 text-[15px] leading-none font-extrabold" style={{ color: TEXT_PRI }}>{feature.title}</span>
               <svg className="history-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="m9 18 6-6-6-6" />
               </svg>
