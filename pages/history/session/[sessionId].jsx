@@ -260,7 +260,7 @@ export default function SessionReviewPage() {
     return (
       <div className="min-h-screen [background:var(--bg-app)] pb-24">
         <Head><title>Review Session - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" />
+        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack />
         <main className="px-4 pt-5">
           <Loader card size="md" label="Loading review..." />
         </main>
@@ -272,7 +272,7 @@ export default function SessionReviewPage() {
     return (
       <div className="min-h-screen [background:var(--bg-app)] pb-24">
         <Head><title>Review Session - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" />
+        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack />
         <main className="px-4 pt-5">
           <p className="font-display font-bold text-white mb-2">Sign in to see your history.</p>
           <button className="primary-btn" onClick={() => router.push('/api/auth/signin')}>Continue with Google</button>
@@ -285,7 +285,7 @@ export default function SessionReviewPage() {
     return (
       <div className="min-h-screen [background:var(--bg-app)] pb-24">
         <Head><title>Review Session - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" />
+        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack />
         <main className="px-4 pt-5">
           <div className="review-card text-center">
             <p className="font-display font-bold text-white">This session is no longer available.</p>
@@ -312,7 +312,7 @@ export default function SessionReviewPage() {
           .save-btn{border:1px solid rgba(148,163,184,.14);background:rgba(255,255,255,.04);border-radius:999px;color:#CBD5E1;font-size:12px;font-weight:800;padding:7px 10px}
           .divider{height:1px;background:rgba(255,255,255,.07);margin:14px 0}.mastery{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900}.explain-box{background:rgba(15,23,42,.55);border:1px solid rgba(148,163,184,.10);border-radius:14px;padding:13px;margin-top:12px}
         `}</style>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" />
+        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack />
         <main className="px-4 pt-5">
         <header className="mb-4">
           <h1 className="font-display text-xl font-black text-white">{session.subject} • {session.topic}</h1>

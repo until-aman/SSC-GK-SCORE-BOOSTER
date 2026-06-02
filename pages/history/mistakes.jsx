@@ -26,7 +26,7 @@ export default function RepeatedMistakesPage() {
   return (
     <div className="min-h-screen [background:var(--bg-app)] pb-24">
       <Head><title>Repeated Mistakes - SSC GK Score Booster</title></Head>
-      <HistoryTopBar title="Repeated Mistakes" icon={RepeatedMistakesIcon} />
+      <HistoryTopBar title="Repeated Mistakes" icon={RepeatedMistakesIcon} showBack />
       <main className="px-4 pt-5">
         <p className="t-page-subtitle text-slate-400 mb-5">Practice questions you got wrong multiple times.</p>
         {loading ? <Loader card size="md" label="Loading mistakes..." /> : (

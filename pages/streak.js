@@ -114,7 +114,7 @@ export default function StreakPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen [background:var(--bg-app)] pb-24">
-        <HistoryTopBar title="Streak History" icon={StreakHistoryIcon} />
+        <HistoryTopBar title="Streak History" icon={StreakHistoryIcon} showBack />
         <div className="px-4 pt-5">
           <div className="skeleton h-36 rounded-3xl mb-4" />
           <div className="skeleton h-52 rounded-3xl" />
@@ -161,7 +161,7 @@ export default function StreakPage() {
       <div className="min-h-screen [background:var(--bg-app)]" style={{ paddingBottom: 100 }}>
 
         {/* ── HEADER ── */}
-        <HistoryTopBar title="Streak History" icon={StreakHistoryIcon} />
+        <HistoryTopBar title="Streak History" icon={StreakHistoryIcon} showBack />
 
         {/* ── HERO CARD — navy base, orange accent ── */}
         <div className="mx-4 mt-5" style={{

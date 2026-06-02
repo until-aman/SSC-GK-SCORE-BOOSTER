@@ -7,7 +7,13 @@ const DEFAULT_ICON = (
   </svg>
 );
 
-export default function HistoryTopBar({ title, badge = 'HISTORY', icon = DEFAULT_ICON, backHref = '/history' }) {
+const BackIcon = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 18l-6-6 6-6" />
+  </svg>
+);
+
+export default function HistoryTopBar({ title, badge = 'HISTORY', icon = DEFAULT_ICON, backHref = '/history', showBack = false }) {
   const router = useRouter();
 
   return (
@@ -30,7 +36,7 @@ export default function HistoryTopBar({ title, badge = 'HISTORY', icon = DEFAULT
         style={{ border: 0, background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}
       >
         <span className="w-8 h-8 rounded-[11px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-          {icon}
+          {showBack ? BackIcon : icon}
         </span>
         <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center text-white truncate">
           {title}
