@@ -90,7 +90,7 @@ const historyFeatures = [
 function FeatureIcon({ children }) {
   return (
     <div className="history-feature-icon">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
         {children}
       </svg>
     </div>
@@ -119,7 +119,7 @@ function HistoryGuestState() {
             background: ${BG_CARD};
             border: 1px solid ${BORDER};
             border-radius: 18px;
-            padding: 4px 16px;
+            padding: 0 20px;
           }
           .history-benefit-strip {
             display: flex;
@@ -138,17 +138,18 @@ function HistoryGuestState() {
           .history-feature-row {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 13px 0;
+            gap: 16px;
+            min-height: 72px;
+            padding: 14px 0;
             border-bottom: 1px solid ${BORDER};
           }
           .history-feature-row:last-child {
             border-bottom: none;
           }
           .history-feature-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 9px;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
             background: ${ORANGE_DIM};
             color: ${ORANGE};
             display: flex;
@@ -159,7 +160,7 @@ function HistoryGuestState() {
           .history-arrow {
             color: ${TEXT_MUT};
             flex-shrink: 0;
-            font-size: 16px;
+            margin-left: auto;
           }
           .history-preview-shell {
             position: relative;
@@ -247,8 +248,10 @@ function HistoryGuestState() {
           {historyFeatures.map(feature => (
             <div key={feature.title} className="history-feature-row">
               <FeatureIcon>{feature.icon}</FeatureIcon>
-              <span className="font-display min-w-0 flex-1" style={{ fontSize: 14, fontWeight: 800, color: TEXT_PRI }}>{feature.title}</span>
-              <span className="history-arrow" aria-hidden="true">&rarr;</span>
+              <span className="font-display min-w-0 flex-1 text-[15px] leading-none font-extrabold" style={{ color: TEXT_PRI }}>{feature.title}</span>
+              <svg className="history-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
             </div>
           ))}
         </section>
