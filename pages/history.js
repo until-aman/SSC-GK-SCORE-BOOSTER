@@ -98,6 +98,22 @@ const historyFeatures = [
       </>
     ),
   },
+  {
+    title: 'Reports',
+    body: 'Open your AI GK analysis and weekly reports.',
+    route: '/analysis',
+    unlockTitle: 'Unlock Reports',
+    unlockBody: 'Sign in to view your GK analysis, weak areas, and weekly reports.',
+    unlockNote: 'Free \u2022 No payment \u2022 Uses your real practice data',
+    icon: (
+      <>
+        <path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+        <path d="M14 3v5h5" />
+        <path d="M8 13h8" />
+        <path d="M8 17h5" />
+      </>
+    ),
+  },
 ];
 
 function FeatureIcon({ children }) {
@@ -544,8 +560,8 @@ export default function HistoryPage() {
 
         <HistoryTopBar title="My History" badge="PRACTICE ARCHIVE" icon={<HistoryHeaderIcon />} />
 
-        <main className="px-4 pt-[28px]">
-          <section className="history-benefit-strip mb-[24px]">
+        <main className="px-4 pt-[22px]">
+          <section className="history-benefit-strip mb-[18px]">
             <span>Review</span>
             <span className="history-benefit-separator">&middot;</span>
             <span>Revise</span>

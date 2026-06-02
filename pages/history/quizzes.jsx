@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -144,7 +144,6 @@ function ReattemptModal({ modal, onClose, onConfirm, busy }) {
 export default function QuizHistoryPage() {
   const { status } = useSession();
   const router = useRouter();
-  const savedRef = useRef(null);
   const [landing, setLanding] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const [expandedSessions, setExpandedSessions] = useState([]);
@@ -177,12 +176,6 @@ export default function QuizHistoryPage() {
     if (isGuest) { setLoading(false); return; }
     loadLanding();
   }, [status, isGuest]);
-
-  useEffect(() => {
-    if (router.query.section === 'saved' && savedRef.current) {
-      savedRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [router.query.section, landing]);
 
   async function loadExpanded() {
     if (expanded) {
@@ -371,30 +364,6 @@ export default function QuizHistoryPage() {
               {(landing?.repeatedMistakesPreview || []).length > 0 && <button className="primary-btn w-full" onClick={() => router.push('/dashboard')}>Practice All Repeated Mistakes -&gt;</button>}
             </section>
 
-            <section ref={savedRef} className="mb-5">
-              <h2 className="font-display text-lg font-black text-white">Saved for Revision</h2>
-              <p className="font-sans text-sm text-slate-500 mb-3">Questions you bookmarked</p>
-              {(landing?.savedPreview || []).length ? landing.savedPreview.map(item => (
-                <div key={item.questionId} className="history-card">
-                  <div className="flex justify-between gap-3">
-                    <p className="text-xs font-bold text-teal-400">{item.subject} • {item.topic}</p>
-                    <p className="text-xs text-slate-500">{formatDate(item.savedAt)}</p>
-                  </div>
-                  <p className="text-sm font-semibold text-white my-3">"{item.questionPreview}"</p>
-                  <p className="text-xs text-slate-400">Wrong {item.wrongCount}x · Skipped {item.skippedCount}x</p>
-                </div>
-              )) : <EmptyPanel title="No saved questions." body="Bookmark tough ones while reviewing." action="Start Practice" onClick={() => router.push('/dashboard')} />}
-              {(landing?.savedPreview || []).length > 0 && <button className="secondary-btn w-full" onClick={() => router.push('/history?section=saved')}>View All Saved Questions -&gt;</button>}
-            </section>
-
-            <section>
-              <h2 className="font-display text-lg font-black text-white mb-3">Coins Earned</h2>
-              <div className="history-card">
-                <p className="font-display font-black text-2xl text-white">Total Coins: {summary.totalCoins}</p>
-                <p className="font-sans text-sm text-orange-300 mt-1">This week: +{summary.weeklyCoins}</p>
-                <button className="secondary-btn mt-4 w-full opacity-50" title="Coming soon" disabled>View History -&gt;</button>
-              </div>
-            </section>
           </>
         )}
         </main>
