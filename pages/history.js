@@ -12,6 +12,15 @@ const FALLBACK_SUMMARY = {
   totalCoins: 0,
 };
 
+const ORANGE = '#FF6B16';
+const ORANGE_DIM = 'rgba(255,107,22,0.15)';
+const BG_CARD = '#172D47';
+const BG_DEEP = '#112236';
+const BORDER = 'rgba(255,255,255,0.08)';
+const TEXT_PRI = '#F0F4F8';
+const TEXT_SEC = '#94A3B8';
+const TEXT_MUT = '#64748B';
+
 const GoogleSVG = () => (
   <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
     <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -95,43 +104,55 @@ function HistoryGuestState() {
   }
 
   return (
-    <>
-      <Head><title>History - SSC GK Score Booster</title></Head>
+      <>
+        <Head><title>History - SSC GK Score Booster</title></Head>
       <div className="min-h-screen [background:var(--bg-app)] px-4 pt-8 pb-24">
         <style>{`
           .history-guest-card {
-            background: #172D47;
-            border: 1px solid rgba(255,255,255,.08);
+            background: ${BG_CARD};
+            border: 1px solid ${BORDER};
             border-radius: 18px;
-            padding: 16px;
+            padding: 4px 16px;
           }
           .history-benefit-strip {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            display: flex;
+            align-items: center;
+            justify-content: center;
             gap: 8px;
-            background: rgba(255,255,255,.035);
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 18px;
-            padding: 8px;
+            background: ${BG_DEEP};
+            border: 1px solid ${BORDER};
+            border-radius: 999px;
+            padding: 9px 14px;
+            flex-wrap: wrap;
           }
           .history-benefit-pill {
-            background: rgba(255,255,255,.035);
-            border: 1px solid rgba(255,255,255,.06);
-            border-radius: 999px;
-            padding: 9px 10px;
-            color: #F8FAFC;
+            color: ${TEXT_SEC};
             font-size: 12px;
-            font-weight: 900;
+            font-weight: 800;
             line-height: 1.1;
             text-align: center;
             white-space: nowrap;
+          }
+          .history-benefit-pill::after {
+            content: '\\2022';
+            color: ${TEXT_MUT};
+            margin-left: 8px;
+            font-weight: 400;
+          }
+          .history-benefit-pill:last-child::after {
+            content: '';
+            margin-left: 0;
+          }
+          .history-benefit-pill strong {
+            color: ${ORANGE};
+            font-weight: 900;
           }
           .history-feature-row {
             display: flex;
             align-items: center;
             gap: 12px;
             padding: 13px 0;
-            border-bottom: 1px solid rgba(255,255,255,.07);
+            border-bottom: 1px solid ${BORDER};
           }
           .history-feature-row:last-child {
             border-bottom: none;
@@ -143,30 +164,31 @@ function HistoryGuestState() {
           .history-feature-icon {
             width: 36px;
             height: 36px;
-            border-radius: 12px;
-            background: rgba(255,122,26,.14);
-            color: #FDBA74;
+            border-radius: 9px;
+            background: ${ORANGE_DIM};
+            color: ${ORANGE};
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
           }
           .history-arrow {
-            color: #64748B;
+            color: ${TEXT_MUT};
             flex-shrink: 0;
           }
           .history-preview-shell {
             position: relative;
+            height: 240px;
             overflow: hidden;
             border-radius: 18px;
-            border: 1px solid rgba(255,255,255,.08);
-            background: #112236;
+            background: transparent;
           }
           .history-preview-blur {
             filter: blur(6px);
-            opacity: .64;
-            transform: scale(1.015);
+            opacity: .4;
             pointer-events: none;
+            user-select: none;
+            padding: 4px;
           }
           .history-lock-card {
             position: absolute;
@@ -175,28 +197,29 @@ function HistoryGuestState() {
             align-items: center;
             justify-content: center;
             padding: 20px;
-            background: linear-gradient(180deg, rgba(13,27,46,.22), rgba(13,27,46,.82));
+            pointer-events: none;
           }
           .history-preview-block {
-            background: #172D47;
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 16px;
+            background: ${BG_CARD};
+            border: 1px solid ${BORDER};
+            border-radius: 12px;
             padding: 14px;
             margin-bottom: 10px;
           }
           .history-google-btn {
             width: 100%;
             border: none;
-            border-radius: 16px;
-            padding: 14px 16px;
+            border-radius: 14px;
+            padding: 14px 0;
             background: #fff;
             color: #0F172A;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             font-size: 15px;
-            font-weight: 900;
+            font-weight: 800;
+            font-family: inherit;
             cursor: pointer;
           }
           .history-google-btn:active {
@@ -212,28 +235,19 @@ function HistoryGuestState() {
           </p>
         </header>
 
-        <section className="mb-4">
-          <h2 className="font-display font-black text-[22px] leading-tight text-white">
-            Your practice archive is waiting.
-          </h2>
-          <p className="font-sans text-[13px] leading-relaxed text-slate-500 mt-2">
-            Sign in to unlock your full quiz archive and keep your progress synced.
-          </p>
-        </section>
-
-        <section className="history-benefit-strip mb-4">
-          {['Quiz History', 'Saved Questions', 'Mistake Tracking', 'Coins & Streaks'].map(item => (
-            <div key={item} className="history-benefit-pill">{item}</div>
+        <section className="history-benefit-strip mb-[18px]">
+          {['Quiz Review', 'Saved Questions', 'Mistake Tracking', 'Coins & Streaks'].map(item => (
+            <div key={item} className="history-benefit-pill"><strong>{item.split(' ')[0]}</strong>{item.includes(' ') ? ` ${item.split(' ').slice(1).join(' ')}` : ''}</div>
           ))}
         </section>
 
-        <section className="history-guest-card mb-4">
+        <section className="history-guest-card mb-[18px]">
           {historyFeatures.map(feature => (
             <div key={feature.title} className="history-feature-row">
               <FeatureIcon>{feature.icon}</FeatureIcon>
               <div className="min-w-0 flex-1">
-                <p className="font-display font-black text-[15px] text-white">{feature.title}</p>
-                <p className="font-sans text-[12px] leading-snug text-slate-500 mt-1">{feature.body}</p>
+                <p className="font-display text-[14px] font-extrabold" style={{ color: TEXT_PRI }}>{feature.title}</p>
+                <p className="font-sans text-[12px] leading-snug mt-1" style={{ color: TEXT_MUT }}>{feature.body}</p>
               </div>
               <svg className="history-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="m9 18 6-6-6-6" />
@@ -242,8 +256,8 @@ function HistoryGuestState() {
           ))}
         </section>
 
-        <section className="history-preview-shell mb-4">
-          <div className="history-preview-blur p-4">
+        <section className="history-preview-shell mb-[18px]">
+          <div className="history-preview-blur">
             {[
               ['Quiz History', '4 quizzes attempted', 'Review score, answers, and weak areas.'],
               ['Saved Questions', '10 saved questions', 'Topic-wise revision set is ready.'],
@@ -253,31 +267,31 @@ function HistoryGuestState() {
               <div key={title} className="history-preview-block">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-display font-black text-[14px] text-white">{title}</p>
-                    <p className="font-sans text-[11px] text-slate-500 mt-1">{meta}</p>
+                    <p className="font-display font-black text-[14px]" style={{ color: TEXT_PRI }}>{title}</p>
+                    <p className="font-sans text-[11px] mt-1" style={{ color: TEXT_MUT }}>{meta}</p>
                   </div>
                   <div className="h-8 w-8 rounded-xl bg-white/15" />
                 </div>
-                <p className="font-sans text-[12px] text-slate-400 mt-3">{body}</p>
+                <p className="font-sans text-[12px] mt-3" style={{ color: TEXT_SEC }}>{body}</p>
                 <div className="h-2 w-full rounded bg-white/10 mt-3" />
               </div>
             ))}
           </div>
           <div className="history-lock-card">
-            <div className="text-center rounded-2xl px-5 py-4" style={{ background: 'rgba(13,27,46,.92)', border: '1px solid rgba(255,255,255,.10)', boxShadow: '0 16px 34px rgba(0,0,0,.38)' }}>
-              <div className="w-11 h-11 rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(255,122,26,.14)', color: '#FDBA74' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="text-center rounded-2xl px-6 py-[18px]" style={{ background: 'rgba(13,27,46,.92)', border: `1px solid ${BORDER}`, boxShadow: '0 10px 30px rgba(0,0,0,0.4)' }}>
+              <div className="w-[42px] h-[42px] rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ background: ORANGE_DIM }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
               </div>
-              <p className="font-display font-black text-[15px] text-white">Your history is waiting</p>
-              <p className="font-sans text-[12px] text-slate-500 mt-1">Sign in to unlock your quiz archive</p>
+              <p className="font-display text-[15px] font-extrabold mb-1" style={{ color: TEXT_PRI }}>Your history is waiting</p>
+              <p className="font-sans text-[12px]" style={{ color: TEXT_MUT }}>Sign in to unlock your quiz archive</p>
             </div>
           </div>
         </section>
 
-        <section className="history-guest-card text-center">
+        <section className="history-guest-card text-center" style={{ padding: '18px 20px' }}>
           <button className="history-google-btn" onClick={handleSignIn}>
             <GoogleSVG />
             Continue with Google
