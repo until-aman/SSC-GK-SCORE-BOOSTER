@@ -3,6 +3,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import GoogleSignInCard from '@/components/GoogleSignInCard';
+import HistoryTopBar from '@/components/HistoryTopBar';
 import Loader from '@/components/ui/Loader';
 
 const FILTERS = [
@@ -261,22 +262,28 @@ export default function QuizHistoryPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-8 pb-24">
+      <div className="min-h-screen [background:var(--bg-app)] pb-24">
         <Head><title>History - SSC GK Score Booster</title></Head>
-        <h1 className="t-page-title font-display text-white mb-1">My History</h1>
-        <p className="t-page-subtitle text-slate-400 mb-5">Review quizzes, revise mistakes, and re-attempt weak areas.</p>
-        <Loader card size="md" label="Loading history..." />
+        <HistoryTopBar title="Quiz History" showBack />
+        <main className="px-4 pt-5">
+          <h1 className="t-page-title font-display text-white mb-1">My History</h1>
+          <p className="t-page-subtitle text-slate-400 mb-5">Review quizzes, revise mistakes, and re-attempt weak areas.</p>
+          <Loader card size="md" label="Loading history..." />
+        </main>
       </div>
     );
   }
 
   if (isGuest) {
     return (
-      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-8 pb-24">
+      <div className="min-h-screen [background:var(--bg-app)] pb-24">
         <Head><title>History - SSC GK Score Booster</title></Head>
-        <h1 className="t-page-title font-display text-white mb-1">My History</h1>
-        <p className="t-page-subtitle text-slate-400 mb-5">Sign in to see your history.</p>
-        <GoogleSignInCard title="Sign in to see your history" subtitle="Review quizzes, mistakes, saved questions and Coins." buttonText="Continue with Google" callbackUrl="/history" />
+        <HistoryTopBar title="Quiz History" showBack />
+        <main className="px-4 pt-5">
+          <h1 className="t-page-title font-display text-white mb-1">My History</h1>
+          <p className="t-page-subtitle text-slate-400 mb-5">Sign in to see your history.</p>
+          <GoogleSignInCard title="Sign in to see your history" subtitle="Review quizzes, mistakes, saved questions and Coins." buttonText="Continue with Google" callbackUrl="/history" />
+        </main>
       </div>
     );
   }
@@ -284,7 +291,7 @@ export default function QuizHistoryPage() {
   return (
     <>
       <Head><title>History - SSC GK Score Booster</title></Head>
-      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-8 pb-28">
+      <div className="min-h-screen [background:var(--bg-app)] pb-28">
         <style>{`
           .history-card,.empty-panel{background:#172D47;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;margin-bottom:12px}
           .stat-card{background:#172D47;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px}
@@ -294,6 +301,8 @@ export default function QuizHistoryPage() {
           .chip{border:1px solid rgba(148,163,184,.16);border-radius:999px;background:#172D47;color:#94A3B8;font-size:12px;font-weight:800;padding:8px 13px;white-space:nowrap}
           .chip.active{background:rgba(255,122,26,.16);border-color:rgba(255,122,26,.45);color:#FDBA74}
         `}</style>
+        <HistoryTopBar title="Quiz History" showBack />
+        <main className="px-4 pt-5">
         <div className="mb-5">
           <h1 className="t-page-title font-display text-white">My History</h1>
           <p className="t-page-subtitle text-slate-400">Review quizzes, revise mistakes, and re-attempt weak areas.</p>
@@ -388,6 +397,7 @@ export default function QuizHistoryPage() {
             </section>
           </>
         )}
+        </main>
       </div>
       <ReattemptModal modal={modal} onClose={() => setModal(null)} onConfirm={confirmReattempt} busy={starting} />
     </>

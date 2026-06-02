@@ -27,7 +27,7 @@ export default function CoinsHistoryPage() {
   return (
     <div className="min-h-screen [background:var(--bg-app)] pb-24">
       <Head><title>Coins History - SSC GK Score Booster</title></Head>
-      <HistoryTopBar title="Coins History" icon={CoinsHistoryIcon} />
+      <HistoryTopBar title="Coins History" icon={CoinsHistoryIcon} showBack />
       <main className="px-4 pt-5">
         <p className="t-page-subtitle text-slate-400 mb-5">Track quiz rewards and activity.</p>
         {loading ? <Loader card size="md" label="Loading rewards..." /> : (

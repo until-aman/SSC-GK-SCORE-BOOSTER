@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 
 import GoogleSignInCard from '@/components/GoogleSignInCard';
+import HistoryTopBar from '@/components/HistoryTopBar';
 import Loader from '@/components/ui/Loader';
 import { getSavedQuestions } from '@/lib/data/savedData';
 
@@ -523,6 +524,7 @@ export default function HistorySavedPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen [background:var(--bg-app)] pb-24">
+        <HistoryTopBar title="Saved Questions" showBack />
         <div className="px-4 pt-8 pb-3">
           <h1 className="t-page-title font-display text-white">Saved Questions</h1>
           <p className="t-page-subtitle font-sans text-slate-400">Build your personal revision bank</p>
@@ -538,6 +540,7 @@ export default function HistorySavedPage() {
     <>
       <Head><title>Saved Questions — SSC GK Score Booster</title></Head>
       <div className="min-h-screen [background:var(--bg-app)] pb-24">
+        <HistoryTopBar title="Saved Questions" showBack />
 
         {/* Header */}
         <div className="px-4 pt-8 pb-3">
