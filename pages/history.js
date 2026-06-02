@@ -118,15 +118,34 @@ function HistoryGuestState() {
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 8px;
             background: ${BG_DEEP};
             border: 1px solid ${BORDER};
             border-radius: 999px;
             padding: 9px 14px;
+            flex-wrap: wrap;
+          }
+          .history-benefit-pill {
             color: ${TEXT_SEC};
             font-size: 12px;
             font-weight: 800;
-            line-height: 1.35;
+            line-height: 1.1;
             text-align: center;
+            white-space: nowrap;
+          }
+          .history-benefit-pill::after {
+            content: '\\2022';
+            color: ${TEXT_MUT};
+            margin-left: 8px;
+            font-weight: 400;
+          }
+          .history-benefit-pill:last-child::after {
+            content: '';
+            margin-left: 0;
+          }
+          .history-benefit-pill strong {
+            color: ${ORANGE};
+            font-weight: 900;
           }
           .history-feature-row {
             display: flex;
@@ -217,7 +236,9 @@ function HistoryGuestState() {
         </header>
 
         <section className="history-benefit-strip mb-[18px]">
-          Review quizzes, revise mistakes, track rewards, and continue where you left off.
+          {['Quiz Review', 'Saved Questions', 'Mistake Tracking', 'Coins & Streaks'].map(item => (
+            <div key={item} className="history-benefit-pill"><strong>{item.split(' ')[0]}</strong>{item.includes(' ') ? ` ${item.split(' ').slice(1).join(' ')}` : ''}</div>
+          ))}
         </section>
 
         <section className="history-guest-card mb-[18px]">
