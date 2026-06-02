@@ -64,14 +64,24 @@ const historyFeatures = [
     ),
   },
   {
-    title: 'Coins & Streaks',
-    body: 'Track rewards and practice consistency.',
+    title: 'Coins & XP',
+    body: 'Track quiz rewards and bonuses.',
     icon: (
       <>
         <circle cx="12" cy="12" r="8" />
         <path d="M12 8v8" />
         <path d="M9 10.5A3 3 0 0 1 12 8h2" />
         <path d="M15 13.5A3 3 0 0 1 12 16h-2" />
+      </>
+    ),
+  },
+  {
+    title: 'Streak History',
+    body: 'Monitor your practice consistency.',
+    icon: (
+      <>
+        <path d="M8 14a4 4 0 1 0 8 0c0-3-4-4-2.5-9C10 7 8 10 8 14z" />
+        <path d="M12 18a2 2 0 0 0 2-2c0-1.5-2-2-1.2-4.5C11 12.6 10 14 10 16a2 2 0 0 0 2 2z" />
       </>
     ),
   },
@@ -87,13 +97,6 @@ function FeatureIcon({ children }) {
   );
 }
 
-const HistoryHeaderIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="9" />
-    <path d="M12 7v5l3 3" />
-  </svg>
-);
-
 function HistoryGuestState() {
   function handleSignIn() {
     document.cookie = 'userMode=; path=/; max-age=0';
@@ -101,9 +104,9 @@ function HistoryGuestState() {
   }
 
   return (
-    <>
-      <Head><title>History - SSC GK Score Booster</title></Head>
-      <div className="min-h-screen [background:var(--bg-app)] pb-24">
+      <>
+        <Head><title>History - SSC GK Score Booster</title></Head>
+      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-8 pb-24">
         <style>{`
           .history-guest-card {
             background: ${BG_CARD};
@@ -140,8 +143,8 @@ function HistoryGuestState() {
             padding-top: 0;
           }
           .history-feature-icon {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 9px;
             background: ${ORANGE_DIM};
             color: ${ORANGE};
@@ -205,32 +208,13 @@ function HistoryGuestState() {
           }
         `}</style>
 
-        <div
-          className="sticky top-0 z-50 px-4 flex items-center justify-between"
-          style={{
-            height: '58px',
-            background: 'rgba(15,32,52,0.88)',
-            backdropFilter: 'blur(14px)',
-            WebkitBackdropFilter: 'blur(14px)',
-            borderBottom: '1px solid rgba(20,184,166,0.18)',
-            borderRadius: '0 0 22px 22px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.22)',
-          }}
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-[11px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-              <HistoryHeaderIcon />
-            </div>
-            <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center text-white">
-              My History
-            </span>
-            <span style={{ fontSize: 9, fontWeight: 800, color: '#F59E0B', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 99, padding: '3px 8px', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-              PRACTICE ARCHIVE
-            </span>
-          </div>
-        </div>
-
-        <div style={{ minHeight: '100vh', background: 'var(--bg-app)', padding: '22px 16px 110px', boxSizing: 'border-box' }}>
+        <header className="mb-5">
+          <h1 className="t-page-title font-display text-white">My History</h1>
+          <p className="t-page-subtitle text-slate-400 mt-1">Your practice archive</p>
+          <p className="font-sans text-[13px] leading-relaxed text-slate-500 mt-2">
+            Review quizzes, revise mistakes, track rewards, and continue where you left off.
+          </p>
+        </header>
 
         <section className="history-benefit-strip mb-[18px]">
           Review quizzes, revise mistakes, track rewards, and continue where you left off.
@@ -240,7 +224,10 @@ function HistoryGuestState() {
           {historyFeatures.map(feature => (
             <div key={feature.title} className="history-feature-row">
               <FeatureIcon>{feature.icon}</FeatureIcon>
-              <span className="font-display min-w-0 flex-1 text-[14px] font-extrabold" style={{ color: TEXT_PRI }}>{feature.title}</span>
+              <div className="min-w-0 flex-1">
+                <p className="font-display text-[14px] font-extrabold" style={{ color: TEXT_PRI }}>{feature.title}</p>
+                <p className="font-sans text-[12px] leading-snug mt-1" style={{ color: TEXT_MUT }}>{feature.body}</p>
+              </div>
               <svg className="history-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="m9 18 6-6-6-6" />
               </svg>
@@ -303,7 +290,7 @@ function HistoryGuestState() {
           </div>
         </section>
 
-        <section className="history-guest-card text-center" style={{ padding: '18px 20px', marginBottom: 0 }}>
+        <section className="history-guest-card text-center" style={{ padding: '18px 20px' }}>
           <button className="history-google-btn" onClick={handleSignIn}>
             <GoogleSVG />
             Continue with Google
@@ -312,7 +299,6 @@ function HistoryGuestState() {
             Free &bull; No payment &bull; Saves your progress across devices
           </p>
         </section>
-        </div>
       </div>
     </>
   );
