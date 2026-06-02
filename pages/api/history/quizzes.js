@@ -26,7 +26,11 @@ export default async function handler(req, res) {
     const limit = Math.min(25, Math.max(1, Number(req.query.limit) || 10));
     const sessions = applyFilters(await getUserSessions(session.user.email), req.query);
     const start = (page - 1) * limit;
-    const paged = sessions.slice(start, start + limit);
+    const paged = sessions.slice(start, start + limit).map(item => ({
+      ...item,
+      maxScore: item.questionCount * 2,
+      hasMistakes: item.incorrect + item.skipped > 0,
+    }));
 
     return res.status(200).json({
       success: true,
