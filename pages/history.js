@@ -259,41 +259,21 @@ function HistoryGuestState() {
         <section className="history-preview-shell mb-[18px]">
           <div className="history-preview-blur">
             {[
-              {
-                title: 'Polity • Fundamental Rights',
-                meta: '68% Accuracy',
-                body: 'Review / Re-attempt',
-                accent: ORANGE,
-              },
-              {
-                title: 'Saved Question',
-                meta: 'Question preview',
-                body: 'Saved for revision',
-                accent: '#14B8A6',
-              },
-              {
-                title: 'Repeated Mistake',
-                meta: 'Wrong 3x',
-                body: 'Practice now',
-                accent: '#EF4444',
-              },
-              {
-                title: 'Rewards',
-                meta: 'Total Coins',
-                body: 'Weekly XP',
-                accent: '#F59E0B',
-              },
-            ].map(({ title, meta, body, accent }) => (
+              ['Quiz History', '4 quizzes attempted', 'Review score, answers, and weak areas.'],
+              ['Saved Questions', '10 saved questions', 'Topic-wise revision set is ready.'],
+              ['Repeated Mistakes', '2 repeated mistakes', 'Practice questions missed more than once.'],
+              ['Coins & XP', '32 coins earned', 'Rewards, bonuses, and XP activity.'],
+            ].map(([title, meta, body]) => (
               <div key={title} className="history-preview-block">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="font-display font-black text-[14px]" style={{ color: TEXT_PRI }}>{title}</p>
                     <p className="font-sans text-[11px] mt-1" style={{ color: TEXT_MUT }}>{meta}</p>
                   </div>
-                  <div className="h-8 w-8 rounded-xl" style={{ background: `${accent}33` }} />
+                  <div className="h-8 w-8 rounded-xl bg-white/15" />
                 </div>
                 <p className="font-sans text-[12px] mt-3" style={{ color: TEXT_SEC }}>{body}</p>
-                <div className="h-2 w-2/3 rounded bg-white/10 mt-3" />
+                <div className="h-2 w-full rounded bg-white/10 mt-3" />
               </div>
             ))}
           </div>
