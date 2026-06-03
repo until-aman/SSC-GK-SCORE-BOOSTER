@@ -1,10 +1,19 @@
 import { useRouter } from 'next/router';
 
-export default function BackButton() {
+export default function BackButton({ fallbackHref = '/history' }) {
   const router = useRouter();
+
+  function handleBack() {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push(fallbackHref);
+  }
+
   return (
     <button
-      onClick={() => router.back()}
+      onClick={handleBack}
       className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
       style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.10)' }}
     >
