@@ -64,6 +64,14 @@ function CountUp({ value, suffix = '' }) {
   return <>{display}{suffix}</>;
 }
 
+function BookmarkIcon({ filled }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? '#14B8A6' : 'none'} stroke={filled ? '#14B8A6' : '#64748b'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" />
+    </svg>
+  );
+}
+
 function formatDate(value) {
   if (!value) return 'Recently';
   const date = new Date(value);
@@ -132,25 +140,25 @@ function QuizCard({ session, onReview, onPractice }) {
         <span className="tone-pill quiz-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{session.badge}</span>
       </div>
 
-      <div className="quiz-score-grid">
-        <div>
+      <div className="quiz-metric-row">
+        <div className="quiz-metric">
           <strong className="font-display">{session.score} / {maxScore}</strong>
           <span>Score</span>
         </div>
-        <div>
-          <strong className="font-display">{session.accuracy}%</strong>
-          <span>Accuracy</span>
+        <div className="quiz-metric quiz-metric-coins">
+          <strong className="font-display">+{session.coinsEarned}</strong>
+          <span>Coins</span>
         </div>
       </div>
 
       <div className="quiz-result-row">
-        <span className="text-emerald-300">✓ {session.correct}</span>
-        <span className="text-red-300">× {session.incorrect}</span>
-        <span className="text-amber-300">~ {session.skipped}</span>
-        <span className="text-orange-300">+{session.coinsEarned} coins</span>
+        <span className="text-slate-400">{session.questionCount} Qs</span>
+        <span className="text-emerald-300">&#10003; {session.correct}</span>
+        <span className="text-red-300">&times; {session.incorrect}</span>
+        <span className="text-slate-400">&#9675; {session.skipped}</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mt-4">
+      <div className="quiz-action-row">
         {mistakes > 0 ? (
           <>
             <button type="button" className="primary-btn" onClick={() => onPractice(session)}>Practice Mistakes</button>
@@ -170,6 +178,75 @@ function StatEntityCard({ item, type, onPractice, onReview }) {
   const tone = TONES[item.statusTone] || TONES.grey;
   const title = type === 'topic' ? item.topic : item.subject;
   const hasMistakes = item.hasMistakes || ((Number(item.wrongCount) || 0) + (Number(item.skippedCount) || 0)) > 0;
+  const revisionLabel = item.statusLabel === 'Improve' ? 'Needs Revision' : item.statusLabel;
+
+  if (type === 'subject') {
+    return (
+      <article className="history-card entity-card subject-entity-card">
+        <div className="entity-top">
+          <h3 className="entity-title font-display">{title}</h3>
+          <span className="tone-pill entity-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{revisionLabel}</span>
+        </div>
+
+        <p className="subject-meta-line">{item.questionCount} attempted <span>&middot;</span> Last practiced {formatDate(item.lastPracticedAt)}</p>
+
+        <div className="entity-stat-row subject-stat-row">
+          <span className="text-emerald-300">&#10003; {item.correctCount}</span>
+          <span className="text-red-300">&times; {item.wrongCount}</span>
+          <span className="text-slate-400">&#9675; {item.skippedCount}</span>
+        </div>
+
+        <div className="subject-action-row">
+          {hasMistakes ? (
+            <>
+              <button type="button" className="primary-btn" onClick={() => onPractice(item)}>Practice Mistakes</button>
+              <button type="button" className="secondary-btn" onClick={() => onReview(item)}>Review Questions</button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="primary-btn" onClick={() => onReview(item)}>Review Questions</button>
+              <button type="button" className="secondary-btn" disabled>Practice Mistakes</button>
+            </>
+          )}
+        </div>
+      </article>
+    );
+  }
+
+  if (type === 'topic') {
+    return (
+      <article className="history-card entity-card topic-entity-card">
+        <div className="entity-top">
+          <h3 className="entity-title font-display">{title}</h3>
+          <span className="tone-pill entity-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{revisionLabel}</span>
+        </div>
+
+        <p className="topic-subject-line">{item.subject}</p>
+        <p className="subject-meta-line">{item.questionCount} attempted <span>&middot;</span> Last practiced {formatDate(item.lastPracticedAt)}</p>
+
+        <div className="entity-stat-row subject-stat-row">
+          <span className="text-emerald-300">&#10003; {item.correctCount}</span>
+          <span className="text-red-300">&times; {item.wrongCount}</span>
+          <span className="text-slate-400">&#9675; {item.skippedCount}</span>
+        </div>
+
+        <div className="subject-action-row">
+          {hasMistakes ? (
+            <>
+              <button type="button" className="primary-btn" onClick={() => onPractice(item)}>Practice Mistakes</button>
+              <button type="button" className="secondary-btn" onClick={() => onReview(item)}>Review</button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="primary-btn" onClick={() => onReview(item)}>Review</button>
+              <button type="button" className="secondary-btn" disabled>Practice Mistakes</button>
+            </>
+          )}
+        </div>
+      </article>
+    );
+  }
+
   return (
     <article className="history-card entity-card">
       <div className="entity-top">
@@ -216,9 +293,29 @@ function StatEntityCard({ item, type, onPractice, onReview }) {
 }
 function QuestionCard({ item, aiCache, setAiCache, onPracticeOne, onToggleSave }) {
   const [open, setOpen] = useState(false);
-  const tone = TONES[item.masteryTone] || TONES.grey;
   const cache = aiCache[item.questionId] || { official: item.explanation || '', ai: null, loading: false };
   const statusText = item.lastAttemptStatus === 'skipped' ? 'Skipped' : item.lastAttemptStatus === 'correct' ? 'Correct' : 'Wrong';
+  const correctCount = Number(item.correctCount) || 0;
+  const wrongCount = Number(item.wrongCount) || 0;
+  const skippedCount = Number(item.skippedCount) || 0;
+  let smartTag = 'Needs Revision';
+  let tagTone = TONES.amber;
+  if (wrongCount >= 2 && correctCount === 0) {
+    smartTag = 'Never Correct';
+    tagTone = TONES.red;
+  } else if (wrongCount >= 2) {
+    smartTag = 'Repeated Mistake';
+    tagTone = TONES.red;
+  } else if (skippedCount >= 2) {
+    smartTag = 'Often Skipped';
+    tagTone = TONES.blue;
+  } else if (correctCount > 0 && wrongCount > 0) {
+    smartTag = 'Improving';
+    tagTone = TONES.amber;
+  } else if (correctCount >= 2 && item.lastAttemptStatus === 'correct') {
+    smartTag = 'Mastered';
+    tagTone = TONES.green;
+  }
 
   async function getAIExplanation() {
     if (cache.ai || cache.loading) return;
@@ -251,15 +348,14 @@ function QuestionCard({ item, aiCache, setAiCache, onPracticeOne, onToggleSave }
     <article className={`history-card question-card ${open ? 'open' : ''}`}>
       <div className="question-top-row">
         <p className="question-kicker">{item.subject} &middot; {item.topic}</p>
-        <span className="tone-pill question-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{item.masteryLabel}</span>
+        <span className="tone-pill question-badge" style={{ color: tagTone[0], background: tagTone[1], borderColor: `${tagTone[0]}55` }}>{smartTag}</span>
       </div>
 
-      <p className={`question-preview font-display ${open ? 'open' : ''}`}>{open ? item.question : item.questionPreview}</p>
+      <p className={`question-preview font-display ${open ? 'open' : ''}`}>{open ? item.question : (item.questionPreview || item.question)}</p>
 
       <div className="question-stat-row">
-        <span className="text-emerald-300">Correct {item.correctCount}x</span>
-        <span className="text-red-300">Wrong {item.wrongCount}x</span>
-        <span className="text-amber-300">Skipped {item.skippedCount}x</span>
+        <span className="text-red-300">Wrong {wrongCount}x</span>
+        <span className="text-slate-400">Skipped {skippedCount}x</span>
       </div>
 
       {open && (
@@ -292,8 +388,8 @@ function QuestionCard({ item, aiCache, setAiCache, onPracticeOne, onToggleSave }
       <div className="question-actions">
         <button type="button" className="primary-btn" onClick={() => onPracticeOne(item)}>Practice Again</button>
         <button type="button" className="secondary-btn" onClick={() => setOpen(value => !value)}>{open ? 'Close' : 'Open'}</button>
-        <button type="button" className={`save-icon-btn ${item.isSaved ? 'saved' : ''}`} onClick={() => onToggleSave(item)} aria-label={item.isSaved ? 'Remove from saved' : 'Save question'} title={item.isSaved ? 'Saved' : 'Save'}>
-          {item.isSaved ? '★' : '☆'}
+        <button type="button" className={`save-icon-btn ${item.isSaved ? 'saved' : ''}`} onClick={event => { event.stopPropagation(); onToggleSave(item); }} aria-label={item.isSaved ? 'Remove bookmark' : 'Save question'} title={item.isSaved ? 'Saved' : 'Save'}>
+          <BookmarkIcon filled={item.isSaved} />
         </button>
       </div>
     </article>
@@ -359,6 +455,7 @@ export default function HistoryPage() {
   const [quickFilter, setQuickFilter] = useState('all');
   const [subjects, setSubjects] = useState(null);
   const [subjectsLoading, setSubjectsLoading] = useState(false);
+  const [subjectFilter, setSubjectFilter] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [topicsBySubject, setTopicsBySubject] = useState({});
   const [topicsLoading, setTopicsLoading] = useState(false);
@@ -390,10 +487,15 @@ export default function HistoryPage() {
     }
   }, []);
 
-  const loadQuizzes = useCallback(async (limit = 3) => {
+  const loadQuizzes = useCallback(async (limit = 3, filter = 'all') => {
     setQuizLoading(true);
     try {
-      const res = await fetch(`/api/history/quizzes?page=1&limit=${limit}`);
+      const params = new URLSearchParams({ page: '1', limit: String(limit) });
+      if (filter === '7d' || filter === '30d') params.set('dateRange', filter);
+      if (filter === 'weak') params.set('status', 'weak');
+      if (filter === 'wrong_skipped') params.set('answerType', 'wrong_skipped');
+
+      const res = await fetch(`/api/history/quizzes?${params.toString()}`);
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
       setQuizData(data.data);
@@ -452,8 +554,12 @@ export default function HistoryPage() {
   useEffect(() => {
     if (status === 'loading' || isGuest) return;
     loadSummary();
-    loadQuizzes(3);
-  }, [status, isGuest, loadSummary, loadQuizzes]);
+  }, [status, isGuest, loadSummary]);
+
+  useEffect(() => {
+    if (status === 'loading' || isGuest) return;
+    loadQuizzes(3, quickFilter);
+  }, [status, isGuest, loadQuizzes, quickFilter]);
 
   useEffect(() => {
     if (status === 'loading' || isGuest) return;
@@ -487,27 +593,38 @@ export default function HistoryPage() {
 
   const filteredQuizzes = useMemo(() => {
     const sessions = quizData.sessions || [];
-    const now = Date.now();
-    return sessions.filter(item => {
-      if (quickFilter === '7d') return now - new Date(item.completedAt || 0).getTime() <= 7 * 86400000;
-      if (quickFilter === '30d') return now - new Date(item.completedAt || 0).getTime() <= 30 * 86400000;
-      if (quickFilter === 'weak') return item.accuracy < 50;
-      if (quickFilter === 'wrong_skipped') return item.incorrect + item.skipped > 0;
-      return true;
-    });
-  }, [quickFilter, quizData.sessions]);
+    return sessions;
+  }, [quizData.sessions]);
 
   const activeFilterCount = Object.values(advancedFilters).filter(value => value && value !== 'all').length;
+  const filteredSubjects = useMemo(() => {
+    const items = subjects || [];
+    if (!subjectFilter) return items;
+    return items.filter(item => item.subject === subjectFilter);
+  }, [subjectFilter, subjects]);
   const topics = topicsBySubject[selectedSubject] || [];
   const questionSubjects = subjects || [];
   const practiceCount = questionsData?.total || 0;
-  const stickyPracticeTypes = ['wrong', 'skipped', 'repeated', 'never_correct'];
-  const showStickyPractice = activeMode === 'mistakes' && practiceCount > 0 && stickyPracticeTypes.includes(questionType);
+  const activeMistakeLabel = QUESTION_TYPES.find(type => type.key === questionType)?.label || 'Filtered';
+  const mistakePhrase = {
+    wrong: 'wrong questions',
+    skipped: 'skipped questions',
+    repeated: 'repeated mistakes',
+    saved: 'saved questions',
+    never_correct: 'never correct questions',
+  }[questionType] || `${activeMistakeLabel.toLowerCase()} questions`;
+  const summaryPhrase = questionType === 'repeated' ? 'repeated questions' : mistakePhrase;
+  const activeMistakeSummary = `${mistakePhrase} in ${questionSubject || 'All subjects'}`;
 
   async function expandQuizzes() {
     const next = !quizExpanded;
     setQuizExpanded(next);
-    await loadQuizzes(next ? 10 : 3);
+    await loadQuizzes(next ? 10 : 3, quickFilter);
+  }
+
+  function handleQuickFilter(nextFilter) {
+    setQuickFilter(nextFilter);
+    setQuizExpanded(false);
   }
 
   function openPracticeModal(payload) {
@@ -584,6 +701,7 @@ export default function HistoryPage() {
 
   function applyMoreFilters(next) {
     setAdvancedFilters(next);
+    setQuizExpanded(false);
     if (activeMode === 'quiz') {
       if (next.dateRange === '7d' || next.dateRange === '30d') setQuickFilter(next.dateRange);
       else if (next.answerStatus === 'wrong_skipped') setQuickFilter('wrong_skipped');
@@ -592,30 +710,21 @@ export default function HistoryPage() {
     setSheetOpen(false);
   }
 
-  function stickyPracticeLabel() {
-    if (questionSubject) return `Practice ${practiceCount} ${questionSubject} Mistakes`;
-    if (questionType === 'repeated') return `Practice ${practiceCount} Repeated Mistakes`;
-    if (questionType === 'skipped') return `Practice ${practiceCount} Skipped Questions`;
-    if (questionType === 'never_correct') return `Practice ${practiceCount} Never Correct Questions`;
-    if (questionType === 'wrong') return activeFilterCount > 0 ? `Practice ${practiceCount} Filtered Questions` : `Practice ${practiceCount} Wrong Questions`;
-    return `Practice ${practiceCount} Filtered Questions`;
-  }
-
   const styles = `
     .history-shell{padding:16px 16px calc(158px + env(safe-area-inset-bottom))}
-    .intro-block{margin-bottom:12px}.intro-title{color:#f8fafc;font-size:17px;line-height:1.2;margin:0 0 5px;font-weight:900}.intro-subtitle{color:#94a3b8;font-size:13px;line-height:1.45;margin:0}
+    .intro-block{margin-bottom:12px}.intro-subtitle{color:#94a3b8;font-size:13px;line-height:1.45;margin:0}
     .compact-strip,.mode-selector{background:#112236;border:1px solid rgba(255,255,255,.08)}.compact-strip{display:flex;justify-content:center;gap:8px;border-radius:999px;padding:8px 14px;color:#94a3b8;font-size:12px;font-weight:800;flex-wrap:wrap;margin-top:12px}.dot{color:#64748b}
     .summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 14px}.stat-card,.history-card{background:#172d47;border:1px solid rgba(255,255,255,.08);border-radius:16px}.stat-card{padding:10px 12px}.stat-card strong{display:block;color:#f8fafc;font-size:20px;line-height:1;font-weight:900}.stat-card span{display:block;color:#64748b;font-size:11px;margin-top:5px;font-weight:700}.history-card{padding:16px;margin-bottom:12px}
-    .quiz-card{padding:14px 15px}.quiz-title{color:#f8fafc;font-size:15px;font-weight:900;line-height:1.25;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}.quiz-date{color:#64748b;font-size:11px;font-weight:700;margin-top:5px}.quiz-badge{max-width:124px;overflow:hidden;text-overflow:ellipsis}.quiz-score-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:13px}.quiz-score-grid div{border:1px solid rgba(148,163,184,.10);background:rgba(15,35,58,.72);border-radius:13px;padding:9px 10px}.quiz-score-grid strong{display:block;color:#f8fafc;font-size:18px;line-height:1;font-weight:900}.quiz-score-grid span{display:block;color:#64748b;font-size:11px;font-weight:800;margin-top:5px}.quiz-result-row{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-top:12px;font-size:13px;font-weight:900}
-    .entity-card{padding:14px 15px}.entity-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.entity-title{color:#f8fafc;font-size:15px;font-weight:900;line-height:1.3;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.entity-subtitle{color:#64748b;font-size:11px;font-weight:800;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.entity-accuracy{text-align:right;flex:0 0 auto}.entity-accuracy p{font-size:24px;line-height:1;font-weight:900;margin:0 0 5px}.entity-badge{font-size:10px;padding:4px 8px}.entity-meta{display:flex;flex-direction:column;gap:4px;margin-top:11px;color:#94a3b8;font-size:12px;font-weight:700}.entity-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;font-size:13px;font-weight:900}
-    .question-card{padding:14px 15px}.question-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.question-kicker{color:#5eead4;font-size:11px;font-weight:900;margin:0;line-height:1.35;min-width:0}.question-badge{font-size:10px;padding:4px 8px;max-width:126px;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.question-preview{color:#f8fafc;font-size:14px;font-weight:800;line-height:1.45;margin:11px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}.question-preview.open{-webkit-line-clamp:unset;display:block}.question-stat-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:11px;font-size:12px;font-weight:900}.question-actions{display:grid;grid-template-columns:1fr .78fr 42px;gap:8px;margin-top:14px}.save-icon-btn{height:40px;border-radius:13px;border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.04);color:#94a3b8;font-size:18px;font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center}.save-icon-btn.saved{color:#fdba74;border-color:rgba(255,122,26,.42);background:rgba(255,122,26,.13)}
+    .quiz-card{padding:13px 15px}.quiz-title{color:#f8fafc;font-size:15px;font-weight:900;line-height:1.25;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}.quiz-date{color:#64748b;font-size:11px;font-weight:700;margin-top:5px}.quiz-badge{max-width:124px;overflow:hidden;text-overflow:ellipsis}.quiz-metric-row{display:grid;grid-template-columns:1fr auto;align-items:end;gap:18px;margin-top:14px}.quiz-metric strong{display:block;color:#f8fafc;font-size:22px;line-height:1;font-weight:900}.quiz-metric span{display:block;color:#64748b;font-size:11px;font-weight:800;margin-top:6px}.quiz-metric-coins{text-align:right}.quiz-metric-coins strong{color:#fdba74}.quiz-result-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:13px;padding:10px 0;border-top:1px solid rgba(148,163,184,.10);border-bottom:1px solid rgba(148,163,184,.10);font-size:13px;font-weight:900;white-space:nowrap}.quiz-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
+    .entity-card{padding:14px 15px}.entity-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.entity-title{color:#f8fafc;font-size:15px;font-weight:900;line-height:1.3;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.entity-subtitle{color:#64748b;font-size:11px;font-weight:800;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.entity-accuracy{text-align:right;flex:0 0 auto}.entity-accuracy p{font-size:24px;line-height:1;font-weight:900;margin:0 0 5px}.entity-badge{font-size:10px;padding:4px 8px;flex:0 0 auto}.entity-meta{display:flex;flex-direction:column;gap:4px;margin-top:11px;color:#94a3b8;font-size:12px;font-weight:700}.entity-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;font-size:13px;font-weight:900}.subject-entity-card,.topic-entity-card{padding:13px 15px}.subject-entity-card .entity-top,.topic-entity-card .entity-top{align-items:flex-start}.subject-entity-card .entity-title{-webkit-line-clamp:1}.topic-entity-card .entity-title{-webkit-line-clamp:2}.topic-subject-line{color:#cbd5e1;font-size:12px;font-weight:800;line-height:1.35;margin:8px 0 0}.subject-meta-line{color:#94a3b8;font-size:12px;font-weight:800;line-height:1.45;margin:12px 0 0}.subject-meta-line span{color:#64748b;margin:0 5px}.subject-stat-row{gap:18px;margin-top:11px}.subject-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
+    .question-card{padding:13px 15px}.question-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.question-kicker{color:#5eead4;font-size:11px;font-weight:900;margin:0;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.question-badge{font-size:10px;padding:4px 8px;max-width:132px;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.question-preview{color:#f8fafc;font-size:14px;font-weight:900;line-height:1.45;margin:12px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}.question-preview.open{-webkit-line-clamp:unset;display:block}.question-stat-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;font-size:12px;font-weight:900}.question-stat-row span+span:before{content:'·';color:#64748b;margin-right:8px}.question-actions{display:grid;grid-template-columns:1fr .72fr 40px;gap:8px;margin-top:14px;align-items:center}.save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid rgba(148,163,184,.14);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;transition:transform .12s ease,background .12s ease,border-color .12s ease}.save-icon-btn:active{transform:scale(.92)}.save-icon-btn.saved{border-color:rgba(20,184,166,.40);background:rgba(20,184,166,.18)}
     .mode-selector{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;border-radius:999px;padding:3px;margin-bottom:16px}.mode-selector button{border:0;border-radius:999px;background:transparent;color:#8da0b8;font-family:inherit;font-size:11px;font-weight:900;padding:9px 4px;white-space:nowrap}.mode-selector button.active{background:rgba(120,53,15,.42);color:white;box-shadow:inset 0 0 0 1px rgba(255,122,26,.48),0 4px 18px rgba(255,90,0,.10)}
     .chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin-left:-16px;margin-right:-16px;padding:0 16px 14px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.sheet-chip-row{margin-left:0;margin-right:0;padding:0 0 4px}.chip{border:1px solid rgba(148,163,184,.14);border-radius:999px;background:rgba(23,45,71,.92);color:#8da0b8;font-size:12px;font-weight:800;padding:7px 13px;white-space:nowrap;text-transform:capitalize;flex:0 0 auto}.chip.active{background:rgba(255,122,26,.17);border-color:rgba(255,122,26,.52);color:#fdba74;box-shadow:0 5px 16px rgba(255,90,0,.08)}
     .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;min-height:40px}.primary-btn{border:0;background:linear-gradient(135deg,#ff7a1a,#ff4d00);color:white;box-shadow:0 8px 22px rgba(255,90,0,.16)}.secondary-btn{border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.04);color:#cbd5e1}.primary-btn:disabled,.secondary-btn:disabled{opacity:.45;cursor:default;box-shadow:none}
     .section-title{color:#f8fafc;font-size:17px;font-weight:900;line-height:1.25;margin:0}.section-subtitle{color:#64748b;font-size:13px;line-height:1.45;margin:5px 0 12px}
     .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}.divider{height:1px;background:rgba(255,255,255,.07);margin:14px 0}.question-expanded{overflow:hidden;margin-top:14px}.option-row{display:flex;justify-content:space-between;gap:10px;border:1px solid rgba(148,163,184,.12);background:rgba(255,255,255,.035);border-radius:12px;padding:10px;margin-top:8px;color:#cbd5e1;font-size:13px}.option-row.correct{border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.10);color:#bbf7d0}.option-row.wrong{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.10);color:#fecaca}
     .modal-backdrop,.sheet-backdrop{position:fixed;inset:0;z-index:80;background:rgba(4,12,24,.72);backdrop-filter:blur(10px);display:flex}.modal-backdrop{align-items:center;justify-content:center;padding:22px}.modal-card{width:min(100%,360px);background:#172d47;border:1px solid rgba(255,255,255,.10);border-radius:22px;padding:20px}.sheet-backdrop{align-items:flex-end}.filter-sheet{width:100%;max-width:430px;margin:0 auto;background:#112236;border:1px solid rgba(255,255,255,.10);border-radius:24px 24px 0 0;padding:12px 16px 20px}.sheet-handle{width:42px;height:4px;border-radius:99px;background:rgba(148,163,184,.35);margin:0 auto 14px}.filter-label{font-size:12px;color:#94a3b8;font-weight:900;margin-bottom:8px}.filter-select{width:100%;background:#172d47;border:1px solid rgba(148,163,184,.16);border-radius:14px;color:#e2e8f0;padding:11px;font-family:inherit}
-    .sticky-practice{position:fixed;left:50%;bottom:82px;transform:translateX(-50%);z-index:50;width:100%;max-width:430px;padding:0 16px 10px;background:linear-gradient(to top,var(--bg-app) 68%,transparent)}.sticky-practice button{box-shadow:0 16px 40px rgba(255,77,0,.26)}
+    .mistake-filter-group{margin-bottom:16px}.mistake-filter-group .chip-row{padding-bottom:0}.mistake-filter-label{display:block;margin:0 0 10px 2px;color:#cbd5e1;font-size:12px;font-weight:900;line-height:1}.active-filter-summary{margin:-2px 2px 14px;color:#94a3b8;font-size:12px;font-weight:800;line-height:1.4}
     @media(max-width:380px){.mode-long{display:none}}@media(min-width:381px){.mode-short{display:none}}
   `;
 
@@ -627,7 +736,6 @@ export default function HistoryPage() {
         <HistoryTopBar title="Quiz History" badge="REVISION ENGINE" icon={<HistoryHeaderIcon />} showBack />
         <main className="history-shell">
           <section className="intro-block">
-            <h1 className="intro-title font-display">Your Review Engine</h1>
             <p className="intro-subtitle">Filter attempted questions and fix weak areas.</p>
             <div className="compact-strip"><span>Sessions</span><span className="dot">·</span><span>Questions</span><span className="dot">·</span><span>Mistakes</span></div>
           </section>
@@ -646,8 +754,6 @@ export default function HistoryPage() {
                 {[
                   ['Quizzes', summary?.totalQuizzes || 0, ''],
                   ['Questions', summary?.totalQuestions || 0, ''],
-                  ['Accuracy', summary?.overallAccuracy || 0, '%'],
-                  ['Saved', summary?.savedCount || 0, ''],
                 ].map(([label, value, suffix]) => <div key={label} className="stat-card"><strong className="font-display"><CountUp value={value} suffix={suffix} /></strong><span>{label}</span></div>)}
               </section>
 
@@ -658,7 +764,7 @@ export default function HistoryPage() {
               {activeMode === 'quiz' && (
                 <>
                   <div className="chip-row">
-                    {QUICK_FILTERS.map(filter => <button key={filter.key} type="button" className={`chip ${quickFilter === filter.key ? 'active' : ''}`} onClick={() => setQuickFilter(filter.key)}>{filter.label}</button>)}
+                    {QUICK_FILTERS.map(filter => <button key={filter.key} type="button" className={`chip ${quickFilter === filter.key ? 'active' : ''}`} onClick={() => handleQuickFilter(filter.key)}>{filter.label}</button>)}
                     <button type="button" className="chip" onClick={() => setSheetOpen(true)}>More Filters{activeFilterCount ? ` (${activeFilterCount})` : ''}</button>
                   </div>
                   {quizLoading ? <Loader card size="sm" label="Loading quizzes..." /> : filteredQuizzes.length ? filteredQuizzes.map(item => (
@@ -672,9 +778,18 @@ export default function HistoryPage() {
                 <section>
                   <h2 className="section-title font-display">Attempted Subjects</h2>
                   <p className="section-subtitle">Subjects you have practiced questions from.</p>
-                  {subjectsLoading ? <Loader card size="sm" label="Loading subjects..." /> : subjects?.length ? subjects.map(item => (
-                    <StatEntityCard key={item.subject} item={item} type="subject" onPractice={subject => openPracticeModal({ subject: subject.subject, count: subject.wrongCount + subject.skippedCount })} onReview={subject => router.push(`/history/questions?subject=${encodeURIComponent(subject.subject)}`)} />
-                  )) : <EmptyPanel title="No attempted subjects yet." body="Start a quiz to build your subject-wise history." action="Start Practice →" onClick={() => router.push('/dashboard')} />}
+                  {subjectsLoading ? <Loader card size="sm" label="Loading subjects..." /> : subjects?.length ? (
+                    <>
+                      <p className="filter-label">Subject</p>
+                      <div className="chip-row">
+                        <button type="button" className={`chip ${!subjectFilter ? 'active' : ''}`} onClick={() => setSubjectFilter('')}>All</button>
+                        {subjects.map(item => <button key={item.subject} type="button" className={`chip ${subjectFilter === item.subject ? 'active' : ''}`} onClick={() => setSubjectFilter(item.subject)}>{item.subject}</button>)}
+                      </div>
+                      {filteredSubjects.map(item => (
+                        <StatEntityCard key={item.subject} item={item} type="subject" onPractice={subject => openPracticeModal({ subject: subject.subject, count: subject.wrongCount + subject.skippedCount })} onReview={subject => router.push(`/history/questions?subject=${encodeURIComponent(subject.subject)}`)} />
+                      ))}
+                    </>
+                  ) : <EmptyPanel title="No attempted subjects yet." body="Start a quiz to build your subject-wise history." action="Start Practice →" onClick={() => router.push('/dashboard')} />}
                 </section>
               )}
 
@@ -695,18 +810,24 @@ export default function HistoryPage() {
 
               {activeMode === 'mistakes' && (
                 <section>
-                  <div className="chip-row">
-                    {QUESTION_TYPES.map(type => <button key={type.key} type="button" className={`chip ${questionType === type.key ? 'active' : ''}`} onClick={() => setQuestionType(type.key)}>{type.label}</button>)}
-                    <button type="button" className="chip" onClick={() => setSheetOpen(true)}>More Filters{activeFilterCount ? ` (${activeFilterCount})` : ''}</button>
+                  <div className="mistake-filter-group">
+                    <p className="mistake-filter-label">Mistake Type</p>
+                    <div className="chip-row">
+                      {QUESTION_TYPES.map(type => <button key={type.key} type="button" className={`chip ${questionType === type.key ? 'active' : ''}`} onClick={() => setQuestionType(type.key)}>{type.label}</button>)}
+                    </div>
                   </div>
-                  <div className="chip-row">
-                    <button type="button" className={`chip ${!questionSubject ? 'active' : ''}`} onClick={() => setQuestionSubject('')}>All</button>
-                    {questionSubjects.map(item => <button key={item.subject} type="button" className={`chip ${questionSubject === item.subject ? 'active' : ''}`} onClick={() => setQuestionSubject(item.subject)}>{item.subject}</button>)}
+                  <div className="mistake-filter-group">
+                    <p className="mistake-filter-label">Subject / Source</p>
+                    <div className="chip-row">
+                      <button type="button" className={`chip ${!questionSubject ? 'active' : ''}`} onClick={() => setQuestionSubject('')}>All</button>
+                      {questionSubjects.map(item => <button key={item.subject} type="button" className={`chip ${questionSubject === item.subject ? 'active' : ''}`} onClick={() => setQuestionSubject(item.subject)}>{item.subject}</button>)}
+                    </div>
                   </div>
+                  <p className="active-filter-summary">Showing: {activeMistakeSummary}</p>
                   {questionsLoading ? <Loader card size="sm" label="Loading questions..." /> : (
                     <>
                       <div className="history-card">
-                        <p className="font-display font-black text-white">{practiceCount} repeated mistakes found</p>
+                        <p className="font-display font-black text-white">{practiceCount} {summaryPhrase} found</p>
                         {practiceCount > 0 && <button type="button" className="primary-btn mt-3 w-full" onClick={() => openPracticeModal({ subject: questionSubject, count: practiceCount, answerStatus: questionType === 'repeated' || questionType === 'never_correct' ? 'wrong_skipped' : questionType, questionHistory: questionType === 'repeated' ? 'repeated' : questionType === 'never_correct' ? 'never_correct' : 'all' })}>Practice All {practiceCount}</button>}
                       </div>
                       {questionsData?.questions?.length ? questionsData.questions.map(item => <QuestionCard key={item.questionId} item={item} aiCache={aiCache} setAiCache={setAiCache} onPracticeOne={question => startFilteredPractice({ singleQuestion: question })} onToggleSave={toggleSave} />) : <EmptyPanel title={`No ${questionType.replace('_', ' ')} questions found.`} body="Practice more to build this list." action="Practice More →" onClick={() => router.push('/dashboard')} />}
@@ -718,14 +839,6 @@ export default function HistoryPage() {
           )}
         </main>
       </div>
-
-      {showStickyPractice && (
-        <div className="sticky-practice">
-          <button type="button" className="primary-btn w-full" onClick={() => openPracticeModal({ subject: questionSubject, count: practiceCount, answerStatus: questionType === 'skipped' ? 'skipped' : 'wrong_skipped', questionHistory: questionType === 'repeated' ? 'repeated' : questionType === 'never_correct' ? 'never_correct' : 'all' })}>
-            {stickyPracticeLabel()}
-          </button>
-        </div>
-      )}
 
       <Modal modal={modal} busy={starting} onClose={() => setModal(null)} onConfirm={() => startFilteredPractice()} />
       <MoreFiltersSheet open={sheetOpen} filters={advancedFilters} subjects={subjects || []} onClose={() => setSheetOpen(false)} onApply={applyMoreFilters} onReset={() => { setAdvancedFilters({ answerStatus: 'all', questionHistory: 'all', dateRange: 'all', quizType: 'all', subject: '' }); setSheetOpen(false); }} />
