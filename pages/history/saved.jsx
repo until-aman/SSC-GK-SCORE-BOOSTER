@@ -525,9 +525,8 @@ export default function HistorySavedPage() {
     return (
       <div className="min-h-screen [background:var(--bg-app)] pb-24">
         <HistoryTopBar title="Saved Questions" showBack />
-        <div className="px-4 pt-8 pb-3">
-          <h1 className="t-page-title font-display text-white">Saved Questions</h1>
-          <p className="t-page-subtitle font-sans text-slate-400">Build your personal revision bank</p>
+        <div className="px-4 pt-5 pb-5">
+          <p className="t-page-subtitle text-slate-400">Build your personal revision bank</p>
         </div>
         <div className="px-4">
           <Loader card size="md" label="Fetching your saved questions…" />
@@ -543,16 +542,8 @@ export default function HistorySavedPage() {
         <HistoryTopBar title="Saved Questions" showBack />
 
         {/* Header */}
-        <div className="px-4 pt-8 pb-3">
-          <div className="flex items-center gap-2.5">
-            <h1 className="t-page-title font-display text-white">Saved Questions</h1>
-            {questions.length > 0 && (
-              <span className="t-badge bg-[rgba(20,184,166,0.15)] border border-[rgba(20,184,166,0.30)] rounded-full px-2.5 py-0.5 font-display text-[#14B8A6]">
-                {questions.length}
-              </span>
-            )}
-          </div>
-          <p className="t-page-subtitle font-sans text-slate-400">Build your personal revision bank</p>
+        <div className="px-4 pt-5 pb-5">
+          <p className="t-page-subtitle text-slate-400">Build your personal revision bank</p>
         </div>
 
         {/* Guest sign-in banner */}

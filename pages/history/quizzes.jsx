@@ -582,7 +582,7 @@ export default function HistoryPage() {
       <Head><title>Quiz History - SSC GK Score Booster</title></Head>
       <div className="min-h-screen [background:var(--bg-app)] pb-28">
         <style>{styles}</style>
-        <HistoryTopBar title="Quiz History" badge="REVISION ENGINE" icon={<HistoryHeaderIcon />} />
+        <HistoryTopBar title="Quiz History" badge="REVISION ENGINE" icon={<HistoryHeaderIcon />} showBack />
         <main className="history-shell">
           <section className="mb-[18px]">
             <h1 className="history-title t-page-title font-display">Quiz History</h1>

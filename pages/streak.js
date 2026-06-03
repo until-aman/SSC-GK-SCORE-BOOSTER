@@ -158,7 +158,7 @@ export default function StreakPage() {
         .prog-bar { animation: progFill 0.8s cubic-bezier(0.22,1,0.36,1) both; }
       `}</style>
 
-      <div className="min-h-screen [background:var(--bg-app)]" style={{ paddingBottom: 100 }}>
+      <div className="min-h-screen [background:var(--bg-app)]" style={{ paddingBottom: 178 }}>
 
         {/* ── HEADER ── */}
         <HistoryTopBar title="Streak History" icon={StreakHistoryIcon} showBack />
@@ -534,11 +534,11 @@ export default function StreakPage() {
 
       {/* ── STICKY CTA — always orange ── */}
       <div style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
-        padding: '10px 16px 74px',
-        background: 'linear-gradient(to top, var(--bg-app) 65%, transparent)',
+        position: 'fixed', bottom: 82, left: 0, right: 0, zIndex: 40,
+        padding: '12px 16px 10px',
+        background: 'linear-gradient(to top, var(--bg-app) 70%, transparent)',
         opacity: showCTA ? 1 : 0,
-        transform: showCTA ? 'translateY(0)' : 'translateY(16px)',
+        transform: showCTA ? 'translateY(0)' : 'translateY(14px)',
         transition: 'opacity 0.4s ease, transform 0.4s ease',
         pointerEvents: showCTA ? 'auto' : 'none',
       }}>
@@ -549,13 +549,13 @@ export default function StreakPage() {
           onClick={() => router.push('/quiz?mode=daily&sourceScreen=daily_challenge')}
           style={{
             display: 'block', width: '100%', maxWidth: 430, margin: '0 auto',
-            padding: '17px 0', borderRadius: 20, border: 'none', cursor: 'pointer',
+            padding: '16px 0', borderRadius: 18, border: 'none', cursor: 'pointer',
             fontFamily: 'inherit', fontSize: 15, fontWeight: 800, color: '#ffffff',
-            background: 'linear-gradient(180deg,#FF8A1F 0%,#FF5A00 100%)',
+            background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)',
             boxShadow: btnPress
-              ? '0 2px 0 #B73E00, 0 6px 14px rgba(255,90,0,0.22)'
-              : '0 6px 0 #B73E00, 0 14px 28px rgba(255,90,0,0.30)',
-            transform: btnPress ? 'translateY(4px)' : 'translateY(0)',
+              ? '0 4px 12px rgba(255,107,22,0.22)'
+              : '0 4px 14px rgba(255,107,22,0.30)',
+            transform: btnPress ? 'scale(0.98)' : 'scale(1)',
             transition: 'transform 120ms ease, box-shadow 120ms ease',
           }}
         >
