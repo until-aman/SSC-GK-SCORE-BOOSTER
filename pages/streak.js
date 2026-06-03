@@ -156,6 +156,16 @@ export default function StreakPage() {
         .streak-fire { animation: streakPulse 2s ease-in-out infinite; }
         @keyframes progFill { from { width: 4%; } }
         .prog-bar { animation: progFill 0.8s cubic-bezier(0.22,1,0.36,1) both; }
+        @keyframes streakCtaPulse {
+          0%, 100% {
+            box-shadow: 0 4px 14px rgba(255,107,22,0.30);
+            transform: scale(1);
+          }
+          50% {
+            box-shadow: 0 10px 28px rgba(255,107,22,0.48), 0 0 0 6px rgba(255,107,22,0.08);
+            transform: scale(1.01);
+          }
+        }
       `}</style>
 
       <div className="min-h-screen [background:var(--bg-app)]" style={{ paddingBottom: 178 }}>
@@ -548,7 +558,7 @@ export default function StreakPage() {
           onPointerLeave={() => setBtnPress(false)}
           onClick={() => router.push('/quiz?mode=daily&sourceScreen=daily_challenge')}
           style={{
-            display: 'block', width: '100%', maxWidth: 430, margin: '0 auto',
+            display: 'block', width: 'calc(100% - 40px)', maxWidth: 390, margin: '0 auto',
             padding: '16px 0', borderRadius: 18, border: 'none', cursor: 'pointer',
             fontFamily: 'inherit', fontSize: 15, fontWeight: 800, color: '#ffffff',
             background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)',
@@ -557,6 +567,7 @@ export default function StreakPage() {
               : '0 4px 14px rgba(255,107,22,0.30)',
             transform: btnPress ? 'scale(0.98)' : 'scale(1)',
             transition: 'transform 120ms ease, box-shadow 120ms ease',
+            animation: btnPress ? 'none' : 'streakCtaPulse 2.4s ease-in-out infinite',
           }}
         >
           {playedToday ? 'Practice More →' : 'Protect Today\'s Streak →'}
