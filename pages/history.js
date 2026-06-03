@@ -1,692 +1,587 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
-import GoogleSignInCard from '@/components/GoogleSignInCard';
 import Loader from '@/components/ui/Loader';
 
-const MODES = [
-  { key: 'quiz', label: 'Quiz-wise', shortLabel: 'Quizzes' },
-  { key: 'subject', label: 'Subject-wise', shortLabel: 'Subjects' },
-  { key: 'topic', label: 'Topic-wise', shortLabel: 'Topics' },
-  { key: 'mistakes', label: 'Mistakes', shortLabel: 'Mistakes' },
+const ORANGE = '#FF6B16';
+const ORANGE_DIM = 'rgba(255,107,22,0.15)';
+const BG_CARD = '#172D47';
+const BG_DEEP = '#112236';
+const BORDER = 'rgba(255,255,255,0.08)';
+const TEXT_PRI = '#F0F4F8';
+const TEXT_SEC = '#94A3B8';
+const TEXT_MUT = '#64748B';
+
+const GoogleSVG = () => (
+  <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+    <path fill="#34A853" d="M10.53 28.59a14.5 14.5 0 010-9.18l-7.98-6.19a24.08 24.08 0 000 21.56l7.98-6.19z"/>
+    <path fill="#FBBC05" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+  </svg>
+);
+
+const historyFeatures = [
+  {
+    title: 'Quiz History',
+    body: 'Review attempted quizzes and re-attempt weak areas.',
+    route: '/history/quizzes',
+    unlockTitle: 'Unlock Quiz History',
+    unlockBody: 'Sign in to review your attempted quizzes and re-attempt mistakes.',
+    unlockNote: 'Free \u2022 No payment \u2022 Saves progress across devices',
+    icon: (
+      <>
+        <rect x="5" y="4" width="14" height="16" rx="2" />
+        <path d="M9 8h6" />
+        <path d="M9 12h6" />
+        <path d="M9 16h4" />
+      </>
+    ),
+  },
+  {
+    title: 'Saved Questions',
+    body: 'Revise bookmarked questions topic-wise.',
+    route: '/history/saved',
+    unlockTitle: 'Unlock Saved Questions',
+    unlockBody: 'Sign in to revise your bookmarked questions across devices.',
+    unlockNote: 'Free \u2022 Keeps your revision list safe',
+    icon: (
+      <>
+        <path d="M6 4h12v17l-6-3-6 3V4z" />
+      </>
+    ),
+  },
+  {
+    title: 'Repeated Mistakes',
+    body: 'See which questions you keep getting wrong.',
+    route: '/history/mistakes',
+    unlockTitle: 'Unlock Repeated Mistakes',
+    unlockBody: 'Sign in to see questions you got wrong multiple times and practice them again.',
+    unlockNote: 'Free \u2022 Helps you revise smarter',
+    icon: (
+      <>
+        <path d="M12 9v4" />
+        <path d="M12 17h.01" />
+        <path d="M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z" />
+      </>
+    ),
+  },
+  {
+    title: 'Coins History',
+    body: 'Track quiz rewards and bonuses.',
+    route: '/history/coins',
+    unlockTitle: 'Unlock Coins History',
+    unlockBody: 'Sign in to track your rewards and quiz activity.',
+    unlockNote: 'Free \u2022 Saves your rewards history',
+    icon: (
+      <>
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 8v8" />
+        <path d="M9 10.5A3 3 0 0 1 12 8h2" />
+        <path d="M15 13.5A3 3 0 0 1 12 16h-2" />
+      </>
+    ),
+  },
+  {
+    title: 'Streak History',
+    body: 'Monitor your practice consistency.',
+    route: '/streak',
+    unlockTitle: 'Unlock Streak History',
+    unlockBody: 'Sign in to track your daily practice consistency.',
+    unlockNote: 'Free \u2022 Keeps your streak safe',
+    icon: (
+      <>
+        <path d="M8 14a4 4 0 1 0 8 0c0-3-4-4-2.5-9C10 7 8 10 8 14z" />
+        <path d="M12 18a2 2 0 0 0 2-2c0-1.5-2-2-1.2-4.5C11 12.6 10 14 10 16a2 2 0 0 0 2 2z" />
+      </>
+    ),
+  },
+  {
+    title: 'Reports',
+    body: 'Open your AI GK analysis and weekly reports.',
+    route: '/analysis',
+    unlockTitle: 'Unlock Reports',
+    unlockBody: 'Sign in to view your GK analysis, weak areas, and weekly reports.',
+    unlockNote: 'Free \u2022 No payment \u2022 Uses your real practice data',
+    icon: (
+      <>
+        <path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+        <path d="M14 3v5h5" />
+        <path d="M8 13h8" />
+        <path d="M8 17h5" />
+      </>
+    ),
+  },
 ];
 
-const QUICK_FILTERS = [
-  { key: 'all', label: 'All' },
-  { key: '7d', label: '7 Days' },
-  { key: '30d', label: '30 Days' },
-  { key: 'weak', label: 'Weak' },
-  { key: 'wrong_skipped', label: 'Wrong + Skipped' },
-];
-
-const QUESTION_TYPES = [
-  { key: 'wrong', label: 'Wrong' },
-  { key: 'skipped', label: 'Skipped' },
-  { key: 'repeated', label: 'Repeated' },
-  { key: 'saved', label: 'Saved' },
-  { key: 'never_correct', label: 'Never Correct' },
-];
-
-const TONES = {
-  green: ['#86efac', 'rgba(34,197,94,.12)'],
-  amber: ['#fcd34d', 'rgba(245,158,11,.12)'],
-  red: ['#fca5a5', 'rgba(239,68,68,.12)'],
-  blue: ['#93c5fd', 'rgba(59,130,246,.12)'],
-  orange: ['#fdba74', 'rgba(255,122,26,.12)'],
-  grey: ['#cbd5e1', 'rgba(148,163,184,.10)'],
-};
-
-function HistoryHeaderIcon() {
+function FeatureIcon({ children }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 3" />
-    </svg>
-  );
-}
-
-function CountUp({ value, suffix = '' }) {
-  const [display, setDisplay] = useState(0);
-  useEffect(() => {
-    const target = Number(value) || 0;
-    const start = performance.now();
-    let frame;
-    function tick(now) {
-      const pct = Math.min(1, (now - start) / 600);
-      setDisplay(Math.round(target * (1 - Math.pow(1 - pct, 3))));
-      if (pct < 1) frame = requestAnimationFrame(tick);
-    }
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [value]);
-  return <>{display}{suffix}</>;
-}
-
-function formatDate(value) {
-  if (!value) return 'Recently';
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return 'Recently';
-  const diff = Date.now() - date.getTime();
-  const days = Math.floor(diff / 86400000);
-  if (days === 0) return 'Today';
-  if (days === 1) return 'Yesterday';
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
-}
-
-function optionText(question, option) {
-  return question[`option${String(option || '').toUpperCase()}`] || '';
-}
-
-function EmptyPanel({ title, body, action, onClick }) {
-  return (
-    <section className="history-card text-center">
-      <p className="font-display font-black text-white">{title}</p>
-      <p className="text-sm text-slate-400 mt-1 mb-4">{body}</p>
-      {action && <button type="button" className="primary-btn" onClick={onClick}>{action}</button>}
-    </section>
-  );
-}
-
-function Modal({ modal, onClose, onConfirm, busy }) {
-  if (!modal) return null;
-  const sizes = modal.count > 25 ? [10, 25, 50].filter(size => size <= modal.count || size === 50) : [];
-  return (
-    <div className="modal-backdrop">
-      <div className="modal-card">
-        <h2 className="font-display text-xl font-black text-white">{modal.title}</h2>
-        <p className="text-sm font-bold text-slate-300 mt-3">{modal.subject}{modal.topic ? ` · ${modal.topic}` : ''}</p>
-        <p className="text-sm text-slate-400 mt-2">{modal.body}</p>
-        {sizes.length > 0 && (
-          <div className="mt-4">
-            <p className="text-xs font-bold text-slate-500 mb-2">Choose practice size:</p>
-            <div className="grid grid-cols-3 gap-2">
-              {sizes.map(size => (
-                <button key={size} type="button" className={`chip ${modal.limit === size ? 'active' : ''}`} onClick={() => modal.setLimit(size)}>{size}</button>
-              ))}
-            </div>
-          </div>
-        )}
-        <div className="grid grid-cols-2 gap-2 mt-5">
-          <button type="button" className="secondary-btn" disabled={busy} onClick={onClose}>Cancel</button>
-          <button type="button" className="primary-btn" disabled={busy} onClick={onConfirm}>{busy ? 'Starting...' : 'Start Practice -&gt;'}</button>
-        </div>
-      </div>
+    <div className="history-feature-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {children}
+      </svg>
     </div>
   );
 }
 
-function QuizCard({ session, onReview, onPractice, onFull }) {
-  const mistakes = (Number(session.incorrect) || 0) + (Number(session.skipped) || 0);
-  const maxScore = session.maxScore || session.questionCount * 2;
-  const tone = TONES[session.badgeTone] || TONES.amber;
-  return (
-    <article className="history-card">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="font-display font-black text-white truncate">{session.subject} · {session.topic}</h3>
-          <p className="text-xs text-slate-500 mt-1">{formatDate(session.completedAt)}</p>
-        </div>
-        <span className="tone-pill" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{session.badge}</span>
-      </div>
-      <div className="mt-4 text-sm text-slate-200">
-        <span className="font-black text-white">Score: {session.score} / {maxScore}</span>
-        <span className="mx-2 text-slate-600">·</span>
-        <span className="font-black text-white">Accuracy: {session.accuracy}%</span>
-      </div>
-      <div className="mt-4 flex flex-wrap items-center gap-3 text-sm font-black">
-        <span className="text-emerald-300">✓ {session.correct}</span>
-        <span className="text-red-300">× {session.incorrect}</span>
-        <span className="text-amber-300">↷ {session.skipped}</span>
-        <span className="text-slate-600">·</span>
-        <span className="text-orange-300">+{session.coinsEarned} coins</span>
-      </div>
-      <div className="grid grid-cols-2 gap-2 mt-5">
-        {mistakes > 0 ? (
-          <>
-            <button type="button" className="primary-btn" onClick={() => onPractice(session)}>Practice Mistakes -&gt;</button>
-            <button type="button" className="secondary-btn" onClick={() => onReview(session)}>Review Quiz</button>
-          </>
-        ) : (
-          <>
-            <button type="button" className="primary-btn" onClick={() => onReview(session)}>Review Quiz</button>
-            <button type="button" className="secondary-btn" onClick={() => onFull(session)}>Re-attempt</button>
-          </>
-        )}
-      </div>
-    </article>
-  );
-}
+const HistoryHeaderIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 3" />
+  </svg>
+);
 
-function StatEntityCard({ item, type, onPractice, onReview }) {
-  const tone = TONES[item.statusTone] || TONES.grey;
-  const title = type === 'topic' ? item.topic : item.subject;
-  return (
-    <article className="history-card">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="font-display font-black text-white truncate">{title}</h3>
-          {type === 'topic' && <p className="text-xs text-slate-500 mt-1">{item.subject}</p>}
-        </div>
-        <div className="text-right">
-          <p className="font-display text-2xl font-black" style={{ color: tone[0] }}>{item.accuracy}%</p>
-          <span className="tone-pill" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{item.statusLabel}</span>
-        </div>
-      </div>
-      <p className="text-sm text-slate-400 mt-4">{item.questionCount} questions attempted</p>
-      <p className="text-sm font-black text-slate-200 mt-2">✓ {item.correctCount} <span className="text-red-300 ml-3">× {item.wrongCount}</span> <span className="text-amber-300 ml-3">↷ {item.skippedCount}</span></p>
-      <p className="text-xs text-slate-500 mt-2">Last practiced: {formatDate(item.lastPracticedAt)}</p>
-      <div className="grid grid-cols-2 gap-2 mt-5">
-        <button type="button" className="primary-btn" onClick={() => onPractice(item)} disabled={!item.hasMistakes}>Practice Mistakes -&gt;</button>
-        <button type="button" className="secondary-btn" onClick={() => onReview(item)}>{type === 'topic' ? 'Review' : 'Review Qs'}</button>
-      </div>
-    </article>
-  );
-}
+function HistoryGuestState() {
+  const [lockedFeature, setLockedFeature] = useState(null);
 
-function QuestionCard({ item, aiCache, setAiCache, onPracticeOne, onToggleSave }) {
-  const [open, setOpen] = useState(false);
-  const tone = TONES[item.masteryTone] || TONES.grey;
-  const cache = aiCache[item.questionId] || { official: item.explanation || '', ai: null, loading: false };
-  const statusText = item.lastAttemptStatus === 'skipped' ? 'Skipped' : item.lastAttemptStatus === 'correct' ? 'Correct' : 'Wrong';
-
-  async function getAIExplanation() {
-    if (cache.ai || cache.loading) return;
-    setAiCache(prev => ({ ...prev, [item.questionId]: { ...cache, loading: true } }));
-    try {
-      const res = await fetch('/api/ai/explain', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: item.question,
-          optionA: item.optionA,
-          optionB: item.optionB,
-          optionC: item.optionC,
-          optionD: item.optionD,
-          correctOption: item.correctOption,
-          userOption: item.lastUserAnswer,
-          explanation: item.explanation || '',
-          subject: item.subject,
-          topic: item.topic,
-        }),
-      });
-      const data = await res.json();
-      setAiCache(prev => ({ ...prev, [item.questionId]: { ...cache, ai: data.aiExplanation || data.explanation || null, loading: false } }));
-    } catch {
-      setAiCache(prev => ({ ...prev, [item.questionId]: { ...cache, loading: false } }));
-    }
+  function handleSignIn(feature) {
+    document.cookie = 'userMode=; path=/; max-age=0';
+    signIn('google', { callbackUrl: feature?.route || '/history' });
   }
 
   return (
-    <article className={`history-card question-card ${open ? 'open' : ''}`}>
-      <p className="text-xs font-bold text-teal-300">{item.subject} · {item.topic}</p>
-      <p className="font-display font-bold text-white leading-relaxed mt-3">"{open ? item.question : item.questionPreview}"</p>
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span className="text-sm font-black text-red-300">× Wrong {item.wrongCount}x</span>
-        <span className="text-sm font-black text-amber-300">↷ Skipped {item.skippedCount}x</span>
-        <span className="tone-pill" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{item.masteryLabel}</span>
-      </div>
+    <>
+      <Head><title>History - SSC GK Score Booster</title></Head>
+      <div className="min-h-screen [background:var(--bg-app)]">
+        <style>{`
+          .history-guest-card {
+            background: ${BG_CARD};
+            border: 1px solid ${BORDER};
+            border-radius: 18px;
+            padding: 4px 16px;
+          }
+          .history-benefit-strip {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: ${BG_DEEP};
+            border: 1px solid ${BORDER};
+            border-radius: 999px;
+            padding: 9px 14px;
+            flex-wrap: wrap;
+          }
+          .history-benefit-strip span {
+            color: ${TEXT_SEC};
+            font-size: 12px;
+          }
+          .history-benefit-separator {
+            color: ${TEXT_MUT};
+          }
+          .history-feature-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 0;
+            border-bottom: 1px solid ${BORDER};
+            width: 100%;
+            background: transparent;
+            border-left: 0;
+            border-right: 0;
+            border-top: 0;
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+          }
+          .history-feature-row:active {
+            transform: scale(.99);
+          }
+          .history-feature-row:last-child {
+            border-bottom: none;
+          }
+          .history-feature-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            background: ${ORANGE_DIM};
+            color: ${ORANGE};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+          }
+          .history-arrow {
+            color: ${TEXT_MUT};
+            flex-shrink: 0;
+            font-size: 16px;
+          }
+          .history-preview-shell {
+            position: relative;
+            height: 360px;
+            margin-top: auto;
+            overflow: hidden;
+            border-radius: 18px;
+            background: transparent;
+            flex: 0 0 auto;
+          }
+          .history-preview-blur {
+            filter: blur(6px);
+            opacity: .4;
+            pointer-events: none;
+            user-select: none;
+            padding: 4px;
+          }
+          .history-lock-card {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            pointer-events: none;
+          }
+          .history-preview-block {
+            background: ${BG_CARD};
+            border: 1px solid ${BORDER};
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+          }
+          .history-google-btn {
+            width: 100%;
+            border: none;
+            border-radius: 14px;
+            padding: 14px 0;
+            background: #fff;
+            color: #0F172A;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 800;
+            font-family: inherit;
+            cursor: pointer;
+          }
+          .history-google-btn:active {
+            transform: scale(.98);
+          }
+          .history-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 80;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(4, 12, 24, .72);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+          }
+          .history-modal-card {
+            position: relative;
+            width: min(100%, 360px);
+            background: ${BG_CARD};
+            border: 1px solid ${BORDER};
+            border-radius: 20px;
+            padding: 24px 20px 20px;
+            text-align: center;
+            box-shadow: 0 24px 70px rgba(0,0,0,.46);
+          }
+          .history-modal-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,.08);
+            background: rgba(255,255,255,.04);
+            color: ${TEXT_MUT};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+          }
+          .history-modal-close:active {
+            transform: scale(.96);
+          }
+          .history-modal-lock {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            margin: 0 auto 14px;
+            background: ${ORANGE_DIM};
+            color: ${ORANGE};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .history-guest-content {
+            background: var(--bg-app);
+            min-height: calc(100dvh - 58px);
+            display: flex;
+            flex-direction: column;
+            padding: 22px 16px calc(94px + env(safe-area-inset-bottom));
+            box-sizing: border-box;
+          }
+          @media (max-height: 700px) {
+            .history-preview-shell {
+              height: 300px;
+            }
+          }
+        `}</style>
 
-      {open && (
-        <div className="question-expanded">
-          {['A', 'B', 'C', 'D'].map(option => {
-            const isCorrect = option === item.correctOption;
-            const isUser = option === item.lastUserAnswer;
-            return (
-              <div key={option} className={`option-row ${isCorrect ? 'correct' : ''} ${isUser && !isCorrect ? 'wrong' : ''}`}>
-                <span>{option}. {optionText(item, option) || '-'}</span>
-                {isUser && !isCorrect && <b>Your last answer ×</b>}
-                {isCorrect && <b>Correct ✓</b>}
+        <div
+          className="sticky top-0 z-50 px-4 flex items-center justify-between"
+          style={{
+            height: '58px',
+            background: 'rgba(15,32,52,0.88)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            borderBottom: '1px solid rgba(20,184,166,0.18)',
+            borderRadius: '0 0 22px 22px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.22)',
+          }}
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-[11px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+              <HistoryHeaderIcon />
+            </div>
+            <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center text-white">
+              My History
+            </span>
+            <span style={{ fontSize: 9, fontWeight: 800, color: '#F59E0B', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 99, padding: '3px 8px', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+              PRACTICE ARCHIVE
+            </span>
+          </div>
+        </div>
+
+        <div className="history-guest-content">
+
+        <section className="history-benefit-strip mb-[18px]">
+          <span>Review</span>
+          <span className="history-benefit-separator">&middot;</span>
+          <span>Revise</span>
+          <span className="history-benefit-separator">&middot;</span>
+          <span>Re-attempt</span>
+          <span className="history-benefit-separator">&middot;</span>
+          <span>Track</span>
+        </section>
+
+        <section className="history-guest-card mb-[18px]">
+          {historyFeatures.map(feature => (
+            <button key={feature.title} type="button" className="history-feature-row" onClick={() => setLockedFeature(feature)}>
+              <FeatureIcon>{feature.icon}</FeatureIcon>
+              <span className="font-display min-w-0 flex-1" style={{ fontSize: 14, fontWeight: 800, color: TEXT_PRI }}>{feature.title}</span>
+              <span className="history-arrow" aria-hidden="true">&rarr;</span>
+            </button>
+          ))}
+        </section>
+
+        <section className="history-preview-shell">
+          <div className="history-preview-blur">
+            {[
+              {
+                title: 'Polity • Fundamental Rights',
+                meta: '68% Accuracy',
+                body: 'Review / Re-attempt',
+                accent: ORANGE,
+              },
+              {
+                title: 'Saved Question',
+                meta: 'Question preview',
+                body: 'Saved for revision',
+                accent: '#14B8A6',
+              },
+              {
+                title: 'Repeated Mistake',
+                meta: 'Wrong 3x',
+                body: 'Practice now',
+                accent: '#EF4444',
+              },
+              {
+                title: 'Rewards',
+                meta: 'Total Coins',
+                body: 'Weekly rewards',
+                accent: '#F59E0B',
+              },
+            ].map(({ title, meta, body, accent }) => (
+              <div key={title} className="history-preview-block">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-display font-black text-[14px]" style={{ color: TEXT_PRI }}>{title}</p>
+                    <p className="font-sans text-[11px] mt-1" style={{ color: TEXT_MUT }}>{meta}</p>
+                  </div>
+                  <div className="h-8 w-8 rounded-xl" style={{ background: `${accent}33` }} />
+                </div>
+                <p className="font-sans text-[12px] mt-3" style={{ color: TEXT_SEC }}>{body}</p>
+                <div className="h-2 w-2/3 rounded bg-white/10 mt-3" />
               </div>
-            );
-          })}
-          <div className="divider" />
-          <p className="text-xs text-slate-400">Your history on this question:</p>
-          <p className="text-sm font-black text-slate-200 mt-2">✓ Correct {item.correctCount}x · × Wrong {item.wrongCount}x · ↷ {item.skippedCount}x</p>
-          <p className="text-xs text-slate-500 mt-1">Last attempt: {statusText} ({formatDate(item.lastAttemptedAt)})</p>
-          <div className="divider" />
-          <p className="text-xs font-black text-orange-300 mb-2">Explanation</p>
-          {item.explanation ? <p className="text-sm text-slate-300 leading-relaxed">{item.explanation}</p> : <p className="text-sm text-slate-500">No official explanation available.</p>}
-          {cache.ai && <p className="text-sm text-orange-100 leading-relaxed mt-3">{cache.ai}</p>}
-          <button type="button" className="secondary-btn mt-3 w-full" onClick={getAIExplanation} disabled={cache.loading}>
-            {cache.loading ? 'Loading...' : 'Get AI Explanation ✦'}
-          </button>
-        </div>
-      )}
-
-      <div className="grid grid-cols-3 gap-2 mt-5">
-        <button type="button" className="secondary-btn" onClick={() => setOpen(value => !value)}>{open ? 'Close' : 'Open'}</button>
-        <button type="button" className="primary-btn" onClick={() => onPracticeOne(item)}>Practice Again</button>
-        <button type="button" className="secondary-btn" onClick={() => onToggleSave(item)}>{item.isSaved ? 'Saved ★' : 'Save ☆'}</button>
-      </div>
-    </article>
-  );
-}
-
-function MoreFiltersSheet({ open, filters, subjects, onClose, onApply, onReset }) {
-  const [draft, setDraft] = useState(filters);
-  useEffect(() => { setDraft(filters); }, [filters, open]);
-  if (!open) return null;
-  return (
-    <div className="sheet-backdrop">
-      <section className="filter-sheet">
-        <div className="sheet-handle" />
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display font-black text-white">Filter Attempted Questions</h2>
-          <button type="button" className="secondary-btn px-3" onClick={onClose}>× Close</button>
-        </div>
-        {[
-          ['Answer Status', 'answerStatus', ['all', 'correct', 'wrong', 'skipped', 'wrong_skipped']],
-          ['Question History', 'questionHistory', ['all', 'repeated', 'never_correct', 'mastered']],
-          ['Date Range', 'dateRange', ['all', 'today', '7d', '30d']],
-          ['Quiz Type', 'quizType', ['all', 'normal', 'daily_challenge', 'reattempt']],
-        ].map(([label, key, values]) => (
-          <div key={key} className="mb-4">
-            <p className="filter-label">{label}</p>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {values.map(value => <button key={value} type="button" className={`chip ${draft[key] === value ? 'active' : ''}`} onClick={() => setDraft(prev => ({ ...prev, [key]: value }))}>{value.replaceAll('_', ' ')}</button>)}
+            ))}
+          </div>
+          <div className="history-lock-card">
+            <div className="text-center rounded-2xl px-6 py-[18px]" style={{ background: 'rgba(13,27,46,.92)', border: `1px solid ${BORDER}`, boxShadow: '0 10px 30px rgba(0,0,0,0.4)' }}>
+              <div className="w-[42px] h-[42px] rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ background: ORANGE_DIM }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </div>
+              <p className="font-display text-[15px] font-extrabold mb-1" style={{ color: TEXT_PRI }}>Your history is waiting</p>
+              <p className="font-sans text-[12px]" style={{ color: TEXT_MUT }}>Sign in to unlock your quiz archive</p>
             </div>
           </div>
-        ))}
-        <div className="mb-5">
-          <p className="filter-label">Subject</p>
-          <select className="filter-select" value={draft.subject || ''} onChange={event => setDraft(prev => ({ ...prev, subject: event.target.value, topic: '' }))}>
-            <option value="">All Subjects</option>
-            {subjects.map(item => <option key={item.subject} value={item.subject}>{item.subject}</option>)}
-          </select>
+        </section>
+
         </div>
-        <div className="mb-5">
-          <p className="filter-label">Topic</p>
-          <select className="filter-select" disabled value="">
-            <option>{draft.subject ? 'Select from Topic-wise mode' : 'Select subject first'}</option>
-          </select>
+      </div>
+      {lockedFeature && (
+        <div className="history-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="history-unlock-title" onClick={() => setLockedFeature(null)}>
+          <div className="history-modal-card" onClick={(event) => event.stopPropagation()}>
+            <button type="button" className="history-modal-close" aria-label="Close" onClick={() => setLockedFeature(null)}>
+              &times;
+            </button>
+            <div className="history-modal-lock" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </div>
+            <h2 id="history-unlock-title" className="font-display text-[19px] font-black leading-tight text-white">
+              {lockedFeature.unlockTitle}
+            </h2>
+            <p className="font-sans text-[13px] leading-relaxed mt-3" style={{ color: TEXT_SEC }}>
+              {lockedFeature.unlockBody}
+            </p>
+            <button className="history-google-btn mt-5" onClick={() => handleSignIn(lockedFeature)}>
+              <GoogleSVG />
+              Continue with Google
+            </button>
+            <p className="font-sans text-[11px] mt-3" style={{ color: TEXT_MUT }}>
+              {lockedFeature.unlockNote}
+            </p>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <button type="button" className="secondary-btn" onClick={onReset}>Reset All</button>
-          <button type="button" className="primary-btn" onClick={() => onApply(draft)}>Apply Filters -&gt;</button>
-        </div>
-      </section>
-    </div>
+      )}
+    </>
   );
 }
 
 export default function HistoryPage() {
   const { status } = useSession();
   const router = useRouter();
-  const [activeMode, setActiveMode] = useState('quiz');
-  const [summary, setSummary] = useState(null);
-  const [summaryLoading, setSummaryLoading] = useState(true);
-  const [summaryError, setSummaryError] = useState('');
-  const [quizData, setQuizData] = useState({ sessions: [], total: 0, hasMore: false });
-  const [quizExpanded, setQuizExpanded] = useState(false);
-  const [quizLoading, setQuizLoading] = useState(false);
-  const [quickFilter, setQuickFilter] = useState('all');
-  const [subjects, setSubjects] = useState(null);
-  const [subjectsLoading, setSubjectsLoading] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState('');
-  const [topicsBySubject, setTopicsBySubject] = useState({});
-  const [topicsLoading, setTopicsLoading] = useState(false);
-  const [questionType, setQuestionType] = useState('wrong');
-  const [questionSubject, setQuestionSubject] = useState('');
-  const [questionsData, setQuestionsData] = useState(null);
-  const [questionsLoading, setQuestionsLoading] = useState(false);
-  const [aiCache, setAiCache] = useState({});
-  const [modal, setModal] = useState(null);
-  const [starting, setStarting] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [advancedFilters, setAdvancedFilters] = useState({ answerStatus: 'all', questionHistory: 'all', dateRange: 'all', quizType: 'all', subject: '' });
+  const [loading, setLoading] = useState(true);
 
   const isGuest = status === 'unauthenticated';
-  const allZero = summary && summary.totalQuizzes === 0 && summary.totalQuestions === 0 && summary.savedCount === 0;
-
-  const loadSummary = useCallback(async () => {
-    setSummaryLoading(true);
-    setSummaryError('');
-    try {
-      const res = await fetch('/api/history/summary');
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
-      setSummary(data.data);
-    } catch {
-      setSummaryError("Couldn't load. Check connection.");
-    } finally {
-      setSummaryLoading(false);
-    }
-  }, []);
-
-  const loadQuizzes = useCallback(async (limit = 3) => {
-    setQuizLoading(true);
-    try {
-      const res = await fetch(`/api/history/quizzes?page=1&limit=${limit}`);
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
-      setQuizData(data.data);
-    } finally {
-      setQuizLoading(false);
-    }
-  }, []);
-
-  const loadSubjects = useCallback(async () => {
-    if (subjects) return subjects;
-    setSubjectsLoading(true);
-    try {
-      const res = await fetch('/api/history/subjects');
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
-      setSubjects(data.data.subjects || []);
-      return data.data.subjects || [];
-    } finally {
-      setSubjectsLoading(false);
-    }
-  }, [subjects]);
-
-  const loadTopics = useCallback(async (subject) => {
-    if (!subject || topicsBySubject[subject]) return;
-    setTopicsLoading(true);
-    try {
-      const res = await fetch(`/api/history/topics?subject=${encodeURIComponent(subject)}`);
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
-      setTopicsBySubject(prev => ({ ...prev, [subject]: data.data.topics || [] }));
-    } finally {
-      setTopicsLoading(false);
-    }
-  }, [topicsBySubject]);
-
-  const loadQuestions = useCallback(async () => {
-    setQuestionsLoading(true);
-    try {
-      const params = new URLSearchParams({ limit: '10' });
-      if (questionType === 'repeated') params.set('questionHistory', 'repeated');
-      else if (questionType === 'never_correct') params.set('questionHistory', 'never_correct');
-      else params.set('status', questionType);
-      if (questionSubject) params.set('subject', questionSubject);
-      Object.entries(advancedFilters).forEach(([key, value]) => {
-        if (value && value !== 'all') params.set(key === 'answerStatus' ? 'status' : key, value);
-      });
-      const res = await fetch(`/api/history/questions?${params.toString()}`);
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
-      setQuestionsData(data.data);
-    } finally {
-      setQuestionsLoading(false);
-    }
-  }, [advancedFilters, questionSubject, questionType]);
 
   useEffect(() => {
-    if (status === 'loading' || isGuest) return;
-    loadSummary();
-    loadQuizzes(3);
-  }, [status, isGuest, loadSummary, loadQuizzes]);
+    if (status === 'loading') return;
+    setLoading(false);
+  }, [status]);
 
-  useEffect(() => {
-    if (status === 'loading' || isGuest) return;
-    if (activeMode === 'subject') loadSubjects();
-    if (activeMode === 'topic') {
-      loadSubjects().then(items => {
-        const subject = selectedSubject || items?.[0]?.subject || '';
-        if (subject) {
-          setSelectedSubject(subject);
-          loadTopics(subject);
-        }
-      });
-    }
-    if (activeMode === 'mistakes') {
-      loadSubjects();
-      loadQuestions();
-    }
-  }, [activeMode, isGuest, loadQuestions, loadSubjects, loadTopics, selectedSubject, status]);
-
-  useEffect(() => {
-    if (activeMode === 'topic' && selectedSubject) loadTopics(selectedSubject);
-  }, [activeMode, loadTopics, selectedSubject]);
-
-  useEffect(() => {
-    if (activeMode === 'mistakes' && status !== 'loading' && !isGuest) loadQuestions();
-  }, [activeMode, isGuest, loadQuestions, status]);
-
-  useEffect(() => {
-    if (sheetOpen && status !== 'loading' && !isGuest) loadSubjects();
-  }, [isGuest, loadSubjects, sheetOpen, status]);
-
-  const filteredQuizzes = useMemo(() => {
-    const sessions = quizData.sessions || [];
-    const now = Date.now();
-    return sessions.filter(item => {
-      if (quickFilter === '7d') return now - new Date(item.completedAt || 0).getTime() <= 7 * 86400000;
-      if (quickFilter === '30d') return now - new Date(item.completedAt || 0).getTime() <= 30 * 86400000;
-      if (quickFilter === 'weak') return item.accuracy < 50;
-      if (quickFilter === 'wrong_skipped') return item.incorrect + item.skipped > 0;
-      return true;
-    });
-  }, [quickFilter, quizData.sessions]);
-
-  const activeFilterCount = Object.values(advancedFilters).filter(value => value && value !== 'all').length;
-  const topics = topicsBySubject[selectedSubject] || [];
-  const questionSubjects = subjects || [];
-  const practiceCount = questionsData?.total || 0;
-
-  async function expandQuizzes() {
-    const next = !quizExpanded;
-    setQuizExpanded(next);
-    await loadQuizzes(next ? 10 : 3);
+  if (status === 'loading' || loading) {
+    return (
+      <div className="min-h-screen [background:var(--bg-app)] pb-24">
+        <Head><title>History - SSC GK Score Booster</title></Head>
+        <HistoryTopBar title="My History" badge="PRACTICE ARCHIVE" icon={<HistoryHeaderIcon />} />
+        <main className="px-4 pt-5">
+          <Loader card size="md" label="Loading history..." />
+        </main>
+      </div>
+    );
   }
 
-  function openPracticeModal(payload) {
-    const count = payload.count || 0;
-    setModal({
-      ...payload,
-      title: payload.title || 'Practice your mistakes?',
-      body: payload.body || `${count} wrong + skipped questions. Your old result stays saved.`,
-      limit: count > 25 ? 25 : count || 10,
-      setLimit: limit => setModal(prev => ({ ...prev, limit })),
-    });
+  if (isGuest) {
+    return <HistoryGuestState />;
   }
-
-  async function startFilteredPractice(payload = modal) {
-    if (!payload) return;
-    setStarting(true);
-    try {
-      if (payload.singleQuestion) {
-        sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
-          questions: [payload.singleQuestion],
-          quizMode: 'filtered_mistakes',
-          subject: payload.singleQuestion.subject,
-          topic: payload.singleQuestion.topic,
-          sourceCollection: payload.singleQuestion.sourceCollection || 'general',
-        }));
-        router.push('/quiz?mode=history&count=1&sourceScreen=history');
-        return;
-      }
-      const res = await fetch('/api/history/reattempt-filtered', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subject: payload.subject || '',
-          topic: payload.topic || '',
-          answerStatus: payload.answerStatus || 'wrong_skipped',
-          questionHistory: payload.questionHistory || 'all',
-          limit: payload.limit || 25,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
-      sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
-        questions: data.data.questions,
-        quizMode: data.data.quizMode,
-        subject: payload.subject || 'History',
-        topic: payload.topic || 'Filtered Practice',
-        sourceCollection: 'general',
-      }));
-      router.push(`/quiz?mode=history&count=${data.data.questionCount}&sourceScreen=history`);
-    } finally {
-      setStarting(false);
-    }
-  }
-
-  async function startSessionPractice(session, full = false) {
-    if (full) {
-      openPracticeModal({ subject: session.subject, topic: session.topic, count: session.questionCount, answerStatus: 'all', title: 'Re-attempt this quiz?' });
-      return;
-    }
-    openPracticeModal({ subject: session.subject, topic: session.topic, count: session.incorrect + session.skipped, answerStatus: 'wrong_skipped' });
-  }
-
-  async function toggleSave(question) {
-    setQuestionsData(prev => ({
-      ...prev,
-      questions: prev.questions.map(item => item.questionId === question.questionId ? { ...item, isSaved: !item.isSaved } : item),
-    }));
-    await fetch('/api/saved-questions/toggle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...question, action: question.isSaved ? 'unsave' : 'save' }),
-    }).catch(() => loadQuestions());
-  }
-
-  function applyMoreFilters(next) {
-    setAdvancedFilters(next);
-    if (activeMode === 'quiz') {
-      if (next.dateRange === '7d' || next.dateRange === '30d') setQuickFilter(next.dateRange);
-      else if (next.answerStatus === 'wrong_skipped') setQuickFilter('wrong_skipped');
-      else setQuickFilter('all');
-    }
-    setSheetOpen(false);
-  }
-
-  function stickyPracticeLabel() {
-    if (questionSubject) return `Practice ${practiceCount} ${questionSubject} Mistakes`;
-    if (questionType === 'repeated') return `Practice ${practiceCount} Repeated Mistakes`;
-    if (questionType === 'skipped') return `Practice ${practiceCount} Skipped Questions`;
-    return `Practice ${practiceCount} Mistakes`;
-  }
-
-  const styles = `
-    .history-shell{padding:20px 16px calc(106px + env(safe-area-inset-bottom))}
-    .history-title{color:#f8fafc;margin:0;line-height:1.05}.history-subtitle{color:#94a3b8;margin:8px 0 16px;line-height:1.45}
-    .compact-strip,.mode-selector{background:#112236;border:1px solid rgba(255,255,255,.08)}.compact-strip{display:flex;justify-content:center;gap:8px;border-radius:999px;padding:9px 14px;color:#94a3b8;font-size:12px;font-weight:800;flex-wrap:wrap}.dot{color:#64748b}
-    .summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}.stat-card,.history-card{background:#172d47;border:1px solid rgba(255,255,255,.08);border-radius:18px}.stat-card{padding:14px}.stat-card strong{display:block;color:#f8fafc;font-size:24px;line-height:1;font-weight:900}.stat-card span{display:block;color:#64748b;font-size:12px;margin-top:8px;font-weight:700}.history-card{padding:16px;margin-bottom:12px}
-    .mode-selector{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;border-radius:999px;padding:4px;margin-bottom:18px}.mode-selector button{border:0;border-radius:999px;background:transparent;color:#94a3b8;font-family:inherit;font-size:11px;font-weight:900;padding:11px 4px;white-space:nowrap}.mode-selector button.active{background:rgba(255,122,26,.18);color:white;box-shadow:inset 0 0 0 1px rgba(255,122,26,.30)}
-    .chip{border:1px solid rgba(148,163,184,.16);border-radius:999px;background:#172d47;color:#94a3b8;font-size:12px;font-weight:800;padding:8px 13px;white-space:nowrap;text-transform:capitalize}.chip.active{background:rgba(255,122,26,.16);border-color:rgba(255,122,26,.45);color:#fdba74}
-    .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit}.primary-btn{border:0;background:linear-gradient(135deg,#ff7a1a,#ff4d00);color:white}.secondary-btn{border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.04);color:#cbd5e1}.primary-btn:disabled,.secondary-btn:disabled{opacity:.45}
-    .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}.divider{height:1px;background:rgba(255,255,255,.07);margin:14px 0}.question-expanded{overflow:hidden;margin-top:14px}.option-row{display:flex;justify-content:space-between;gap:10px;border:1px solid rgba(148,163,184,.12);background:rgba(255,255,255,.035);border-radius:12px;padding:10px;margin-top:8px;color:#cbd5e1;font-size:13px}.option-row.correct{border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.10);color:#bbf7d0}.option-row.wrong{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.10);color:#fecaca}
-    .modal-backdrop,.sheet-backdrop{position:fixed;inset:0;z-index:80;background:rgba(4,12,24,.72);backdrop-filter:blur(10px);display:flex}.modal-backdrop{align-items:center;justify-content:center;padding:22px}.modal-card{width:min(100%,360px);background:#172d47;border:1px solid rgba(255,255,255,.10);border-radius:22px;padding:20px}.sheet-backdrop{align-items:flex-end}.filter-sheet{width:100%;max-width:430px;margin:0 auto;background:#112236;border:1px solid rgba(255,255,255,.10);border-radius:24px 24px 0 0;padding:12px 16px 20px}.sheet-handle{width:42px;height:4px;border-radius:99px;background:rgba(148,163,184,.35);margin:0 auto 14px}.filter-label{font-size:12px;color:#94a3b8;font-weight:900;margin-bottom:8px}.filter-select{width:100%;background:#172d47;border:1px solid rgba(148,163,184,.16);border-radius:14px;color:#e2e8f0;padding:11px;font-family:inherit}
-    .sticky-practice{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:50;width:100%;max-width:430px;padding:0 16px 8px}.sticky-practice button{box-shadow:0 16px 40px rgba(255,77,0,.26)}
-    @media(max-width:380px){.mode-long{display:none}}@media(min-width:381px){.mode-short{display:none}}
-  `;
 
   return (
     <>
-      <Head><title>Quiz History - SSC GK Score Booster</title></Head>
+      <Head><title>History - SSC GK Score Booster</title></Head>
       <div className="min-h-screen [background:var(--bg-app)] pb-28">
-        <style>{styles}</style>
-        <HistoryTopBar title="Quiz History" badge="REVISION ENGINE" icon={<HistoryHeaderIcon />} />
-        <main className="history-shell">
-          <section className="mb-[18px]">
-            <h1 className="history-title t-page-title font-display">Quiz History</h1>
-            <p className="history-subtitle t-page-subtitle">Review attempted questions.</p>
-            <div className="compact-strip"><span>Sessions</span><span className="dot">·</span><span>Questions</span><span className="dot">·</span><span>Mistakes</span></div>
+        <style>{`
+          .history-guest-card {
+            background: ${BG_CARD};
+            border: 1px solid ${BORDER};
+            border-radius: 18px;
+            padding: 4px 16px;
+          }
+          .history-benefit-strip {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: ${BG_DEEP};
+            border: 1px solid ${BORDER};
+            border-radius: 999px;
+            padding: 9px 14px;
+            flex-wrap: wrap;
+          }
+          .history-benefit-strip span {
+            color: ${TEXT_SEC};
+            font-size: 12px;
+          }
+          .history-benefit-separator {
+            color: ${TEXT_MUT};
+          }
+          .history-feature-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 0;
+            border-bottom: 1px solid ${BORDER};
+            width: 100%;
+            background: transparent;
+            border-left: 0;
+            border-right: 0;
+            border-top: 0;
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+          }
+          .history-feature-row:active {
+            transform: scale(.99);
+          }
+          .history-feature-row:last-child {
+            border-bottom: none;
+          }
+          .history-feature-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            background: ${ORANGE_DIM};
+            color: ${ORANGE};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+          }
+          .history-arrow {
+            color: ${TEXT_MUT};
+            flex-shrink: 0;
+            font-size: 16px;
+          }
+        `}</style>
+
+        <HistoryTopBar title="My History" badge="PRACTICE ARCHIVE" icon={<HistoryHeaderIcon />} />
+
+        <main className="px-4 pt-[22px]">
+          <section className="history-benefit-strip mb-[18px]">
+            <span>Review</span>
+            <span className="history-benefit-separator">&middot;</span>
+            <span>Revise</span>
+            <span className="history-benefit-separator">&middot;</span>
+            <span>Re-attempt</span>
+            <span className="history-benefit-separator">&middot;</span>
+            <span>Track</span>
           </section>
 
-          {status === 'loading' || summaryLoading ? (
-            <Loader card size="md" label="Loading quiz history..." />
-          ) : isGuest ? (
-            <GoogleSignInCard title="Your quiz history is waiting" subtitle="Sign in to review attempted questions and mistakes." buttonText="Continue with Google" callbackUrl="/history" />
-          ) : summaryError ? (
-            <EmptyPanel title="Couldn't load." body="Check connection." action="Retry" onClick={loadSummary} />
-          ) : allZero ? (
-            <EmptyPanel title="No quiz history yet." body="Start a quiz and your attempted questions will appear here." action="Start Daily Challenge ->" onClick={() => router.push('/quiz?mode=daily')} />
-          ) : (
-            <>
-              <section className="summary-grid">
-                {[
-                  ['Quizzes', summary?.totalQuizzes || 0, ''],
-                  ['Questions', summary?.totalQuestions || 0, ''],
-                  ['Accuracy', summary?.overallAccuracy || 0, '%'],
-                  ['Saved', summary?.savedCount || 0, ''],
-                ].map(([label, value, suffix]) => <div key={label} className="stat-card"><strong className="font-display"><CountUp value={value} suffix={suffix} /></strong><span>{label}</span></div>)}
-              </section>
-
-              <section className="mode-selector">
-                {MODES.map(mode => <button key={mode.key} type="button" className={activeMode === mode.key ? 'active' : ''} onClick={() => setActiveMode(mode.key)}><span className="mode-long">{mode.label}</span><span className="mode-short">{mode.shortLabel}</span></button>)}
-              </section>
-
-              {activeMode === 'quiz' && (
-                <>
-                  <div className="flex gap-2 overflow-x-auto pb-3 -mx-4 px-4">
-                    {QUICK_FILTERS.map(filter => <button key={filter.key} type="button" className={`chip ${quickFilter === filter.key ? 'active' : ''}`} onClick={() => setQuickFilter(filter.key)}>{filter.label}</button>)}
-                    <button type="button" className="chip" onClick={() => setSheetOpen(true)}>More Filters{activeFilterCount ? ` (${activeFilterCount})` : ''}</button>
-                  </div>
-                  {quizLoading ? <Loader card size="sm" label="Loading quizzes..." /> : filteredQuizzes.length ? filteredQuizzes.map(item => (
-                    <QuizCard key={item.sessionId} session={item} onReview={session => router.push(`/history/session/${session.sessionId}`)} onPractice={session => startSessionPractice(session)} onFull={session => startSessionPractice(session, true)} />
-                  )) : <EmptyPanel title="No quizzes found." body="Try another filter." action="Reset Filters" onClick={() => setQuickFilter('all')} />}
-                  {(quizData.sessions || []).length > 0 && <button type="button" className="secondary-btn w-full" onClick={expandQuizzes}>{quizExpanded ? 'Show Less' : 'View More Quizzes -&gt;'}</button>}
-                </>
-              )}
-
-              {activeMode === 'subject' && (
-                <section>
-                  <h2 className="font-display text-lg font-black text-white">Attempted Subjects</h2>
-                  <p className="text-sm text-slate-500 mb-3">Subjects you have practiced questions from.</p>
-                  {subjectsLoading ? <Loader card size="sm" label="Loading subjects..." /> : subjects?.length ? subjects.map(item => (
-                    <StatEntityCard key={item.subject} item={item} type="subject" onPractice={subject => openPracticeModal({ subject: subject.subject, count: subject.wrongCount + subject.skippedCount })} onReview={subject => router.push(`/history/questions?subject=${encodeURIComponent(subject.subject)}`)} />
-                  )) : <EmptyPanel title="No attempted subjects yet." body="Start a quiz to build your subject-wise history." action="Start Practice ->" onClick={() => router.push('/dashboard')} />}
-                </section>
-              )}
-
-              {activeMode === 'topic' && (
-                <section>
-                  <p className="filter-label">Select Subject</p>
-                  <div className="flex gap-2 overflow-x-auto pb-3 -mx-4 px-4">
-                    {(subjects || []).map(item => <button key={item.subject} type="button" className={`chip ${selectedSubject === item.subject ? 'active' : ''}`} onClick={() => setSelectedSubject(item.subject)}>{item.subject}</button>)}
-                  </div>
-                  {!selectedSubject ? <EmptyPanel title="Select a subject to see topics." body="Choose a subject above to see attempted topics." /> : topicsLoading ? <Loader card size="sm" label="Loading topics..." /> : topics.length ? (
-                    <>
-                      <h2 className="font-display text-lg font-black text-white">{selectedSubject} - Attempted Topics</h2>
-                      <div className="mt-3">{topics.map(item => <StatEntityCard key={item.topic} item={item} type="topic" onPractice={topic => openPracticeModal({ subject: topic.subject, topic: topic.topic, count: topic.wrongCount + topic.skippedCount })} onReview={topic => router.push(`/history/questions?subject=${encodeURIComponent(topic.subject)}&topic=${encodeURIComponent(topic.topic)}`)} />)}</div>
-                    </>
-                  ) : <EmptyPanel title={`No topics attempted in ${selectedSubject} yet.`} body={`Start a ${selectedSubject} quiz to build topic history.`} action={`Practice ${selectedSubject} ->`} onClick={() => router.push('/dashboard')} />}
-                </section>
-              )}
-
-              {activeMode === 'mistakes' && (
-                <section>
-                  <div className="flex gap-2 overflow-x-auto pb-3 -mx-4 px-4">
-                    {QUESTION_TYPES.map(type => <button key={type.key} type="button" className={`chip ${questionType === type.key ? 'active' : ''}`} onClick={() => setQuestionType(type.key)}>{type.label}</button>)}
-                    <button type="button" className="chip" onClick={() => setSheetOpen(true)}>More Filters{activeFilterCount ? ` (${activeFilterCount})` : ''}</button>
-                  </div>
-                  <div className="flex gap-2 overflow-x-auto pb-3 -mx-4 px-4">
-                    <button type="button" className={`chip ${!questionSubject ? 'active' : ''}`} onClick={() => setQuestionSubject('')}>All</button>
-                    {questionSubjects.map(item => <button key={item.subject} type="button" className={`chip ${questionSubject === item.subject ? 'active' : ''}`} onClick={() => setQuestionSubject(item.subject)}>{item.subject}</button>)}
-                  </div>
-                  {questionsLoading ? <Loader card size="sm" label="Loading questions..." /> : (
-                    <>
-                      <div className="history-card">
-                        <p className="font-display font-black text-white">{practiceCount} questions · {questionSubject || 'All'} · {questionType.replace('_', ' ')}</p>
-                        {practiceCount > 0 && <button type="button" className="primary-btn mt-3 w-full" onClick={() => openPracticeModal({ subject: questionSubject, count: practiceCount, answerStatus: questionType === 'repeated' || questionType === 'never_correct' ? 'wrong_skipped' : questionType, questionHistory: questionType === 'repeated' ? 'repeated' : questionType === 'never_correct' ? 'never_correct' : 'all' })}>Practice All {practiceCount} -&gt;</button>}
-                      </div>
-                      {questionsData?.questions?.length ? questionsData.questions.map(item => <QuestionCard key={item.questionId} item={item} aiCache={aiCache} setAiCache={setAiCache} onPracticeOne={question => startFilteredPractice({ singleQuestion: question })} onToggleSave={toggleSave} />) : <EmptyPanel title={`No ${questionType.replace('_', ' ')} questions found.`} body="Practice more to build this list." action="Practice More ->" onClick={() => router.push('/dashboard')} />}
-                    </>
-                  )}
-                </section>
-              )}
-            </>
-          )}
+          <section className="history-guest-card">
+            {historyFeatures.map(feature => (
+              <button key={feature.title} type="button" className="history-feature-row" onClick={() => router.push(feature.route)}>
+                <FeatureIcon>{feature.icon}</FeatureIcon>
+                <span className="font-display min-w-0 flex-1" style={{ fontSize: 14, fontWeight: 800, color: TEXT_PRI }}>{feature.title}</span>
+                <span className="history-arrow" aria-hidden="true">&rarr;</span>
+              </button>
+            ))}
+          </section>
         </main>
       </div>
-
-      {activeMode === 'mistakes' && practiceCount > 0 && (
-        <div className="sticky-practice">
-          <button type="button" className="primary-btn w-full" onClick={() => openPracticeModal({ subject: questionSubject, count: practiceCount, answerStatus: questionType === 'skipped' ? 'skipped' : 'wrong_skipped', questionHistory: questionType === 'repeated' ? 'repeated' : questionType === 'never_correct' ? 'never_correct' : 'all' })}>
-            {stickyPracticeLabel()} -&gt;
-          </button>
-        </div>
-      )}
-
-      <Modal modal={modal} busy={starting} onClose={() => setModal(null)} onConfirm={() => startFilteredPractice()} />
-      <MoreFiltersSheet open={sheetOpen} filters={advancedFilters} subjects={subjects || []} onClose={() => setSheetOpen(false)} onApply={applyMoreFilters} onReset={() => { setAdvancedFilters({ answerStatus: 'all', questionHistory: 'all', dateRange: 'all', quizType: 'all', subject: '' }); setSheetOpen(false); }} />
     </>
   );
 }
