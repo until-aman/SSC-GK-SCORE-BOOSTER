@@ -5,6 +5,7 @@ import Head from 'next/head';
 import Image from 'next/image';
 
 import GoogleSignInCard from '@/components/GoogleSignInCard';
+import MentorMessage from '@/components/MentorMessage';
 import NotificationBell from '@/components/NotificationBell';
 import WhatsAppBell from '@/components/WhatsAppBell';
 import Loader from '@/components/ui/Loader';
@@ -21,6 +22,7 @@ import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 import { getDashboardBootstrap } from '@/lib/data/appData';
 import { getLeaderboard } from '@/lib/data/leaderboardData';
 import { getDailyChallenge, getTopics } from '@/lib/data/questionData';
+import { MENTOR_COPY } from '@/lib/mentorCopy';
 
 const SUBJECTS = Object.keys(subjectStyles);
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -384,6 +386,7 @@ export default function Dashboard() {
   const [bootstrapUpdatedAt, setBootstrapUpdatedAt] = useState(null);
   const [bootstrapMsg, setBootstrapMsg] = useState(null);
   const [leaderboardMsg, setLeaderboardMsg] = useState(null);
+  const [showMentorSetupBanner, setShowMentorSetupBanner] = useState(false);
   const profileFallbackRequested = useRef(false);
   const savedQuestionsMigrated = useRef(false);
 
@@ -503,6 +506,15 @@ export default function Dashboard() {
     if (status === 'loading') return;
     if (!isLoggedIn && !isGuest) router.replace('/');
   }, [status, isLoggedIn, isGuest, router]);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const onboarded = localStorage.getItem('mentor_onboarded');
+      if (!onboarded) {
+        setShowMentorSetupBanner(true);
+      }
+    }
+  }, [status]);
 
   // Migrate any locally-saved guest questions to the cloud (runs once on login)
   async function migrateLocalSavedQuestions() {
@@ -819,6 +831,27 @@ export default function Dashboard() {
           {/* Right: WhatsApp bell */}
           <WhatsAppBell />
         </div>
+
+        {showMentorSetupBanner && (
+          <div className="mx-4 mb-4 rounded-xl border border-teal-500/40 bg-teal-500/10 p-4">
+            <MentorMessage
+              message={MENTOR_COPY.NO_PLAN}
+              variant="info"
+            />
+            <button
+              onClick={() => router.push('/mentor-setup')}
+              className="mt-3 w-full py-3 rounded-xl bg-teal-600 text-white text-sm font-semibold"
+            >
+              Build My GK Plan
+            </button>
+            <button
+              onClick={() => setShowMentorSetupBanner(false)}
+              className="mt-2 w-full py-2 text-xs text-slate-400"
+            >
+              Remind me later
+            </button>
+          </div>
+        )}
 
         {/* ── GREETING ── */}
         <div style={{ padding: '18px 20px 8px' }}>
