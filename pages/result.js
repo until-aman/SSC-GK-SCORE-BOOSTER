@@ -6,6 +6,7 @@ import CoinsToast from '@/components/CoinsToast';
 import Confetti from '@/components/Confetti';
 
 import GoogleSignInCard from '@/components/GoogleSignInCard';
+import MentorMessage from '@/components/MentorMessage';
 import Loader from '@/components/ui/Loader';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
@@ -13,6 +14,7 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import RefreshStatus from '@/components/ui/RefreshStatus';
 import { fetchWithClientCache, formatLastUpdated, patchCache, readCache, writeCache } from '@/lib/clientCache';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
+import { MENTOR_COPY, FEEDBACK_CHIPS } from '@/lib/mentorCopy';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -127,6 +129,26 @@ function buildAttemptAnswers(result) {
   });
 }
 
+function classifyPerformance(correctAnswers, incorrectAnswers, skipped, totalQuestions) {
+  if (!totalQuestions || totalQuestions === 0) return 'AVERAGE';
+  const correctRate = (correctAnswers / totalQuestions) * 100;
+  const skippedRate = (skipped / totalQuestions) * 100;
+  if (skippedRate >= 30) return 'LOW_CONFIDENCE';
+  if (correctRate >= 80) return 'EXCELLENT';
+  if (correctRate >= 65) return 'GOOD';
+  if (correctRate >= 45) return 'AVERAGE';
+  return 'WEAK';
+}
+
+function getResultCounts(result) {
+  return {
+    correctAnswers: Number(result?.correctAnswers ?? result?.correct ?? 0),
+    incorrectAnswers: Number(result?.incorrectAnswers ?? result?.incorrect ?? 0),
+    skipped: Number(result?.skipped ?? 0),
+    totalQuestions: Number(result?.totalQuestions ?? 0),
+  };
+}
+
 async function saveQuizSession(result, routeSessionId) {
   if (!result) return;
 
@@ -197,6 +219,8 @@ export default function Result() {
   const [leaderboardRefreshing, setLeaderboardRefreshing] = useState(false);
   const [leaderboardMsg, setLeaderboardMsg]   = useState('');
   const [weeklyUpdatedAt, setWeeklyUpdatedAt] = useState(null);
+  const [feedbackChip, setFeedbackChip] = useState(null);
+  const [chipSent, setChipSent] = useState(false);
   const scoreSavedRef = useRef(false);
   const landingConfettiShownRef = useRef(false);
   const leaderboardRefreshedAfterScoreRef = useRef(false);
@@ -801,6 +825,86 @@ export default function Result() {
                 </button>
               )}
               {aiError && <p style={{ marginTop: 8, fontSize: 12, color: '#F87171' }}>{aiError}</p>}
+            </div>
+          );
+        })()}
+
+        {/* ── Mentor Feedback Section ── */}
+        {result && (() => {
+          const counts = getResultCounts(result);
+          const cat = classifyPerformance(
+            counts.correctAnswers,
+            counts.incorrectAnswers,
+            counts.skipped,
+            counts.totalQuestions
+          );
+          const variant = cat === 'EXCELLENT' ? 'success' : cat === 'WEAK' ? 'strict' : 'info';
+          return (
+            <div className="mt-4 space-y-3">
+              <MentorMessage message={MENTOR_COPY[`RESULT_${cat}`]} variant={variant} />
+
+              {!chipSent ? (
+                <div>
+                  <p className="text-xs text-slate-400 mb-2">How did this feel?</p>
+                  <div className="flex flex-wrap gap-2">
+                    {FEEDBACK_CHIPS.map(chip => (
+                      <button
+                        key={chip}
+                        onClick={async () => {
+                          setFeedbackChip(chip);
+                          setChipSent(true);
+                          try {
+                            await fetch('/api/mentor/task-feedback', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                subject: result.subject || '',
+                                topic: result.topic || '',
+                                quizSessionId: coinsResult?.sessionId || '',
+                                feedbackChip: chip,
+                                resultCategory: cat,
+                                correctRate: counts.totalQuestions > 0
+                                  ? (counts.correctAnswers / counts.totalQuestions) * 100 : 0,
+                                wrongRate: counts.totalQuestions > 0
+                                  ? (counts.incorrectAnswers / counts.totalQuestions) * 100 : 0,
+                                skippedRate: counts.totalQuestions > 0
+                                  ? (counts.skipped / counts.totalQuestions) * 100 : 0,
+                                totalQuestions: counts.totalQuestions,
+                                quizMode: result.quizMode || 'subject_topic',
+                              }),
+                            });
+                          } catch { /* silent — feedback is non-critical */ }
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-xs border transition-all ${
+                          feedbackChip === chip
+                            ? 'bg-teal-600 border-teal-500 text-white'
+                            : 'bg-transparent border-slate-600 text-slate-300 hover:border-teal-500'
+                        }`}
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-teal-400">Feedback recorded. Plan is updating.</p>
+              )}
+
+              {(cat === 'WEAK' || cat === 'AVERAGE' || cat === 'LOW_CONFIDENCE') ? (
+                <button
+                  onClick={() => router.push('/history/mistakes')}
+                  className="w-full py-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-300 text-sm font-medium"
+                >
+                  Review Mistakes
+                </button>
+              ) : (
+                <button
+                  onClick={() => router.push('/mentor')}
+                  className="w-full py-3 rounded-xl border border-teal-500/40 bg-teal-500/10 text-teal-300 text-sm font-medium"
+                >
+                  Next Task
+                </button>
+              )}
             </div>
           );
         })()}

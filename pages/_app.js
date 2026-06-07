@@ -20,6 +20,7 @@ const BOTTOM_NAV_ROUTES = [
   '/streak',
   '/saved',
   '/profile',
+  '/mentor',
   '/result',
 ];
 
