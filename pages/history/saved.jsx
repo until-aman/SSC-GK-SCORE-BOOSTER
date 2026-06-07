@@ -35,14 +35,38 @@ function formatSavedDate(ts) {
   return `Saved ${d.getDate()} ${d.toLocaleString('default', { month: 'short' })}`;
 }
 
+function BookmarkIcon({ filled = true, size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? '#14B8A6' : 'none'} stroke={filled ? '#14B8A6' : '#64748B'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" />
+    </svg>
+  );
+}
+
 /* ── Compact list card ────────────────────────────────────────────────── */
 function QuestionRow({ q, index, onView, onUnsave }) {
   const savedLabel = formatSavedDate(q.savedAt || q.createdAt);
   return (
     <div style={{
       background: '#172D47', border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 18, padding: '14px 16px', marginBottom: 10,
+      borderRadius: 18, padding: '14px 16px', paddingRight: 54, marginBottom: 10,
+      position: 'relative',
     }}>
+      <button
+        onClick={() => onUnsave(q.questionId)}
+        style={{
+          position: 'absolute', top: 12, right: 12,
+          width: 32, height: 32, borderRadius: 12,
+          background: 'rgba(15,23,42,0.36)',
+          border: '1px solid rgba(148,163,184,0.14)',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+        title="Remove bookmark"
+        aria-label="Remove bookmark"
+      >
+        <BookmarkIcon filled size={15} />
+      </button>
+
       {/* Subject • Topic */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
         {q.subject && (
@@ -70,27 +94,16 @@ function QuestionRow({ q, index, onView, onUnsave }) {
       {/* Footer: saved date + View → */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 11, color: '#475569' }}>{savedLabel || 'Saved'}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <button
-            onClick={() => onUnsave(q.questionId)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}
-            title="Remove bookmark"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="#4A5568" stroke="#4A5568" strokeWidth="1.5" strokeLinecap="round">
-              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/>
-            </svg>
-          </button>
-          <button
-            onClick={() => onView(index)}
-            style={{
-              background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.15)',
-              borderRadius: 10, padding: '5px 12px', cursor: 'pointer',
-              fontSize: 12, fontWeight: 700, color: '#94A3B8',
-            }}
-          >
-            View →
-          </button>
-        </div>
+        <button
+          onClick={() => onView(index)}
+          style={{
+            background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.15)',
+            borderRadius: 10, padding: '5px 12px', cursor: 'pointer',
+            fontSize: 12, fontWeight: 700, color: '#94A3B8',
+          }}
+        >
+          View →
+        </button>
       </div>
     </div>
   );
@@ -139,46 +152,76 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: '#06111F', zIndex: 60, display: 'flex', flexDirection: 'column', maxWidth: 430, margin: '0 auto' }}
+      style={{
+        position: 'fixed', inset: 0, background: 'var(--bg-app)', zIndex: 60,
+        display: 'flex', flexDirection: 'column', maxWidth: 430, margin: '0 auto',
+        boxShadow: '0 0 0 1px rgba(20,184,166,0.10)',
+      }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
       {/* Header */}
-      <div style={{ padding: '14px 16px 12px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(148,163,184,0.10)' }}>
+      <div style={{
+        minHeight: 64, padding: '12px 16px', flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: 'rgba(12,31,52,0.96)',
+        borderBottom: '1px solid rgba(20,184,166,0.18)',
+        borderRadius: '0 0 22px 22px',
+        boxShadow: '0 14px 34px rgba(0,0,0,0.18)',
+      }}>
         <button
           onClick={onClose}
-          style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          style={{
+            width: 36, height: 36, borderRadius: '50%',
+            background: 'rgba(255,122,26,0.12)', border: '1px solid rgba(255,122,26,0.22)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+          }}
           aria-label="Close"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF7A1A" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC', margin: 0 }}>Saved Revision</p>
-          <p style={{ fontSize: 11, color: '#475569', margin: 0 }}>{idx + 1} / {total}</p>
+        <div style={{ textAlign: 'center', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <p style={{ fontSize: 15, fontWeight: 800, color: '#F8FAFC', margin: 0, fontFamily: 'var(--font-display)' }}>Saved Revision</p>
+            <span style={{
+              fontSize: 9, fontWeight: 800, color: '#F59E0B',
+              border: '1px solid rgba(245,158,11,0.30)', borderRadius: 999,
+              padding: '3px 7px', letterSpacing: '0.02em',
+              background: 'rgba(245,158,11,0.08)',
+            }}>SAVED</span>
+          </div>
+          <p style={{ fontSize: 12, color: '#64748B', margin: '3px 0 0', fontWeight: 700 }}>{idx + 1} / {total}</p>
         </div>
         {/* Spacer keeps title centred */}
-        <div style={{ width: 32 }} />
+        <div style={{ width: 36 }} />
       </div>
 
       {/* Scrollable body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px 16px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '18px 16px 18px' }}>
+        <section style={{
+          background: '#172D47',
+          border: '1px solid rgba(148,163,184,0.12)',
+          borderRadius: 22,
+          padding: '16px 16px 14px',
+          boxShadow: '0 14px 30px rgba(0,0,0,0.14)',
+        }}>
 
         {/* Subject • Topic */}
         {(q.subject || q.topic) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12, flexWrap: 'wrap' }}>
             {q.subject && (
               <span style={{ fontSize: 11, fontWeight: 700, color: '#14B8A6', background: 'rgba(20,184,166,0.10)', borderRadius: 99, padding: '2px 10px' }}>
                 {getDisplaySubject(q.subject, q.collection)}
               </span>
             )}
             {q.topic && (
-              <span style={{ fontSize: 11, color: '#475569' }}>{q.topic}</span>
+              <span style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>{q.topic}</span>
             )}
           </div>
         )}
 
         {/* Question */}
-        <p className="t-body" style={{ color: '#F8FAFC', fontWeight: 700, marginBottom: 20 }}>
+        <p className="t-body" style={{ color: '#F8FAFC', fontWeight: 800, marginBottom: 18, lineHeight: 1.55 }}>
           {q.question}
         </p>
 
@@ -216,7 +259,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
                 onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,
-                  borderRadius: 14, padding: '12px 14px', width: '100%', textAlign: 'left',
+                  borderRadius: 16, padding: '13px 14px', width: '100%', textAlign: 'left',
                   background: rowBg, border: `1px solid ${rowBorder}`,
                   cursor: revealed ? 'default' : 'pointer',
                   transition: 'background 250ms ease, border-color 250ms ease, transform 80ms ease',
@@ -281,7 +324,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
         {/* Answer + explanation — shown after reveal */}
         {revealed && (
           <>
-            <div style={{ background: 'rgba(20,184,166,0.06)', border: '1px solid rgba(20,184,166,0.22)', borderRadius: 14, padding: '14px 16px', marginBottom: 16 }}>
+            <div style={{ background: 'rgba(20,184,166,0.07)', border: '1px solid rgba(20,184,166,0.24)', borderRadius: 16, padding: '14px 16px', marginBottom: 16 }}>
               <p style={{ fontSize: 14, fontWeight: 700, color: '#14B8A6', marginBottom: q.explanation ? 10 : 0 }}>
                 Correct Answer: {q.correctOption}
               </p>
@@ -296,19 +339,17 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 24, paddingBottom: 8 }}>
               <button
                 onClick={() => onUnsave(q.questionId)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#4A5568', fontWeight: 500 }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#64748B', fontWeight: 700 }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="#4A5568" stroke="none" strokeLinecap="round">
-                  <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/>
-                </svg>
+                <BookmarkIcon filled size={13} />
                 Remove from Saved
               </button>
               <button
                 onClick={handleMarkRevised}
                 disabled={markedDone}
-                style={{ background: 'none', border: 'none', cursor: markedDone ? 'default' : 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: markedDone ? '#14B8A6' : '#4A5568', fontWeight: 500 }}
+                style={{ background: 'none', border: 'none', cursor: markedDone ? 'default' : 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: markedDone ? '#14B8A6' : '#64748B', fontWeight: 700 }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={markedDone ? '#14B8A6' : '#4A5568'} strokeWidth="2.5" strokeLinecap="round">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={markedDone ? '#14B8A6' : '#64748B'} strokeWidth="2.5" strokeLinecap="round">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
                 {markedDone ? 'Marked as Revised' : 'Mark as Revised'}
@@ -316,18 +357,24 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
             </div>
           </>
         )}
+        </section>
       </div>
 
       {/* Footer nav — Previous | Next */}
-      <div style={{ padding: '10px 16px 32px', flexShrink: 0, borderTop: '1px solid rgba(148,163,184,0.10)', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{
+        padding: '12px 16px 24px', flexShrink: 0,
+        borderTop: '1px solid rgba(148,163,184,0.10)',
+        background: 'linear-gradient(180deg, rgba(7,24,42,0.76), rgba(7,24,42,0.98))',
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
         <button
           onClick={goPrev}
           disabled={idx === 0}
           style={{
             flex: 1, height: 48, borderRadius: 14,
             cursor: idx === 0 ? 'default' : 'pointer',
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(148,163,184,0.12)',
+            background: 'rgba(23,45,71,0.82)',
+            border: '1px solid rgba(148,163,184,0.14)',
             color: idx === 0 ? 'rgba(255,255,255,0.20)' : '#F8FAFC',
             fontSize: 14, fontWeight: 700,
           }}
@@ -341,11 +388,12 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
             flex: 1, height: 48, borderRadius: 14,
             cursor: idx === total - 1 ? 'default' : 'pointer',
             background: idx === total - 1
-              ? 'rgba(255,255,255,0.04)'
+              ? 'rgba(23,45,71,0.82)'
               : 'linear-gradient(135deg, #FF7A1A, #FF5A00)',
             border: idx === total - 1 ? '1px solid rgba(148,163,184,0.12)' : 'none',
             color: idx === total - 1 ? 'rgba(255,255,255,0.20)' : '#FFFFFF',
             fontSize: 14, fontWeight: 700,
+            boxShadow: idx === total - 1 ? 'none' : '0 10px 28px rgba(255,90,0,0.26)',
           }}
         >
           Next →
@@ -646,24 +694,6 @@ export default function HistorySavedPage() {
           </>
         ) : (
           <>
-            {/* Stats row */}
-            <div style={{ display: 'flex', gap: 8, paddingLeft: 16, paddingRight: 16, marginBottom: 14 }}>
-              <div style={{ background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.12)', borderRadius: 12, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#F8FAFC' }}>{questions.length}</span>
-                <span style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>Saved</span>
-              </div>
-              <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.18)', borderRadius: 12, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#FCD34D' }}>{unrevisedCount}</span>
-                <span style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>Unrevised</span>
-              </div>
-              {wrongCount > 0 && (
-                <div style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.18)', borderRadius: 12, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: '#FCA5A5' }}>{wrongCount}</span>
-                  <span style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>Wrong</span>
-                </div>
-              )}
-            </div>
-
             {/* Search bar */}
             <div style={{ paddingLeft: 16, paddingRight: 16, marginBottom: 10 }}>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -696,7 +726,7 @@ export default function HistorySavedPage() {
             {/* Filter chips + sort */}
             <div
               className="flex gap-2 overflow-x-auto"
-              style={{ paddingLeft: 16, paddingRight: 16, marginBottom: 6, scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 2, paddingBottom: 4, marginBottom: 12, scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {filterChips.map(({ key, label }) => (
                 <button
@@ -704,7 +734,7 @@ export default function HistorySavedPage() {
                   onClick={() => setActiveFilter(key)}
                   className="flex-shrink-0"
                   style={{
-                    borderRadius: 99, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',
+                    borderRadius: 99, padding: '8px 15px', fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',
                     background: activeFilter === key ? '#14B8A6' : 'rgba(23,45,71,0.8)',
                     color: activeFilter === key ? '#fff' : '#64748B',
                     border: activeFilter === key ? 'none' : '1px solid rgba(148,163,184,0.14)',
@@ -716,7 +746,7 @@ export default function HistorySavedPage() {
             </div>
 
             {/* Count + sort row */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 16, paddingRight: 16, marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingLeft: 16, paddingRight: 16, marginBottom: 18 }}>
               <span style={{ fontSize: 12, color: '#475569', fontWeight: 500 }}>
                 {filtered.length} question{filtered.length !== 1 ? 's' : ''}
               </span>
@@ -725,7 +755,7 @@ export default function HistorySavedPage() {
                 onChange={e => setSortOrder(e.target.value)}
                 style={{
                   background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(148,163,184,0.14)',
-                  borderRadius: 10, padding: '5px 10px', fontSize: 11, color: '#94A3B8',
+                  borderRadius: 12, padding: '8px 12px', minHeight: 36, fontSize: 12, color: '#94A3B8',
                   cursor: 'pointer', fontWeight: 600, outline: 'none', fontFamily: 'inherit',
                 }}
               >
