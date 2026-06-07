@@ -1,24 +1,29 @@
-// components/MentorMessage.jsx
-// Renders mentor avatar + Hinglish guidance message.
-// variant: 'info' | 'warning' | 'success' | 'strict'
+import Lottie from 'lottie-react';
+import mentorPointer from '@/public/animations/mentor-pointer.json';
 
 export default function MentorMessage({ message, variant = 'info' }) {
-  const styles = {
-    info:    'border-teal-500/30 bg-teal-500/10 text-teal-100',
-    warning: 'border-amber-500/30 bg-amber-500/10 text-amber-100',
-    success: 'border-green-500/30 bg-green-500/10 text-green-100',
-    strict:  'border-red-500/30 bg-red-500/10 text-red-100',
+  const accentColor = {
+    info: 'border-l-orange-500',
+    warning: 'border-l-amber-500',
+    success: 'border-l-orange-400',
+    strict: 'border-l-red-500',
   };
+
   return (
-    <div className={`flex items-start gap-3 rounded-xl border p-3 ${styles[variant] || styles.info}`}>
-      <div className="flex-shrink-0 w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center text-white font-bold text-base">
-        🎯
+    <div className={`flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-slate-800 p-4 border-l-4 ${accentColor[variant] || accentColor.info}`}>
+      <div className="flex-shrink-0 w-9 h-9">
+        <Lottie
+          animationData={mentorPointer}
+          loop={false}
+          autoplay={true}
+          style={{ width: 36, height: 36 }}
+        />
       </div>
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide opacity-60 mb-0.5">
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-1">
           Aapka Mentor
         </p>
-        <p className="text-sm leading-relaxed">{message}</p>
+        <p className="text-sm text-slate-100 leading-relaxed">{message}</p>
       </div>
     </div>
   );

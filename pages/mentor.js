@@ -100,13 +100,13 @@ const mentorBenefits = [
 
 const ACHIEVEMENTS = [
   { icon: '🔥', label: '1-Day\nStreak', color: '#f97316', glow: 'rgba(249,115,22,0.22)', unlocked: profile => (profile?.streakCount || 0) >= 1 },
-  { icon: '🧠', label: 'GK\nStarter', color: '#22d3ee', glow: 'rgba(34,211,238,0.22)', unlocked: profile => (profile?.totalCoins || 0) > 0 },
+  { icon: '🧠', label: 'GK\nStarter', color: '#F59E0B', glow: 'rgba(245,158,11,0.22)', unlocked: profile => (profile?.totalCoins || 0) > 0 },
   { icon: '⚡', label: 'Daily\nChallenger', color: '#a78bfa', glow: 'rgba(167,139,250,0.22)', unlocked: profile => (profile?.totalCoins || 0) >= 50 },
   { icon: '🌟', label: '3-Day\nStreak', color: '#fbbf24', glow: 'rgba(251,191,36,0.22)', unlocked: profile => (profile?.streakCount || 0) >= 3 },
   { icon: '🔥', label: '7-Day\nStreak', color: '#f97316', glow: 'rgba(249,115,22,0.22)', unlocked: profile => (profile?.streakCount || 0) >= 7 },
   { icon: '🏆', label: 'Champion', color: '#fbbf24', glow: 'rgba(251,191,36,0.22)', unlocked: profile => ['Champion', 'Legend'].includes(profile?.level) },
   { icon: '👑', label: 'Legend', color: '#fbbf24', glow: 'rgba(251,191,36,0.22)', unlocked: profile => profile?.level === 'Legend' },
-  { icon: '📚', label: '100\nQuizzes', color: '#14B8A6', glow: 'rgba(20,184,166,0.22)', unlocked: () => false },
+  { icon: '📚', label: '100\nQuizzes', color: '#F97316', glow: 'rgba(249,115,22,0.22)', unlocked: () => false },
   { icon: '🏅', label: 'Top 100\nRank', color: '#60a5fa', glow: 'rgba(96,165,250,0.22)', unlocked: () => false },
 ];
 
@@ -258,7 +258,7 @@ export default function MentorPage() {
               background: 'rgba(15,32,52,0.88)',
               backdropFilter: 'blur(14px)',
               WebkitBackdropFilter: 'blur(14px)',
-              borderBottom: '1px solid rgba(20,184,166,0.18)',
+              borderBottom: '1px solid rgba(249,115,22,0.18)',
               borderRadius: '0 0 22px 22px',
               boxShadow: '0 10px 30px rgba(0,0,0,0.22)',
             }}
@@ -347,7 +347,7 @@ export default function MentorPage() {
                   </div>
                 </div>
                 {[
-                  ['Indian Polity', 'Fundamental Rights', '#14B8A6'],
+                  ['Indian Polity', 'Fundamental Rights', '#F97316'],
                   ['Repeated Mistakes', 'Revise 12 questions', '#EF4444'],
                   ['Daily Challenge', 'Mixed GK practice', '#F59E0B'],
                 ].map(([title, body, accent]) => (
@@ -497,51 +497,50 @@ export default function MentorPage() {
         <div className="mx-auto max-w-md space-y-5">
           <section className="space-y-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-600 text-xl font-bold">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500 text-xl font-bold">
                 🎯
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Aapka SSC Mentor</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-orange-400">Aapka SSC Mentor</p>
                 <h1 className="text-2xl font-bold">Mentor</h1>
               </div>
             </div>
-            <MentorMessage message={todaysPlan?.mentorDayMessage || MENTOR_COPY.NO_PLAN} />
+            <MentorMessage message={onboarded ? (todaysPlan?.mentorDayMessage || MENTOR_COPY.NO_TASKS_TODAY) : MENTOR_COPY.NO_PLAN} />
           </section>
 
           {error ? (
-            <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
+            <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
               {error}
             </div>
           ) : null}
 
           {!onboarded ? (
-            <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900 p-4">
-              <MentorMessage message={MENTOR_COPY.NO_PLAN} />
+            <section>
               <button
                 type="button"
                 onClick={() => router.push('/mentor-setup')}
-                className="w-full rounded-xl bg-teal-600 py-3 text-sm font-semibold text-white"
+                className="w-full rounded-2xl bg-orange-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-orange-600 active:bg-orange-700"
               >
                 Build My GK Plan
               </button>
             </section>
           ) : (
             <>
-              <section className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+              <section className="rounded-2xl border border-white/[0.06] bg-slate-800 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-sm font-semibold text-white">Preparation Snapshot</h2>
+                    <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400">Your Preparation</h2>
                     <p className="mt-1 text-xs text-slate-400">
                       {mentorProfile?.examTarget} · {mentorProfile?.daysLeftRange} · {mentorProfile?.pace}
                     </p>
-                    <p className="mt-2 text-sm text-teal-200">{mentorProfile?.dailyGKTime} daily</p>
+                    <p className="mt-2 text-xs text-slate-400">{mentorProfile?.dailyGKTime} daily</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => router.push('/mentor-setup-edit')}
-                    className="shrink-0 rounded-lg border border-teal-500/40 px-3 py-2 text-xs font-semibold text-teal-200"
+                    className="shrink-0 rounded-2xl border border-orange-500/30 px-3 py-2 text-xs font-semibold text-orange-400"
                   >
-                    Edit Preparation Details
+                    Edit
                   </button>
                 </div>
               </section>
@@ -573,7 +572,7 @@ export default function MentorPage() {
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: '/' })}
-              className="w-full rounded-xl border border-red-500/30 bg-red-500/10 py-3 text-sm font-semibold text-red-200"
+              className="w-full rounded-2xl border border-red-500/30 bg-red-500/10 py-3 text-sm font-semibold text-red-200"
             >
               Sign Out
             </button>
