@@ -833,14 +833,14 @@ export default function Dashboard() {
         </div>
 
         {showMentorSetupBanner && (
-          <div className="mx-4 mb-4 rounded-xl border border-teal-500/40 bg-teal-500/10 p-4">
+          <div className="mx-4 mb-4 rounded-2xl border border-white/[0.06] bg-slate-800 p-4">
             <MentorMessage
               message={MENTOR_COPY.NO_PLAN}
               variant="info"
             />
             <button
               onClick={() => router.push('/mentor-setup')}
-              className="mt-3 w-full py-3 rounded-xl bg-teal-600 text-white text-sm font-semibold"
+              className="mt-3 w-full py-3 rounded-2xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 active:bg-orange-700 transition-colors"
             >
               Build My GK Plan
             </button>

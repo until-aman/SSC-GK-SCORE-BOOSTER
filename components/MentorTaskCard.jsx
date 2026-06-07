@@ -13,29 +13,33 @@ export default function MentorTaskCard({ task }) {
     setDone(true);
   };
 
+  const hasPrimaryAction = Boolean(task.ctaRoute);
+
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-white">{task.displayName}</p>
-          <p className="mt-1 text-xs text-slate-400">
-            {task.subjectName}
-            {task.estimatedMinutes ? ` · ${task.estimatedMinutes} min` : ''}
-            {task.questionCount ? ` · ${task.questionCount} questions` : ''}
-          </p>
-        </div>
-        <span className="rounded-full border border-slate-700 px-2 py-1 text-xs text-slate-400">
-          #{task.priority}
+    <div className="rounded-2xl border border-white/[0.06] bg-slate-800 p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="text-xs font-semibold uppercase tracking-widest text-orange-400">
+          {task.taskType || `Task ${task.priority}`}
         </span>
+        {task.estimatedMinutes ? (
+          <span className="text-xs text-slate-400">~{task.estimatedMinutes} min</span>
+        ) : null}
       </div>
+      <p className="text-base font-bold text-slate-100 mb-1">{task.subjectName}</p>
+      <p className="text-sm text-slate-400 mb-3">
+        {task.displayName}
+        {task.questionCount ? ` · ${task.questionCount} questions` : ''}
+      </p>
       {task.mentorMessage ? (
-        <p className="mt-3 text-sm leading-relaxed text-slate-300">{task.mentorMessage}</p>
+        <p className="text-xs text-slate-400 mb-4 leading-relaxed">{task.mentorMessage}</p>
       ) : null}
       <button
         type="button"
         onClick={handleAction}
-        className={`mt-4 w-full rounded-xl py-2.5 text-sm font-semibold transition-all ${
-          done ? 'bg-green-500/15 text-green-200' : 'bg-teal-600 text-white hover:bg-teal-500'
+        className={`w-full rounded-2xl py-3 text-sm font-semibold transition-colors ${
+          done || !hasPrimaryAction
+            ? 'border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+            : 'bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700'
         }`}
       >
         {done ? 'Done' : task.ctaLabel}

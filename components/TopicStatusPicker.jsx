@@ -9,7 +9,7 @@ const TOPIC_STATUS_ORDER = [
 const TOPIC_STATUS_STYLES = {
   [TOPIC_STATUS.NOT_STARTED]: 'border-slate-600 bg-slate-800 text-slate-300',
   [TOPIC_STATUS.WEAK]: 'border-red-500/50 bg-red-500/15 text-red-200',
-  [TOPIC_STATUS.STRONG]: 'border-green-500/50 bg-green-500/15 text-green-200',
+  [TOPIC_STATUS.STRONG]: 'border-orange-500/30 bg-orange-500/10 text-orange-400',
 };
 
 export { TOPIC_STATUS_ORDER };
@@ -32,7 +32,7 @@ export default function TopicStatusPicker({ subjectId, topics = [], value = {}, 
             key={topic.topicId || topicName}
             type="button"
             onClick={() => cycleTopic(topicName)}
-            className="flex w-full items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-left"
+            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-slate-800 p-3 text-left"
           >
             <span className="min-w-0">
               <span className="block truncate text-sm font-medium text-slate-100">

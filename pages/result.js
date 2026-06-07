@@ -877,8 +877,8 @@ export default function Result() {
                         }}
                         className={`px-3 py-1.5 rounded-full text-xs border transition-all ${
                           feedbackChip === chip
-                            ? 'bg-teal-600 border-teal-500 text-white'
-                            : 'bg-transparent border-slate-600 text-slate-300 hover:border-teal-500'
+                            ? 'border-orange-500 bg-orange-500/10 text-orange-400'
+                            : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
                         }`}
                       >
                         {chip}
@@ -887,20 +887,20 @@ export default function Result() {
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-teal-400">Feedback recorded. Plan is updating.</p>
+                <p className="text-xs text-orange-400">Feedback recorded. Plan is updating.</p>
               )}
 
               {(cat === 'WEAK' || cat === 'AVERAGE' || cat === 'LOW_CONFIDENCE') ? (
                 <button
                   onClick={() => router.push('/history/mistakes')}
-                  className="w-full py-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-300 text-sm font-medium"
+                  className="w-full py-3 rounded-2xl border border-red-500/30 bg-red-500/10 text-red-400 text-sm font-semibold"
                 >
                   Review Mistakes
                 </button>
               ) : (
                 <button
                   onClick={() => router.push('/mentor')}
-                  className="w-full py-3 rounded-xl border border-teal-500/40 bg-teal-500/10 text-teal-300 text-sm font-medium"
+                  className="w-full py-3 rounded-2xl bg-orange-500 text-white text-sm font-semibold"
                 >
                   Next Task
                 </button>
