@@ -3,6 +3,8 @@ import { buttonStyles } from '@/lib/designTokens';
 const variants = {
   primary: buttonStyles.primary,
   secondary: buttonStyles.secondary,
+  teal: buttonStyles.teal,
+  danger: buttonStyles.danger,
 };
 
 export default function AppButton({
