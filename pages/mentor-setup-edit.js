@@ -271,7 +271,7 @@ export default function MentorSetupEditPage() {
           <div className="w-full max-w-md rounded-2xl border border-white/[0.06] bg-slate-800 p-4">
             <MentorMessage message={MENTOR_COPY.EDIT_PROFILE_SAVED} variant="success" />
             <div className="mt-3">
-              <MentorMessage message="Kya aap aaj se naya plan generate karna chahte hain?" />
+              <MentorMessage message="Kya aap aaj se naya plan generate karna chahte hain? Plan updated timeline ke hisaab se adjust ho jayega." />
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2">
               <button
