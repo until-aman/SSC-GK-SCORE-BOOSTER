@@ -1,7 +1,7 @@
 export function TeacherMentorIcon({ className = 'h-6 w-6' }) {
   return (
     <img
-      src="/Teacher%20icon.png"
+      src="/Mentor%20icon.png"
       alt=""
       aria-hidden="true"
       className={`${className} object-contain`}

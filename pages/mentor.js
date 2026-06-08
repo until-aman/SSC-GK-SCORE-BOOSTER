@@ -57,7 +57,7 @@ function AppTopBar() {
           </svg>
         </div>
         <span className="font-display self-center whitespace-nowrap text-[18px] font-black leading-none tracking-wide text-white">
-          SSC GK SCORE BOOSTER
+          SSC Smart Mentor
         </span>
       </div>
       <WhatsAppBell />
@@ -66,7 +66,27 @@ function AppTopBar() {
 }
 
 function getMentorCacheKey(email) {
-  return `mentor_snapshot_v2:${email || 'guest'}:${getISTDateKey()}`;
+  // v3: bumped so any pre-existing cached snapshots (which lacked plan-version
+  // guarding) are abandoned once and refetched cleanly.
+  return `mentor_snapshot_v3:${email || 'guest'}:${getISTDateKey()}`;
+}
+
+// Plan-version guard: drop any task that does not belong to the snapshot's
+// current active plan, so old-plan tasks can never render.
+function sanitizeSnapshot(snapshot) {
+  if (!snapshot || !snapshot.plan) return snapshot;
+  const activePlanId = snapshot.plan.planId;
+  if (!activePlanId) return snapshot;
+  const belongs = task => !task?.planId || task.planId === activePlanId;
+  const filt = arr => (Array.isArray(arr) ? arr.filter(belongs) : arr);
+  return {
+    ...snapshot,
+    plan: { ...snapshot.plan, tasks: filt(snapshot.plan.tasks) },
+    activeTasks: filt(snapshot.activeTasks),
+    completedToday: filt(snapshot.completedToday),
+    deferredTasks: filt(snapshot.deferredTasks),
+    pendingTasks: filt(snapshot.pendingTasks),
+  };
 }
 
 function isGuestMode() {
@@ -140,6 +160,21 @@ function writeLocalSnapshot(snapshot) {
     if (snapshot.plan) localStorage.setItem('mentor_today_plan', JSON.stringify({ date: getISTDateKey(), plan: snapshot.plan }));
     localStorage.setItem(getMentorCacheKey(''), JSON.stringify(snapshot));
   } catch {}
+}
+
+function getRecentMentorAttemptTaskId() {
+  if (typeof window === 'undefined') return '';
+  try {
+    const result = JSON.parse(sessionStorage.getItem('quizResult') || 'null');
+    if (!result?.sourceTaskId) return '';
+    const isMentorAttempt = result.sourceScreen === 'mentor_plan' || result.sourcePage === 'mentor' || result.returnUrl === '/mentor';
+    if (!isMentorAttempt) return '';
+    const completedAtMs = new Date(result.completedAt || 0).getTime();
+    if (!completedAtMs || Date.now() - completedAtMs > 60 * 60 * 1000) return '';
+    return result.sourceTaskId;
+  } catch {
+    return '';
+  }
 }
 
 function readCachedSnapshot(email) {
@@ -418,9 +453,9 @@ function ConfirmTaskModal({ task, busy, onClose, onConfirm }) {
           </div>
           <div>
             <p className="text-xs font-black uppercase tracking-widest text-orange-300">Confirm Task</p>
-            <h2 className="mt-1 font-display text-xl font-black text-white">Done with this task?</h2>
+            <h2 className="mt-1 font-display text-xl font-black text-white">Mark this task as completed?</h2>
             <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-400">
-              Confirm karne ke baad task completed tray mein move ho jayega.
+              Agar aapne yeh task complete kar liya hai, toh isse completed mark kar sakte hain. Aapka current plan uske according update ho jayega.
             </p>
           </div>
         </div>
@@ -439,7 +474,7 @@ function ConfirmTaskModal({ task, busy, onClose, onConfirm }) {
             onClick={onConfirm}
             className="rounded-2xl bg-gradient-to-r from-[#ff7a1a] to-[#ff4d00] py-3 text-sm font-black text-white disabled:opacity-60"
           >
-            {busy ? 'Saving...' : 'Confirm'}
+            {busy ? 'Saving...' : 'Mark Completed'}
           </button>
         </div>
       </div>
@@ -476,6 +511,12 @@ export default function MentorPage() {
   const onboarded = Boolean(snapshot?.exists && profile);
   const mentorDayMessage = snapshot?.mentorMessage || getMentorDayMessage(now);
   const preparationStartedDate = formatPreparationStartedDate(profile?.onboardingCompletedAt);
+  const manualDoneTaskIds = useMemo(() => {
+    const recentTaskId = getRecentMentorAttemptTaskId();
+    if (!recentTaskId) return new Set();
+    const stillActive = (snapshot?.activeTasks || []).some(task => task.taskId === recentTaskId && task.status === 'active');
+    return stillActive ? new Set([recentTaskId]) : new Set();
+  }, [snapshot]);
 
   const loadMentor = useCallback(async ({ forceRefresh = false, background = false } = {}) => {
     if (!email && !guestMode) return false;
@@ -491,7 +532,7 @@ export default function MentorPage() {
 
     const cached = !forceRefresh ? readCachedSnapshot(email) : null;
     if (cached) {
-      setSnapshot(cached);
+      setSnapshot(sanitizeSnapshot(cached));
       setLoading(false);
     }
 
@@ -500,7 +541,7 @@ export default function MentorPage() {
       const res = await fetch(url, { method: forceRefresh ? 'POST' : 'GET' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || MENTOR_COPY.PLAN_FAILED);
-      setSnapshot(data);
+      setSnapshot(sanitizeSnapshot(data));
       writeCachedSnapshot(email, data);
       return true;
     } catch (err) {
@@ -517,6 +558,15 @@ export default function MentorPage() {
     if (status !== 'authenticated' && !(status === 'unauthenticated' && guestMode)) return;
     loadMentor();
   }, [guestMode, loadMentor, status]);
+
+  // Post plan-update toast (set by the Preparation Setup edit flow via ?updated=1).
+  useEffect(() => {
+    if (!router.isReady || router.query.updated !== '1') return;
+    setToast({ type: 'success', message: 'Aapka GK plan update ho gaya hai.' });
+    const timer = setTimeout(() => setToast(null), 2800);
+    router.replace('/mentor', undefined, { shallow: true });
+    return () => clearTimeout(timer);
+  }, [router.isReady, router.query.updated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function runTaskAction(task, actionType, actionValue = '') {
     setBusyTaskId(task.taskId);
@@ -644,6 +694,13 @@ export default function MentorPage() {
   }
 
   function handlePrimary(task) {
+    if (isRepeatedMistakesPracticeTask(task)) {
+      launchRepeatedMistakesPractice(task).catch(err => {
+        setError(err.message || 'Repeated mistakes practice start nahi ho payi.');
+        setBusyTaskId('');
+      });
+      return;
+    }
     if (task.taskType === 'practice_task') {
       setPracticeTask(task);
       return;
@@ -672,6 +729,64 @@ export default function MentorPage() {
     setConfirmTask(task);
   }
 
+  function isRepeatedMistakesPracticeTask(task) {
+    return task?.reason === 'recent_mistakes' || task?.ctaRoute === '/history/mistakes';
+  }
+
+  async function launchRepeatedMistakesPractice(task) {
+    setBusyTaskId(task.taskId);
+    const count = Number(task.questionCount || 25);
+    const planId = task.planId || snapshot?.plan?.planId || '';
+    const mentorContext = {
+      sourcePage: 'mentor',
+      sourceScreen: 'mentor_plan',
+      sourceTaskId: task.taskId,
+      planId,
+      returnUrl: '/mentor',
+      subject: task.subject || '',
+      topic: task.topic || 'Repeated Mistakes',
+      questionCount: count,
+    };
+    sessionStorage.setItem('ssc_mentor_return_context', JSON.stringify(mentorContext));
+    await runTaskAction(task, 'launch_practice', String(count));
+
+    if (guestMode && !email) {
+      router.push('/history/mistakes');
+      return;
+    }
+
+    const res = await fetch('/api/history/reattempt-filtered', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subject: '',
+        topic: '',
+        answerStatus: 'wrong_skipped',
+        questionHistory: 'repeated',
+        limit: count,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) throw new Error(data.error || 'Repeated mistakes practice start nahi ho payi.');
+    sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
+      questions: data.data.questions,
+      quizMode: data.data.quizMode,
+      subject: 'History',
+      topic: 'Repeated Mistakes',
+      sourceCollection: 'general',
+    }));
+    const params = new URLSearchParams({
+      mode: 'history',
+      count: String(data.data.questionCount || count),
+      sourcePage: 'mentor',
+      sourceScreen: 'mentor_plan',
+      sourceTaskId: task.taskId,
+      planId,
+      returnUrl: '/mentor',
+    });
+    router.push(`/quiz?${params.toString()}`);
+  }
+
   async function launchPractice(count) {
     const task = practiceTask;
     if (!task) return;
@@ -689,6 +804,7 @@ export default function MentorPage() {
         returnUrl: '/mentor',
         subject,
         topic,
+        collection: 'PYQ',
         questionCount: count,
       };
       sessionStorage.setItem('ssc_mentor_return_context', JSON.stringify(mentorContext));
@@ -696,6 +812,7 @@ export default function MentorPage() {
         subject,
         topic,
         count: String(count),
+        collection: 'PYQ',
         sourcePage: 'mentor',
         sourceScreen: 'mentor_plan',
         sourceTaskId: task.taskId,
@@ -775,7 +892,7 @@ export default function MentorPage() {
                     <div className="min-w-0">
                       <h1 className="font-display text-2xl font-black leading-tight">Today&apos;s GK Plan</h1>
                       <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                        Aaj ka focus clear rakhiye - ek task complete kijiye, phir next step pe chalte hain.
+                        Aaj ka focused revision plan.
                       </p>
                     </div>
                   </div>
@@ -815,25 +932,30 @@ export default function MentorPage() {
                 !error ? <MentorEmptyState onBuild={() => router.push('/mentor-setup')} /> : null
               ) : (
                 <>
-                  <section className="rounded-2xl border border-white/[0.08] bg-[#172d47] p-4">
+                  <section className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#18324f] p-3.5 shadow-[0_14px_34px_rgba(0,0,0,0.16)]">
+                    <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-teal-300 via-teal-400 to-transparent" />
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">Preparation Setup</h2>
-                        <p className="mt-2 text-sm font-bold text-slate-100">
-                          {profile?.examTarget || 'Exam not set'} - {formatDaysLeftLabel(profile?.daysLeftRange)}
+                      <div className="min-w-0">
+                        <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Preparation Setup</h2>
+                        <p className="mt-1.5 text-base font-black leading-tight text-slate-100">
+                          {profile?.examTarget || 'Exam not set'} <span className="text-slate-500">·</span> {formatDaysLeftLabel(profile?.daysLeftRange)}
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-teal-200">
-                          {formatDailyTimeLabel(profile?.dailyGKTime)} - {profile?.pace || 'Pace not set'} pace
+                        <div className="mt-2.5 flex flex-wrap gap-1.5">
+                          <span className="rounded-full border border-teal-300/15 bg-teal-300/10 px-3 py-1 text-xs font-black text-teal-200">
+                            {formatDailyTimeLabel(profile?.dailyGKTime)}
+                          </span>
+                          <span className="rounded-full border border-teal-300/15 bg-white/[0.04] px-3 py-1 text-xs font-black text-slate-200">
+                            {profile?.pace || 'Pace not set'} pace
+                          </span>
+                        </div>
+                        <p className="mt-2.5 text-xs font-semibold text-slate-500">
+                          Plan can be updated anytime{preparationStartedDate ? ` · Started ${preparationStartedDate}` : ''}
                         </p>
-                        <p className="mt-2 text-xs font-semibold text-slate-500">Plan can be updated anytime.</p>
-                        {preparationStartedDate ? (
-                          <p className="mt-1 text-xs font-semibold text-slate-400">Started {preparationStartedDate}</p>
-                        ) : null}
                       </div>
                       <button
                         type="button"
                         onClick={() => router.push('/mentor-setup-edit')}
-                        className="shrink-0 rounded-2xl border border-orange-500/30 px-3 py-2 text-xs font-black text-orange-300"
+                        className="shrink-0 rounded-full border border-teal-300/20 bg-white/[0.03] px-3 py-2 text-xs font-black text-teal-200"
                       >
                         Edit
                       </button>
@@ -857,7 +979,9 @@ export default function MentorPage() {
                       deferredTasks={snapshot?.deferredTasks}
                       progress={progress}
                       busyTaskId={busyTaskId}
+                      manualDoneTaskIds={manualDoneTaskIds}
                       onPrimary={handlePrimary}
+                      onDone={setConfirmTask}
                       onLater={handleLater}
                       onShowNextDay={handleShowNextDay}
                     />
@@ -915,9 +1039,9 @@ export default function MentorPage() {
           const task = confirmTask;
           if (!task) return;
           try {
-            await runTaskAction(task, 'complete');
+            await runTaskAction(task, 'complete', manualDoneTaskIds.has(task.taskId) ? 'manual_recovery' : '');
             setConfirmTask(null);
-            setToast({ type: 'success', message: 'Task completed' });
+            setToast({ type: 'success', message: manualDoneTaskIds.has(task.taskId) ? 'Task completed mark ho gaya.' : 'Task completed' });
             setTimeout(() => setToast(null), 2400);
           } catch (err) {
             setError(err.message || 'Task complete hua, lekin save nahi ho paya. Please retry.');
