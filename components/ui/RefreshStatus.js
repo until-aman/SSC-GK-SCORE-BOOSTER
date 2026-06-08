@@ -18,7 +18,7 @@ export default function RefreshStatus({
   return (
     <div
       className="flex items-center gap-1.5 text-[10px]"
-      style={{ color: '#64748B', minWidth: 0, flexWrap: 'wrap' }}
+      style={{ color: 'var(--color-text-muted)', minWidth: 0, flexWrap: 'wrap' }}
     >
       <span>{statusText}</span>
       <span aria-hidden="true">·</span>
@@ -28,7 +28,7 @@ export default function RefreshStatus({
         disabled={isRefreshing}
         className="font-semibold active:opacity-70 disabled:opacity-60"
         style={{
-          color: '#14B8A6',
+          color: 'var(--color-brand-teal-dark)',
           background: 'none',
           border: 'none',
           padding: 0,
