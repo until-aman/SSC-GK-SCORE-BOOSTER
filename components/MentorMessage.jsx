@@ -1,33 +1,11 @@
 export function TeacherMentorIcon({ className = 'h-6 w-6' }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M4 18.5V8.75l8-3.25 8 3.25v9.75"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M7.5 11.25h9M7.5 14h6.25M7.5 16.75h4"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-      />
-      <path
-        d="M15.25 17.25l4.25-4.25M19.5 13v3.5M19.5 13H16"
-        stroke="#14B8A6"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9 8.75a3 3 0 0 1 6 0"
-        stroke="#F97316"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
+    <img
+      src="/Teacher%20icon.png"
+      alt=""
+      aria-hidden="true"
+      className={`${className} object-contain`}
+    />
   );
 }
 

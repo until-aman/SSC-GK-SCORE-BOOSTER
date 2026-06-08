@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import GoogleSignInCard from '@/components/GoogleSignInCard';
@@ -48,6 +48,34 @@ function getDaysClosingLine(daysLeftRange) {
   return MENTOR_COPY.DAYS_PLENTY;
 }
 
+function isGuestMode() {
+  if (typeof document === 'undefined') return false;
+  return document.cookie.split(';').some(cookie => cookie.trim().startsWith('userMode=guest'));
+}
+
+function buildLocalSnapshot(profile, plan) {
+  const tasks = plan?.tasks || [];
+  const activeTasks = tasks.filter(task => task.status === 'active').slice(0, 3);
+  const completedToday = tasks.filter(task => task.status === 'completed');
+  const deferredTasks = tasks.filter(task => task.status === 'snoozed');
+  const total = activeTasks.length + completedToday.length + deferredTasks.length;
+  return {
+    exists: true,
+    profile,
+    plan,
+    activeTasks,
+    completedToday,
+    deferredTasks,
+    progress: {
+      completed: completedToday.length,
+      total,
+      percent: total ? Math.round((completedToday.length / total) * 100) : 0,
+    },
+    mentorMessage: MENTOR_COPY.MORNING_GREETING,
+    lastSyncAt: new Date().toISOString(),
+  };
+}
+
 function OptionCard({ selected, title, subtitle, onClick }) {
   return (
     <button
@@ -68,6 +96,7 @@ function OptionCard({ selected, title, subtitle, onClick }) {
 export default function MentorSetupPage() {
   const router = useRouter();
   const { status } = useSession();
+  const [guestMode, setGuestMode] = useState(false);
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     examTarget: '',
@@ -86,6 +115,10 @@ export default function MentorSetupPage() {
     { repeatedMistakesPreview: [] },
     { subjects: {} }
   ), [formData]);
+
+  useEffect(() => {
+    setGuestMode(isGuestMode());
+  }, []);
 
   const updateForm = patch => {
     setError(null);
@@ -115,22 +148,24 @@ export default function MentorSetupPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('/api/mentor/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          examTarget: formData.examTarget,
-          daysLeftRange: formData.daysLeftRange,
-          customDaysLeft: null,
-          dailyGKTime: formData.dailyGKTime,
-          pace: formData.pace,
-          goals: [],
-          subjectStatus: formData.subjectStatus,
-          topicsCompleted: {},
-          topicStrength: {},
-        }),
-      });
-      if (!res.ok) throw new Error('Save failed');
+      if (status === 'authenticated') {
+        const res = await fetch('/api/mentor/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            examTarget: formData.examTarget,
+            daysLeftRange: formData.daysLeftRange,
+            customDaysLeft: null,
+            dailyGKTime: formData.dailyGKTime,
+            pace: formData.pace,
+            goals: [],
+            subjectStatus: formData.subjectStatus,
+            topicsCompleted: {},
+            topicStrength: {},
+          }),
+        });
+        if (!res.ok) throw new Error('Save failed');
+      }
       const onboardingCompletedAt = new Date().toISOString();
       const today = getISTDateKey();
       const plan = generateTodaysPlan(
@@ -140,13 +175,15 @@ export default function MentorSetupPage() {
         { subjects: {} }
       );
       localStorage.setItem('mentor_onboarded', 'true');
-      localStorage.setItem('mentor_profile_cache', JSON.stringify({
+      const profile = {
         ...formData,
         topicsCompleted: {},
         topicStrength: {},
         onboardingCompletedAt,
-      }));
+      };
+      localStorage.setItem('mentor_profile_cache', JSON.stringify(profile));
       localStorage.setItem('mentor_today_plan', JSON.stringify({ date: today, plan }));
+      localStorage.setItem(`mentor_snapshot_v2:${status === 'authenticated' ? 'account' : 'guest'}:${today}`, JSON.stringify(buildLocalSnapshot(profile, plan)));
       router.push('/mentor');
     } catch (e) {
       setError('Plan could not be saved. Please retry.');
@@ -159,7 +196,7 @@ export default function MentorSetupPage() {
     return <div className="min-h-screen bg-slate-950" />;
   }
 
-  if (status !== 'authenticated') {
+  if (status !== 'authenticated' && !guestMode) {
     return (
       <div className="min-h-screen bg-slate-950 px-4 py-10 text-white">
         <GoogleSignInCard

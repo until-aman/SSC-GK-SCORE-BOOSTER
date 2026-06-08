@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import DreamPostCard from '@/components/DreamPostCard';
 import Loader from '@/components/ui/Loader';
 import MentorMessage, { TeacherMentorIcon } from '@/components/MentorMessage';
 import TodaysPlanCard from '@/components/TodaysPlanCard';
+import WhatsAppBell from '@/components/WhatsAppBell';
+import RefreshStatus from '@/components/ui/RefreshStatus';
 import {
   MENTOR_COPY,
   formatPreparationStartedDate,
@@ -14,15 +15,14 @@ import {
 } from '@/lib/mentorCopy';
 
 const ORANGE = '#FF6B16';
-const ORANGE_DIM = 'rgba(255,107,22,0.15)';
-const GOLD = '#F59E0B';
-const GOLD_DIM = 'rgba(245,158,11,0.15)';
 const BG_CARD = '#172D47';
 const BG_DEEP = '#112236';
 const BORDER = 'rgba(255,255,255,0.08)';
 const TEXT_PRI = '#F0F4F8';
 const TEXT_SEC = '#94A3B8';
 const TEXT_MUT = '#64748B';
+
+const QUESTION_COUNTS = [10, 25, 50];
 
 const GoogleSVG = () => (
   <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -33,107 +33,136 @@ const GoogleSVG = () => (
   </svg>
 );
 
-const MentorHeaderIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="9" />
-    <circle cx="12" cy="12" r="5" />
-    <circle cx="12" cy="12" r="1.5" fill="#f97316" stroke="none" />
-  </svg>
-);
-
-const LockIcon = ({ size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="11" width="18" height="11" rx="2" />
-    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-  </svg>
-);
-
-const TargetMiniIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <circle cx="12" cy="12" r="6" />
-    <circle cx="12" cy="12" r="2" />
-  </svg>
-);
-
-const CalendarMiniIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2" />
-    <path d="M16 2v4" />
-    <path d="M8 2v4" />
-    <path d="M3 10h18" />
-  </svg>
-);
-
-const TrendMiniIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-    <polyline points="16 7 22 7 22 13" />
-  </svg>
-);
-
-const AlertMiniIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 9v4" />
-    <path d="M12 17h.01" />
-    <path d="M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z" />
-  </svg>
-);
-
-const mentorBenefits = [
-  {
-    Icon: TargetMiniIcon,
-    title: 'Personal GK Plan',
-    body: 'Get a daily GK plan based on your exam timeline and preparation status.',
-  },
-  {
-    Icon: CalendarMiniIcon,
-    title: "Today's Tasks",
-    body: 'Know exactly what to study, revise, and practice each day.',
-  },
-  {
-    Icon: TrendMiniIcon,
-    title: 'Weak Topic Focus',
-    body: 'Turn weak topics into practice tasks and track improvement.',
-  },
-  {
-    Icon: AlertMiniIcon,
-    title: 'Mistake Revision',
-    body: 'Review repeated mistakes before they cost marks again.',
-  },
-];
-
-const ACHIEVEMENTS = [
-  { icon: '🔥', label: '1-Day\nStreak', color: '#f97316', glow: 'rgba(249,115,22,0.22)', unlocked: profile => (profile?.streakCount || 0) >= 1 },
-  { icon: '🧠', label: 'GK\nStarter', color: '#22d3ee', glow: 'rgba(34,211,238,0.22)', unlocked: profile => (profile?.totalCoins || 0) > 0 },
-  { icon: '⚡', label: 'Daily\nChallenger', color: '#a78bfa', glow: 'rgba(167,139,250,0.22)', unlocked: profile => (profile?.totalCoins || 0) >= 50 },
-  { icon: '🌟', label: '3-Day\nStreak', color: '#fbbf24', glow: 'rgba(251,191,36,0.22)', unlocked: profile => (profile?.streakCount || 0) >= 3 },
-  { icon: '🔥', label: '7-Day\nStreak', color: '#f97316', glow: 'rgba(249,115,22,0.22)', unlocked: profile => (profile?.streakCount || 0) >= 7 },
-  { icon: '🏆', label: 'Champion', color: '#fbbf24', glow: 'rgba(251,191,36,0.22)', unlocked: profile => ['Champion', 'Legend'].includes(profile?.level) },
-  { icon: '👑', label: 'Legend', color: '#fbbf24', glow: 'rgba(251,191,36,0.22)', unlocked: profile => profile?.level === 'Legend' },
-  { icon: '📚', label: '100\nQuizzes', color: '#14B8A6', glow: 'rgba(20,184,166,0.22)', unlocked: () => false },
-  { icon: '🏅', label: 'Top 100\nRank', color: '#60a5fa', glow: 'rgba(96,165,250,0.22)', unlocked: () => false },
-];
-
-function getCachedPlan() {
-  try {
-    const raw = localStorage.getItem('mentor_today_plan');
-    if (!raw) return null;
-    const { date, plan } = JSON.parse(raw);
-    const today = getISTDateKey();
-    return date === today ? plan : null;
-  } catch { return null; }
+function AppTopBar() {
+  return (
+    <div
+      className="sticky top-0 z-50 flex items-center justify-between px-4"
+      style={{
+        height: '58px',
+        background: 'rgba(15,32,52,0.88)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
+        border: '1px solid rgba(20,184,166,0.18)',
+        borderTop: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
+        borderRadius: '0 0 22px 22px',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.22)',
+      }}
+    >
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[11px] bg-orange-500/10">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#f97316" aria-hidden="true">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+        </div>
+        <span className="font-display self-center whitespace-nowrap text-[18px] font-black leading-none tracking-wide text-white">
+          SSC GK SCORE BOOSTER
+        </span>
+      </div>
+      <WhatsAppBell />
+    </div>
+  );
 }
 
-function setCachedPlan(plan) {
-  const today = getISTDateKey();
-  localStorage.setItem('mentor_today_plan', JSON.stringify({ date: today, plan }));
+function getMentorCacheKey(email) {
+  return `mentor_snapshot_v2:${email || 'guest'}:${getISTDateKey()}`;
+}
+
+function isGuestMode() {
+  if (typeof document === 'undefined') return false;
+  return document.cookie.split(';').some(cookie => cookie.trim().startsWith('userMode=guest'));
+}
+
+function buildLocalSnapshot() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const profile = JSON.parse(localStorage.getItem('mentor_profile_cache') || 'null');
+    const planCache = JSON.parse(localStorage.getItem('mentor_today_plan') || 'null');
+    if (!profile) return { exists: false };
+    const plan = planCache?.plan || null;
+    const tasks = plan?.tasks || [];
+    const activeTasks = tasks.filter(task => task.status === 'active').slice(0, 3);
+    const completedToday = tasks.filter(task => task.status === 'completed');
+    const deferredTasks = tasks.filter(task => task.status === 'snoozed');
+    const pendingTasks = tasks.filter(task => task.status === 'pending');
+    const total = activeTasks.length + completedToday.length + deferredTasks.length;
+    return {
+      exists: true,
+      profile,
+      plan: plan ? { ...plan, tasks } : null,
+      activeTasks,
+      completedToday,
+      deferredTasks,
+      pendingTasks,
+      progress: {
+        completed: completedToday.length,
+        total,
+        percent: total ? Math.round((completedToday.length / total) * 100) : 0,
+      },
+      mentorMessage: getMentorDayMessage(new Date()),
+      lastSyncAt: new Date().toISOString(),
+    };
+  } catch {
+    return { exists: false };
+  }
+}
+
+function buildLocalSnapshotFromParts(profile, plan) {
+  const tasks = plan?.tasks || [];
+  const activeTasks = tasks.filter(task => task.status === 'active').slice(0, 3);
+  const completedToday = tasks.filter(task => task.status === 'completed');
+  const deferredTasks = tasks.filter(task => task.status === 'snoozed');
+  const pendingTasks = tasks.filter(task => task.status === 'pending');
+  const total = activeTasks.length + completedToday.length + deferredTasks.length;
+  return {
+    exists: Boolean(profile),
+    profile,
+    plan: plan ? { ...plan, tasks } : null,
+    activeTasks,
+    completedToday,
+    deferredTasks,
+    pendingTasks,
+    progress: {
+      completed: completedToday.length,
+      total,
+      percent: total ? Math.round((completedToday.length / total) * 100) : 0,
+    },
+    mentorMessage: getMentorDayMessage(new Date()),
+    lastSyncAt: new Date().toISOString(),
+  };
+}
+
+function writeLocalSnapshot(snapshot) {
+  if (typeof window === 'undefined' || !snapshot) return;
+  try {
+    if (snapshot.profile) localStorage.setItem('mentor_profile_cache', JSON.stringify(snapshot.profile));
+    if (snapshot.plan) localStorage.setItem('mentor_today_plan', JSON.stringify({ date: getISTDateKey(), plan: snapshot.plan }));
+    localStorage.setItem(getMentorCacheKey(''), JSON.stringify(snapshot));
+  } catch {}
+}
+
+function readCachedSnapshot(email) {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(getMentorCacheKey(email));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedSnapshot(email, snapshot) {
+  if (typeof window === 'undefined' || !snapshot) return;
+  try {
+    localStorage.setItem(getMentorCacheKey(email), JSON.stringify(snapshot));
+  } catch {}
 }
 
 function formatDaysLeftLabel(daysLeftRange) {
   if (!daysLeftRange || daysLeftRange === "I don't know yet") return 'Timeline not set';
   if (daysLeftRange === '60+') return '60+ days left';
-  return `${String(daysLeftRange).replace('-', '–')} days left`;
+  return `${String(daysLeftRange).replace('-', '-')} days left`;
 }
 
 function formatDailyTimeLabel(dailyGKTime) {
@@ -141,52 +170,279 @@ function formatDailyTimeLabel(dailyGKTime) {
   return `${dailyGKTime.replace(/\s*daily$/i, '')}/day`;
 }
 
-function AchievementsGrid({ userProfile }) {
-  const withState = ACHIEVEMENTS.map(item => ({ ...item, isUnlocked: item.unlocked(userProfile) }));
-  const unlocked = withState.filter(item => item.isUnlocked);
-  const ordered = [...unlocked, ...withState.filter(item => !item.isUnlocked)];
+function getSnapshotProgress(snapshot) {
+  const progress = snapshot?.progress || {};
+  const active = snapshot?.activeTasks || [];
+  const done = snapshot?.completedToday || [];
+  const later = snapshot?.deferredTasks || [];
+  const total = progress.total ?? (active.length + done.length + later.length);
+  const completed = progress.completed ?? done.length;
+  return {
+    total,
+    completed,
+    percent: progress.percent ?? (total ? Math.round((completed / total) * 100) : 0),
+  };
+}
 
+function MentorEmptyState({ onBuild }) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
-      {ordered.map(badge => (
-        <div
-          key={badge.label}
-          style={{
-            background: badge.isUnlocked
-              ? `radial-gradient(ellipse at top, ${badge.glow}, transparent 72%), rgba(255,255,255,0.04)`
-              : 'rgba(255,255,255,0.025)',
-            border: `1px solid ${badge.isUnlocked ? badge.glow : 'rgba(255,255,255,0.06)'}`,
-            borderRadius: 16,
-            padding: '14px 10px 10px',
-            minWidth: 78,
-            maxWidth: 78,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 6,
-            flexShrink: 0,
-            opacity: badge.isUnlocked ? 1 : 0.38,
-            filter: badge.isUnlocked ? 'none' : 'grayscale(1)',
-            boxShadow: badge.isUnlocked ? `0 4px 18px ${badge.glow}` : 'none',
-          }}
-        >
-          <span style={{ fontSize: 26, lineHeight: 1 }}>
-            {badge.isUnlocked ? badge.icon : '🔒'}
-          </span>
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              color: badge.isUnlocked ? badge.color : '#475569',
-              textAlign: 'center',
-              lineHeight: 1.35,
-              whiteSpace: 'pre-line',
-            }}
-          >
-            {badge.label}
-          </span>
+    <section className="rounded-2xl border border-white/[0.08] bg-[#172d47] p-4">
+      <MentorMessage message="Aapka GK plan abhi ready nahi hai. Preparation setup complete kijiye, phir daily task plan ban jayega." />
+      <div className="mt-4 rounded-2xl border border-white/[0.06] bg-[#112236] p-4">
+        <p className="text-xs font-black uppercase tracking-widest text-slate-400">You will get</p>
+        <div className="mt-3 grid gap-2 text-sm font-semibold text-slate-300">
+          <p>Daily task plan</p>
+          <p>Mistake revision</p>
+          <p>Topic-wise practice</p>
+          <p>Progress tracking</p>
         </div>
-      ))}
+      </div>
+      <button
+        type="button"
+        onClick={onBuild}
+        className="mt-4 w-full rounded-2xl bg-[#14B8A6] py-3 text-sm font-black text-white active:scale-[0.98]"
+      >
+        Build My GK Plan
+      </button>
+    </section>
+  );
+}
+
+function SignInPreview() {
+  return (
+    <div className="app-page">
+      <div className="app-shell !px-0 pb-20">
+        <AppTopBar />
+        <main className="px-4 pb-24 pt-[18px] text-white">
+          <section className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/20 via-slate-800 to-teal-500/20">
+                <TeacherMentorIcon className="h-7 w-7" />
+              </div>
+              <div>
+                <h1 className="font-display text-2xl font-black">Today&apos;s GK Plan</h1>
+                <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                  Aaj ka focus clear rakhiye - ek task complete kijiye, phir next step pe chalte hain.
+                </p>
+              </div>
+            </div>
+            <MentorMessage message="Sign in kijiye. Aapka personalized GK plan save rahega aur daily progress sync hogi." />
+          </section>
+
+          <section className="relative mt-5 h-[340px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#172d47] p-4">
+            <div className="space-y-3 opacity-45 blur-[5px]">
+              <div className="rounded-2xl border border-white/[0.08] bg-[#112236] p-4">
+                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Day Progress</p>
+                <div className="mt-3 h-2 rounded-full bg-[#0d1b2e]">
+                  <div className="h-full w-1/3 rounded-full bg-teal-400" />
+                </div>
+              </div>
+              {['Repeated Mistakes', 'Indian Polity', 'Quick Confidence Check'].map(title => (
+                <div key={title} className="rounded-2xl border border-white/[0.08] bg-[#112236] p-4">
+                  <p className="text-xs font-bold text-orange-300">Practice Task</p>
+                  <p className="mt-2 font-display text-lg font-black text-white">{title}</p>
+                  <div className="mt-3 h-10 rounded-2xl bg-orange-500" />
+                </div>
+              ))}
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center p-6">
+              <div className="w-full rounded-2xl border border-white/[0.08] bg-[#0d1b2e]/95 p-5 text-center shadow-2xl">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/15">
+                  <TeacherMentorIcon className="h-7 w-7" />
+                </div>
+                <p className="font-display text-lg font-black text-white">Your mentor plan is waiting</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">Sign in to unlock your GK revision lane</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    document.cookie = 'userMode=; path=/; max-age=0';
+                    signIn('google', { callbackUrl: '/mentor' });
+                  }}
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3 text-sm font-black text-slate-950"
+                >
+                  <GoogleSVG />
+                  Continue with Google
+                </button>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function CountModal({ task, busy, onClose, onSelect }) {
+  if (!task) return null;
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 px-4 pb-5 pt-10 backdrop-blur-sm">
+      <div className="w-full max-w-[448px] rounded-3xl border border-white/[0.08] bg-[#172d47] p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-orange-300">How many questions?</p>
+            <h2 className="mt-1 font-display text-xl font-black text-white">{task.title || task.topic || 'Mentor Task'}</h2>
+            <p className="mt-1 text-xs font-semibold text-slate-400">Question count select kijiye. Result ke baad Mentor tab par wapas aa sakte hain.</p>
+          </div>
+          <button type="button" onClick={onClose} className="h-9 w-9 rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-400">
+            x
+          </button>
+        </div>
+        <div className="mt-5 grid grid-cols-3 gap-2">
+          {QUESTION_COUNTS.map(count => (
+            <button
+              key={count}
+              type="button"
+              disabled={busy}
+              onClick={() => onSelect(count)}
+              className="rounded-2xl border border-orange-500/25 bg-orange-500/10 py-4 text-center font-display text-lg font-black text-orange-200 active:scale-[0.98] disabled:opacity-60"
+            >
+              {count}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfidenceModal({ task, busy, onClose, onSelect }) {
+  if (!task) return null;
+  const options = ['Weak', 'Okay', 'Strong', 'Need revision'];
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 px-4 pb-5 pt-10 backdrop-blur-sm">
+      <div className="w-full max-w-[448px] rounded-3xl border border-white/[0.08] bg-[#172d47] p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-teal-300">Confidence Check</p>
+            <h2 className="mt-1 font-display text-xl font-black text-white">{task.topic || 'Topic confidence'}</h2>
+            <p className="mt-1 text-xs font-semibold text-slate-400">Apna current confidence select kijiye. Plan uske hisaab se update hoga.</p>
+          </div>
+          <button type="button" onClick={onClose} className="h-9 w-9 rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-400">
+            x
+          </button>
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          {options.map(option => (
+            <button
+              key={option}
+              type="button"
+              disabled={busy}
+              onClick={() => onSelect(option)}
+              className="rounded-2xl border border-white/[0.08] bg-[#112236] py-3 text-sm font-black text-slate-100 active:scale-[0.98] disabled:opacity-60"
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CoverageModal({ task, busy, onClose, onSelect }) {
+  if (!task) return null;
+  const options = ['Theory Complete', 'Started', 'Not Yet'];
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 px-4 pb-5 pt-10 backdrop-blur-sm">
+      <div className="w-full max-w-[448px] rounded-3xl border border-white/[0.08] bg-[#172d47] p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-teal-300">Coverage Check</p>
+            <h2 className="mt-1 font-display text-xl font-black text-white">{task.topic || 'Topic coverage'}</h2>
+            <p className="mt-1 text-xs font-semibold text-slate-400">Apna theory status select kijiye. Mentor plan uske hisaab se update hoga.</p>
+          </div>
+          <button type="button" onClick={onClose} className="h-9 w-9 rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-400">
+            x
+          </button>
+        </div>
+        <div className="mt-5 grid gap-2">
+          {options.map(option => (
+            <button
+              key={option}
+              type="button"
+              disabled={busy}
+              onClick={() => onSelect(option)}
+              className="rounded-2xl border border-white/[0.08] bg-[#112236] py-3 text-sm font-black text-slate-100 active:scale-[0.98] disabled:opacity-60"
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BlockerModal({ task, busy, onClose, onSelect }) {
+  if (!task) return null;
+  const options = ['Theory pending', 'Time kam hai', 'Topic confusing hai', 'Practice nahi hui'];
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 px-4 pb-5 pt-10 backdrop-blur-sm">
+      <div className="w-full max-w-[448px] rounded-3xl border border-white/[0.08] bg-[#172d47] p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-orange-300">Feedback</p>
+            <h2 className="mt-1 font-display text-xl font-black text-white">Is topic mein main blocker kya hai?</h2>
+            <p className="mt-1 text-xs font-semibold text-slate-400">Ek option select kijiye. Mentor plan chhote next step mein adjust hoga.</p>
+          </div>
+          <button type="button" onClick={onClose} className="h-9 w-9 rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-400">
+            x
+          </button>
+        </div>
+        <div className="mt-5 grid gap-2">
+          {options.map(option => (
+            <button
+              key={option}
+              type="button"
+              disabled={busy}
+              onClick={() => onSelect(option)}
+              className="rounded-2xl border border-white/[0.08] bg-[#112236] py-3 text-sm font-black text-slate-100 active:scale-[0.98] disabled:opacity-60"
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmTaskModal({ task, busy, onClose, onConfirm }) {
+  if (!task) return null;
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 px-4 pb-5 pt-10 backdrop-blur-sm">
+      <div className="w-full max-w-[448px] rounded-3xl border border-white/[0.08] bg-[#172d47] p-5 shadow-2xl">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-orange-500/15">
+            <TeacherMentorIcon className="h-7 w-7" />
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-orange-300">Confirm Task</p>
+            <h2 className="mt-1 font-display text-xl font-black text-white">Done with this task?</h2>
+            <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-400">
+              Confirm karne ke baad task completed tray mein move ho jayega.
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onClose}
+            className="rounded-2xl border border-white/[0.08] bg-[#112236] py-3 text-sm font-black text-slate-300 disabled:opacity-60"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onConfirm}
+            className="rounded-2xl bg-gradient-to-r from-[#ff7a1a] to-[#ff4d00] py-3 text-sm font-black text-white disabled:opacity-60"
+          >
+            {busy ? 'Saving...' : 'Confirm'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -194,426 +450,486 @@ function AchievementsGrid({ userProfile }) {
 export default function MentorPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const email = session?.user?.email || '';
+  const [guestMode, setGuestMode] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState(null);
-  const [mentorProfile, setMentorProfile] = useState(null);
-  const [todaysPlan, setTodaysPlan] = useState(null);
-  const [onboarded, setOnboarded] = useState(false);
-  const [error, setError] = useState(null);
-  const [lockedBenefit, setLockedBenefit] = useState(null);
+  const [snapshot, setSnapshot] = useState(null);
+  const [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [busyTaskId, setBusyTaskId] = useState('');
+  const [practiceTask, setPracticeTask] = useState(null);
+  const [confidenceTask, setConfidenceTask] = useState(null);
+  const [coverageTask, setCoverageTask] = useState(null);
+  const [blockerTask, setBlockerTask] = useState(null);
+  const [confirmTask, setConfirmTask] = useState(null);
+  const [toast, setToast] = useState(null);
   const [now, setNow] = useState(() => new Date());
-  const mentorDayMessage = getMentorDayMessage(now);
-  const preparationStartedDate = formatPreparationStartedDate(mentorProfile?.onboardingCompletedAt);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60 * 1000);
+    setGuestMode(isGuestMode());
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    if (status !== 'authenticated') return;
+  const progress = useMemo(() => getSnapshotProgress(snapshot), [snapshot]);
+  const profile = snapshot?.profile || null;
+  const onboarded = Boolean(snapshot?.exists && profile);
+  const mentorDayMessage = snapshot?.mentorMessage || getMentorDayMessage(now);
+  const preparationStartedDate = formatPreparationStartedDate(profile?.onboardingCompletedAt);
 
-    let cancelled = false;
-    async function loadMentor() {
-      setLoading(true);
-      setError(null);
-      try {
-        const onboardedFlag = localStorage.getItem('mentor_onboarded');
-        let nextOnboarded = Boolean(onboardedFlag);
+  const loadMentor = useCallback(async ({ forceRefresh = false, background = false } = {}) => {
+    if (!email && !guestMode) return false;
+    if (!background) setLoading(true);
+    setError('');
 
-        const userProfileRes = await fetch('/api/user-profile');
-        const userProfileData = await userProfileRes.json();
-
-        let nextMentorProfile = null;
-        const cachedProfile = localStorage.getItem('mentor_profile_cache');
-        if (cachedProfile) {
-          nextMentorProfile = JSON.parse(cachedProfile);
-        }
-
-        if (!nextMentorProfile?.onboardingCompletedAt) {
-          const profileRes = await fetch('/api/mentor/profile');
-          const profileData = await profileRes.json();
-          if (profileData.exists) {
-            nextMentorProfile = profileData.profile;
-            nextOnboarded = true;
-            localStorage.setItem('mentor_onboarded', 'true');
-            localStorage.setItem('mentor_profile_cache', JSON.stringify(nextMentorProfile));
-          }
-        }
-
-        let nextPlan = getCachedPlan();
-        if (!nextPlan && nextMentorProfile) {
-          const planRes = await fetch('/api/mentor/today-plan');
-          const planData = await planRes.json();
-          if (planData.exists) {
-            nextPlan = planData.plan;
-            setCachedPlan(nextPlan);
-          }
-        }
-
-        if (!cancelled) {
-          setUserProfile(userProfileData);
-          setMentorProfile(nextMentorProfile);
-          setTodaysPlan(nextPlan);
-          setOnboarded(nextOnboarded && Boolean(nextMentorProfile));
-        }
-      } catch (err) {
-        if (!cancelled) setError(MENTOR_COPY.PLAN_FAILED);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    if (guestMode && !email) {
+      const localSnapshot = buildLocalSnapshot();
+      setSnapshot(localSnapshot);
+      setLoading(false);
+      return true;
     }
 
-    loadMentor();
-    return () => { cancelled = true; };
-  }, [status]);
+    const cached = !forceRefresh ? readCachedSnapshot(email) : null;
+    if (cached) {
+      setSnapshot(cached);
+      setLoading(false);
+    }
 
-  if (status === 'loading' || (status === 'authenticated' && loading)) {
+    try {
+      const url = forceRefresh ? '/api/mentor/refresh' : '/api/mentor/plan';
+      const res = await fetch(url, { method: forceRefresh ? 'POST' : 'GET' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || MENTOR_COPY.PLAN_FAILED);
+      setSnapshot(data);
+      writeCachedSnapshot(email, data);
+      return true;
+    } catch (err) {
+      if (!cached) setError(err.message || MENTOR_COPY.PLAN_FAILED);
+      else setError('Latest sync nahi ho paya. Cached plan dikha rahe hain.');
+      return false;
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [email, guestMode]);
+
+  useEffect(() => {
+    if (status !== 'authenticated' && !(status === 'unauthenticated' && guestMode)) return;
+    loadMentor();
+  }, [guestMode, loadMentor, status]);
+
+  async function runTaskAction(task, actionType, actionValue = '') {
+    setBusyTaskId(task.taskId);
+    if (guestMode && !email) {
+      if (actionType !== 'launch_practice') {
+        const nextStatus = actionType === 'snooze' ? 'snoozed' : 'completed';
+        const nextTasks = (snapshot?.plan?.tasks || []).map(item => item.taskId === task.taskId ? {
+          ...item,
+          status: getGuestTaskStatus(item, actionType, nextStatus),
+          taskType: getGuestTaskType(item, actionType),
+          completedAt: actionType === 'snooze' ? item.completedAt : new Date().toISOString(),
+          snoozedUntil: actionType === 'snooze' ? new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString() : item.snoozedUntil,
+          snoozeCount: actionType === 'snooze' ? Number(item.snoozeCount || 0) + 1 : item.snoozeCount,
+          questionCount: actionType === 'snooze' && Number(item.snoozeCount || 0) + 1 >= 2 && Number(item.questionCount || 0) > 10 ? 10 : item.questionCount,
+          whyThisText: actionType === 'snooze' && Number(item.snoozeCount || 0) + 1 >= 2 ? 'Is topic ko chhote step mein tod dete hain.' : item.whyThisText,
+          ctaLabel: actionType === 'snooze' && Number(item.snoozeCount || 0) + 1 >= 3 ? 'Answer Now' : item.ctaLabel,
+          secondaryAction: actionType === 'snooze' && Number(item.snoozeCount || 0) + 1 >= 3 ? 'Later' : item.secondaryAction,
+          reason: actionType === 'snooze' && Number(item.snoozeCount || 0) + 1 >= 3 ? 'snooze_blocker' : item.reason,
+          mentorMessage: actionType === 'snooze' && Number(item.snoozeCount || 0) + 1 >= 3 ? 'Is topic mein main blocker kya hai? Ek quick response se next step better decide hoga.' : item.mentorMessage,
+          actionValue,
+        } : item);
+        const nextSnapshot = buildLocalSnapshotFromParts(snapshot?.profile, { ...(snapshot?.plan || {}), tasks: nextTasks });
+        setSnapshot(nextSnapshot);
+        writeLocalSnapshot(nextSnapshot);
+      }
+      setBusyTaskId('');
+      return;
+    }
+    const res = await fetch('/api/mentor/task-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        taskId: task.taskId,
+        planId: task.planId || snapshot?.plan?.planId,
+        actionType,
+        actionValue,
+        subject: task.subject || task.subjectId,
+        topic: task.topic,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Action save nahi ho paya');
+    if (actionType !== 'launch_practice') {
+      await loadMentor({ background: true });
+    }
+    setBusyTaskId('');
+  }
+
+  function getGuestTaskStatus(item, actionType, fallbackStatus) {
+    if (actionType === 'response') return 'completed';
+    if (actionType === 'snooze' && Number(item.snoozeCount || 0) + 1 >= 3) return 'active';
+    return fallbackStatus;
+  }
+
+  function getGuestTaskType(item, actionType) {
+    if (actionType === 'snooze' && Number(item.snoozeCount || 0) + 1 >= 3) return 'feedback_task';
+    return item.taskType;
+  }
+
+  async function handleRefresh() {
+    if (refreshing) return;
+    setRefreshing(true);
+    const ok = await loadMentor({ forceRefresh: true, background: true });
+    try {
+      if (!ok) throw new Error('refresh failed');
+      setToast({ type: 'success', message: 'Mentor plan refreshed' });
+    } catch {
+      setToast({ type: 'error', message: 'Could not refresh plan. Please try again.' });
+    } finally {
+      setTimeout(() => setToast(null), 2800);
+    }
+  }
+
+  async function handleShowNextDay() {
+    if (refreshing) return;
+    setRefreshing(true);
+    setError('');
+    try {
+      if (guestMode && !email) {
+        const tasks = snapshot?.plan?.tasks || [];
+        let unlocked = false;
+        const nextTasks = tasks.map(task => {
+          if (!unlocked && task.status === 'pending') {
+            unlocked = true;
+            return { ...task, status: 'active' };
+          }
+          return task;
+        });
+        const nextPlan = {
+          ...(snapshot?.plan || {}),
+          activeDayNumber: Number(snapshot?.plan?.activeDayNumber || snapshot?.plan?.dayNumber || 1) + 1,
+          dayNumber: Number(snapshot?.plan?.dayNumber || 1) + 1,
+          tasks: nextTasks,
+        };
+        const localSnapshot = buildLocalSnapshotFromParts(snapshot?.profile, nextPlan);
+        setSnapshot(localSnapshot);
+        writeLocalSnapshot(localSnapshot);
+      } else {
+        const res = await fetch('/api/mentor/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ unlockNextDay: true }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Next day unlock nahi ho paya.');
+        setSnapshot(data);
+        writeCachedSnapshot(email, data);
+      }
+      setToast({ type: 'success', message: 'Next step unlocked' });
+      setTimeout(() => setToast(null), 2400);
+    } catch (err) {
+      setError(err.message || 'Next day unlock nahi ho paya.');
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  async function handleLater(task) {
+    try {
+      await runTaskAction(task, 'snooze');
+    } catch (err) {
+      setError(err.message || 'Task later save nahi ho paya.');
+      setBusyTaskId('');
+    }
+  }
+
+  function handlePrimary(task) {
+    if (task.taskType === 'practice_task') {
+      setPracticeTask(task);
+      return;
+    }
+    if (task.taskType === 'revision_task') {
+      setConfirmTask(task);
+      return;
+    }
+    if (task.taskType === 'mistake_recovery_task') {
+      runTaskAction(task, 'launch_practice').catch(() => {});
+      router.push('/history/mistakes');
+      return;
+    }
+    if (task.taskType === 'confidence_check') {
+      setConfidenceTask(task);
+      return;
+    }
+    if (task.taskType === 'coverage_check') {
+      setCoverageTask(task);
+      return;
+    }
+    if (task.taskType === 'feedback_task') {
+      setBlockerTask(task);
+      return;
+    }
+    setConfirmTask(task);
+  }
+
+  async function launchPractice(count) {
+    const task = practiceTask;
+    if (!task) return;
+    setBusyTaskId(task.taskId);
+    try {
+      await runTaskAction(task, 'launch_practice', String(count));
+      const subject = task.subject || task.subjectId || task.subjectName || '';
+      const topic = task.topic || '';
+      const planId = task.planId || snapshot?.plan?.planId || '';
+      const mentorContext = {
+        sourcePage: 'mentor',
+        sourceScreen: 'mentor_plan',
+        sourceTaskId: task.taskId,
+        planId,
+        returnUrl: '/mentor',
+        subject,
+        topic,
+        questionCount: count,
+      };
+      sessionStorage.setItem('ssc_mentor_return_context', JSON.stringify(mentorContext));
+      const params = new URLSearchParams({
+        subject,
+        topic,
+        count: String(count),
+        sourcePage: 'mentor',
+        sourceScreen: 'mentor_plan',
+        sourceTaskId: task.taskId,
+        planId,
+        returnUrl: '/mentor',
+      });
+      router.push(`/quiz?${params.toString()}`);
+    } catch (err) {
+      setError(err.message || 'Practice start nahi ho payi.');
+      setBusyTaskId('');
+    }
+  }
+
+  async function saveConfidence(value) {
+    const task = confidenceTask;
+    if (!task) return;
+    try {
+      await runTaskAction(task, 'response', value);
+      setConfidenceTask(null);
+    } catch (err) {
+      setError(err.message || 'Confidence save nahi ho paya.');
+      setBusyTaskId('');
+    }
+  }
+
+  async function saveCoverage(value) {
+    const task = coverageTask;
+    if (!task) return;
+    try {
+      await runTaskAction(task, 'response', value);
+      setCoverageTask(null);
+    } catch (err) {
+      setError(err.message || 'Coverage save nahi ho paya.');
+      setBusyTaskId('');
+    }
+  }
+
+  async function saveBlocker(value) {
+    const task = blockerTask;
+    if (!task) return;
+    try {
+      await runTaskAction(task, 'response', value);
+      setBlockerTask(null);
+    } catch (err) {
+      setError(err.message || 'Feedback save nahi ho paya.');
+      setBusyTaskId('');
+    }
+  }
+
+  if (status === 'loading' || ((status === 'authenticated' || guestMode) && loading && !snapshot)) {
     return <Loader fullScreen label="Loading mentor..." />;
   }
 
-  if (status === 'unauthenticated') {
+  if (status === 'unauthenticated' && !guestMode) {
     return (
       <>
-        <Head><title>Mentor — SSC GK Score Booster</title></Head>
-        <div className="min-h-screen [background:var(--bg-app)] text-white">
-          <div
-            className="sticky top-0 z-50 px-4 flex items-center justify-between"
-            style={{
-              height: '58px',
-              background: 'rgba(15,32,52,0.88)',
-              backdropFilter: 'blur(14px)',
-              WebkitBackdropFilter: 'blur(14px)',
-              borderBottom: '1px solid rgba(20,184,166,0.18)',
-              borderRadius: '0 0 22px 22px',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.22)',
-            }}
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-[11px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-                <MentorHeaderIcon />
-              </div>
-              <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center text-white">
-                SSC Mentor
-              </span>
-              <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, background: GOLD_DIM, border: `1px solid ${GOLD}40`, borderRadius: 99, padding: '3px 8px', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                GK PLAN
-              </span>
-            </div>
-          </div>
-
-          <main style={{ minHeight: 'calc(100dvh - 58px)', padding: '22px 16px calc(112px + env(safe-area-inset-bottom))', boxSizing: 'border-box' }}>
-            <section style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              background: BG_DEEP,
-              border: `1px solid ${BORDER}`,
-              borderRadius: 99,
-              padding: '9px 14px',
-              marginBottom: 18,
-              flexWrap: 'wrap',
-            }}>
-              <span className="font-sans" style={{ fontSize: 12, color: TEXT_SEC }}>
-                <span style={{ fontWeight: 800, color: ORANGE }}>Daily</span> Plan
-              </span>
-              <span style={{ color: TEXT_MUT }}>·</span>
-              <span className="font-sans" style={{ fontSize: 12, color: TEXT_SEC }}>
-                <span style={{ fontWeight: 800, color: ORANGE }}>Weak</span> Topics
-              </span>
-              <span style={{ color: TEXT_MUT }}>·</span>
-              <span className="font-sans" style={{ fontSize: 12, color: TEXT_SEC }}>
-                <span style={{ fontWeight: 800, color: ORANGE }}>Mistake</span> Revision
-              </span>
-            </section>
-
-            <section style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: 18, padding: '4px 16px', marginBottom: 18 }}>
-              {mentorBenefits.map(({ Icon, title }, index) => (
-                <button
-                  key={title}
-                  type="button"
-                  onClick={() => setLockedBenefit(mentorBenefits[index])}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '13px 0',
-                    width: '100%',
-                    background: 'transparent',
-                    borderLeft: 0,
-                    borderRight: 0,
-                    borderTop: 0,
-                    borderBottom: index < mentorBenefits.length - 1 ? `1px solid ${BORDER}` : 'none',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  <div style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0, background: ORANGE_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon />
-                  </div>
-                  <span className="font-display" style={{ flex: 1, fontSize: 14, fontWeight: 800, color: TEXT_PRI }}>
-                    {title}
-                  </span>
-                  <span style={{ fontSize: 16, color: TEXT_MUT, flexShrink: 0 }}>→</span>
-                </button>
-              ))}
-            </section>
-
-            <section style={{ position: 'relative', height: 300, borderRadius: 18, overflow: 'hidden', marginBottom: 18 }}>
-              <div style={{ filter: 'blur(6px)', opacity: 0.4, pointerEvents: 'none', userSelect: 'none', padding: 4 }}>
-                <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 14, marginBottom: 10 }}>
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div style={{ width: 120, height: 10, background: 'rgba(255,255,255,0.2)', borderRadius: 4, marginBottom: 10 }} />
-                      <div style={{ width: 170, height: 8, background: 'rgba(255,255,255,0.12)', borderRadius: 4 }} />
-                    </div>
-                    <div style={{ width: 54, height: 28, background: ORANGE_DIM, borderRadius: 99 }} />
-                  </div>
-                </div>
-                {[
-                  ['Indian Polity', 'Fundamental Rights', '#14B8A6'],
-                  ['Repeated Mistakes', 'Revise 12 questions', '#EF4444'],
-                  ['Daily Challenge', 'Mixed GK practice', '#F59E0B'],
-                ].map(([title, body, accent]) => (
-                  <div key={title} style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 14, marginBottom: 10 }}>
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="font-display font-black text-[14px]" style={{ color: TEXT_PRI }}>{title}</p>
-                        <p className="font-sans text-[11px] mt-1" style={{ color: TEXT_MUT }}>{body}</p>
-                      </div>
-                      <div style={{ width: 36, height: 36, borderRadius: 12, background: `${accent}33` }} />
-                    </div>
-                    <div style={{ height: 8, background: BG_DEEP, borderRadius: 99, overflow: 'hidden', marginTop: 12 }}>
-                      <div style={{ width: '54%', height: '100%', background: accent, borderRadius: 99 }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                <div style={{
-                  background: 'rgba(13,27,46,0.92)',
-                  border: `1px solid ${BORDER}`,
-                  borderRadius: 16,
-                  padding: '18px 24px',
-                  textAlign: 'center',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
-                }}>
-                  <div style={{ width: 42, height: 42, borderRadius: 12, margin: '0 auto 12px', background: ORANGE_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <LockIcon />
-                  </div>
-                  <div className="font-display" style={{ fontSize: 15, fontWeight: 800, color: TEXT_PRI, marginBottom: 4 }}>
-                    Your mentor plan is waiting
-                  </div>
-                  <div className="font-sans" style={{ fontSize: 12, color: TEXT_MUT }}>
-                    Sign in to unlock your GK plan
-                  </div>
-                </div>
-              </div>
-            </section>
-
-          </main>
-        </div>
-
-        {lockedBenefit && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="mentor-unlock-title"
-            onClick={() => setLockedBenefit(null)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 80,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 24,
-              background: 'rgba(4,12,24,0.72)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-            }}
-          >
-            <div
-              onClick={event => event.stopPropagation()}
-              style={{
-                position: 'relative',
-                width: 'min(100%, 360px)',
-                background: BG_CARD,
-                border: `1px solid ${BORDER}`,
-                borderRadius: 20,
-                padding: '24px 20px 20px',
-                textAlign: 'center',
-                boxShadow: '0 24px 70px rgba(0,0,0,0.46)',
-              }}
-            >
-              <button
-                type="button"
-                aria-label="Close"
-                onClick={() => setLockedBenefit(null)}
-                style={{
-                  position: 'absolute',
-                  top: 10,
-                  right: 10,
-                  width: 34,
-                  height: 34,
-                  borderRadius: 12,
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.04)',
-                  color: TEXT_MUT,
-                  fontSize: 22,
-                  lineHeight: 1,
-                  cursor: 'pointer',
-                }}
-              >
-                ×
-              </button>
-              <div style={{ width: 46, height: 46, borderRadius: 14, margin: '0 auto 14px', background: ORANGE_DIM, color: ORANGE, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <LockIcon size={22} />
-              </div>
-              <h2 id="mentor-unlock-title" className="font-display text-[19px] font-black leading-tight text-white">
-                Unlock {lockedBenefit.title}
-              </h2>
-              <p className="font-sans text-[13px] leading-relaxed mt-3" style={{ color: TEXT_SEC }}>
-                {lockedBenefit.body}
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  document.cookie = 'userMode=; path=/; max-age=0';
-                  signIn('google', { callbackUrl: '/mentor' });
-                }}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  borderRadius: 14,
-                  padding: '14px 0',
-                  background: '#fff',
-                  color: '#0F172A',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  fontSize: 15,
-                  fontWeight: 800,
-                  fontFamily: 'inherit',
-                  cursor: 'pointer',
-                  marginTop: 20,
-                }}
-              >
-                <GoogleSVG />
-                Continue with Google
-              </button>
-              <p className="font-sans text-[11px] mt-3" style={{ color: TEXT_MUT }}>
-                Free · No payment · Saves your plan across devices
-              </p>
-            </div>
-          </div>
-        )}
+        <Head><title>Mentor - SSC GK Score Booster</title></Head>
+        <SignInPreview />
       </>
     );
   }
 
   return (
     <>
-      <Head><title>Mentor — SSC GK Score Booster</title></Head>
-      <main className="min-h-screen bg-slate-950 px-4 pb-24 pt-5 text-white">
-        <div className="mx-auto max-w-md space-y-5">
-          <section className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/20 via-slate-800 to-teal-500/20 text-orange-400">
-                <TeacherMentorIcon className="h-7 w-7" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">Today&apos;s GK Plan</h1>
-                <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                  Aaj ka focus clear rakhiye — plan follow kijiye, mistakes revise kar lijiye.
-                </p>
-              </div>
-            </div>
-            <MentorMessage message={onboarded ? mentorDayMessage : MENTOR_COPY.NO_PLAN} />
-          </section>
-
-          {error ? (
-            <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
-              {error}
-            </div>
-          ) : null}
-
-          {!onboarded ? (
-            <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900 p-4">
-              <MentorMessage message={MENTOR_COPY.NO_PLAN} />
-              <button
-                type="button"
-                onClick={() => router.push('/mentor-setup')}
-                className="w-full rounded-xl bg-teal-600 py-3 text-sm font-semibold text-white"
-              >
-                Build My GK Plan
-              </button>
-            </section>
-          ) : (
-            <>
-              <section className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400">Preparation Setup</h2>
-                    <p className="mt-2 text-sm font-semibold text-slate-100">
-                      {mentorProfile?.examTarget || 'Exam not set'} · {formatDaysLeftLabel(mentorProfile?.daysLeftRange)}
-                    </p>
-                    <p className="mt-1 text-sm text-teal-200">
-                      {formatDailyTimeLabel(mentorProfile?.dailyGKTime)} · {mentorProfile?.pace || 'Pace not set'} pace
-                    </p>
-                    <p className="mt-2 text-xs text-slate-500">Plan can be updated anytime.</p>
-                    {preparationStartedDate ? (
-                      <p className="mt-1 text-xs text-slate-400">Started {preparationStartedDate}</p>
-                    ) : null}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => router.push('/mentor-setup-edit')}
-                    className="shrink-0 rounded-lg border border-teal-500/40 px-3 py-2 text-xs font-semibold text-teal-200"
-                  >
-                    Edit
-                  </button>
-                </div>
-              </section>
-
+      <Head><title>Mentor - SSC GK Score Booster</title></Head>
+      <div className="app-page">
+        <div className="app-shell !px-0 pb-20">
+          <AppTopBar />
+          <main className="px-4 pb-24 pt-[18px] text-white">
+            <div className="space-y-5">
               <section className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-lg font-bold leading-none text-slate-100">Today&apos;s Plan</h2>
-                  <p className="shrink-0 rounded-full border border-white/[0.06] bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-400">
-                    Day {todaysPlan?.dayNumber || 1} of {todaysPlan?.daysTotal || 45} · {todaysPlan?.tasks?.length || 0} tasks
-                  </p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/20 via-slate-800 to-teal-500/20">
+                      <TeacherMentorIcon className="h-7 w-7" />
+                    </div>
+                    <div className="min-w-0">
+                      <h1 className="font-display text-2xl font-black leading-tight">Today&apos;s GK Plan</h1>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                        Aaj ka focus clear rakhiye - ek task complete kijiye, phir next step pe chalte hain.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <TodaysPlanCard plan={todaysPlan} />
+                <RefreshStatus
+                  label="Plan sync"
+                  updatedAt={snapshot?.lastSyncAt || snapshot?.plan?.updatedAt}
+                  isRefreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  refreshText="Refresh My Plan"
+                />
+                <MentorMessage message={onboarded ? mentorDayMessage : MENTOR_COPY.NO_PLAN} />
               </section>
-            </>
-          )}
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-bold">Your Goal</h2>
-            <DreamPostCard coins={userProfile?.totalCoins || 0} />
-          </section>
+              {error && !onboarded ? (
+                <section className="rounded-2xl border border-red-500/40 bg-red-500/10 p-4">
+                  <p className="font-display text-base font-black text-red-100">Could not load mentor plan.</p>
+                  <p className="mt-1 text-xs font-semibold text-red-200/80">Please refresh and try again.</p>
+                  <button
+                    type="button"
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                    className="mt-4 w-full rounded-2xl border border-red-400/30 bg-red-500/15 py-3 text-sm font-black text-red-100 disabled:opacity-60"
+                  >
+                    {refreshing ? 'Refreshing...' : 'Refresh My Plan'}
+                  </button>
+                </section>
+              ) : null}
 
-          <section className="space-y-3">
-            <MentorMessage message={MENTOR_COPY.ACHIEVEMENTS_LABEL} variant="success" />
-            <AchievementsGrid userProfile={userProfile} />
-          </section>
+              {error && onboarded ? (
+                <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-3 text-sm font-semibold text-red-200">
+                  {error}
+                </div>
+              ) : null}
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-bold">Account</h2>
-            <button
-              type="button"
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="w-full rounded-xl border border-red-500/30 bg-red-500/10 py-3 text-sm font-semibold text-red-200"
-            >
-              Sign Out
-            </button>
-          </section>
+              {!onboarded ? (
+                !error ? <MentorEmptyState onBuild={() => router.push('/mentor-setup')} /> : null
+              ) : (
+                <>
+                  <section className="rounded-2xl border border-white/[0.08] bg-[#172d47] p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">Preparation Setup</h2>
+                        <p className="mt-2 text-sm font-bold text-slate-100">
+                          {profile?.examTarget || 'Exam not set'} - {formatDaysLeftLabel(profile?.daysLeftRange)}
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-teal-200">
+                          {formatDailyTimeLabel(profile?.dailyGKTime)} - {profile?.pace || 'Pace not set'} pace
+                        </p>
+                        <p className="mt-2 text-xs font-semibold text-slate-500">Plan can be updated anytime.</p>
+                        {preparationStartedDate ? (
+                          <p className="mt-1 text-xs font-semibold text-slate-400">Started {preparationStartedDate}</p>
+                        ) : null}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => router.push('/mentor-setup-edit')}
+                        className="shrink-0 rounded-2xl border border-orange-500/30 px-3 py-2 text-xs font-black text-orange-300"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  </section>
+
+                  <section className="space-y-3">
+                    <div className="flex items-end justify-between gap-3">
+                      <div>
+                        <h2 className="font-display text-xl font-black leading-none text-slate-100">Today&apos;s Plan</h2>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">{progress.completed}/{Math.max(progress.total, 1)} tasks completed</p>
+                      </div>
+                      <p className="shrink-0 rounded-full border border-white/[0.08] bg-[#172d47] px-3 py-1.5 text-xs font-black text-slate-400">
+                        Day {snapshot?.plan?.dayNumber || 1} of {snapshot?.plan?.daysTotal || 45} - {progress.total || 0} tasks
+                      </p>
+                    </div>
+                    <TodaysPlanCard
+                      plan={snapshot?.plan}
+                      activeTasks={snapshot?.activeTasks}
+                      completedTasks={snapshot?.completedToday}
+                      deferredTasks={snapshot?.deferredTasks}
+                      progress={progress}
+                      busyTaskId={busyTaskId}
+                      onPrimary={handlePrimary}
+                      onLater={handleLater}
+                      onShowNextDay={handleShowNextDay}
+                    />
+                  </section>
+                </>
+              )}
+            </div>
+          </main>
         </div>
-      </main>
+      </div>
+      <CountModal
+        task={practiceTask}
+        busy={Boolean(busyTaskId)}
+        onClose={() => {
+          setPracticeTask(null);
+          setBusyTaskId('');
+        }}
+        onSelect={launchPractice}
+      />
+      <ConfidenceModal
+        task={confidenceTask}
+        busy={Boolean(busyTaskId)}
+        onClose={() => {
+          setConfidenceTask(null);
+          setBusyTaskId('');
+        }}
+        onSelect={saveConfidence}
+      />
+      <CoverageModal
+        task={coverageTask}
+        busy={Boolean(busyTaskId)}
+        onClose={() => {
+          setCoverageTask(null);
+          setBusyTaskId('');
+        }}
+        onSelect={saveCoverage}
+      />
+      <BlockerModal
+        task={blockerTask}
+        busy={Boolean(busyTaskId)}
+        onClose={() => {
+          setBlockerTask(null);
+          setBusyTaskId('');
+        }}
+        onSelect={saveBlocker}
+      />
+      <ConfirmTaskModal
+        task={confirmTask}
+        busy={Boolean(busyTaskId)}
+        onClose={() => {
+          setConfirmTask(null);
+          setBusyTaskId('');
+        }}
+        onConfirm={async () => {
+          const task = confirmTask;
+          if (!task) return;
+          try {
+            await runTaskAction(task, 'complete');
+            setConfirmTask(null);
+            setToast({ type: 'success', message: 'Task completed' });
+            setTimeout(() => setToast(null), 2400);
+          } catch (err) {
+            setError(err.message || 'Task complete hua, lekin save nahi ho paya. Please retry.');
+            setBusyTaskId('');
+          }
+        }}
+      />
+      {toast ? (
+        <div className={`fixed bottom-24 left-4 right-4 z-[90] mx-auto max-w-[430px] rounded-2xl px-4 py-3 text-sm font-black text-white shadow-2xl ${toast.type === 'success' ? 'bg-[#14B8A6]' : 'bg-red-500'}`}>
+          {toast.message}
+        </div>
+      ) : null}
     </>
   );
 }
