@@ -142,10 +142,10 @@ export default function WhatsAppBell() {
               padding: '12px 14px 13px',
             }}>
               <p style={{ color: '#F0F4F8', fontSize: 13, fontWeight: 700, margin: 0, lineHeight: 1.35 }}>
-                Never miss daily GK quizzes 🔔
+                Aaj ka GK plan ready hai 🔔
               </p>
               <p style={{ color: '#64748B', fontSize: 11, margin: '4px 0 0', lineHeight: 1.4 }}>
-                Tap to join WhatsApp updates
+                Daily tasks aur revision updates WhatsApp par paaiye.
               </p>
             </div>
           </div>

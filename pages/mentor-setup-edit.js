@@ -14,6 +14,23 @@ const DAYS_OPTIONS = ['0-15', '16-30', '31-45', '46-60', '60+', "I don't know ye
 const TIME_OPTIONS = ['15-20 min', '30 min', '45 min', '1 hour', '1.5+ hours'];
 const PACE_OPTIONS = ['Light', 'Balanced', 'Aggressive'];
 
+// Remove every Mentor snapshot/plan cache so a superseded plan can never be
+// rehydrated on the Mentor tab after the plan is updated.
+function clearAllMentorCaches() {
+  if (typeof window === 'undefined') return;
+  try {
+    const drop = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      if (key.startsWith('mentor_snapshot_') || key === 'mentor_today_plan' || key === 'mentor_profile_cache') {
+        drop.push(key);
+      }
+    }
+    drop.forEach(key => localStorage.removeItem(key));
+  } catch {}
+}
+
 function OptionButton({ selected, children, onClick }) {
   return (
     <button
@@ -79,6 +96,8 @@ export default function MentorSetupEditPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState(false);
   const [topicsData, setTopicsData] = useState({ subjects: {} });
   const [openSubjects, setOpenSubjects] = useState({});
   const [formData, setFormData] = useState(null);
@@ -197,6 +216,48 @@ export default function MentorSetupEditPage() {
       setError('Preparation details could not be saved. Please retry.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Regenerate the plan after Preparation Setup is edited. Idempotent (guarded
+  // by `generating`), clears all stale caches, and supersedes the old plan
+  // server-side via /api/mentor/generate.
+  const handleUpdatePlan = async () => {
+    if (generating) return; // idempotency: ignore double taps
+    setGenError(false);
+    const today = getISTDateKey();
+
+    if (guestMode) {
+      const nextProfile = {
+        ...formData,
+        topicsCompleted: buildTopicsCompleted(formData.topicStrength),
+        onboardingCompletedAt: formData.onboardingCompletedAt || new Date().toISOString(),
+      };
+      const plan = generateTodaysPlan(nextProfile, [], { repeatedMistakesPreview: [] }, { subjects: {} });
+      const snapshot = buildLocalPlanSnapshot(nextProfile, plan);
+      clearAllMentorCaches();
+      localStorage.setItem('mentor_profile_cache', JSON.stringify(nextProfile));
+      localStorage.setItem('mentor_today_plan', JSON.stringify({ date: today, plan }));
+      localStorage.setItem(`mentor_snapshot_v3:guest:${today}`, JSON.stringify(snapshot));
+      router.push('/mentor?updated=1');
+      return;
+    }
+
+    setGenerating(true);
+    try {
+      const res = await fetch('/api/mentor/generate', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'generate failed');
+      // New plan is now the active one server-side — purge every old cache and
+      // seed only the fresh snapshot so the Mentor tab shows the new plan only.
+      clearAllMentorCaches();
+      localStorage.setItem(`mentor_snapshot_v3:${session?.user?.email || ''}:${today}`, JSON.stringify(data));
+      router.push('/mentor?updated=1');
+    } catch {
+      // Edge C: profile saved but generation failed — do NOT restore old tasks.
+      clearAllMentorCaches();
+      setGenerating(false);
+      setGenError(true);
     }
   };
 
@@ -335,43 +396,25 @@ export default function MentorSetupEditPage() {
             <div className="mt-3">
               <MentorMessage message="Kya aap aaj se naya plan generate karna chahte hain? Plan updated timeline ke hisaab se adjust ho jayega." />
             </div>
+            {genError ? (
+              <div className="mt-3 rounded-2xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
+                Preparation details update ho gayi hain, lekin naya plan generate nahi ho paya.
+              </div>
+            ) : null}
             <div className="mt-4 grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={async () => {
-                  if (guestMode) {
-                    const today = getISTDateKey();
-                    const nextProfile = {
-                      ...formData,
-                      topicsCompleted: buildTopicsCompleted(formData.topicStrength),
-                      onboardingCompletedAt: formData.onboardingCompletedAt || new Date().toISOString(),
-                    };
-                    const plan = generateTodaysPlan(nextProfile, [], { repeatedMistakesPreview: [] }, { subjects: {} });
-                    const snapshot = buildLocalPlanSnapshot(nextProfile, plan);
-                    localStorage.setItem('mentor_profile_cache', JSON.stringify(nextProfile));
-                    localStorage.setItem('mentor_today_plan', JSON.stringify({ date: today, plan }));
-                    localStorage.setItem(`mentor_snapshot_v2:guest:${today}`, JSON.stringify(snapshot));
-                    router.push('/mentor');
-                    return;
-                  }
-                  try {
-                    const res = await fetch('/api/mentor/generate', { method: 'POST' });
-                    const data = await res.json().catch(() => ({}));
-                    if (res.ok) {
-                      localStorage.setItem(`mentor_snapshot_v2:${session?.user?.email || ''}:${getISTDateKey()}`, JSON.stringify(data));
-                    }
-                  } catch {}
-                  localStorage.removeItem('mentor_today_plan');
-                  router.push('/mentor');
-                }}
-                className="rounded-2xl bg-orange-500 py-3 text-sm font-semibold text-white"
+                onClick={handleUpdatePlan}
+                disabled={generating}
+                className="rounded-2xl bg-orange-500 py-3 text-sm font-semibold text-white disabled:opacity-60"
               >
-                Update Plan
+                {generating ? 'Generating...' : genError ? 'Retry Plan Generation' : 'Update Plan'}
               </button>
               <button
                 type="button"
+                disabled={generating}
                 onClick={() => router.push('/mentor')}
-                className="rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-semibold text-slate-300"
+                className="rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-semibold text-slate-300 disabled:opacity-60"
               >
                 Keep Old Plan
               </button>
