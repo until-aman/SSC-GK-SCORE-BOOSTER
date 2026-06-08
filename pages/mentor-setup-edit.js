@@ -18,10 +18,10 @@ function OptionButton({ selected, children, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl border px-3 py-2 text-sm font-semibold transition-all ${
+      className={`rounded-2xl border px-3 py-2 text-sm font-semibold transition-all ${
         selected
-          ? 'border-teal-400 bg-teal-500/15 text-white'
-          : 'border-slate-800 bg-slate-900 text-slate-300'
+          ? 'border-orange-500 bg-orange-500/10 text-white'
+          : 'border-white/[0.06] bg-slate-800 text-slate-300'
       }`}
     >
       {children}
@@ -173,8 +173,8 @@ export default function MentorSetupEditPage() {
           <h1 className="text-xl font-bold">Edit Preparation Details</h1>
         </div>
 
-        <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900 p-4">
-          <h2 className="text-sm font-semibold text-white">Exam and Timeline</h2>
+        <section className="space-y-3 rounded-2xl border border-white/[0.06] bg-slate-800 p-4">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400">Exam and Timeline</h2>
           <div className="flex flex-wrap gap-2">
             {EXAM_OPTIONS.map(option => (
               <OptionButton key={option} selected={formData.examTarget === option} onClick={() => updateForm({ examTarget: option })}>
@@ -191,8 +191,8 @@ export default function MentorSetupEditPage() {
           </div>
         </section>
 
-        <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900 p-4">
-          <h2 className="text-sm font-semibold text-white">Study Preferences</h2>
+        <section className="space-y-3 rounded-2xl border border-white/[0.06] bg-slate-800 p-4">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400">Study Preferences</h2>
           <div className="flex flex-wrap gap-2">
             {TIME_OPTIONS.map(option => (
               <OptionButton key={option} selected={formData.dailyGKTime === option} onClick={() => updateForm({ dailyGKTime: option })}>
@@ -222,7 +222,7 @@ export default function MentorSetupEditPage() {
           {activeSubjects.length ? activeSubjects.map(subjectId => {
             const subject = topicsData.subjects?.[subjectId];
             return (
-              <div key={subjectId} className="rounded-xl border border-slate-800 bg-slate-900">
+              <div key={subjectId} className="rounded-2xl border border-white/[0.06] bg-slate-800">
                 <button
                   type="button"
                   onClick={() => setOpenSubjects(prev => ({ ...prev, [subjectId]: !prev[subjectId] }))}
@@ -234,7 +234,7 @@ export default function MentorSetupEditPage() {
                   <span className="text-xs text-slate-500">{openSubjects[subjectId] ? 'Hide' : 'Show'}</span>
                 </button>
                 {openSubjects[subjectId] ? (
-                  <div className="border-t border-slate-800 p-3">
+                  <div className="border-t border-white/[0.06] p-3">
                     <TopicStatusPicker
                       subjectId={subjectId}
                       topics={subject?.topics || []}
@@ -251,7 +251,7 @@ export default function MentorSetupEditPage() {
         </section>
 
         {error ? (
-          <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
+          <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
             {error}
           </div>
         ) : null}
@@ -260,7 +260,7 @@ export default function MentorSetupEditPage() {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="w-full rounded-xl bg-teal-600 py-3 text-sm font-semibold text-white disabled:bg-slate-800 disabled:text-slate-500"
+          className="w-full rounded-2xl bg-orange-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-orange-600 active:bg-orange-700 disabled:bg-slate-800 disabled:text-slate-500"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
@@ -268,7 +268,7 @@ export default function MentorSetupEditPage() {
 
       {showConfirm ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 px-4 pb-4">
-          <div className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-white/[0.06] bg-slate-800 p-4">
             <MentorMessage message={MENTOR_COPY.EDIT_PROFILE_SAVED} variant="success" />
             <div className="mt-3">
               <MentorMessage message="Kya aap aaj se naya plan generate karna chahte hain? Plan updated timeline ke hisaab se adjust ho jayega." />
@@ -280,14 +280,14 @@ export default function MentorSetupEditPage() {
                   localStorage.removeItem('mentor_today_plan');
                   router.push('/mentor');
                 }}
-                className="rounded-xl bg-teal-600 py-3 text-sm font-semibold text-white"
+                className="rounded-2xl bg-orange-500 py-3 text-sm font-semibold text-white"
               >
                 Update Plan
               </button>
               <button
                 type="button"
                 onClick={() => router.push('/mentor')}
-                className="rounded-xl border border-slate-700 py-3 text-sm font-semibold text-slate-200"
+                className="rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-semibold text-slate-300"
               >
                 Keep Old Plan
               </button>

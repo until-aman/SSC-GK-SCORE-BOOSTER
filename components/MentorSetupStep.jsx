@@ -32,7 +32,7 @@ export default function MentorSetupStep({
                 <span
                   key={index}
                   className={`h-2 rounded-full transition-all ${
-                    active ? 'w-6 bg-teal-400' : 'w-2 bg-slate-700'
+                    active ? 'w-2 bg-orange-500' : 'w-2 bg-slate-600'
                   }`}
                 />
               );
@@ -50,10 +50,10 @@ export default function MentorSetupStep({
           type="button"
           onClick={onContinue}
           disabled={continueDisabled || submitting}
-          className={`mt-6 w-full rounded-xl py-3 text-sm font-semibold transition-all ${
+          className={`mt-6 w-full rounded-2xl py-3 text-sm font-semibold transition-colors ${
             continueDisabled || submitting
               ? 'cursor-not-allowed bg-slate-800 text-slate-500'
-              : 'bg-teal-600 text-white shadow-lg shadow-teal-950/40 hover:bg-teal-500'
+              : 'bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700'
           }`}
         >
           {submitting ? 'Saving...' : continueLabel}

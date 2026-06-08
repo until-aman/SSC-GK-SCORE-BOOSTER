@@ -53,10 +53,10 @@ function OptionCard({ selected, title, subtitle, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-xl border p-4 text-left transition-all ${
+      className={`w-full rounded-2xl border p-4 text-left transition-all ${
         selected
-          ? 'border-teal-400 bg-teal-500/15 text-white'
-          : 'border-slate-800 bg-slate-900 text-slate-200 hover:border-teal-500/50'
+          ? 'border-orange-500 bg-orange-500/10 text-white'
+          : 'border-white/[0.06] bg-slate-800 text-slate-200 hover:border-orange-500'
       }`}
     >
       <span className="block text-sm font-semibold">{title}</span>
@@ -262,7 +262,7 @@ export default function MentorSetupPage() {
         <section className="space-y-4">
           <h1 className="text-2xl font-bold">Plan Preview</h1>
           <MentorMessage message={MENTOR_COPY.SETUP_PLAN_READY} variant="success" />
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <div className="rounded-2xl border border-white/[0.06] bg-slate-800 p-4">
             <p className="text-sm font-semibold text-white">{formData.examTarget}</p>
             <p className="mt-1 text-xs text-slate-400">
               {formData.daysLeftRange} · {formData.pace} · {formData.dailyGKTime}
@@ -270,7 +270,7 @@ export default function MentorSetupPage() {
           </div>
           <div className="space-y-3">
             {previewPlan.tasks.slice(0, 3).map(task => (
-              <div key={task.taskId} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+              <div key={task.taskId} className="rounded-2xl border border-white/[0.06] bg-slate-800 p-4">
                 <p className="text-sm font-semibold text-white">{task.displayName}</p>
                 <p className="mt-1 text-xs text-slate-400">
                   {task.ctaLabel} · {task.estimatedMinutes} min
@@ -280,7 +280,7 @@ export default function MentorSetupPage() {
           </div>
           <MentorMessage message={getDaysClosingLine(formData.daysLeftRange)} />
           {error ? (
-            <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
+            <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
               {error}
             </div>
           ) : null}
