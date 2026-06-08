@@ -6,7 +6,8 @@ import Loader from '@/components/ui/Loader';
 import MentorMessage from '@/components/MentorMessage';
 import SubjectStatusPicker, { SUBJECTS } from '@/components/SubjectStatusPicker';
 import TopicStatusPicker from '@/components/TopicStatusPicker';
-import { MENTOR_COPY, SUBJECT_DISPLAY_NAMES, SUBJECT_STATUS, TOPIC_STATUS } from '@/lib/mentorCopy';
+import { MENTOR_COPY, SUBJECT_DISPLAY_NAMES, SUBJECT_STATUS, TOPIC_STATUS, getISTDateKey } from '@/lib/mentorCopy';
+import { generateTodaysPlan } from '@/lib/mentorPlanEngine';
 
 const EXAM_OPTIONS = ['SSC CGL', 'SSC CHSL', 'SSC CPO', 'SSC MTS', 'SSC GD', 'Other SSC Exam'];
 const DAYS_OPTIONS = ['0-15', '16-30', '31-45', '46-60', '60+', "I don't know yet"];
@@ -40,9 +41,40 @@ function buildTopicsCompleted(topicStrength) {
   return result;
 }
 
+function buildLocalPlanSnapshot(profile, plan) {
+  const tasks = plan?.tasks || [];
+  const activeTasks = tasks.filter(task => task.status === 'active').slice(0, 3);
+  const completedToday = tasks.filter(task => task.status === 'completed');
+  const deferredTasks = tasks.filter(task => task.status === 'snoozed');
+  const pendingTasks = tasks.filter(task => task.status === 'pending');
+  const total = activeTasks.length + completedToday.length + deferredTasks.length;
+  return {
+    exists: true,
+    profile,
+    plan,
+    activeTasks,
+    completedToday,
+    deferredTasks,
+    pendingTasks,
+    progress: {
+      completed: completedToday.length,
+      total,
+      percent: total ? Math.round((completedToday.length / total) * 100) : 0,
+    },
+    mentorMessage: plan?.mentorDayMessage || MENTOR_COPY.MORNING_GREETING,
+    lastSyncAt: new Date().toISOString(),
+  };
+}
+
+function isGuestMode() {
+  if (typeof document === 'undefined') return false;
+  return document.cookie.split(';').some(cookie => cookie.trim().startsWith('userMode=guest'));
+}
+
 export default function MentorSetupEditPage() {
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const [guestMode, setGuestMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -52,6 +84,34 @@ export default function MentorSetupEditPage() {
   const [formData, setFormData] = useState(null);
 
   useEffect(() => {
+    const guest = isGuestMode();
+    setGuestMode(guest);
+    if (status === 'unauthenticated' && guest) {
+      try {
+        const cachedProfile = JSON.parse(localStorage.getItem('mentor_profile_cache') || 'null');
+        if (!cachedProfile) {
+          router.replace('/mentor-setup');
+          return;
+        }
+        setFormData({
+          examTarget: cachedProfile.examTarget || '',
+          daysLeftRange: cachedProfile.daysLeftRange || '',
+          customDaysLeft: cachedProfile.customDaysLeft || null,
+          dailyGKTime: cachedProfile.dailyGKTime || '',
+          pace: cachedProfile.pace || '',
+          goals: cachedProfile.goals || [],
+          subjectStatus: cachedProfile.subjectStatus || {},
+          topicsCompleted: cachedProfile.topicsCompleted || {},
+          topicStrength: cachedProfile.topicStrength || {},
+        });
+        setTopicsData({ subjects: {} });
+      } catch {
+        setError('Preparation details could not be loaded. Please retry.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     if (status !== 'authenticated') return;
     let cancelled = false;
 
@@ -122,12 +182,14 @@ export default function MentorSetupEditPage() {
         ...formData,
         topicsCompleted: buildTopicsCompleted(formData.topicStrength),
       };
-      const res = await fetch('/api/mentor/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Save failed');
+      if (!guestMode) {
+        const res = await fetch('/api/mentor/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error('Save failed');
+      }
       localStorage.setItem('mentor_profile_cache', JSON.stringify(payload));
       localStorage.setItem('mentor_onboarded', 'true');
       setShowConfirm(true);
@@ -138,11 +200,11 @@ export default function MentorSetupEditPage() {
     }
   };
 
-  if (status === 'loading' || (status === 'authenticated' && loading)) {
+  if (status === 'loading' || ((status === 'authenticated' || guestMode) && loading)) {
     return <Loader fullScreen label="Loading details..." />;
   }
 
-  if (status !== 'authenticated') {
+  if (status !== 'authenticated' && !guestMode) {
     return (
       <div className="min-h-screen bg-slate-950 px-4 py-10 text-white">
         <GoogleSignInCard
@@ -276,7 +338,29 @@ export default function MentorSetupEditPage() {
             <div className="mt-4 grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
+                  if (guestMode) {
+                    const today = getISTDateKey();
+                    const nextProfile = {
+                      ...formData,
+                      topicsCompleted: buildTopicsCompleted(formData.topicStrength),
+                      onboardingCompletedAt: formData.onboardingCompletedAt || new Date().toISOString(),
+                    };
+                    const plan = generateTodaysPlan(nextProfile, [], { repeatedMistakesPreview: [] }, { subjects: {} });
+                    const snapshot = buildLocalPlanSnapshot(nextProfile, plan);
+                    localStorage.setItem('mentor_profile_cache', JSON.stringify(nextProfile));
+                    localStorage.setItem('mentor_today_plan', JSON.stringify({ date: today, plan }));
+                    localStorage.setItem(`mentor_snapshot_v2:guest:${today}`, JSON.stringify(snapshot));
+                    router.push('/mentor');
+                    return;
+                  }
+                  try {
+                    const res = await fetch('/api/mentor/generate', { method: 'POST' });
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok) {
+                      localStorage.setItem(`mentor_snapshot_v2:${session?.user?.email || ''}:${getISTDateKey()}`, JSON.stringify(data));
+                    }
+                  } catch {}
                   localStorage.removeItem('mentor_today_plan');
                   router.push('/mentor');
                 }}

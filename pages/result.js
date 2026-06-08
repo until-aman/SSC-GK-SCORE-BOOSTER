@@ -149,6 +149,73 @@ function getResultCounts(result) {
   };
 }
 
+function readMentorReturnContext(result) {
+  if (!result) return null;
+  let cached = null;
+  try {
+    cached = JSON.parse(sessionStorage.getItem('ssc_mentor_return_context') || 'null');
+  } catch {}
+
+  const direct = result.sourceScreen === 'mentor_plan' || result.sourcePage === 'mentor'
+    ? {
+        sourcePage: result.sourcePage || 'mentor',
+        sourceScreen: result.sourceScreen || 'mentor_plan',
+        sourceTaskId: result.sourceTaskId || '',
+        planId: result.planId || cached?.planId || '',
+        returnUrl: result.returnUrl || '/mentor',
+      }
+    : null;
+
+  if (direct?.sourceTaskId) return direct;
+  if (cached?.sourceTaskId) return cached;
+  return direct;
+}
+
+function isGuestMode() {
+  if (typeof document === 'undefined') return false;
+  return document.cookie.split(';').some(cookie => cookie.trim().startsWith('userMode=guest'));
+}
+
+function getMentorGuestSnapshotKey() {
+  const today = new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split('T')[0];
+  return `mentor_snapshot_v2:guest:${today}`;
+}
+
+function completeGuestMentorTask(result, mentorContext) {
+  if (typeof window === 'undefined' || !mentorContext?.sourceTaskId) return;
+  try {
+    const rawSnapshot = localStorage.getItem(getMentorGuestSnapshotKey());
+    const rawPlan = localStorage.getItem('mentor_today_plan');
+    const snapshot = rawSnapshot ? JSON.parse(rawSnapshot) : null;
+    const planCache = rawPlan ? JSON.parse(rawPlan) : null;
+    const plan = snapshot?.plan || planCache?.plan;
+    if (!plan?.tasks?.length) return;
+    const now = new Date().toISOString();
+    const tasks = plan.tasks.map(task => task.taskId === mentorContext.sourceTaskId ? {
+      ...task,
+      status: 'completed',
+      completedAt: now,
+      lastQuizResult: {
+        subject: result.subject || '',
+        topic: result.topic || '',
+        accuracy: result.accuracy || 0,
+        completedAt: now,
+      },
+    } : task);
+    const nextPlan = { ...plan, tasks };
+    const nextSnapshot = snapshot ? {
+      ...snapshot,
+      plan: nextPlan,
+      activeTasks: tasks.filter(task => task.status === 'active').slice(0, 3),
+      completedToday: tasks.filter(task => task.status === 'completed'),
+      deferredTasks: tasks.filter(task => task.status === 'snoozed'),
+      lastSyncAt: now,
+    } : null;
+    localStorage.setItem('mentor_today_plan', JSON.stringify({ date: getMentorGuestSnapshotKey().split(':').pop(), plan: nextPlan }));
+    if (nextSnapshot) localStorage.setItem(getMentorGuestSnapshotKey(), JSON.stringify(nextSnapshot));
+  } catch {}
+}
+
 async function saveQuizSession(result, routeSessionId) {
   if (!result) return;
 
@@ -224,6 +291,7 @@ export default function Result() {
   const scoreSavedRef = useRef(false);
   const landingConfettiShownRef = useRef(false);
   const leaderboardRefreshedAfterScoreRef = useRef(false);
+  const mentorReturnSavedRef = useRef(false);
 
 
 
@@ -358,6 +426,42 @@ export default function Result() {
   }, [status, router.isReady, result]);
 
   useEffect(() => {
+    if (!router.isReady || status !== 'authenticated' || !result) return;
+    if (mentorReturnSavedRef.current) return;
+    const mentorContext = readMentorReturnContext(result);
+    if (!mentorContext?.sourceTaskId) return;
+    mentorReturnSavedRef.current = true;
+    const counts = getResultCounts(result);
+    fetch('/api/mentor/quiz-return', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        taskId: mentorContext.sourceTaskId,
+        planId: mentorContext.planId || result.planId || '',
+        quizSessionId: result.clientSessionId || result.sessionId || router.query.sessionId || '',
+        subject: result.subject || router.query.subject || '',
+        topic: result.topic || router.query.topic || '',
+        correct: counts.correctAnswers,
+        incorrect: counts.incorrectAnswers,
+        skipped: counts.skipped,
+        totalQuestions: counts.totalQuestions,
+      }),
+    }).catch(err => {
+      console.warn('[result] mentor return save failed:', err.message);
+      mentorReturnSavedRef.current = false;
+    });
+  }, [result, router.isReady, router.query.sessionId, router.query.subject, router.query.topic, status]);
+
+  useEffect(() => {
+    if (!router.isReady || status !== 'unauthenticated' || !result || !isGuestMode()) return;
+    if (mentorReturnSavedRef.current) return;
+    const mentorContext = readMentorReturnContext(result);
+    if (!mentorContext?.sourceTaskId) return;
+    mentorReturnSavedRef.current = true;
+    completeGuestMentorTask(result, mentorContext);
+  }, [result, router.isReady, status]);
+
+  useEffect(() => {
     if (!result || status !== 'unauthenticated') return;
     patchGuestProfileCache();
   }, [result, status]);
@@ -486,6 +590,11 @@ export default function Result() {
   }, [result]);
 
   function handleContinue() {
+    const mentorContext = readMentorReturnContext(result);
+    if (mentorContext?.sourceTaskId) {
+      router.push(mentorContext.returnUrl || '/mentor');
+      return;
+    }
     const subject = result?.subject || router.query.subject;
     const collection = result?.collection || router.query.collection || 'general';
     if (subject === 'Mixed') {
@@ -493,6 +602,31 @@ export default function Result() {
       return;
     }
     router.push('/dashboard');
+  }
+
+  function handleMentorPracticeMore() {
+    const mentorContext = readMentorReturnContext(result);
+    const subject = result?.subject || router.query.subject || '';
+    const topic = result?.topic || router.query.topic || '';
+    const params = new URLSearchParams({
+      subject,
+      topic,
+      count: '25',
+      sourcePage: 'mentor',
+      sourceScreen: 'mentor_plan',
+      sourceTaskId: mentorContext?.sourceTaskId || '',
+      planId: mentorContext?.planId || '',
+      returnUrl: mentorContext?.returnUrl || '/mentor',
+    });
+    if (mentorContext?.planId) {
+      sessionStorage.setItem('ssc_mentor_return_context', JSON.stringify({
+        ...mentorContext,
+        subject,
+        topic,
+        questionCount: 25,
+      }));
+    }
+    router.push(`/quiz?${params.toString()}`);
   }
 
   function handleShareWhatsApp() {
@@ -697,6 +831,43 @@ export default function Result() {
         })()}
 
         {/* ── 2. COINS + STREAK STRIP ── */}
+        {readMentorReturnContext(result)?.sourceTaskId ? (
+          <div className="mentor-in" style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.22)', borderRadius: 20, padding: 16, borderLeft: '4px solid #14B8A6' }}>
+            <p className="t-stat-label" style={{ color: '#14B8A6', marginBottom: 6 }}>Mentor Next Step</p>
+            <p style={{ color: '#F8FAFC', fontWeight: 800, fontSize: 15, marginBottom: 4 }}>
+              Result Mentor plan mein save ho jayega.
+            </p>
+            <p style={{ color: '#93A4BC', fontSize: 12, lineHeight: 1.55, marginBottom: 12 }}>
+              Ab aap Mentor tab par return kar sakte hain, same topic practice kar sakte hain, ya result review kar sakte hain.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => router.push(readMentorReturnContext(result)?.returnUrl || '/mentor')}
+                className="t-button-sm"
+                style={{ width: '100%', height: 44, borderRadius: 14, border: 'none', background: '#14B8A6', color: '#FFFFFF', cursor: 'pointer' }}
+              >
+                Return to Mentor Tab
+              </button>
+              <button
+                type="button"
+                onClick={handleMentorPracticeMore}
+                className="t-button-sm"
+                style={{ width: '100%', height: 44, borderRadius: 14, border: '1px solid rgba(255,255,255,0.10)', background: '#1E3554', color: '#F8FAFC', cursor: 'pointer' }}
+              >
+                Practice More
+              </button>
+              <button
+                type="button"
+                className="t-button-sm"
+                style={{ width: '100%', height: 40, borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#93A4BC', cursor: 'default' }}
+              >
+                Stay on Results
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {savingCoins && !coinsResult && (
           <div style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.22)', borderRadius: 20, padding: 16, display: 'flex', alignItems: 'center', gap: 10, borderLeft: '4px solid #14B8A6' }}>
             <Loader size="sm" />
@@ -838,6 +1009,7 @@ export default function Result() {
             counts.skipped,
             counts.totalQuestions
           );
+          const mentorContext = readMentorReturnContext(result);
           const variant = cat === 'EXCELLENT' ? 'success' : cat === 'WEAK' ? 'strict' : 'info';
           return (
             <div className="mt-4 space-y-3">
@@ -871,6 +1043,10 @@ export default function Result() {
                                   ? (counts.skipped / counts.totalQuestions) * 100 : 0,
                                 totalQuestions: counts.totalQuestions,
                                 quizMode: result.quizMode || 'subject_topic',
+                                sourceTaskId: mentorContext?.sourceTaskId || '',
+                                sourcePage: mentorContext?.sourcePage || '',
+                                mentorNextAction: cat === 'EXCELLENT' || cat === 'GOOD' ? 'spaced_revision' : 'revision_followup',
+                                mentorActionSavedAt: new Date().toISOString(),
                               }),
                             });
                           } catch { /* silent — feedback is non-critical */ }

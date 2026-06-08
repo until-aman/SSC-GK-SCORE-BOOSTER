@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -333,7 +333,7 @@ const OPTION_KEYS   = ['optionA', 'optionB', 'optionC', 'optionD'];
 const ACTIVE_QUIZ_SESSION_KEY = 'ssc_active_quiz_session';
 const QUIZ_SESSION_EXPIRY_MS = 60 * 60 * 1000;
 const QUESTION_DURATION_SECONDS = 30;
-const VALID_SOURCE_SCREENS = new Set(['dashboard', 'analysis', 'saved', 'history', 'daily_challenge', 'unknown']);
+const VALID_SOURCE_SCREENS = new Set(['dashboard', 'analysis', 'saved', 'history', 'daily_challenge', 'mentor_plan', 'unknown']);
 
 function normalizeSourceScreen(value) {
   return VALID_SOURCE_SCREENS.has(value) ? value : 'unknown';
@@ -469,7 +469,20 @@ function getDisplaySubject(subject, collection) {
 export default function Quiz() {
   const router = useRouter();
   const { status } = useSession();
-  const { subject, topic, count, n, sessionId: qSessionId, mode, collection = 'general', sourceScreen: qSourceScreen } = router.query;
+  const {
+    subject,
+    topic,
+    count,
+    n,
+    sessionId: qSessionId,
+    mode,
+    collection = 'general',
+    sourceScreen: qSourceScreen,
+    sourcePage = '',
+    sourceTaskId = '',
+    planId = '',
+    returnUrl = '',
+  } = router.query;
   const questionCount = count || n;
   const isSavedMode  = mode === 'saved';
   const isHistoryMode = mode === 'history';
@@ -479,6 +492,17 @@ export default function Quiz() {
   const effectiveSubject = restoredMeta?.subject || historyMeta?.subject || (isSavedMode ? 'Saved' : isDailyMode ? 'Daily Challenge' : subject);
   const effectiveTopic   = restoredMeta?.topic   || historyMeta?.topic   || (isSavedMode ? 'Mixed'  : isDailyMode ? 'Mixed GK'        : topic);
   const sourceScreen = normalizeSourceScreen(isDailyMode ? 'daily_challenge' : isSavedMode ? 'saved' : isHistoryMode ? 'history' : qSourceScreen);
+  const mentorContext = useMemo(() => (
+    sourceScreen === 'mentor_plan' || sourcePage === 'mentor'
+      ? {
+          sourcePage: 'mentor',
+          sourceScreen: 'mentor_plan',
+          sourceTaskId: String(sourceTaskId || ''),
+          planId: String(planId || ''),
+          returnUrl: String(returnUrl || '/mentor'),
+        }
+      : null
+  ), [planId, returnUrl, sourcePage, sourceScreen, sourceTaskId]);
 
   const [questions, setQuestions]       = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -883,6 +907,7 @@ export default function Quiz() {
       mode: mode || 'standard',
       historyMeta,
       sourceScreen,
+      mentorContext,
       selectedQuestionCount: questions.length,
       totalQuestions: questions.length,
       questions,
@@ -905,6 +930,7 @@ export default function Quiz() {
     effectiveTopic,
     mode,
     historyMeta,
+    mentorContext,
     sourceScreen,
     questionStartedAt,
     questions,
@@ -957,6 +983,10 @@ export default function Quiz() {
       isRetry: Boolean(historyMeta?.isRetry),
       attemptNumber: historyMeta?.attemptNumber || 1,
       sourceScreen,
+      sourcePage: mentorContext?.sourcePage || '',
+      sourceTaskId: mentorContext?.sourceTaskId || '',
+      planId: mentorContext?.planId || '',
+      returnUrl: mentorContext?.returnUrl || '',
       sessionId: clientSessionId,
       clientSessionId,
       startedAt: new Date(startedAtMs).toISOString(),
@@ -968,7 +998,7 @@ export default function Quiz() {
     router.push(
       `/result?subject=${encodeURIComponent(effectiveSubject)}&topic=${encodeURIComponent(effectiveTopic)}&sessionId=${clientSessionId}&correct=${results.correct}&incorrect=${results.incorrect}&skipped=${results.skipped}&total=${results.totalQuestions}&score=${results.rawScore}`
     );
-  }, [questions, sessionId, router, quizComplete, effectiveSubject, effectiveTopic, collection, mode, answerTimes, sourceScreen, historyMeta]);
+  }, [questions, sessionId, router, quizComplete, effectiveSubject, effectiveTopic, collection, mode, answerTimes, sourceScreen, historyMeta, mentorContext]);
 
   const requestQuizExit = useCallback((targetUrl = '/dashboard') => {
     if (!quizInProgress || allowQuizExitRef.current) return true;
@@ -1080,6 +1110,10 @@ export default function Quiz() {
       isRetry: Boolean(session.historyMeta?.isRetry),
       attemptNumber: session.historyMeta?.attemptNumber || 1,
       sourceScreen: normalizeSourceScreen(session.sourceScreen),
+      sourcePage: session.mentorContext?.sourcePage || '',
+      sourceTaskId: session.mentorContext?.sourceTaskId || '',
+      planId: session.mentorContext?.planId || '',
+      returnUrl: session.mentorContext?.returnUrl || '',
       sessionId: storedSessionId,
       clientSessionId: storedSessionId,
       startedAt: new Date(startedAtMs).toISOString(),
@@ -1203,6 +1237,7 @@ export default function Quiz() {
       collection,
       mode: mode || 'standard',
       sourceScreen,
+      mentorContext,
       selectedQuestionCount: questions.length,
       totalQuestions: questions.length,
       questions,
@@ -1224,6 +1259,7 @@ export default function Quiz() {
     effectiveSubject,
     effectiveTopic,
     mode,
+    mentorContext,
     sourceScreen,
     questionStartedAt,
     questions,
