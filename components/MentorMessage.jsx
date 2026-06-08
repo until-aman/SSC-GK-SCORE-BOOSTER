@@ -1,24 +1,47 @@
-// components/MentorMessage.jsx
-// Renders mentor avatar + Hinglish guidance message.
-// variant: 'info' | 'warning' | 'success' | 'strict'
-
-export default function MentorMessage({ message, variant = 'info' }) {
-  const styles = {
-    info:    'border-teal-500/30 bg-teal-500/10 text-teal-100',
-    warning: 'border-amber-500/30 bg-amber-500/10 text-amber-100',
-    success: 'border-green-500/30 bg-green-500/10 text-green-100',
-    strict:  'border-red-500/30 bg-red-500/10 text-red-100',
-  };
+export function TeacherMentorIcon({ className = 'h-6 w-6' }) {
   return (
-    <div className={`flex items-start gap-3 rounded-xl border p-3 ${styles[variant] || styles.info}`}>
-      <div className="flex-shrink-0 w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center text-white font-bold text-base">
-        🎯
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 18.5V8.75l8-3.25 8 3.25v9.75"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7.5 11.25h9M7.5 14h6.25M7.5 16.75h4"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path
+        d="M15.25 17.25l4.25-4.25M19.5 13v3.5M19.5 13H16"
+        stroke="#14B8A6"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 8.75a3 3 0 0 1 6 0"
+        stroke="#F97316"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export default function MentorMessage({ message }) {
+  return (
+    <div className="flex items-start">
+      <div className="z-10 mt-4 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border border-orange-500/35 bg-gradient-to-br from-orange-500 via-orange-500/80 to-teal-500/80 text-white shadow-lg shadow-black/25">
+        <TeacherMentorIcon className="h-6 w-6" />
       </div>
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide opacity-60 mb-0.5">
-          Aapka Mentor
+      <div className="relative -ml-3 flex-1 rounded-2xl border border-white/[0.06] border-l-4 border-l-orange-500 bg-slate-800 px-4 py-4 pl-7">
+        <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-slate-400">
+          AAPKA MENTOR
         </p>
-        <p className="text-sm leading-relaxed">{message}</p>
+        <p className="text-sm leading-relaxed text-slate-100">{message}</p>
       </div>
     </div>
   );

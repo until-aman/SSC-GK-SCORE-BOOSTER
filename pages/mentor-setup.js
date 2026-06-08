@@ -5,7 +5,7 @@ import GoogleSignInCard from '@/components/GoogleSignInCard';
 import MentorMessage from '@/components/MentorMessage';
 import MentorSetupStep from '@/components/MentorSetupStep';
 import SubjectStatusPicker, { SUBJECTS } from '@/components/SubjectStatusPicker';
-import { MENTOR_COPY, SUBJECT_STATUS } from '@/lib/mentorCopy';
+import { MENTOR_COPY, SUBJECT_STATUS, getISTDateKey } from '@/lib/mentorCopy';
 import { generateTodaysPlan } from '@/lib/mentorPlanEngine';
 
 const EXAM_OPTIONS = [
@@ -131,9 +131,10 @@ export default function MentorSetupPage() {
         }),
       });
       if (!res.ok) throw new Error('Save failed');
-      const today = new Date().toISOString().split('T')[0];
+      const onboardingCompletedAt = new Date().toISOString();
+      const today = getISTDateKey();
       const plan = generateTodaysPlan(
-        { ...formData, topicsCompleted: {}, topicStrength: {}, onboardingCompletedAt: new Date().toISOString() },
+        { ...formData, topicsCompleted: {}, topicStrength: {}, onboardingCompletedAt },
         [],
         { repeatedMistakesPreview: [] },
         { subjects: {} }
@@ -143,6 +144,7 @@ export default function MentorSetupPage() {
         ...formData,
         topicsCompleted: {},
         topicStrength: {},
+        onboardingCompletedAt,
       }));
       localStorage.setItem('mentor_today_plan', JSON.stringify({ date: today, plan }));
       router.push('/mentor');
