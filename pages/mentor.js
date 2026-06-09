@@ -13,6 +13,8 @@ import {
   getISTDateKey,
   getMentorDayMessage,
 } from '@/lib/mentorCopy';
+import { getUserCacheScope } from '@/lib/userCacheScope';
+import { isMentorSnapshotFresh, fetchMentorPlan, fetchMentorRefresh } from '@/lib/data/mentorData';
 
 const ORANGE = '#FF6B16';
 const BG_CARD = '#172D47';
@@ -66,9 +68,11 @@ function AppTopBar() {
 }
 
 function getMentorCacheKey(email) {
-  // v3: bumped so any pre-existing cached snapshots (which lacked plan-version
-  // guarding) are abandoned once and refetched cleanly.
-  return `mentor_snapshot_v3:${email || 'guest'}:${getISTDateKey()}`;
+  // v3 + account scope. Uses a non-reversible scope hash (not the plain email)
+  // so User A's snapshot can never be read for User B, and no email appears in
+  // the localStorage key. Date-specific behaviour is preserved.
+  const scope = email ? getUserCacheScope({ user: { email } }) : 'guest';
+  return `mentor_snapshot_v3:${scope}:${getISTDateKey()}`;
 }
 
 // Plan-version guard: drop any task that does not belong to the snapshot's
@@ -190,7 +194,9 @@ function readCachedSnapshot(email) {
 function writeCachedSnapshot(email, snapshot) {
   if (typeof window === 'undefined' || !snapshot) return;
   try {
-    localStorage.setItem(getMentorCacheKey(email), JSON.stringify(snapshot));
+    // Stamp client write time so the freshness gate (10 min) is reliable even
+    // if the server lastSyncAt clock differs slightly.
+    localStorage.setItem(getMentorCacheKey(email), JSON.stringify({ ...snapshot, _cachedAt: Date.now() }));
   } catch {}
 }
 
@@ -534,13 +540,17 @@ export default function MentorPage() {
     if (cached) {
       setSnapshot(sanitizeSnapshot(cached));
       setLoading(false);
+      // Fresh cache → zero API calls. Stale cache → render now, refresh once
+      // below in the background (the cached render already happened).
+      if (isMentorSnapshotFresh(cached)) {
+        setRefreshing(false);
+        return true;
+      }
     }
 
     try {
-      const url = forceRefresh ? '/api/mentor/refresh' : '/api/mentor/plan';
-      const res = await fetch(url, { method: forceRefresh ? 'POST' : 'GET' });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || MENTOR_COPY.PLAN_FAILED);
+      // Deduped reads: GET /api/mentor/plan or POST /api/mentor/refresh (force).
+      const data = forceRefresh ? await fetchMentorRefresh() : await fetchMentorPlan();
       setSnapshot(sanitizeSnapshot(data));
       writeCachedSnapshot(email, data);
       return true;
@@ -609,8 +619,22 @@ export default function MentorPage() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Action save nahi ho paya');
+    // Step 8: patch state + cache from the authoritative snapshot the
+    // task-action route now returns — no follow-up GET /api/mentor/plan.
+    // If the server could not build a snapshot, fall back to one targeted
+    // background refresh (safety only; not the normal path).
     if (actionType !== 'launch_practice') {
-      await loadMentor({ background: true });
+      if (data.snapshot) {
+        setSnapshot(sanitizeSnapshot(data.snapshot));
+        writeCachedSnapshot(email, data.snapshot);
+      } else {
+        // Targeted fallback only: fetch the plan once (bypasses freshness gate).
+        try {
+          const fresh = await fetchMentorPlan();
+          setSnapshot(sanitizeSnapshot(fresh));
+          writeCachedSnapshot(email, fresh);
+        } catch { /* keep current state; controls re-enable below */ }
+      }
     }
     setBusyTaskId('');
   }

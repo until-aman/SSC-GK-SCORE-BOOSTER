@@ -3,6 +3,8 @@ import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import WhatsAppBell from '@/components/WhatsAppBell';
+import { getUserCacheScope } from '@/lib/userCacheScope';
+import { getAnalysisActivity, readAnalysisInterest, patchAnalysisInterestState, recordAnalysisInterest } from '@/lib/data/analysisData';
 
 // ── Design tokens (match existing app) ──────────────────────────────────
 const ORANGE     = '#FF6B16';
@@ -132,6 +134,7 @@ function timeAgo(iso) {
 // ── Main page ────────────────────────────────────────────────────────────
 export default function AnalysisPage() {
   const { data: session, status } = useSession();
+  const cacheScope = getUserCacheScope(session);
   const router = useRouter();
 
   // Real activity data (null = loading)
@@ -155,24 +158,34 @@ export default function AnalysisPage() {
   const planRef       = useRef(null);
   const autoCallFired = useRef(false);
 
-  // ── On mount: read localStorage flags ─────────────────────────────────
+  // ── On mount: read the global reveal flag (UX only, not account-specific) ──
   useEffect(() => {
     try {
-      if (localStorage.getItem('analysisInterestRecorded') === 'true') setInterestRecorded(true);
       if (localStorage.getItem('analysisRevealed') === 'true') setRevealed(true);
     } catch {}
   }, []);
 
-  // ── Fetch real activity once session status is known ──────────────────
+  // ── Account-scoped, server-confirmed interest state (Step 10/4) ───────────
+  useEffect(() => {
+    if (status !== 'authenticated') { setInterestRecorded(false); return; }
+    setInterestRecorded(readAnalysisInterest(cacheScope));
+  }, [status, cacheScope]);
+
+  // ── Real activity: logged-in only, cache-aware (Step 10) ──────────────────
+  // Guests make ZERO network calls — the static premium sample renders directly.
   useEffect(() => {
     if (status === 'loading') return;
     let cancelled = false;
-    fetch('/api/analysis-activity')
-      .then(r => r.json())
-      .then(d => { if (!cancelled) setActivity(d || { hasHistory: false }); })
+    if (status !== 'authenticated') {
+      if (process.env.NODE_ENV !== 'production') console.debug('[apidiag] {"kind":"analysis","event":"analysis-guest-static-preview"}');
+      setActivity({ hasHistory: false, isGuest: true });
+      return;
+    }
+    getAnalysisActivity({ scope: cacheScope })
+      .then(res => { if (!cancelled) setActivity(res?.data || { hasHistory: false }); })
       .catch(() => { if (!cancelled) setActivity({ hasHistory: false }); });
     return () => { cancelled = true; };
-  }, [status]);
+  }, [status, cacheScope]);
 
   // ── Analytics: tab opened ──────────────────────────────────────────────
   useEffect(() => {
@@ -187,14 +200,12 @@ export default function AnalysisPage() {
     setCtaLoading(true);
     setCtaError('');
     try {
-      const res  = await fetch('/api/notify-interest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collection: 'AI Analysis' }),
-      });
-      const data = await res.json();
-      if (res.ok && (data.success || data.alreadyJoined)) {
-        try { localStorage.setItem('analysisInterestRecorded', 'true'); } catch {}
+      // Idempotent POST (server checks email+collection; client guard + module
+      // in-flight dedup prevent duplicate submits). NO activity refetch.
+      const data = await recordAnalysisInterest({ collection: 'AI Analysis' });
+      if (data.ok) {
+        // Persist only a SERVER-CONFIRMED success into account-scoped state.
+        patchAnalysisInterestState(cacheScope, true);
         setInterestRecorded(true);
         console.log('[Analytics] analysis_interest_recorded', { email: session?.user?.email });
       } else if (data.guestBlocked) {
@@ -210,7 +221,7 @@ export default function AnalysisPage() {
     } finally {
       setCtaLoading(false);
     }
-  }, [interestRecorded, session]);
+  }, [interestRecorded, session, cacheScope]);
 
   // ── Auto-record after sign-in redirect ────────────────────────────────
   useEffect(() => {

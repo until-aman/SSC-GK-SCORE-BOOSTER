@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { getUserCacheScope } from '@/lib/userCacheScope';
+import { getDreamPost, updateDreamPost } from '@/lib/data/profileData';
 
 const DREAM_POST_TARGET = 8000;
 
@@ -27,6 +30,8 @@ function getMotivationalMessage(progressPercent, dreamPost) {
 }
 
 export default function DreamPostCard({ coins }) {
+  const { data: session } = useSession();
+  const scope = getUserCacheScope(session);
   const [dreamPost, setDreamPost]                     = useState('');
   const [dreamPostUnlockedAt, setDreamPostUnlockedAt] = useState(null);
   const [isEditing, setIsEditing]                     = useState(false);
@@ -38,9 +43,10 @@ export default function DreamPostCard({ coins }) {
   const [fetchError, setFetchError]                   = useState(false);
 
   useEffect(() => {
-    fetch('/api/dream-post')
-      .then(r => r.json())
-      .then(data => {
+    // Account-scoped, cache-aware read (fresh → 0 network; else 1 GET, deduped).
+    getDreamPost({ scope })
+      .then(res => {
+        const data = res?.data || {};
         setDreamPost(data.dreamPost || '');
         setDreamPostUnlockedAt(data.dreamPostUnlockedAt || null);
         setIsLoading(false);
@@ -49,7 +55,8 @@ export default function DreamPostCard({ coins }) {
         setFetchError(true);
         setIsLoading(false);
       });
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope]);
 
   function openEditForm() {
     setError('');
@@ -90,13 +97,10 @@ export default function DreamPostCard({ coins }) {
     setIsSaving(true);
     setError('');
     try {
-      const res = await fetch('/api/dream-post', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dreamPost: valueToSave }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
+      // One mutation (in-flight deduped); patches the scoped Dream Post cache.
+      // No follow-up GET.
+      const data = await updateDreamPost({ scope, dreamPost: valueToSave });
+      if (!data.ok) {
         setError(data.error || "Couldn't save your Dream Post. Please try again.");
         return;
       }

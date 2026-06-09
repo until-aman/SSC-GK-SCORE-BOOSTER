@@ -6,6 +6,8 @@ import BackButton from '@/components/BackButton';
 import GoogleSignInCard from '@/components/GoogleSignInCard';
 import SessionRow from '@/components/SessionRow';
 import Loader from '@/components/ui/Loader';
+import { getUserCacheScope } from '@/lib/userCacheScope';
+import { getScoreHistory } from '@/lib/data/historyClientData';
 
 const LEVEL_THRESHOLDS = {
   Aspirant: { min: 0, max: 200, next: 'Scholar' },
@@ -28,14 +30,14 @@ export default function CoinsHistoryPage() {
 
   const fetchHistory = useCallback(() => {
     setLoading(true);
-    fetch('/api/score-history')
-      .then(r => r.json())
-      .then(d => {
-        setData(d);
+    getScoreHistory({ scope: getUserCacheScope(session) })
+      .then(res => {
+        if (res?.data) setData(res.data);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
   useEffect(() => {
     if (status === 'loading') return;

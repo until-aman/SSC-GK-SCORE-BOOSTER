@@ -4,6 +4,10 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
 import Loader from '@/components/ui/Loader';
+import { getUserCacheScope } from '@/lib/userCacheScope';
+import { getHistoryQuestions, normalizeHistoryQuery } from '@/lib/data/historyClientData';
+import { toggleSavedQuestion } from '@/lib/data/savedData';
+import { getAIExplanation as getAIExplanationHelper } from '@/lib/data/aiData';
 
 const FILTERS = ['all', 'wrong', 'skipped', 'correct', 'saved'];
 const FILTER_COPY = {
@@ -55,24 +59,17 @@ function QuestionReviewCard({ item, aiCache, setAiCache, onPractice, onToggleSav
     if (cache.ai || cache.loading) return;
     setAiCache(prev => ({ ...prev, [item.questionId]: { ...cache, loading: true } }));
     try {
-      const res = await fetch('/api/ai/explain', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: item.question,
-          optionA: item.optionA,
-          optionB: item.optionB,
-          optionC: item.optionC,
-          optionD: item.optionD,
-          correctOption: item.correctOption,
-          userOption: item.lastUserAnswer,
-          explanation: item.explanation || '',
-          subject: item.subject,
-          topic: item.topic,
-        }),
+      // Shared helper: 7-day content-keyed cache + in-flight dedup. Sheet
+      // explanation remains visible (cache.official) while AI loads.
+      const { text, source } = await getAIExplanationHelper({
+        question: item.question,
+        optionA: item.optionA, optionB: item.optionB, optionC: item.optionC, optionD: item.optionD,
+        correctOption: item.correctOption,
+        userOption: item.lastUserAnswer,
+        sheetExplanation: item.explanation || '',
+        subject: item.subject, topic: item.topic,
       });
-      const data = await res.json();
-      setAiCache(prev => ({ ...prev, [item.questionId]: { ...cache, ai: data.aiExplanation || data.explanation || null, loading: false } }));
+      setAiCache(prev => ({ ...prev, [item.questionId]: { ...cache, ai: source === 'ai' ? text : null, loading: false } }));
     } catch {
       setAiCache(prev => ({ ...prev, [item.questionId]: { ...cache, loading: false } }));
     }
@@ -145,7 +142,8 @@ function QuestionReviewCard({ item, aiCache, setAiCache, onPractice, onToggleSav
 }
 
 export default function HistoryQuestionsPage() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const cacheScope = getUserCacheScope(session);
   const router = useRouter();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -159,16 +157,16 @@ export default function HistoryQuestionsPage() {
   const loadQuestions = useCallback(async function loadQuestions(nextPage = 1, append = false) {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ ...router.query, page: String(nextPage), limit: '50' });
-      const res = await fetch(`/api/history/questions?${params.toString()}`);
-      const json = await res.json();
-      if (!res.ok || !json.success) throw new Error(json.error || 'Failed');
+      const query = normalizeHistoryQuery({ ...router.query, page: nextPage, limit: 50 });
+      const res = await getHistoryQuestions({ scope: cacheScope, query });
+      const json = res?.data;
+      if (!json?.success) throw new Error(json?.error || 'Failed');
       setData(prev => append ? { ...json.data, questions: [...(prev?.questions || []), ...json.data.questions] } : json.data);
       setPage(nextPage);
     } finally {
       setLoading(false);
     }
-  }, [router.query]);
+  }, [router.query, cacheScope]);
 
   useEffect(() => {
     if (!router.isReady || status === 'loading') return;
@@ -269,12 +267,13 @@ export default function HistoryQuestionsPage() {
   }
 
   async function toggleSave(question) {
+    // Optimistic UI patch (unchanged), then shared mutation helper that patches
+    // the scoped IDs/list caches + marks History caches stale. No full GET.
     setData(prev => ({ ...prev, questions: prev.questions.map(item => item.questionId === question.questionId ? { ...item, isSaved: !item.isSaved } : item) }));
-    await fetch('/api/saved-questions/toggle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...question, action: question.isSaved ? 'unsave' : 'save' }),
-    }).catch(() => loadQuestions(page, false));
+    try {
+      const r = await toggleSavedQuestion({ scope: cacheScope, action: question.isSaved ? 'unsave' : 'save', question });
+      if (!r.ok) loadQuestions(page, false); // rollback via refetch on failure
+    } catch { loadQuestions(page, false); }
   }
 
   return (

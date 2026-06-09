@@ -8,6 +8,7 @@ import {
   parseUserRow,
   appendUserRow,
 } from '@/lib/sheets';
+import { buildProfileResponse } from '@/lib/server/userProfileService';
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
@@ -58,17 +59,7 @@ export default async function handler(req, res) {
       const newRow = createDefaultUserRow(session.user.email, session.user.name, sessionImage);
       await appendUserRow(newRow);
       const user = parseUserRow(newRow);
-      return res.status(200).json({
-        email: user.email,
-        name: user.name,
-        totalCoins: user.totalCoins,
-        level: user.level,
-        streakCount: user.streakCount,
-        lastAttemptDate: user.lastAttemptDate,
-        createdAt: user.createdAt,
-        image: user.image,
-        isNewUser: true,
-      });
+      return res.status(200).json(buildProfileResponse(user, true));
     }
 
     const user = parseUserRow(userRow);
@@ -91,17 +82,7 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({
-      email: user.email,
-      name: user.name,
-      totalCoins: user.totalCoins,
-      level: user.level,
-      streakCount: user.streakCount,
-      lastAttemptDate: user.lastAttemptDate,
-      createdAt: user.createdAt,
-      image: user.image,
-      isNewUser: false,
-    });
+    return res.status(200).json(buildProfileResponse(user, false));
   } catch (err) {
     console.error('[user-profile] Error:', err.message);
     return res.status(500).json({ error: 'Internal server error' });

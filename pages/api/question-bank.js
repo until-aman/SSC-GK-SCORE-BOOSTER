@@ -1,9 +1,10 @@
 import { kv } from '@vercel/kv';
 import { getQuestionsForSubject } from '@/lib/sheets';
+import { getServerCache, setServerCache } from '@/lib/server/serverCache';
 
 const KV_TTL_SECONDS = 4 * 60 * 60;
-const MEM_TTL_MS = 4 * 60 * 60 * 1000;
-const MAX_MEM_ENTRIES = 100;
+const MEM_TTL_MS = 4 * 60 * 60 * 1000;   // unchanged 4h server mem TTL
+const MAX_MEM_ENTRIES = 100;             // unchanged bound
 const TIMEOUT_MS = 10_000;
 
 const KV_ENABLED = !!(
@@ -11,23 +12,14 @@ const KV_ENABLED = !!(
   process.env.KV_REST_API_TOKEN
 );
 
-const memCache = new Map();
-
+// Step 14: the bespoke in-memory Map is replaced by the shared bounded
+// serverCache (same 4h TTL + 100-entry bound). KV behavior is unchanged.
 function memGet(key) {
-  const entry = memCache.get(key);
-  if (!entry) return null;
-  if (Date.now() - entry.cachedAt > MEM_TTL_MS) {
-    memCache.delete(key);
-    return null;
-  }
-  return entry.questions;
+  const v = getServerCache(`qbank:${key}`);
+  return v === undefined ? null : v;
 }
-
 function memSet(key, questions) {
-  if (memCache.size >= MAX_MEM_ENTRIES) {
-    memCache.delete(memCache.keys().next().value);
-  }
-  memCache.set(key, { questions, cachedAt: Date.now() });
+  setServerCache(`qbank:${key}`, questions, MEM_TTL_MS, { maxEntries: MAX_MEM_ENTRIES });
 }
 
 function withTimeout(promise, ms) {

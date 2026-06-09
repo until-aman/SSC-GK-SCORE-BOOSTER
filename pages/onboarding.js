@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { getUserCacheScope } from '@/lib/userCacheScope';
+import { getUserProfile, readUserProfileCache, updateUserProfile } from '@/lib/data/profileData';
 
 export default function Onboarding() {
   const { data: session, status } = useSession();
@@ -13,21 +15,23 @@ export default function Onboarding() {
   useEffect(() => {
     if (status === 'loading') return;
     if (!session) { router.replace('/'); return; }
-    // If user already exists (not new), skip onboarding
-    fetch('/api/user-profile')
-      .then(r => r.json())
-      .then(data => {
-        if (data.isNewUser === false) {
-          router.replace('/dashboard');
-        } else {
-          setName(session.user?.name || '');
-          setChecking(false);
-        }
-      })
-      .catch(() => {
+    const scope = getUserCacheScope(session);
+    // If the shared profile cache already proves the user is existing → skip
+    // onboarding with ZERO profile GET. If it proves new → render onboarding.
+    const cached = readUserProfileCache(scope);
+    if (cached && cached.isNewUser === false) { router.replace('/dashboard'); return; }
+    if (cached && cached.isNewUser === true) { setName(session.user?.name || ''); setChecking(false); return; }
+    // Uncertain (no cache): one GET (this also creates the Users row for a new
+    // user). A transient failure renders onboarding (existing safe behavior) —
+    // never a hard redirect based on a failed read.
+    getUserProfile({ scope })
+      .then(res => {
+        const data = res?.data || {};
+        if (data.isNewUser === false) { router.replace('/dashboard'); return; }
         setName(session.user?.name || '');
         setChecking(false);
-      });
+      })
+      .catch(() => { setName(session.user?.name || ''); setChecking(false); });
   }, [status, session, router]);
 
   async function handleSubmit() {
@@ -35,11 +39,9 @@ export default function Onboarding() {
     if (!trimmed) return;
     setSaving(true);
     try {
-      await fetch('/api/user-profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: trimmed }),
-      });
+      // One PATCH; patches the shared profile cache (name + isNewUser:false) so
+      // the next Dashboard/Profile open needs no GET. No follow-up profile GET.
+      await updateUserProfile({ scope: getUserCacheScope(session), name: trimmed });
     } catch { /* ignore — still proceed */ }
     const alreadySeen = (() => {
       try { return localStorage.getItem('ssc_onboarding_done') === 'true'; } catch { return false; }
