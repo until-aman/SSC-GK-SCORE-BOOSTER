@@ -1,3 +1,4 @@
+import { withApiTrace } from '@/lib/apiDiagnostics';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import {
@@ -6,6 +7,7 @@ import {
   updateMentorTaskStatus,
   upsertStudentTopicState,
 } from '@/lib/sheets';
+import { loadOrCreateMentorSnapshot } from './plan';
 
 const ACTION_TO_STATUS = {
   complete: 'completed',
@@ -13,7 +15,8 @@ const ACTION_TO_STATUS = {
   response: 'completed',
 };
 
-export default async function handler(req, res) {
+export default withApiTrace('/api/mentor/task-action', handler);
+async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.email) return res.status(401).json({ error: 'Unauthorized' });
@@ -85,6 +88,23 @@ export default async function handler(req, res) {
       actionValue,
       sourcePage: 'mentor',
     });
+
+    // Step 8: for non-launch actions, return the SAME authoritative snapshot the
+    // client used to fetch separately via GET /api/mentor/plan, so the client
+    // patches its state/cache from this response and skips the follow-up GET.
+    // This reuses the existing snapshot builder (existing active plan → no
+    // regeneration), so it does not add a new full-plan rebuild. launch_practice
+    // navigates away and needs no snapshot.
+    if (actionType !== 'launch_practice') {
+      try {
+        const snapshot = await loadOrCreateMentorSnapshot(session.user.email);
+        return res.status(200).json({ success: true, snapshot });
+      } catch (snapErr) {
+        // Mutation already succeeded; the client falls back to a plan refresh.
+        console.error('[mentor/task-action] snapshot build failed:', snapErr.message);
+        return res.status(200).json({ success: true });
+      }
+    }
 
     return res.status(200).json({ success: true });
   } catch (err) {

@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import PageLoader from '@/components/ui/PageLoader';
 import BottomNav from '@/components/BottomNav';
+import CacheScopeGuard from '@/components/CacheScopeGuard';
 import '@/styles/globals.css';
 
 const BOTTOM_NAV_ROUTES = [
@@ -45,6 +46,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider session={session}>
+        <CacheScopeGuard />
         <div className="min-h-screen app-premium-bg flex justify-center">
           <div
             className="w-full max-w-[430px] min-h-screen app-premium-bg relative overflow-x-clip flex flex-col"

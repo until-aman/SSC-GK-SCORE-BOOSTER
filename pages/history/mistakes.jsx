@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
 import Loader from '@/components/ui/Loader';
+import { getUserCacheScope } from '@/lib/userCacheScope';
+import { getHistoryQuestions, normalizeHistoryQuery } from '@/lib/data/historyClientData';
+import { toggleSavedQuestion } from '@/lib/data/savedData';
 
 const RepeatedMistakesIcon = (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -146,6 +150,8 @@ function QuestionCard({ item, isOpen, onToggleOpen, onPracticeOne, onToggleSave 
 }
 
 export default function RepeatedMistakesPage() {
+  const { data: session } = useSession();
+  const cacheScope = getUserCacheScope(session);
   const router = useRouter();
   const [mistakes, setMistakes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -167,17 +173,16 @@ export default function RepeatedMistakesPage() {
         let hasMore = true;
 
         while (hasMore) {
-          const params = new URLSearchParams({
+          const query = normalizeHistoryQuery({
             answerStatus: 'wrong_skipped',
             questionHistory: 'repeated',
-            limit: '50',
-            page: String(page),
+            limit: 50,
+            page,
           });
-          const res = await fetch(`/api/history/questions?${params.toString()}`);
-          const json = await res.json();
-
-          if (!res.ok || !json.success) {
-            throw new Error(json.error || 'Failed to load repeated mistakes');
+          const res = await getHistoryQuestions({ scope: cacheScope, query });
+          const json = res?.data;
+          if (!json?.success) {
+            throw new Error(json?.error || 'Failed to load repeated mistakes');
           }
 
           allQuestions.push(...(json.data?.questions || []));
@@ -201,6 +206,7 @@ export default function RepeatedMistakesPage() {
     return () => {
       ignore = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -275,11 +281,12 @@ export default function RepeatedMistakesPage() {
 
   async function toggleSave(question) {
     setMistakes(prev => prev.map(item => item.questionId === question.questionId ? { ...item, isSaved: !item.isSaved } : item));
-    await fetch('/api/saved-questions/toggle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...question, action: question.isSaved ? 'unsave' : 'save' }),
-    }).catch(() => setMistakes(prev => prev.map(item => item.questionId === question.questionId ? { ...item, isSaved: question.isSaved } : item)));
+    try {
+      const r = await toggleSavedQuestion({ scope: cacheScope, action: question.isSaved ? 'unsave' : 'save', question });
+      if (!r.ok) setMistakes(prev => prev.map(item => item.questionId === question.questionId ? { ...item, isSaved: question.isSaved } : item));
+    } catch {
+      setMistakes(prev => prev.map(item => item.questionId === question.questionId ? { ...item, isSaved: question.isSaved } : item));
+    }
   }
 
   const styles = `

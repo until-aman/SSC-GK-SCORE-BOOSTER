@@ -1,3 +1,4 @@
+import { withApiTrace } from '@/lib/apiDiagnostics';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import {
@@ -177,7 +178,8 @@ export async function loadOrCreateMentorSnapshot(email, { forceRefresh = false, 
   });
 }
 
-export default async function handler(req, res) {
+export default withApiTrace('/api/mentor/plan', handler);
+async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.email) return res.status(401).json({ error: 'Unauthorized' });

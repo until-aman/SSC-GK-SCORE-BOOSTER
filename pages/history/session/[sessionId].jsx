@@ -4,6 +4,10 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
 import Loader from '@/components/ui/Loader';
+import { getUserCacheScope } from '@/lib/userCacheScope';
+import { getHistorySession } from '@/lib/data/historyClientData';
+import { toggleSavedQuestion } from '@/lib/data/savedData';
+import { getAIExplanation as getAIExplanationHelper } from '@/lib/data/aiData';
 
 const FILTERS = ['Wrong + Skipped', 'Wrong', 'Skipped', 'Correct', 'Saved'];
 const TONES = {
@@ -88,24 +92,15 @@ function QuestionCard({ item, onToggleSave, onPracticeOne }) {
     if (cache?.ai || cache?.loading) return;
     setCache(prev => ({ ...(prev || { official: item.explanation || '', ai: null }), loading: true }));
     try {
-      const res = await fetch('/api/ai/explain', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: item.question,
-          optionA: item.optionA,
-          optionB: item.optionB,
-          optionC: item.optionC,
-          optionD: item.optionD,
-          correctOption: item.correctOption,
-          userOption: item.userAnswer,
-          explanation: item.explanation || '',
-          subject: item.subject,
-          topic: item.topic,
-        }),
+      const { text, source } = await getAIExplanationHelper({
+        question: item.question,
+        optionA: item.optionA, optionB: item.optionB, optionC: item.optionC, optionD: item.optionD,
+        correctOption: item.correctOption,
+        userOption: item.userAnswer,
+        sheetExplanation: item.explanation || '',
+        subject: item.subject, topic: item.topic,
       });
-      const data = await res.json();
-      setCache(prev => ({ ...(prev || {}), ai: data.aiExplanation || data.explanation || null, loading: false }));
+      setCache(prev => ({ ...(prev || {}), ai: source === 'ai' ? text : null, loading: false }));
     } catch {
       setCache(prev => ({ ...(prev || { official: item.explanation || '', ai: null }), loading: false }));
     }
@@ -170,7 +165,8 @@ function QuestionCard({ item, onToggleSave, onPracticeOne }) {
 }
 
 export default function SessionReviewPage() {
-  const { status } = useSession();
+  const { data: authSession, status } = useSession();
+  const cacheScope = getUserCacheScope(authSession);
   const router = useRouter();
   const { sessionId } = router.query;
   const [data, setData] = useState(null);
@@ -185,16 +181,16 @@ export default function SessionReviewPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/history/session/${sessionId}`);
-      const json = await res.json();
-      if (!res.ok || !json.success) throw new Error(json.error || 'Failed');
+      const res = await getHistorySession({ scope: cacheScope, sessionId });
+      const json = res?.data;
+      if (!json?.success) throw new Error(json?.error || 'Failed');
       setData(json.data);
     } catch {
       setError('This session is no longer available.');
     } finally {
       setLoading(false);
     }
-  }, [sessionId]);
+  }, [sessionId, cacheScope]);
 
   useEffect(() => {
     if (!router.isReady || status === 'loading') return;
@@ -240,11 +236,8 @@ export default function SessionReviewPage() {
       answers: prev.answers.map(answer => answer.questionId === item.questionId ? { ...answer, isSaved: !answer.isSaved } : answer),
     }));
     try {
-      await fetch('/api/saved-questions/toggle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...item, action: item.isSaved ? 'unsave' : 'save', sessionId }),
-      });
+      const r = await toggleSavedQuestion({ scope: cacheScope, action: item.isSaved ? 'unsave' : 'save', question: { ...item, sessionId } });
+      if (!r.ok) throw new Error('toggle failed');
     } catch {
       setData(prev => ({
         ...prev,

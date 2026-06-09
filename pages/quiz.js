@@ -8,7 +8,8 @@ import AppCard from '@/components/ui/AppCard';
 import { fetchWithClientCache, readCache } from '@/lib/clientCache';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 import { getDailyChallenge, getQuestionBank } from '@/lib/data/questionData';
-import { getSavedQuestionIds } from '@/lib/data/savedData';
+import { getSavedQuestionIds, saveQuestion, unsaveQuestion } from '@/lib/data/savedData';
+import { getUserCacheScope } from '@/lib/userCacheScope';
 
 const GK_FACTS = [
   // GK Facts
@@ -468,7 +469,7 @@ function getDisplaySubject(subject, collection) {
 
 export default function Quiz() {
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const {
     subject,
     topic,
@@ -581,12 +582,13 @@ export default function Quiz() {
   // Load saved IDs for bookmark state
   useEffect(() => {
     if (status === 'loading') return;
-    getSavedQuestionIds({ isLoggedIn })
+    getSavedQuestionIds({ isLoggedIn, scope: getUserCacheScope(session) })
       .then(result => {
         const ids = Array.isArray(result) ? result : result.data?.savedIds || [];
         setSavedIds(new Set(ids));
       })
       .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, isLoggedIn]);
 
   async function handleBookmarkToggle(question) {
@@ -629,16 +631,15 @@ export default function Quiz() {
       return;
     }
 
-    // Logged-in: use API
+    // Logged-in: use the shared mutation helpers (existing routes), which also
+    // patch the scoped saved-IDs/list caches + mark History caches stale.
+    const scope = getUserCacheScope(session);
     const isSaved = savedIds.has(question.id);
     if (isSaved) {
       setSavedIds(prev => { const n = new Set(prev); n.delete(question.id); return n; });
       try {
-        await fetch('/api/saved-questions', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ questionId: question.id }),
-        });
+        const r = await unsaveQuestion({ scope, questionId: question.id });
+        if (!r.ok) setSavedIds(prev => new Set([...prev, question.id])); // rollback
       } catch {
         setSavedIds(prev => new Set([...prev, question.id])); // rollback
       }
@@ -648,25 +649,20 @@ export default function Quiz() {
       setBookmarkFeedback(question.id);
       setTimeout(() => setBookmarkFeedback(null), 1200);
       try {
-        const saveRes = await fetch('/api/saved-questions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            questionId:    question.id,
-            subject:       question.subject,
-            topic:         question.topic,
-            question:      question.question,
-            optionA:       question.optionA,
-            optionB:       question.optionB,
-            optionC:       question.optionC,
-            optionD:       question.optionD,
-            correctOption: question.correctOption,
-            explanation:   question.explanation || '',
-          }),
-        });
-        if (!saveRes.ok) {
-          const err = await saveRes.json().catch(() => ({}));
-          console.error('[bookmark save failed]', saveRes.status, err);
+        const r = await saveQuestion({ scope, question: {
+          questionId:    question.id,
+          subject:       question.subject,
+          topic:         question.topic,
+          question:      question.question,
+          optionA:       question.optionA,
+          optionB:       question.optionB,
+          optionC:       question.optionC,
+          optionD:       question.optionD,
+          correctOption: question.correctOption,
+          explanation:   question.explanation || '',
+        } });
+        if (!r.ok) {
+          console.error('[bookmark save failed]');
           setSavedIds(prev => { const n = new Set(prev); n.delete(question.id); return n; }); // rollback
         }
       } catch {
@@ -826,6 +822,13 @@ export default function Quiz() {
           return;
         }
       } catch {}
+    }
+
+    // Step 14: reaching here means the canonical /api/question-bank path did not
+    // produce a usable pool — i.e. the legacy /api/questions fallback. Log why.
+    if (process.env.NODE_ENV !== 'production') {
+      const reason = subject === 'Mixed' ? 'mixed-subject' : 'missing-bank';
+      try { console.debug(`[apidiag] {"kind":"public-cache","event":"questions-legacy-fallback","reason":"${reason}"}`); } catch {}
     }
 
     const cached = readCache(cacheKey, CACHE_TTL.ONE_DAY);

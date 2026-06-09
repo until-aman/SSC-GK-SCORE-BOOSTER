@@ -4,6 +4,8 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
 import { getISTDateString } from '@/lib/streak';
+import { getUserCacheScope } from '@/lib/userCacheScope';
+import { getUserProfile } from '@/lib/data/profileData';
 
 const DAY_LABELS  = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -105,10 +107,12 @@ export default function StreakPage() {
   useEffect(() => {
     if (status === 'loading') return;
     if (status === 'unauthenticated') { router.replace('/'); return; }
-    fetch('/api/user-profile')
-      .then(r => r.json())
-      .then(d => { setProfile(d); setLoading(false); })
+    // Streak needs only streakCount + lastAttemptDate (+ createdAt) — all present
+    // in the shared profile cache. Fresh → 0 network; else 1 GET (deduped).
+    getUserProfile({ scope: getUserCacheScope(session) })
+      .then(res => { if (res?.data) setProfile(res.data); setLoading(false); })
       .catch(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router]);
 
   if (status === 'loading' || loading) {

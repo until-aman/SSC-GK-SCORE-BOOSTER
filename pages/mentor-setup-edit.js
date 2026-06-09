@@ -8,6 +8,7 @@ import SubjectStatusPicker, { SUBJECTS } from '@/components/SubjectStatusPicker'
 import TopicStatusPicker from '@/components/TopicStatusPicker';
 import { MENTOR_COPY, SUBJECT_DISPLAY_NAMES, SUBJECT_STATUS, TOPIC_STATUS, getISTDateKey } from '@/lib/mentorCopy';
 import { generateTodaysPlan } from '@/lib/mentorPlanEngine';
+import { getUserCacheScope } from '@/lib/userCacheScope';
 
 const EXAM_OPTIONS = ['SSC CGL', 'SSC CHSL', 'SSC CPO', 'SSC MTS', 'SSC GD', 'Other SSC Exam'];
 const DAYS_OPTIONS = ['0-15', '16-30', '31-45', '46-60', '60+', "I don't know yet"];
@@ -250,8 +251,11 @@ export default function MentorSetupEditPage() {
       if (!res.ok) throw new Error(data.error || 'generate failed');
       // New plan is now the active one server-side — purge every old cache and
       // seed only the fresh snapshot so the Mentor tab shows the new plan only.
+      // Step 8: stamp `_cachedAt` so the Mentor freshness gate treats this as
+      // fresh → no immediate GET /api/mentor/plan after navigation.
       clearAllMentorCaches();
-      localStorage.setItem(`mentor_snapshot_v3:${session?.user?.email || ''}:${today}`, JSON.stringify(data));
+      localStorage.setItem(`mentor_snapshot_v3:${getUserCacheScope(session)}:${today}`, JSON.stringify({ ...data, _cachedAt: Date.now() }));
+      if (process.env.NODE_ENV !== 'production') console.debug('[apidiag] {"kind":"mentor","event":"mentor-generate-cache-write"}');
       router.push('/mentor?updated=1');
     } catch {
       // Edge C: profile saved but generation failed — do NOT restore old tasks.

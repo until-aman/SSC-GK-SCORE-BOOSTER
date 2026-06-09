@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
+import { markJourney } from '@/lib/journeyDiagnostics';
+import { getUserCacheScope } from '@/lib/userCacheScope';
+import { getHistoryLanding, getHistoryQuizzes, getHistoryTopics, getHistoryQuestions, normalizeHistoryQuery } from '@/lib/data/historyClientData';
+import { toggleSavedQuestion } from '@/lib/data/savedData';
+import { getAIExplanation as getAIExplanationHelper } from '@/lib/data/aiData';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
 import GoogleSignInCard from '@/components/GoogleSignInCard';
@@ -379,24 +384,15 @@ function QuestionCard({ item, isOpen, onToggleOpen, aiCache, setAiCache, onPract
     if (cache.ai || cache.loading) return;
     setAiCache(prev => ({ ...prev, [item.questionId]: { ...cache, loading: true } }));
     try {
-      const res = await fetch('/api/ai/explain', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: item.question,
-          optionA: item.optionA,
-          optionB: item.optionB,
-          optionC: item.optionC,
-          optionD: item.optionD,
-          correctOption: item.correctOption,
-          userOption: item.lastUserAnswer,
-          explanation: item.explanation || '',
-          subject: item.subject,
-          topic: item.topic,
-        }),
+      const { text, source } = await getAIExplanationHelper({
+        question: item.question,
+        optionA: item.optionA, optionB: item.optionB, optionC: item.optionC, optionD: item.optionD,
+        correctOption: item.correctOption,
+        userOption: item.lastUserAnswer,
+        sheetExplanation: item.explanation || '',
+        subject: item.subject, topic: item.topic,
       });
-      const data = await res.json();
-      setAiCache(prev => ({ ...prev, [item.questionId]: { ...cache, ai: data.aiExplanation || data.explanation || null, loading: false } }));
+      setAiCache(prev => ({ ...prev, [item.questionId]: { ...cache, ai: source === 'ai' ? text : null, loading: false } }));
     } catch {
       setAiCache(prev => ({ ...prev, [item.questionId]: { ...cache, loading: false } }));
     }
@@ -501,7 +497,8 @@ function MoreFiltersSheet({ open, filters, subjects, onClose, onApply, onReset }
 }
 
 export default function HistoryPage() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const cacheScope = getUserCacheScope(session);
   const router = useRouter();
   const [activeMode, setActiveMode] = useState('quiz');
   const [summary, setSummary] = useState(null);
@@ -536,86 +533,97 @@ export default function HistoryPage() {
   const isGuest = status === 'unauthenticated';
   const allZero = summary && summary.totalQuizzes === 0 && summary.totalQuestions === 0 && summary.savedCount === 0;
 
+  // Step 9: summary, default quiz page, and subjects all come from ONE
+  // cache-aware GET /api/history/landing. The three loaders share the same
+  // scoped key, so Step 5 in-flight dedup collapses the mount to one network
+  // request (cold) and zero (warm).
   const loadSummary = useCallback(async () => {
     setSummaryLoading(true);
     setSummaryError('');
     try {
-      const res = await fetch('/api/history/summary');
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
-      setSummary(data.data);
+      markJourney({ journey: 'history-landing', route: '/api/history/landing', trigger: 'mount', cache: 'helper', helper: 'getHistoryLanding' });
+      const res = await getHistoryLanding({ scope: cacheScope });
+      const payload = res?.data?.data;
+      if (!payload) throw new Error('Failed');
+      setSummary(payload.summary);
     } catch {
       setSummaryError("Couldn't load. Check connection.");
     } finally {
       setSummaryLoading(false);
     }
-  }, []);
+  }, [cacheScope]);
 
   const loadQuizzes = useCallback(async (limit = 3, filter = 'all', range = appliedCustomRange) => {
     setQuizLoading(true);
     try {
-      const params = new URLSearchParams({ page: '1', limit: String(limit) });
-      if (filter === '7d' || filter === '30d') params.set('dateRange', filter);
-      if (filter === 'custom' && range.start && range.end) {
-        params.set('startDate', range.start);
-        params.set('endDate', range.end);
+      // Default landing page (all, page 1, limit ≤ 3) → served by the shared
+      // landing payload (no extra request). Any filter/expansion → cache-aware
+      // GET /api/history/quizzes keyed by the exact query.
+      const isDefault = filter === 'all' && !range.start && !range.end && limit <= 3;
+      if (isDefault) {
+        const res = await getHistoryLanding({ scope: cacheScope });
+        if (res?.data?.data?.quizzes) setQuizData(res.data.data.quizzes);
+        return;
       }
-
-      const res = await fetch(`/api/history/quizzes?${params.toString()}`);
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
+      const params = { page: 1, limit };
+      if (filter === '7d' || filter === '30d') params.dateRange = filter;
+      if (filter === 'custom' && range.start && range.end) { params.startDate = range.start; params.endDate = range.end; }
+      const query = normalizeHistoryQuery(params);
+      const res = await getHistoryQuizzes({ scope: cacheScope, query });
+      const data = res?.data;
+      if (!data?.success) throw new Error(data?.error || 'Failed');
       setQuizData(data.data);
     } finally {
       setQuizLoading(false);
     }
-  }, [appliedCustomRange]);
+  }, [appliedCustomRange, cacheScope]);
 
   const loadSubjects = useCallback(async () => {
     if (subjects) return subjects;
     setSubjectsLoading(true);
     try {
-      const res = await fetch('/api/history/subjects');
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
-      setSubjects(data.data.subjects || []);
-      return data.data.subjects || [];
+      const res = await getHistoryLanding({ scope: cacheScope });
+      const list = res?.data?.data?.subjects || [];
+      setSubjects(list);
+      return list;
     } finally {
       setSubjectsLoading(false);
     }
-  }, [subjects]);
+  }, [subjects, cacheScope]);
 
   const loadTopics = useCallback(async (subject) => {
     if (!subject || topicsBySubject[subject]) return;
     setTopicsLoading(true);
     try {
-      const res = await fetch(`/api/history/topics?subject=${encodeURIComponent(subject)}`);
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
+      const res = await getHistoryTopics({ scope: cacheScope, subject });
+      const data = res?.data;
+      if (!data?.success) throw new Error(data?.error || 'Failed');
       setTopicsBySubject(prev => ({ ...prev, [subject]: data.data.topics || [] }));
     } finally {
       setTopicsLoading(false);
     }
-  }, [topicsBySubject]);
+  }, [topicsBySubject, cacheScope]);
 
   const loadQuestions = useCallback(async () => {
     setQuestionsLoading(true);
     try {
-      const params = new URLSearchParams({ limit: '10' });
-      if (questionType === 'repeated') params.set('questionHistory', 'repeated');
-      else if (questionType === 'never_correct') params.set('questionHistory', 'never_correct');
-      else params.set('status', questionType);
-      if (questionSubject) params.set('subject', questionSubject);
+      const params = { limit: 10 };
+      if (questionType === 'repeated') params.questionHistory = 'repeated';
+      else if (questionType === 'never_correct') params.questionHistory = 'never_correct';
+      else params.status = questionType;
+      if (questionSubject) params.subject = questionSubject;
       Object.entries(advancedFilters).forEach(([key, value]) => {
-        if (value && value !== 'all') params.set(key === 'answerStatus' ? 'status' : key, value);
+        if (value && value !== 'all') params[key === 'answerStatus' ? 'status' : key] = value;
       });
-      const res = await fetch(`/api/history/questions?${params.toString()}`);
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
+      const query = normalizeHistoryQuery(params);
+      const res = await getHistoryQuestions({ scope: cacheScope, query });
+      const data = res?.data;
+      if (!data?.success) throw new Error(data?.error || 'Failed');
       setQuestionsData(data.data);
     } finally {
       setQuestionsLoading(false);
     }
-  }, [advancedFilters, questionSubject, questionType]);
+  }, [advancedFilters, questionSubject, questionType, cacheScope]);
 
   useEffect(() => {
     if (status === 'loading' || isGuest) return;
@@ -810,11 +818,10 @@ export default function HistoryPage() {
       ...prev,
       questions: prev.questions.map(item => item.questionId === question.questionId ? { ...item, isSaved: !item.isSaved } : item),
     }));
-    await fetch('/api/saved-questions/toggle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...question, action: question.isSaved ? 'unsave' : 'save' }),
-    }).catch(() => loadQuestions());
+    try {
+      const r = await toggleSavedQuestion({ scope: cacheScope, action: question.isSaved ? 'unsave' : 'save', question });
+      if (!r.ok) loadQuestions();
+    } catch { loadQuestions(); }
   }
 
   function applyMoreFilters(next) {

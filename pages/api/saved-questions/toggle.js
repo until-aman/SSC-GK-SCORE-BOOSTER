@@ -7,6 +7,12 @@ const SHEET_NAME = 'SavedQuestions';
 const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
 let cachedSheetId = null;
 
+// Step 11: in-process in-flight guard keyed by email|questionId|action. Identical
+// concurrent toggles for the SAME action share one check+write promise (no double
+// flip / duplicate row); opposite actions and different questions are never
+// merged. Server-instance-local (Sheets has no transaction).
+const toggleInflight = new Map();
+
 async function getSheetId(sheets) {
   if (cachedSheetId !== null) return cachedSheetId;
   const meta = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
@@ -40,40 +46,34 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: 'questionId and valid action are required' });
   }
 
-  try {
+  const email = session.user.email;
+  const dedupeKey = `${email}|${questionId}|${action}`;
+
+  async function applyToggle() {
     const sheets = await getSheetsClient();
     const existing = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: `${SHEET_NAME}!A2:B`,
     });
     const rows = existing.data.values || [];
-    const rowIndex = rows.findIndex(row => row[0] === session.user.email && row[1] === questionId);
+    const rowIndex = rows.findIndex(row => row[0] === email && row[1] === questionId);
 
     if (action === 'save') {
-      if (rowIndex !== -1) return res.status(200).json({ success: true, data: { isSaved: true, alreadySaved: true } });
+      if (rowIndex !== -1) return { isSaved: true, alreadySaved: true };
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
         range: `${SHEET_NAME}!A:L`,
         valueInputOption: 'USER_ENTERED',
         requestBody: {
           values: [[
-            session.user.email,
-            questionId,
-            subject,
-            topic,
-            question,
-            optionA,
-            optionB,
-            optionC,
-            optionD,
-            String(correctOption || '').toUpperCase(),
-            explanation,
-            new Date().toISOString(),
+            email, questionId, subject, topic, question,
+            optionA, optionB, optionC, optionD,
+            String(correctOption || '').toUpperCase(), explanation, new Date().toISOString(),
           ]],
         },
       });
-      invalidateSavedIdsCache(session.user.email);
-      return res.status(200).json({ success: true, data: { isSaved: true } });
+      invalidateSavedIdsCache(email);
+      return { isSaved: true };
     }
 
     if (rowIndex !== -1) {
@@ -83,15 +83,23 @@ export default async function handler(req, res) {
         spreadsheetId: SPREADSHEET_ID,
         requestBody: {
           requests: [{
-            deleteDimension: {
-              range: { sheetId, dimension: 'ROWS', startIndex: sheetRowIndex, endIndex: sheetRowIndex + 1 },
-            },
+            deleteDimension: { range: { sheetId, dimension: 'ROWS', startIndex: sheetRowIndex, endIndex: sheetRowIndex + 1 } },
           }],
         },
       });
-      invalidateSavedIdsCache(session.user.email);
+      invalidateSavedIdsCache(email);
+      return { isSaved: false, alreadySaved: false };
     }
-    return res.status(200).json({ success: true, data: { isSaved: false } });
+    return { isSaved: false, alreadyUnsaved: true };
+  }
+
+  try {
+    let pending = toggleInflight.get(dedupeKey);
+    if (!pending) {
+      pending = applyToggle().finally(() => toggleInflight.delete(dedupeKey));
+      toggleInflight.set(dedupeKey, pending);
+    }
+    return res.status(200).json({ success: true, data: await pending });
   } catch (err) {
     console.error('[saved-questions/toggle]', err.message);
     return res.status(500).json({ success: false, error: 'Failed to update saved question' });

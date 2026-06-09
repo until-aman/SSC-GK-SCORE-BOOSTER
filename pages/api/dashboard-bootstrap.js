@@ -1,3 +1,4 @@
+import { withApiTrace } from '@/lib/apiDiagnostics';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
 import {
@@ -9,29 +10,31 @@ import {
   COLLECTION_PREFIX,
   getLeaderboardCacheRow,
 } from '@/lib/sheets';
+import { buildProfileResponse } from '@/lib/server/userProfileService';
 
 // Only collections that have active question data in the sheet.
 const BOOTSTRAP_COLLECTIONS = ['PYQ', 'Parmar'];
 
 // ─── Section helpers ─────────────────────────────────────────────────────────
 
-/** Returns a profile object for the session user, or null for guests. */
+/**
+ * Returns a profile object for the session user, or null for guests.
+ *
+ * For a signed-in user whose Users row does not yet exist (a brand-new
+ * account), returns `{ isNewUser: true }` so the Dashboard can route to
+ * /onboarding WITHOUT a second `/api/user-profile` round-trip. This mirrors the
+ * new-user detection in `/api/user-profile`; it does NOT create the Users row
+ * (onboarding's `/api/user-profile` call still owns row creation). A transient
+ * Sheets failure throws and is caught by the handler (profile stays null + an
+ * `errors` entry) — distinct from this confirmed "no row" signal.
+ */
 async function fetchProfile(session) {
   if (!session?.user?.email) return null;
   const rows = await getUserRows();
   const userRow = findUserRow(rows, session.user.email);
-  if (!userRow) return null;
+  if (!userRow) return { isNewUser: true };
   const user = parseUserRow(userRow);
-  return {
-    email:           user.email,
-    name:            user.name,
-    totalCoins:      user.totalCoins,
-    level:           user.level,
-    streakCount:     user.streakCount,
-    lastAttemptDate: user.lastAttemptDate,
-    createdAt:       user.createdAt,
-    image:           user.image,
-  };
+  return buildProfileResponse(user, false);
 }
 
 /** Reads the cached weekly top-10 from the LeaderboardCache sheet tab. */
@@ -71,7 +74,8 @@ async function fetchCollectionCounts(collection) {
 
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
-export default async function handler(req, res) {
+export default withApiTrace('/api/dashboard-bootstrap', handler);
+async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

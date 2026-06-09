@@ -2,9 +2,16 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
 import { getSheetsClient } from '@/lib/sheets';
 import { invalidateSavedIdsCache } from './saved-questions/ids';
+import { buildSavedRow, findSavedRowIndex, normalizeMigrationBatch, MAX_MIGRATION_BATCH } from '@/lib/server/savedQuestionsService';
 
 const SHEET_NAME = 'SavedQuestions';
 const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
+
+// Step 11: in-process in-flight guard for single saves + batch migrations,
+// keyed by `email|<questionId|batch>`. Concurrent identical submits share one
+// check+append promise so a duplicate can't slip past the existing-row check.
+// Server-instance-local (Sheets has no unique index/transaction).
+const saveInflight = new Map();
 
 // Cache the numeric sheetId to avoid repeated metadata fetches
 let cachedSheetId = null;
@@ -58,7 +65,44 @@ export default async function handler(req, res) {
     }
   }
 
-  // ── POST: save a question ────────────────────────────────────────────
+  // ── POST: batch guest migration ({ questions: [...] }) ──────────────────
+  if (req.method === 'POST' && Array.isArray(req.body?.questions)) {
+    if (req.body.questions.length > MAX_MIGRATION_BATCH * 4) {
+      return res.status(413).json({ error: 'Too many questions in one request' });
+    }
+    const batch = normalizeMigrationBatch(req.body.questions); // dedup + bound + validate
+    const dedupeKey = `${email}|batch`;
+    try {
+      let pending = saveInflight.get(dedupeKey);
+      if (!pending) {
+        pending = (async () => {
+          // Read existing saved IDs ONCE; append only the missing questions.
+          const existing = await sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: `${SHEET_NAME}!A2:B` });
+          const rows = existing.data.values || [];
+          const savedSet = new Set(rows.filter(r => r[0] === email).map(r => r[1]));
+          const toAppend = batch.filter(q => !savedSet.has(q.questionId || q.id));
+          const skipped = batch.length - toAppend.length;
+          if (toAppend.length > 0) {
+            await sheets.spreadsheets.values.append({
+              spreadsheetId: SPREADSHEET_ID,
+              range: `${SHEET_NAME}!A:L`,
+              valueInputOption: 'USER_ENTERED',
+              requestBody: { values: toAppend.map(q => buildSavedRow(email, q)) },
+            });
+            invalidateSavedIdsCache(email);
+          }
+          return { ok: true, migrated: toAppend.length, skipped, failed: 0 };
+        })().finally(() => saveInflight.delete(dedupeKey));
+        saveInflight.set(dedupeKey, pending);
+      }
+      return res.status(200).json(await pending);
+    } catch (err) {
+      console.error('[saved-questions POST batch]', err.message);
+      return res.status(500).json({ error: 'Failed to migrate saved questions' });
+    }
+  }
+
+  // ── POST: save a single question ─────────────────────────────────────
   if (req.method === 'POST') {
     const {
       questionId, subject, topic, question,
@@ -76,39 +120,32 @@ export default async function handler(req, res) {
     }
 
     try {
-      // Duplicate check — read only email + questionId columns
-      const existing = await sheets.spreadsheets.values.get({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEET_NAME}!A2:B`,
-      });
-      const rows = existing.data.values || [];
-      const alreadySaved = rows.some(r => r[0] === email && r[1] === questionId);
-      if (alreadySaved) return res.status(200).json({ ok: true, alreadySaved: true });
+      const dedupeKey = `${email}|${questionId}`;
+      let pending = saveInflight.get(dedupeKey);
+      if (!pending) {
+        pending = (async () => {
+          // Duplicate check — read only email + questionId columns
+          const existing = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: `${SHEET_NAME}!A2:B`,
+          });
+          const rows = existing.data.values || [];
+          if (findSavedRowIndex(rows, email, questionId) !== -1) return { ok: true, alreadySaved: true };
 
-      const savedAt = new Date().toISOString();
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEET_NAME}!A:L`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: {
-          values: [[
-            email,
-            questionId,
-            subject       || '',
-            topic         || '',
-            question,
-            optionA,
-            optionB,
-            optionC,
-            optionD,
-            correctOption.toUpperCase(),
-            explanation   || '',
-            savedAt,
-          ]],
-        },
-      });
-      invalidateSavedIdsCache(email);
-      return res.status(200).json({ ok: true });
+          await sheets.spreadsheets.values.append({
+            spreadsheetId: SPREADSHEET_ID,
+            range: `${SHEET_NAME}!A:L`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: {
+              values: [buildSavedRow(email, { questionId, subject, topic, question, optionA, optionB, optionC, optionD, correctOption, explanation })],
+            },
+          });
+          invalidateSavedIdsCache(email);
+          return { ok: true };
+        })().finally(() => saveInflight.delete(dedupeKey));
+        saveInflight.set(dedupeKey, pending);
+      }
+      return res.status(200).json(await pending);
     } catch (err) {
       console.error('[saved-questions POST]', err.message);
       return res.status(500).json({ error: 'Failed to save question' });

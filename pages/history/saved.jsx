@@ -6,7 +6,8 @@ import Head from 'next/head';
 import GoogleSignInCard from '@/components/GoogleSignInCard';
 import HistoryTopBar from '@/components/HistoryTopBar';
 import Loader from '@/components/ui/Loader';
-import { getSavedQuestions } from '@/lib/data/savedData';
+import { getSavedQuestions, unsaveQuestion } from '@/lib/data/savedData';
+import { getUserCacheScope } from '@/lib/userCacheScope';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 const OPTION_KEYS   = ['optionA', 'optionB', 'optionC', 'optionD'];
@@ -404,7 +405,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
 }
 
 export default function HistorySavedPage() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [questions, setQuestions]     = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -440,13 +441,14 @@ export default function HistorySavedPage() {
   useEffect(() => {
     if (status === 'loading') return;
 
-    getSavedQuestions({ isLoggedIn })
+    getSavedQuestions({ isLoggedIn, scope: getUserCacheScope(session) })
       .then(result => {
         const saved = Array.isArray(result) ? result : result.data?.saved || [];
         setQuestions(saved);
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, isLoggedIn]);
 
   // ── Load revised IDs ──────────────────────────────────────────────────
@@ -464,19 +466,13 @@ export default function HistorySavedPage() {
     if (updated.length === 0) setRevisionIdx(null);
 
     if (isLoggedIn) {
-      try {
-        await fetch('/api/saved-questions', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ questionId }),
-        });
-      } catch {
-        // Best-effort; list already updated optimistically
-      }
+      // Shared helper (existing DELETE route) → also patches scoped IDs/list
+      // caches + marks History caches stale. No list refetch.
+      try { await unsaveQuestion({ scope: getUserCacheScope(session), questionId }); } catch { /* optimistic list already updated */ }
     } else {
       try { localStorage.setItem('ssc_saved_questions', JSON.stringify(updated)); } catch {}
     }
-  }, [isLoggedIn, questions]);
+  }, [isLoggedIn, questions, session]);
 
   // ── Mark as revised ───────────────────────────────────────────────────
   function markRevised(questionId) {

@@ -14,6 +14,12 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import RefreshStatus from '@/components/ui/RefreshStatus';
 import { fetchWithClientCache, formatLastUpdated, patchCache, readCache, writeCache } from '@/lib/clientCache';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
+import { getUserCacheScope, buildUserScopedKey } from '@/lib/userCacheScope';
+import { markMentorCacheStale } from '@/lib/data/mentorData';
+import { markHistoryCachesStale } from '@/lib/data/historyClientData';
+import { markAnalysisActivityStale } from '@/lib/data/analysisData';
+import { patchUserProfileCache } from '@/lib/data/profileData';
+import { getAIResultInsights, readAIInsightsCache } from '@/lib/data/aiData';
 import { MENTOR_COPY, FEEDBACK_CHIPS } from '@/lib/mentorCopy';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
@@ -63,14 +69,21 @@ function ChampionAvatar({ imageUrl, name, size = 36 }) {
 }
 
 
-function patchProfileCaches(profileSnapshot) {
-  if (!profileSnapshot) return;
+// Step 7: after a quiz, patch the ACCOUNT-SCOPED bootstrap cache that the
+// Dashboard actually reads (`dashboard_bootstrap:u_<hash>`), so updated
+// coins/level/streak appear without any extra API call. The previous unscoped
+// `user_profile` write had no reader and the unscoped `dashboard_bootstrap`
+// patch never reached the scoped key (Step 4) — both removed.
+function patchProfileCaches(profileSnapshot, scope) {
+  if (!profileSnapshot || !scope || scope === 'guest') return;
   try {
-    writeCache(CACHE_KEYS.USER_PROFILE, profileSnapshot);
-    patchCache(CACHE_KEYS.DASHBOARD_BOOTSTRAP, data => ({
+    patchCache(buildUserScopedKey(CACHE_KEYS.DASHBOARD_BOOTSTRAP, scope), data => ({
       ...(data || {}),
-      profile: profileSnapshot,
+      profile: { ...(data?.profile || {}), ...profileSnapshot, isNewUser: false },
     }));
+    // Step 12: also patch the shared profile cache (Profile/Streak/Onboarding)
+    // via a safe merge so coins/level/streak/lastAttempt show with no profile GET.
+    patchUserProfileCache(scope, { ...profileSnapshot, isNewUser: false });
   } catch {}
 }
 
@@ -97,9 +110,6 @@ function getWeeklyPlayers(data) {
   return [];
 }
 
-function getAIResultKey(sessionId) {
-  return `ai_result:${sessionId || 'latest'}`;
-}
 
 function getQuizMode(result, subject) {
   if (result?.quizMode) return result.quizMode;
@@ -216,8 +226,8 @@ function completeGuestMentorTask(result, mentorContext) {
   } catch {}
 }
 
-async function saveQuizSession(result, routeSessionId) {
-  if (!result) return;
+async function saveQuizSession(result, routeSessionId, scoreFields = {}) {
+  if (!result) return null;
 
   const subject = result.subject || '';
   const payload = {
@@ -230,6 +240,8 @@ async function saveQuizSession(result, routeSessionId) {
     timeSpentSeconds: Number(result.timeSpentSeconds || 0),
     sourceScreen: result.sourceScreen || 'unknown',
     answers: buildAttemptAnswers(result),
+    // Score fields for canonical persistence (same values formerly sent to /api/score).
+    ...scoreFields,
   };
 
   const response = await fetch('/api/quiz-session/complete', {
@@ -255,6 +267,8 @@ async function saveQuizSession(result, routeSessionId) {
       }),
     }).catch(() => {});
   }
+
+  return responseBody;
 }
 
 
@@ -374,36 +388,40 @@ export default function Result() {
     const resolvedTopic = topic || result?.topic || '';
     const resolvedSessionId = sessionId || result?.sessionId || result?.clientSessionId || crypto.randomUUID();
 
+    // Score fields previously sent to /api/score — now part of the single
+    // canonical completion request to /api/quiz-session/complete.
+    const scoreFields = {
+      correctAnswers:   Number(correct   || result?.correct          || 0),
+      incorrectAnswers: Number(incorrect || result?.incorrect        || 0),
+      skipped:          Number(skipped   || result?.skipped          || 0),
+      totalQuestions:   Number(total     || result?.totalQuestions   || 0),
+      rawScore:         Number(score     || result?.rawScore         || 0),
+      subject:          resolvedSubject,
+      topic:            resolvedTopic,
+      sessionId:        resolvedSessionId,
+      clientSessionId:  result?.clientSessionId || resolvedSessionId,
+      quizMode:         getQuizMode(result, resolvedSubject),
+      sourceCollection: result?.collection || '',
+      startedAt:        result?.startedAt || '',
+      timeSpentSeconds: Number(result?.timeSpentSeconds || 0),
+      isDailyChallenge: resolvedSubject === 'Daily Challenge',
+    };
+
     setSavingCoins(true);
-    fetch('/api/score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        correctAnswers:   Number(correct   || result?.correct          || 0),
-        incorrectAnswers: Number(incorrect || result?.incorrect        || 0),
-        skipped:          Number(skipped   || result?.skipped          || 0),
-        totalQuestions:   Number(total     || result?.totalQuestions   || 0),
-        rawScore:         Number(score     || result?.rawScore         || 0),
-        subject:          resolvedSubject,
-        topic:            resolvedTopic,
-        sessionId:        resolvedSessionId,
-        clientSessionId:  result?.clientSessionId || resolvedSessionId,
-        quizMode:         getQuizMode(result, resolvedSubject),
-        sourceCollection: result?.collection || '',
-        startedAt:        result?.startedAt || '',
-        timeSpentSeconds: Number(result?.timeSpentSeconds || 0),
-        isDailyChallenge: resolvedSubject === 'Daily Challenge',
-      }),
-    })
-      .then(r => r.json())
+    saveQuizSession(result, resolvedSessionId, scoreFields)
       .then(data => {
-        saveQuizSession(result, resolvedSessionId).catch(err => {
-          console.warn('[result] quiz session save failed:', err.message);
-        });
         setSavingCoins(false);
-        if (data.ok) {
+        if (data && (data.ok || data.success)) {
           setCoinsResult(data);
-          patchProfileCaches(data.profileSnapshot);
+          patchProfileCaches(data.profileSnapshot, getUserCacheScope(session));
+          // Step 9: this quiz added a new session → mark account-scoped History
+          // landing/summary/subjects/score caches stale (no immediate refetch;
+          // next History open renders cached data + one background refresh).
+          markHistoryCachesStale(getUserCacheScope(session));
+          // Step 10: this quiz changed the user's real activity → mark the
+          // account-scoped Analysis activity cache stale (no immediate refetch;
+          // next Analysis open renders cached + one background refresh).
+          markAnalysisActivityStale(getUserCacheScope(session));
           if (!leaderboardRefreshedAfterScoreRef.current) {
             leaderboardRefreshedAfterScoreRef.current = true;
             loadWeeklyLeaderboard({ forceRefresh: true, background: true });
@@ -416,10 +434,8 @@ export default function Result() {
           }
         }
       })
-      .catch(() => {
-        saveQuizSession(result, resolvedSessionId).catch(err => {
-          console.warn('[result] quiz session save failed:', err.message);
-        });
+      .catch(err => {
+        console.warn('[result] quiz completion save failed:', err.message);
         setSavingCoins(false);
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -446,10 +462,19 @@ export default function Result() {
         skipped: counts.skipped,
         totalQuestions: counts.totalQuestions,
       }),
-    }).catch(err => {
-      console.warn('[result] mentor return save failed:', err.message);
-      mentorReturnSavedRef.current = false;
-    });
+    })
+      .then(() => {
+        // Step 8: quiz-return changed Mentor task/topic state. Its response
+        // carries no snapshot, so mark the scoped Mentor cache stale (do NOT
+        // delete it, do NOT fetch a plan here). Next Mentor open renders the
+        // cached plan instantly and background-refreshes once.
+        markMentorCacheStale(getUserCacheScope(session));
+      })
+      .catch(err => {
+        console.warn('[result] mentor return save failed:', err.message);
+        mentorReturnSavedRef.current = false;
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, router.isReady, router.query.sessionId, router.query.subject, router.query.topic, status]);
 
   useEffect(() => {
@@ -468,32 +493,25 @@ export default function Result() {
 
   useEffect(() => {
     if (!result || !router.isReady) return;
-    const key = getAIResultKey(router.query.sessionId || result.sessionId);
-    try {
-      const cached = sessionStorage.getItem(key);
-      if (cached) setAiAnalysis(JSON.parse(cached));
-    } catch {}
+    // Read-only: show previously generated attempt insight without a Gemini call.
+    const sessionId = router.query.sessionId || result.sessionId;
+    const cached = readAIInsightsCache({ scope: getUserCacheScope(session), sessionId });
+    if (cached) setAiAnalysis({ summary: cached });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, router.isReady, router.query.sessionId]);
 
   async function handleGenerateAIAnalysis() {
     if (!result || aiLoading) return;
-    const key = getAIResultKey(router.query.sessionId || result.sessionId);
-    try {
-      const cached = sessionStorage.getItem(key);
-      if (cached) {
-        setAiAnalysis(JSON.parse(cached));
-        setAiError('');
-        return;
-      }
-    } catch {}
-
+    const sessionId = router.query.sessionId || result.sessionId;
     setAiLoading(true);
     setAiError('');
     try {
-      const res = await fetch('/api/ai/result-insights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      // Attempt-scoped helper: cache-hit → no POST; else one POST (deduped),
+      // cached for 24h keyed by account scope + stable session id.
+      const { text, source } = await getAIResultInsights({
+        scope: getUserCacheScope(session),
+        sessionId,
+        payload: {
           subject:          result.subject,
           topic:            result.topic,
           totalQuestions:   result.totalQuestions,
@@ -502,14 +520,10 @@ export default function Result() {
           skipped:          result.skipped,
           rawScore:         result.rawScore,
           accuracy:         result.accuracy,
-        }),
+        },
       });
-      if (!res.ok) throw new Error('AI request failed');
-      const data = await res.json();
-      const analysis = { summary: data.aiSummary || data.summary || '' };
-      if (!analysis.summary) throw new Error('Empty AI response');
-      sessionStorage.setItem(key, JSON.stringify(analysis));
-      setAiAnalysis(analysis);
+      if (source === 'fallback' || !text) throw new Error('AI unavailable');
+      setAiAnalysis({ summary: text });
     } catch {
       setAiError("Couldn’t generate AI analysis. Try again.");
     } finally {
