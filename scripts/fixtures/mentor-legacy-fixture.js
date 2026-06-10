@@ -81,10 +81,10 @@ function topicStateRows() {
 
 function buildLegacyRawData() {
   return {
-    profile: { headers: PROFILE_HEADERS, rows: [profileRow()] },
-    plans: { headers: PLAN_HEADERS, rows: planRows() },
-    tasks: { headers: TASK_HEADERS, rows: taskRows() },
-    topicState: { headers: TOPIC_HEADERS, rows: topicStateRows() },
+    profile: { headers: [...PROFILE_HEADERS], rows: [profileRow()] },
+    plans: { headers: [...PLAN_HEADERS], rows: planRows() },
+    tasks: { headers: [...TASK_HEADERS], rows: taskRows() },
+    topicState: { headers: [...TOPIC_HEADERS], rows: topicStateRows() },
   };
 }
 
