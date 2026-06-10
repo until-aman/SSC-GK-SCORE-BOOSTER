@@ -6,7 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:mentor-repo": "node scripts/test-mentor-repository.js",
+    "test:mentor-plan-day": "node scripts/test-mentor-plan-day.js",
+    "test:mentor-state-machine": "node scripts/test-mentor-task-state-machine.js",
+    "test:mentor-rollover": "node scripts/test-mentor-daily-rollover.js",
+    "test:mentor-sheets": "node scripts/test-mentor-sheets-migration.js",
+    "mentor:sheets-migration:dry-run": "node scripts/mentor-sheets-migration.js",
+    "mentor:sheets-migration:apply": "node scripts/mentor-sheets-migration.js --apply"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

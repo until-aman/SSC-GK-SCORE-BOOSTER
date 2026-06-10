@@ -4,10 +4,14 @@ import { authOptions } from '../auth/[...nextauth]';
 import {
   getSheetsClient,
   appendMentorTaskLog,
+  getActiveMentorPlan,
   updateMentorTaskStatus,
   upsertStudentTopicState,
 } from '@/lib/sheets';
 import { loadOrCreateMentorSnapshot } from './plan';
+import { isMentorTaskStateMachineV2Enabled } from '@/lib/mentor/repository/featureFlags';
+import { evaluateTaskTransition, TASK_ACTION } from '@/lib/mentor/domain/taskStateMachine';
+import { COMPLETION_SOURCE, PENDING_REASON } from '@/lib/mentor/domain/enums';
 
 const ACTION_TO_STATUS = {
   complete: 'completed',
@@ -36,6 +40,9 @@ async function handler(req, res) {
 
   try {
     const sheets = await getSheetsClient();
+    if (isMentorTaskStateMachineV2Enabled()) {
+      await shadowValidateTaskAction({ sheets, email: session.user.email, taskId, planId, actionType, actionValue }).catch(() => {});
+    }
     const now = new Date().toISOString();
     const status = ACTION_TO_STATUS[actionType];
     if (status) {
@@ -111,6 +118,42 @@ async function handler(req, res) {
     console.error('[mentor/task-action]', err.message);
     return res.status(500).json({ error: 'Task complete hua, lekin save nahi ho paya. Please retry.' });
   }
+}
+
+async function shadowValidateTaskAction({ sheets, email, taskId, planId, actionType, actionValue }) {
+  const plan = await getActiveMentorPlan(sheets, email);
+  const task = (plan?.tasks || []).find(item => item.taskId === taskId);
+  if (!task) return;
+  const action = mapLegacyAction(actionType, actionValue);
+  const result = evaluateTaskTransition({
+    task: { ...task, type: task.taskType || task.type, planVersion: 1, isCurrentGeneration: true },
+    action,
+    context: {
+      expectedPlanId: planId || plan.planId,
+      expectedPlanVersion: 1,
+      pendingReason: PENDING_REASON.USER_POSTPONED,
+      completionSource: actionType === 'response' ? COMPLETION_SOURCE.MENTOR_RESPONSE : COMPLETION_SOURCE.MANUAL_RECOVERY,
+      manualRecoveryVerified: actionValue === 'manual_recovery',
+    },
+  });
+  console.info('[mentor-task-sm-v2:shadow]', JSON.stringify({
+    action,
+    legacyAction: actionType,
+    legacyCurrentStatus: task.status,
+    canonicalMappedStatus: task.status === 'snoozed' ? 'pending' : task.status,
+    allowed: Boolean(result.allowed),
+    proposedNextStatus: result.allowed ? result.nextTask.status : null,
+    diagnosticCode: result.allowed ? null : result.code,
+  }));
+}
+
+function mapLegacyAction(actionType, actionValue) {
+  if (actionType === 'snooze') return TASK_ACTION.POSTPONE;
+  if (actionType === 'response') return TASK_ACTION.COMPLETE;
+  if (actionType === 'launch_practice') return TASK_ACTION.START;
+  if (actionType === 'complete' && actionValue === 'manual_recovery') return TASK_ACTION.COMPLETE_MANUAL_RECOVERY;
+  if (actionType === 'complete') return TASK_ACTION.COMPLETE;
+  return '';
 }
 
 function normalizeConfidence(value) {

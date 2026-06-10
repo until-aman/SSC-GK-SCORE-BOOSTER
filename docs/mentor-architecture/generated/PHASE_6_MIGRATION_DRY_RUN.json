@@ -1,0 +1,573 @@
+{
+  "schemaVersion": "mentor-sheets-v2",
+  "workbookIdHash": "c71b314c3ed08712",
+  "inspectionTimestamp": "2026-06-10T15:58:51.747Z",
+  "tabNames": [
+    "MentorProfile",
+    "MentorPlans",
+    "MentorTasks",
+    "MentorTaskLogs",
+    "StudentTopicState",
+    "MentorMutationRequests",
+    "MentorSchema"
+  ],
+  "tabs": {
+    "MentorProfile": {
+      "tabName": "MentorProfile",
+      "exists": true,
+      "rowCount": 1,
+      "originalHeaderFingerprint": "a22bc3206df4e5374bbe8a0942ff96b77015dc18b496a349a0388ac438b84885",
+      "physicalHeaders": [
+        "Email",
+        "ExamTarget",
+        "DaysLeftRange",
+        "CustomDaysLeft",
+        "DailyGKTime",
+        "Pace",
+        "Goals",
+        "SubjectStatusJSON",
+        "TopicsCompletedJSON",
+        "OnboardingCompletedAt",
+        "LastUpdatedAt",
+        "OnboardingVersion",
+        "TopicStrengthJSON",
+        "MentorPlanId\n",
+        "ActiveDayNumber",
+        "ProgressPercent\n",
+        "LastPlanRefreshAt\n",
+        "PlanNeedsRebuild",
+        "MentorLastSyncAt",
+        "MentorCacheVersion"
+      ],
+      "normalizedHeaders": [
+        "Email",
+        "ExamTarget",
+        "DaysLeftRange",
+        "CustomDaysLeft",
+        "DailyGKTime",
+        "Pace",
+        "Goals",
+        "SubjectStatusJSON",
+        "TopicsCompletedJSON",
+        "OnboardingCompletedAt",
+        "LastUpdatedAt",
+        "OnboardingVersion",
+        "TopicStrengthJSON",
+        "MentorPlanId",
+        "ActiveDayNumber",
+        "ProgressPercent",
+        "LastPlanRefreshAt",
+        "PlanNeedsRebuild",
+        "MentorLastSyncAt",
+        "MentorCacheVersion"
+      ],
+      "columnsToAdd": [
+        "ActivePlanVersion",
+        "Timezone",
+        "SnapshotRevision",
+        "PlanStartLocalDate",
+        "LastProcessedCalendarDay",
+        "UnlockedDay"
+      ],
+      "requiredColumnsToAdd": [
+        "ActivePlanVersion",
+        "Timezone",
+        "SnapshotRevision"
+      ],
+      "warnings": [],
+      "blockingErrors": []
+    },
+    "MentorPlans": {
+      "tabName": "MentorPlans",
+      "exists": true,
+      "rowCount": 5,
+      "originalHeaderFingerprint": "e9d6beec71d892388246e07eefebd45d30f59ba1cce3728161724c46a6a062ab",
+      "physicalHeaders": [
+        "Email",
+        "PlanId",
+        "Status",
+        "Version",
+        "CreatedAt",
+        "UpdatedAt",
+        "ActiveDayNumber",
+        "ExamSnapshot",
+        "DaysLeftSnapshot",
+        "PaceSnapshot"
+      ],
+      "normalizedHeaders": [
+        "Email",
+        "PlanId",
+        "Status",
+        "Version",
+        "CreatedAt",
+        "UpdatedAt",
+        "ActiveDayNumber",
+        "ExamSnapshot",
+        "DaysLeftSnapshot",
+        "PaceSnapshot"
+      ],
+      "columnsToAdd": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskSetRevision",
+        "NextTaskNumber",
+        "Timezone",
+        "PlanStartLocalDate",
+        "TotalPlanDays",
+        "UnlockedDay",
+        "LastProcessedCalendarDay",
+        "LastDailyRolloverAt",
+        "FeaturedPendingTaskId",
+        "FeaturedPendingForCalendarDay",
+        "GenerationStatus",
+        "RowVersion",
+        "SupersededByPlanId",
+        "SupersededAt"
+      ],
+      "requiredColumnsToAdd": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskSetRevision",
+        "NextTaskNumber",
+        "Timezone",
+        "PlanStartLocalDate",
+        "TotalPlanDays",
+        "UnlockedDay",
+        "LastProcessedCalendarDay",
+        "LastDailyRolloverAt",
+        "FeaturedPendingTaskId",
+        "FeaturedPendingForCalendarDay",
+        "GenerationStatus",
+        "RowVersion"
+      ],
+      "warnings": [],
+      "blockingErrors": []
+    },
+    "MentorTasks": {
+      "tabName": "MentorTasks",
+      "exists": true,
+      "rowCount": 15,
+      "originalHeaderFingerprint": "8a1fc85b1ebca884367cb7f17d60c4b1733ee62ed2a867252a6a6918ed594316",
+      "physicalHeaders": [
+        "Email",
+        "PlanId",
+        "TaskId",
+        "SequenceNumber",
+        "DayNumber",
+        "Type",
+        "Status",
+        "Subject",
+        "Topic",
+        "Title",
+        "CreatedAt",
+        "CompletedAt"
+      ],
+      "normalizedHeaders": [
+        "Email",
+        "PlanId",
+        "TaskId",
+        "SequenceNumber",
+        "DayNumber",
+        "Type",
+        "Status",
+        "Subject",
+        "Topic",
+        "Title",
+        "CreatedAt",
+        "CompletedAt"
+      ],
+      "columnsToAdd": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "PendingReason",
+        "MovedToPendingAt",
+        "NextEligibleAt",
+        "NextEligibleResurfaceAt",
+        "ResurfacedCount",
+        "LastResurfacedAt",
+        "CompletionSource",
+        "LinkedQuizSessionId",
+        "ParentTaskId",
+        "RelatedTaskId",
+        "TriggerReason",
+        "CancellationReason",
+        "RowVersion"
+      ],
+      "requiredColumnsToAdd": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "PendingReason",
+        "MovedToPendingAt",
+        "NextEligibleAt",
+        "NextEligibleResurfaceAt",
+        "ResurfacedCount",
+        "LastResurfacedAt",
+        "CompletionSource",
+        "LinkedQuizSessionId",
+        "ParentTaskId",
+        "RelatedTaskId",
+        "TriggerReason",
+        "CancellationReason",
+        "RowVersion"
+      ],
+      "warnings": [],
+      "blockingErrors": []
+    },
+    "MentorTaskLogs": {
+      "tabName": "MentorTaskLogs",
+      "exists": false,
+      "rowCount": 0,
+      "originalHeaderFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "physicalHeaders": [],
+      "normalizedHeaders": [],
+      "columnsToAdd": [
+        "EventId",
+        "FromStatus",
+        "ToStatus",
+        "CanonicalAction",
+        "IdempotencyKey",
+        "RequestId",
+        "EventPayloadJSON"
+      ],
+      "requiredColumnsToAdd": [
+        "EventId",
+        "FromStatus",
+        "ToStatus",
+        "CanonicalAction",
+        "IdempotencyKey",
+        "RequestId",
+        "EventPayloadJSON"
+      ],
+      "warnings": [],
+      "blockingErrors": []
+    },
+    "StudentTopicState": {
+      "tabName": "StudentTopicState",
+      "exists": true,
+      "rowCount": 4,
+      "originalHeaderFingerprint": "b6a2da0c00ea04469d8555980e1afaebe1308dd02dda46f9c9dea5b68eb1ae15",
+      "physicalHeaders": [
+        "Email",
+        "Subject",
+        "Topic",
+        "TheoryStatus",
+        "PracticeStatus",
+        "ConfidenceLevel",
+        "UpdatedAt"
+      ],
+      "normalizedHeaders": [
+        "Email",
+        "Subject",
+        "Topic",
+        "TheoryStatus",
+        "PracticeStatus",
+        "ConfidenceLevel",
+        "UpdatedAt"
+      ],
+      "columnsToAdd": [],
+      "requiredColumnsToAdd": [],
+      "warnings": [],
+      "blockingErrors": []
+    },
+    "MentorMutationRequests": {
+      "tabName": "MentorMutationRequests",
+      "exists": false,
+      "rowCount": 0,
+      "originalHeaderFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "physicalHeaders": [],
+      "normalizedHeaders": [],
+      "columnsToAdd": [
+        "IdempotencyKey",
+        "UserScopeHash",
+        "PlanId",
+        "TaskId",
+        "Action",
+        "PayloadHash",
+        "Status",
+        "ResultJSON",
+        "CreatedAt",
+        "CompletedAt",
+        "ExpiresAt"
+      ],
+      "requiredColumnsToAdd": [
+        "IdempotencyKey",
+        "UserScopeHash",
+        "PlanId",
+        "TaskId",
+        "Action",
+        "PayloadHash",
+        "Status",
+        "ResultJSON",
+        "CreatedAt",
+        "CompletedAt",
+        "ExpiresAt"
+      ],
+      "warnings": [],
+      "blockingErrors": []
+    },
+    "MentorSchema": {
+      "tabName": "MentorSchema",
+      "exists": false,
+      "rowCount": 0,
+      "originalHeaderFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "physicalHeaders": [],
+      "normalizedHeaders": [],
+      "columnsToAdd": [
+        "SchemaName",
+        "SchemaVersion",
+        "AppliedAt",
+        "ManifestHash"
+      ],
+      "requiredColumnsToAdd": [
+        "SchemaName",
+        "SchemaVersion",
+        "AppliedAt",
+        "ManifestHash"
+      ],
+      "warnings": [],
+      "blockingErrors": []
+    }
+  },
+  "originalRowCounts": {
+    "MentorProfile": 1,
+    "MentorPlans": 5,
+    "MentorTasks": 15,
+    "MentorTaskLogs": 0,
+    "StudentTopicState": 4,
+    "MentorMutationRequests": 0,
+    "MentorSchema": 0
+  },
+  "originalHeaderFingerprints": {
+    "MentorProfile": "a22bc3206df4e5374bbe8a0942ff96b77015dc18b496a349a0388ac438b84885",
+    "MentorPlans": "e9d6beec71d892388246e07eefebd45d30f59ba1cce3728161724c46a6a062ab",
+    "MentorTasks": "8a1fc85b1ebca884367cb7f17d60c4b1733ee62ed2a867252a6a6918ed594316",
+    "MentorTaskLogs": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "StudentTopicState": "b6a2da0c00ea04469d8555980e1afaebe1308dd02dda46f9c9dea5b68eb1ae15",
+    "MentorMutationRequests": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "MentorSchema": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "columnsToAdd": {
+    "MentorProfile": [
+      "ActivePlanVersion",
+      "Timezone",
+      "SnapshotRevision",
+      "PlanStartLocalDate",
+      "LastProcessedCalendarDay",
+      "UnlockedDay"
+    ],
+    "MentorPlans": [
+      "PlanVersion",
+      "GenerationId",
+      "TaskSetRevision",
+      "NextTaskNumber",
+      "Timezone",
+      "PlanStartLocalDate",
+      "TotalPlanDays",
+      "UnlockedDay",
+      "LastProcessedCalendarDay",
+      "LastDailyRolloverAt",
+      "FeaturedPendingTaskId",
+      "FeaturedPendingForCalendarDay",
+      "GenerationStatus",
+      "RowVersion",
+      "SupersededByPlanId",
+      "SupersededAt"
+    ],
+    "MentorTasks": [
+      "PlanVersion",
+      "GenerationId",
+      "TaskNumber",
+      "QuestionCount",
+      "OriginalScheduledDay",
+      "ScheduledLocalDate",
+      "PendingReason",
+      "MovedToPendingAt",
+      "NextEligibleAt",
+      "NextEligibleResurfaceAt",
+      "ResurfacedCount",
+      "LastResurfacedAt",
+      "CompletionSource",
+      "LinkedQuizSessionId",
+      "ParentTaskId",
+      "RelatedTaskId",
+      "TriggerReason",
+      "CancellationReason",
+      "RowVersion"
+    ],
+    "MentorTaskLogs": [
+      "EventId",
+      "FromStatus",
+      "ToStatus",
+      "CanonicalAction",
+      "IdempotencyKey",
+      "RequestId",
+      "EventPayloadJSON"
+    ],
+    "StudentTopicState": [],
+    "MentorMutationRequests": [
+      "IdempotencyKey",
+      "UserScopeHash",
+      "PlanId",
+      "TaskId",
+      "Action",
+      "PayloadHash",
+      "Status",
+      "ResultJSON",
+      "CreatedAt",
+      "CompletedAt",
+      "ExpiresAt"
+    ],
+    "MentorSchema": [
+      "SchemaName",
+      "SchemaVersion",
+      "AppliedAt",
+      "ManifestHash"
+    ]
+  },
+  "rowsToBackfill": {
+    "MentorPlans": 1,
+    "MentorTasks": 15
+  },
+  "proposedGenerationMapping": [
+    {
+      "planId": "MP_TEST_REUSED",
+      "activeGenerationId": "MP_TEST_REUSED#g5",
+      "currentGenerationOrdinal": 5,
+      "currentGenerationTaskCount": 3
+    }
+  ],
+  "proposedTaskNumberMapping": [
+    {
+      "taskId": "TASK_1",
+      "planId": "MP_TEST_REUSED",
+      "generationId": "MP_TEST_REUSED#g1",
+      "taskNumber": 1,
+      "sequenceNumber": 1,
+      "status": "completed"
+    },
+    {
+      "taskId": "TASK_2",
+      "planId": "MP_TEST_REUSED",
+      "generationId": "MP_TEST_REUSED#g1",
+      "taskNumber": 2,
+      "sequenceNumber": 2,
+      "status": "pending"
+    },
+    {
+      "taskId": "TASK_3",
+      "planId": "MP_TEST_REUSED",
+      "generationId": "MP_TEST_REUSED#g1",
+      "taskNumber": 3,
+      "sequenceNumber": 3,
+      "status": "pending"
+    },
+    {
+      "taskId": "TASK_4",
+      "planId": "MP_TEST_REUSED",
+      "generationId": "MP_TEST_REUSED#g2",
+      "taskNumber": 4,
+      "sequenceNumber": 1,
+      "status": "completed"
+    },
+    {
+      "taskId": "TASK_5",
+      "planId": "MP_TEST_REUSED",
+      "generationId": "MP_TEST_REUSED#g2",
+      "taskNumber": 5,
+      "sequenceNumber": 2,
+      "status": "pending"
+    },
+    {
+      "taskId": "TASK_6",
+      "planId": "MP_TEST_REUSED",
+      "generationId": "MP_TEST_REUSED#g2",
+      "taskNumber": 6,
+      "sequenceNumber": 3,
+      "status": "pending"
+    },
+    {
+      "taskId": "TASK_7",
+      "planId": "MP_TEST_REUSED",
+      "generationId": "MP_TEST_REUSED#g3",
+      "taskNumber": 7,
+      "sequenceNumber": 1,
+      "status": "completed"
+    },
+    {
+      "taskId": "TASK_8",
+      "planId": "MP_TEST_REUSED",
+      "generationId": "MP_TEST_REUSED#g3",
+      "taskNumber": 8,
+      "sequenceNumber": 2,
+      "status": "pending"
+    },
+    {
+      "taskId": "TASK_9",
+      "planId": "MP_TEST_REUSED",
+      "generationId": "MP_TEST_REUSED#g3",
+      "taskNumber": 9,
+      "sequenceNumber": 3,
+      "status": "pending"
+    },
+    {
+      "taskId": "TASK_10",
+      "planId": "MP_TEST_REUSED",
+      "generationId": "MP_TEST_REUSED#g4",
+      "taskNumber": 10,
+      "sequenceNumber": 1,
+      "status": "completed"
+    },
+    {
+      "taskId": "TASK_11",
+      "planId": "MP_TEST_REUSED",
+      "generationId": "MP_TEST_REUSED#g4",
+      "taskNumber": 11,
+      "sequenceNumber": 2,
+      "status": "pending"
+    },
+    {
+      "taskId": "TASK_12",
+      "planId": "MP_TEST_REUSED",
+      "generationId": "MP_TEST_REUSED#g4",
+      "taskNumber": 12,
+      "sequenceNumber": 3,
+      "status": "pending"
+    },
+    {
+      "taskId": "TASK_13",
+      "planId": "MP_TEST_REUSED",
+      "generationId": "MP_TEST_REUSED#g5",
+      "taskNumber": 13,
+      "sequenceNumber": 1,
+      "status": "completed"
+    },
+    {
+      "taskId": "TASK_14",
+      "planId": "MP_TEST_REUSED",
+      "generationId": "MP_TEST_REUSED#g5",
+      "taskNumber": 14,
+      "sequenceNumber": 2,
+      "status": "pending"
+    },
+    {
+      "taskId": "TASK_15",
+      "planId": "MP_TEST_REUSED",
+      "generationId": "MP_TEST_REUSED#g5",
+      "taskNumber": 15,
+      "sequenceNumber": 3,
+      "status": "pending"
+    }
+  ],
+  "proposedNextTaskNumber": 16,
+  "warnings": [],
+  "blockingErrors": [],
+  "manifestHash": "521ca1e2c39cc76c4ee38880d84b8cbbb6bc52a8046068c1738b3068689a72b6"
+}
