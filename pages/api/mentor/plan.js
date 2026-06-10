@@ -12,6 +12,7 @@ import {
 import { getUserAttemptAnswers } from '@/lib/historyData';
 import { generateTodaysPlan } from '@/lib/mentorPlanEngine';
 import { getMentorDayMessage } from '@/lib/mentorCopy';
+import { runMentorShadowComparison } from '@/lib/mentor/repository';
 
 function normalizeSubjectId(subjectId) {
   return String(subjectId || '').replace(/^Q_PYQ_/, '');
@@ -185,6 +186,14 @@ async function handler(req, res) {
   if (!session?.user?.email) return res.status(401).json({ error: 'Unauthorized' });
   try {
     const snapshot = await loadOrCreateMentorSnapshot(session.user.email);
+    // Phase 2: read-only shadow comparison (Mentor Repository v2). No-op unless
+    // MENTOR_REPO_V2_SHADOW is enabled; fire-and-forget; never alters the response.
+    if (process.env.MENTOR_REPO_V2_SHADOW === 'true') {
+      runMentorShadowComparison(
+        { email: session.user.email },
+        { ...snapshot, studentTopicState: snapshot.profile?.studentTopicState || [] }
+      ).catch(() => {});
+    }
     return res.status(200).json(snapshot);
   } catch (err) {
     console.error('[mentor/plan]', err.message);

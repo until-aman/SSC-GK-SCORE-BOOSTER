@@ -22,6 +22,7 @@ import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 import { getDashboardBootstrap } from '@/lib/data/appData';
 import { getUserCacheScope, buildUserScopedKey } from '@/lib/userCacheScope';
 import { migrateGuestSavedQuestions } from '@/lib/data/savedData';
+import { readMentorSnapshotCache } from '@/lib/data/mentorData';
 import { getLeaderboard } from '@/lib/data/leaderboardData';
 import { getDailyChallenge, getTopics } from '@/lib/data/questionData';
 import { MENTOR_COPY } from '@/lib/mentorCopy';
@@ -478,13 +479,21 @@ export default function Dashboard() {
   }, [status, isLoggedIn, isGuest, router]);
 
   useEffect(() => {
-    if (status === 'authenticated') {
-      const onboarded = localStorage.getItem('mentor_onboarded');
-      if (!onboarded) {
-        setShowMentorSetupBanner(true);
-      }
+    if (status !== 'authenticated') return;
+    // Show the "Build My GK Plan" banner only when the account genuinely has no
+    // mentor plan. The legacy `mentor_onboarded` flag is device-local and can be
+    // missing even when a plan exists (built on another device / cleared storage),
+    // which made Home disagree with the Mentor tab. Prefer the account-scoped
+    // mentor snapshot that the Mentor tab populates; self-heal the flag.
+    const onboarded = localStorage.getItem('mentor_onboarded') === 'true';
+    const snapshot = readMentorSnapshotCache(cacheScope);
+    const hasPlan = Boolean(snapshot && (snapshot.exists || snapshot.profile || snapshot.plan?.tasks?.length));
+    if (hasPlan && !onboarded) {
+      try { localStorage.setItem('mentor_onboarded', 'true'); } catch {}
     }
-  }, [status]);
+    setShowMentorSetupBanner(!onboarded && !hasPlan);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, cacheScope]);
 
   // Migrate any locally-saved guest questions to the cloud (runs once on login).
   // Step 11: ONE batched POST /api/saved-questions (server appends only missing

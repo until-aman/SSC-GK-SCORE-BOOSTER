@@ -59,7 +59,23 @@ function AppTopBar() {
           </svg>
         </div>
         <span className="font-display self-center whitespace-nowrap text-[18px] font-black leading-none tracking-wide text-white">
-          SSC Smart Mentor
+          Today&apos;s GK Plan
+        </span>
+        <span
+          className="flex-shrink-0"
+          style={{
+            fontSize: 9,
+            fontWeight: 800,
+            color: '#14B8A6',
+            background: 'rgba(20,184,166,0.15)',
+            border: '1px solid rgba(20,184,166,0.30)',
+            borderRadius: 99,
+            padding: '3px 8px',
+            letterSpacing: '0.05em',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          MENTOR
         </span>
       </div>
       <WhatsAppBell />
@@ -908,19 +924,6 @@ export default function MentorPage() {
           <main className="px-4 pb-24 pt-[18px] text-white">
             <div className="space-y-5">
               <section className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/20 via-slate-800 to-teal-500/20">
-                      <TeacherMentorIcon className="h-7 w-7" />
-                    </div>
-                    <div className="min-w-0">
-                      <h1 className="font-display text-2xl font-black leading-tight">Today&apos;s GK Plan</h1>
-                      <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                        Aaj ka focused revision plan.
-                      </p>
-                    </div>
-                  </div>
-                </div>
                 <RefreshStatus
                   label="Plan sync"
                   updatedAt={snapshot?.lastSyncAt || snapshot?.plan?.updatedAt}
