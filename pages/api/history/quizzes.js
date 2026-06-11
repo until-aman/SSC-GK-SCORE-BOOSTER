@@ -1,9 +1,21 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import { getUserSessions } from '@/lib/historyData';
+import { paginateQuizSessions } from '@/lib/server/historyService';
 
 function applyFilters(sessions, query) {
   let filtered = [...sessions];
+  if (query.startDate && query.endDate) {
+    const start = new Date(`${query.startDate}T00:00:00`).getTime();
+    const end = new Date(`${query.endDate}T23:59:59.999`).getTime();
+    if (Number.isFinite(start) && Number.isFinite(end)) {
+      filtered = filtered.filter(item => {
+        const attemptedAt = item.completedAt || item.createdAt || item.attemptedAt || '';
+        const attemptedTime = new Date(attemptedAt).getTime();
+        return Number.isFinite(attemptedTime) && attemptedTime >= start && attemptedTime <= end;
+      });
+    }
+  }
   if (query.dateRange === '7d' || query.dateRange === '30d') {
     const days = query.dateRange === '7d' ? 7 : 30;
     const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
@@ -25,21 +37,9 @@ export default async function handler(req, res) {
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(25, Math.max(1, Number(req.query.limit) || 10));
     const sessions = applyFilters(await getUserSessions(session.user.email), req.query);
-    const start = (page - 1) * limit;
-    const paged = sessions.slice(start, start + limit);
-
     return res.status(200).json({
       success: true,
-      data: {
-        sessions: paged,
-        total: sessions.length,
-        page,
-        hasMore: start + limit < sessions.length,
-        filterSummary: {
-          quizCount: sessions.length,
-          totalWrongSkipped: sessions.reduce((sum, item) => sum + item.incorrect + item.skipped, 0),
-        },
-      },
+      data: paginateQuizSessions(sessions, { page, limit }),
     });
   } catch (err) {
     console.error('[history/quizzes]', err.message);

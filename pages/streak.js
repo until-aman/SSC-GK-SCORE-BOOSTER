@@ -4,6 +4,8 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
 import { getISTDateString } from '@/lib/streak';
+import { getUserCacheScope } from '@/lib/userCacheScope';
+import { getUserProfile } from '@/lib/data/profileData';
 
 const DAY_LABELS  = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -105,10 +107,12 @@ export default function StreakPage() {
   useEffect(() => {
     if (status === 'loading') return;
     if (status === 'unauthenticated') { router.replace('/'); return; }
-    fetch('/api/user-profile')
-      .then(r => r.json())
-      .then(d => { setProfile(d); setLoading(false); })
+    // Streak needs only streakCount + lastAttemptDate (+ createdAt) — all present
+    // in the shared profile cache. Fresh → 0 network; else 1 GET (deduped).
+    getUserProfile({ scope: getUserCacheScope(session) })
+      .then(res => { if (res?.data) setProfile(res.data); setLoading(false); })
       .catch(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router]);
 
   if (status === 'loading' || loading) {
@@ -156,9 +160,19 @@ export default function StreakPage() {
         .streak-fire { animation: streakPulse 2s ease-in-out infinite; }
         @keyframes progFill { from { width: 4%; } }
         .prog-bar { animation: progFill 0.8s cubic-bezier(0.22,1,0.36,1) both; }
+        @keyframes streakCtaPulse {
+          0%, 100% {
+            box-shadow: 0 4px 14px rgba(255,107,22,0.30);
+            transform: scale(1);
+          }
+          50% {
+            box-shadow: 0 10px 28px rgba(255,107,22,0.48), 0 0 0 6px rgba(255,107,22,0.08);
+            transform: scale(1.01);
+          }
+        }
       `}</style>
 
-      <div className="min-h-screen [background:var(--bg-app)]" style={{ paddingBottom: 100 }}>
+      <div className="min-h-screen [background:var(--bg-app)]" style={{ paddingBottom: 178 }}>
 
         {/* ── HEADER ── */}
         <HistoryTopBar title="Streak History" icon={StreakHistoryIcon} showBack />
@@ -534,11 +548,11 @@ export default function StreakPage() {
 
       {/* ── STICKY CTA — always orange ── */}
       <div style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
-        padding: '10px 16px 74px',
-        background: 'linear-gradient(to top, var(--bg-app) 65%, transparent)',
+        position: 'fixed', bottom: 82, left: 0, right: 0, zIndex: 40,
+        padding: '12px 16px 10px',
+        background: 'linear-gradient(to top, var(--bg-app) 70%, transparent)',
         opacity: showCTA ? 1 : 0,
-        transform: showCTA ? 'translateY(0)' : 'translateY(16px)',
+        transform: showCTA ? 'translateY(0)' : 'translateY(14px)',
         transition: 'opacity 0.4s ease, transform 0.4s ease',
         pointerEvents: showCTA ? 'auto' : 'none',
       }}>
@@ -548,15 +562,16 @@ export default function StreakPage() {
           onPointerLeave={() => setBtnPress(false)}
           onClick={() => router.push('/quiz?mode=daily&sourceScreen=daily_challenge')}
           style={{
-            display: 'block', width: '100%', maxWidth: 430, margin: '0 auto',
-            padding: '17px 0', borderRadius: 20, border: 'none', cursor: 'pointer',
+            display: 'block', width: 'calc(100% - 40px)', maxWidth: 390, margin: '0 auto',
+            padding: '16px 0', borderRadius: 18, border: 'none', cursor: 'pointer',
             fontFamily: 'inherit', fontSize: 15, fontWeight: 800, color: '#ffffff',
-            background: 'linear-gradient(180deg,#FF8A1F 0%,#FF5A00 100%)',
+            background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)',
             boxShadow: btnPress
-              ? '0 2px 0 #B73E00, 0 6px 14px rgba(255,90,0,0.22)'
-              : '0 6px 0 #B73E00, 0 14px 28px rgba(255,90,0,0.30)',
-            transform: btnPress ? 'translateY(4px)' : 'translateY(0)',
+              ? '0 4px 12px rgba(255,107,22,0.22)'
+              : '0 4px 14px rgba(255,107,22,0.30)',
+            transform: btnPress ? 'scale(0.98)' : 'scale(1)',
             transition: 'transform 120ms ease, box-shadow 120ms ease',
+            animation: btnPress ? 'none' : 'streakCtaPulse 2.4s ease-in-out infinite',
           }}
         >
           {playedToday ? 'Practice More →' : 'Protect Today\'s Streak →'}

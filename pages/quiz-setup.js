@@ -22,6 +22,14 @@ const SUBJECTS = [
   'Static GK', 'Mixed',
 ];
 
+const SUBJECT_QUERY_ALIASES = {
+  Ancient_History: 'Ancient History',
+  Medieval_History: 'Medieval History',
+  Modern_History: 'Modern History',
+  Current_Affairs: 'Current Affairs',
+  Static_GK: 'Static GK',
+};
+
 // Icon map for bottom sheet rows
 const SUBJECT_ICON = {
   'Polity':           '⚖️',
@@ -66,6 +74,11 @@ function isGuestMode() {
 function parseTopicsFromResponse(data, subject) {
   const topicMap = (data?.topics && data.topics[subject]) || data?.[subject] || {};
   return Object.entries(topicMap).map(([name, count]) => ({ name, count }));
+}
+
+function normalizeSubjectQuery(subject) {
+  if (Array.isArray(subject)) return normalizeSubjectQuery(subject[0]);
+  return SUBJECT_QUERY_ALIASES[subject] || subject;
 }
 
 function getBootstrapTopics(subject, collection) {
@@ -231,7 +244,7 @@ export default function QuizSetup() {
   // Pre-select subject from query param (e.g. from subject cards)
   useEffect(() => {
     if (!router.isReady) return;
-    const { subject } = router.query;
+    const subject = normalizeSubjectQuery(router.query.subject);
     if (subject && SUBJECTS.includes(subject)) {
       setSelectedSubject(subject);
       setSelectedTopic(ALL_TOPICS); // default to "All" — CTA active immediately

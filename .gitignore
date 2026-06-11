@@ -34,3 +34,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Step 17 load-test / diagnostic artifacts (may contain request metadata)
+dev-diag.log
+*.har
+*.log

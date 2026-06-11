@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -8,7 +8,8 @@ import AppCard from '@/components/ui/AppCard';
 import { fetchWithClientCache, readCache } from '@/lib/clientCache';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 import { getDailyChallenge, getQuestionBank } from '@/lib/data/questionData';
-import { getSavedQuestionIds } from '@/lib/data/savedData';
+import { getSavedQuestionIds, saveQuestion, unsaveQuestion } from '@/lib/data/savedData';
+import { getUserCacheScope } from '@/lib/userCacheScope';
 
 const GK_FACTS = [
   // GK Facts
@@ -333,7 +334,7 @@ const OPTION_KEYS   = ['optionA', 'optionB', 'optionC', 'optionD'];
 const ACTIVE_QUIZ_SESSION_KEY = 'ssc_active_quiz_session';
 const QUIZ_SESSION_EXPIRY_MS = 60 * 60 * 1000;
 const QUESTION_DURATION_SECONDS = 30;
-const VALID_SOURCE_SCREENS = new Set(['dashboard', 'analysis', 'saved', 'history', 'daily_challenge', 'unknown']);
+const VALID_SOURCE_SCREENS = new Set(['dashboard', 'analysis', 'saved', 'history', 'daily_challenge', 'mentor_plan', 'unknown']);
 
 function normalizeSourceScreen(value) {
   return VALID_SOURCE_SCREENS.has(value) ? value : 'unknown';
@@ -468,8 +469,21 @@ function getDisplaySubject(subject, collection) {
 
 export default function Quiz() {
   const router = useRouter();
-  const { status } = useSession();
-  const { subject, topic, count, n, sessionId: qSessionId, mode, collection = 'general', sourceScreen: qSourceScreen } = router.query;
+  const { data: session, status } = useSession();
+  const {
+    subject,
+    topic,
+    count,
+    n,
+    sessionId: qSessionId,
+    mode,
+    collection = 'general',
+    sourceScreen: qSourceScreen,
+    sourcePage = '',
+    sourceTaskId = '',
+    planId = '',
+    returnUrl = '',
+  } = router.query;
   const questionCount = count || n;
   const isSavedMode  = mode === 'saved';
   const isHistoryMode = mode === 'history';
@@ -479,6 +493,17 @@ export default function Quiz() {
   const effectiveSubject = restoredMeta?.subject || historyMeta?.subject || (isSavedMode ? 'Saved' : isDailyMode ? 'Daily Challenge' : subject);
   const effectiveTopic   = restoredMeta?.topic   || historyMeta?.topic   || (isSavedMode ? 'Mixed'  : isDailyMode ? 'Mixed GK'        : topic);
   const sourceScreen = normalizeSourceScreen(isDailyMode ? 'daily_challenge' : isSavedMode ? 'saved' : isHistoryMode ? 'history' : qSourceScreen);
+  const mentorContext = useMemo(() => (
+    sourceScreen === 'mentor_plan' || sourcePage === 'mentor'
+      ? {
+          sourcePage: 'mentor',
+          sourceScreen: 'mentor_plan',
+          sourceTaskId: String(sourceTaskId || ''),
+          planId: String(planId || ''),
+          returnUrl: String(returnUrl || '/mentor'),
+        }
+      : null
+  ), [planId, returnUrl, sourcePage, sourceScreen, sourceTaskId]);
 
   const [questions, setQuestions]       = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -557,12 +582,13 @@ export default function Quiz() {
   // Load saved IDs for bookmark state
   useEffect(() => {
     if (status === 'loading') return;
-    getSavedQuestionIds({ isLoggedIn })
+    getSavedQuestionIds({ isLoggedIn, scope: getUserCacheScope(session) })
       .then(result => {
         const ids = Array.isArray(result) ? result : result.data?.savedIds || [];
         setSavedIds(new Set(ids));
       })
       .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, isLoggedIn]);
 
   async function handleBookmarkToggle(question) {
@@ -605,16 +631,15 @@ export default function Quiz() {
       return;
     }
 
-    // Logged-in: use API
+    // Logged-in: use the shared mutation helpers (existing routes), which also
+    // patch the scoped saved-IDs/list caches + mark History caches stale.
+    const scope = getUserCacheScope(session);
     const isSaved = savedIds.has(question.id);
     if (isSaved) {
       setSavedIds(prev => { const n = new Set(prev); n.delete(question.id); return n; });
       try {
-        await fetch('/api/saved-questions', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ questionId: question.id }),
-        });
+        const r = await unsaveQuestion({ scope, questionId: question.id });
+        if (!r.ok) setSavedIds(prev => new Set([...prev, question.id])); // rollback
       } catch {
         setSavedIds(prev => new Set([...prev, question.id])); // rollback
       }
@@ -624,25 +649,20 @@ export default function Quiz() {
       setBookmarkFeedback(question.id);
       setTimeout(() => setBookmarkFeedback(null), 1200);
       try {
-        const saveRes = await fetch('/api/saved-questions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            questionId:    question.id,
-            subject:       question.subject,
-            topic:         question.topic,
-            question:      question.question,
-            optionA:       question.optionA,
-            optionB:       question.optionB,
-            optionC:       question.optionC,
-            optionD:       question.optionD,
-            correctOption: question.correctOption,
-            explanation:   question.explanation || '',
-          }),
-        });
-        if (!saveRes.ok) {
-          const err = await saveRes.json().catch(() => ({}));
-          console.error('[bookmark save failed]', saveRes.status, err);
+        const r = await saveQuestion({ scope, question: {
+          questionId:    question.id,
+          subject:       question.subject,
+          topic:         question.topic,
+          question:      question.question,
+          optionA:       question.optionA,
+          optionB:       question.optionB,
+          optionC:       question.optionC,
+          optionD:       question.optionD,
+          correctOption: question.correctOption,
+          explanation:   question.explanation || '',
+        } });
+        if (!r.ok) {
+          console.error('[bookmark save failed]');
           setSavedIds(prev => { const n = new Set(prev); n.delete(question.id); return n; }); // rollback
         }
       } catch {
@@ -804,6 +824,13 @@ export default function Quiz() {
       } catch {}
     }
 
+    // Step 14: reaching here means the canonical /api/question-bank path did not
+    // produce a usable pool — i.e. the legacy /api/questions fallback. Log why.
+    if (process.env.NODE_ENV !== 'production') {
+      const reason = subject === 'Mixed' ? 'mixed-subject' : 'missing-bank';
+      try { console.debug(`[apidiag] {"kind":"public-cache","event":"questions-legacy-fallback","reason":"${reason}"}`); } catch {}
+    }
+
     const cached = readCache(cacheKey, CACHE_TTL.ONE_DAY);
     const cachedPool = cached ? getQuestionPool(cached.data) : [];
 
@@ -883,6 +910,7 @@ export default function Quiz() {
       mode: mode || 'standard',
       historyMeta,
       sourceScreen,
+      mentorContext,
       selectedQuestionCount: questions.length,
       totalQuestions: questions.length,
       questions,
@@ -905,6 +933,7 @@ export default function Quiz() {
     effectiveTopic,
     mode,
     historyMeta,
+    mentorContext,
     sourceScreen,
     questionStartedAt,
     questions,
@@ -957,6 +986,10 @@ export default function Quiz() {
       isRetry: Boolean(historyMeta?.isRetry),
       attemptNumber: historyMeta?.attemptNumber || 1,
       sourceScreen,
+      sourcePage: mentorContext?.sourcePage || '',
+      sourceTaskId: mentorContext?.sourceTaskId || '',
+      planId: mentorContext?.planId || '',
+      returnUrl: mentorContext?.returnUrl || '',
       sessionId: clientSessionId,
       clientSessionId,
       startedAt: new Date(startedAtMs).toISOString(),
@@ -968,7 +1001,7 @@ export default function Quiz() {
     router.push(
       `/result?subject=${encodeURIComponent(effectiveSubject)}&topic=${encodeURIComponent(effectiveTopic)}&sessionId=${clientSessionId}&correct=${results.correct}&incorrect=${results.incorrect}&skipped=${results.skipped}&total=${results.totalQuestions}&score=${results.rawScore}`
     );
-  }, [questions, sessionId, router, quizComplete, effectiveSubject, effectiveTopic, collection, mode, answerTimes, sourceScreen, historyMeta]);
+  }, [questions, sessionId, router, quizComplete, effectiveSubject, effectiveTopic, collection, mode, answerTimes, sourceScreen, historyMeta, mentorContext]);
 
   const requestQuizExit = useCallback((targetUrl = '/dashboard') => {
     if (!quizInProgress || allowQuizExitRef.current) return true;
@@ -1080,6 +1113,10 @@ export default function Quiz() {
       isRetry: Boolean(session.historyMeta?.isRetry),
       attemptNumber: session.historyMeta?.attemptNumber || 1,
       sourceScreen: normalizeSourceScreen(session.sourceScreen),
+      sourcePage: session.mentorContext?.sourcePage || '',
+      sourceTaskId: session.mentorContext?.sourceTaskId || '',
+      planId: session.mentorContext?.planId || '',
+      returnUrl: session.mentorContext?.returnUrl || '',
       sessionId: storedSessionId,
       clientSessionId: storedSessionId,
       startedAt: new Date(startedAtMs).toISOString(),
@@ -1203,6 +1240,7 @@ export default function Quiz() {
       collection,
       mode: mode || 'standard',
       sourceScreen,
+      mentorContext,
       selectedQuestionCount: questions.length,
       totalQuestions: questions.length,
       questions,
@@ -1224,6 +1262,7 @@ export default function Quiz() {
     effectiveSubject,
     effectiveTopic,
     mode,
+    mentorContext,
     sourceScreen,
     questionStartedAt,
     questions,

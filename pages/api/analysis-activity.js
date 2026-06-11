@@ -1,3 +1,4 @@
+import { withApiTrace } from '@/lib/apiDiagnostics';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
 import { getLeaderboardData, getUserRows, findUserRow, parseUserRow, CACHE_TTL } from '@/lib/sheets';
@@ -14,7 +15,8 @@ const activityCache = new Map();
  * F skipped | G totalQuestions | H rawScore | I subject | J topic | K sessionId |
  * L coins | M isDailyChallenge | N streakBonus | O total coins
  */
-export default async function handler(req, res) {
+export default withApiTrace('/api/analysis-activity', handler);
+async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const session = await getServerSession(req, res, authOptions);

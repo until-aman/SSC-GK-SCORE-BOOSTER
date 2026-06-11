@@ -6,6 +6,7 @@ import CoinsToast from '@/components/CoinsToast';
 import Confetti from '@/components/Confetti';
 
 import GoogleSignInCard from '@/components/GoogleSignInCard';
+import MentorMessage from '@/components/MentorMessage';
 import Loader from '@/components/ui/Loader';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
@@ -13,6 +14,13 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import RefreshStatus from '@/components/ui/RefreshStatus';
 import { fetchWithClientCache, formatLastUpdated, patchCache, readCache, writeCache } from '@/lib/clientCache';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
+import { getUserCacheScope, buildUserScopedKey } from '@/lib/userCacheScope';
+import { markMentorCacheStale } from '@/lib/data/mentorData';
+import { markHistoryCachesStale } from '@/lib/data/historyClientData';
+import { markAnalysisActivityStale } from '@/lib/data/analysisData';
+import { patchUserProfileCache } from '@/lib/data/profileData';
+import { getAIResultInsights, readAIInsightsCache } from '@/lib/data/aiData';
+import { MENTOR_COPY, FEEDBACK_CHIPS } from '@/lib/mentorCopy';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -61,14 +69,21 @@ function ChampionAvatar({ imageUrl, name, size = 36 }) {
 }
 
 
-function patchProfileCaches(profileSnapshot) {
-  if (!profileSnapshot) return;
+// Step 7: after a quiz, patch the ACCOUNT-SCOPED bootstrap cache that the
+// Dashboard actually reads (`dashboard_bootstrap:u_<hash>`), so updated
+// coins/level/streak appear without any extra API call. The previous unscoped
+// `user_profile` write had no reader and the unscoped `dashboard_bootstrap`
+// patch never reached the scoped key (Step 4) — both removed.
+function patchProfileCaches(profileSnapshot, scope) {
+  if (!profileSnapshot || !scope || scope === 'guest') return;
   try {
-    writeCache(CACHE_KEYS.USER_PROFILE, profileSnapshot);
-    patchCache(CACHE_KEYS.DASHBOARD_BOOTSTRAP, data => ({
+    patchCache(buildUserScopedKey(CACHE_KEYS.DASHBOARD_BOOTSTRAP, scope), data => ({
       ...(data || {}),
-      profile: profileSnapshot,
+      profile: { ...(data?.profile || {}), ...profileSnapshot, isNewUser: false },
     }));
+    // Step 12: also patch the shared profile cache (Profile/Streak/Onboarding)
+    // via a safe merge so coins/level/streak/lastAttempt show with no profile GET.
+    patchUserProfileCache(scope, { ...profileSnapshot, isNewUser: false });
   } catch {}
 }
 
@@ -95,9 +110,6 @@ function getWeeklyPlayers(data) {
   return [];
 }
 
-function getAIResultKey(sessionId) {
-  return `ai_result:${sessionId || 'latest'}`;
-}
 
 function getQuizMode(result, subject) {
   if (result?.quizMode) return result.quizMode;
@@ -127,8 +139,95 @@ function buildAttemptAnswers(result) {
   });
 }
 
-async function saveQuizSession(result, routeSessionId) {
-  if (!result) return;
+function classifyPerformance(correctAnswers, incorrectAnswers, skipped, totalQuestions) {
+  if (!totalQuestions || totalQuestions === 0) return 'AVERAGE';
+  const correctRate = (correctAnswers / totalQuestions) * 100;
+  const skippedRate = (skipped / totalQuestions) * 100;
+  if (skippedRate >= 30) return 'LOW_CONFIDENCE';
+  if (correctRate >= 80) return 'EXCELLENT';
+  if (correctRate >= 65) return 'GOOD';
+  if (correctRate >= 45) return 'AVERAGE';
+  return 'WEAK';
+}
+
+function getResultCounts(result) {
+  return {
+    correctAnswers: Number(result?.correctAnswers ?? result?.correct ?? 0),
+    incorrectAnswers: Number(result?.incorrectAnswers ?? result?.incorrect ?? 0),
+    skipped: Number(result?.skipped ?? 0),
+    totalQuestions: Number(result?.totalQuestions ?? 0),
+  };
+}
+
+function readMentorReturnContext(result) {
+  if (!result) return null;
+  let cached = null;
+  try {
+    cached = JSON.parse(sessionStorage.getItem('ssc_mentor_return_context') || 'null');
+  } catch {}
+
+  const direct = result.sourceScreen === 'mentor_plan' || result.sourcePage === 'mentor'
+    ? {
+        sourcePage: result.sourcePage || 'mentor',
+        sourceScreen: result.sourceScreen || 'mentor_plan',
+        sourceTaskId: result.sourceTaskId || '',
+        planId: result.planId || cached?.planId || '',
+        returnUrl: result.returnUrl || '/mentor',
+      }
+    : null;
+
+  if (direct?.sourceTaskId) return direct;
+  if (cached?.sourceTaskId) return cached;
+  return direct;
+}
+
+function isGuestMode() {
+  if (typeof document === 'undefined') return false;
+  return document.cookie.split(';').some(cookie => cookie.trim().startsWith('userMode=guest'));
+}
+
+function getMentorGuestSnapshotKey() {
+  const today = new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split('T')[0];
+  return `mentor_snapshot_v2:guest:${today}`;
+}
+
+function completeGuestMentorTask(result, mentorContext) {
+  if (typeof window === 'undefined' || !mentorContext?.sourceTaskId) return;
+  try {
+    const rawSnapshot = localStorage.getItem(getMentorGuestSnapshotKey());
+    const rawPlan = localStorage.getItem('mentor_today_plan');
+    const snapshot = rawSnapshot ? JSON.parse(rawSnapshot) : null;
+    const planCache = rawPlan ? JSON.parse(rawPlan) : null;
+    const plan = snapshot?.plan || planCache?.plan;
+    if (!plan?.tasks?.length) return;
+    const now = new Date().toISOString();
+    const tasks = plan.tasks.map(task => task.taskId === mentorContext.sourceTaskId ? {
+      ...task,
+      status: 'completed',
+      completedAt: now,
+      lastQuizResult: {
+        subject: result.subject || '',
+        topic: result.topic || '',
+        accuracy: result.accuracy || 0,
+        completedAt: now,
+      },
+    } : task);
+    const nextPlan = { ...plan, tasks };
+    const nextSnapshot = snapshot ? {
+      ...snapshot,
+      plan: nextPlan,
+      activeTasks: tasks.filter(task => task.status === 'active').slice(0, 3),
+      completedToday: tasks.filter(task => task.status === 'completed'),
+      deferredTasks: tasks.filter(task => task.status === 'snoozed'),
+      lastSyncAt: now,
+    } : null;
+    localStorage.setItem('mentor_today_plan', JSON.stringify({ date: getMentorGuestSnapshotKey().split(':').pop(), plan: nextPlan }));
+    if (nextSnapshot) localStorage.setItem(getMentorGuestSnapshotKey(), JSON.stringify(nextSnapshot));
+  } catch {}
+}
+
+async function saveQuizSession(result, routeSessionId, scoreFields = {}) {
+  if (!result) return null;
 
   const subject = result.subject || '';
   const payload = {
@@ -141,6 +240,8 @@ async function saveQuizSession(result, routeSessionId) {
     timeSpentSeconds: Number(result.timeSpentSeconds || 0),
     sourceScreen: result.sourceScreen || 'unknown',
     answers: buildAttemptAnswers(result),
+    // Score fields for canonical persistence (same values formerly sent to /api/score).
+    ...scoreFields,
   };
 
   const response = await fetch('/api/quiz-session/complete', {
@@ -166,6 +267,8 @@ async function saveQuizSession(result, routeSessionId) {
       }),
     }).catch(() => {});
   }
+
+  return responseBody;
 }
 
 
@@ -197,9 +300,12 @@ export default function Result() {
   const [leaderboardRefreshing, setLeaderboardRefreshing] = useState(false);
   const [leaderboardMsg, setLeaderboardMsg]   = useState('');
   const [weeklyUpdatedAt, setWeeklyUpdatedAt] = useState(null);
+  const [feedbackChip, setFeedbackChip] = useState(null);
+  const [chipSent, setChipSent] = useState(false);
   const scoreSavedRef = useRef(false);
   const landingConfettiShownRef = useRef(false);
   const leaderboardRefreshedAfterScoreRef = useRef(false);
+  const mentorReturnSavedRef = useRef(false);
 
 
 
@@ -282,36 +388,40 @@ export default function Result() {
     const resolvedTopic = topic || result?.topic || '';
     const resolvedSessionId = sessionId || result?.sessionId || result?.clientSessionId || crypto.randomUUID();
 
+    // Score fields previously sent to /api/score — now part of the single
+    // canonical completion request to /api/quiz-session/complete.
+    const scoreFields = {
+      correctAnswers:   Number(correct   || result?.correct          || 0),
+      incorrectAnswers: Number(incorrect || result?.incorrect        || 0),
+      skipped:          Number(skipped   || result?.skipped          || 0),
+      totalQuestions:   Number(total     || result?.totalQuestions   || 0),
+      rawScore:         Number(score     || result?.rawScore         || 0),
+      subject:          resolvedSubject,
+      topic:            resolvedTopic,
+      sessionId:        resolvedSessionId,
+      clientSessionId:  result?.clientSessionId || resolvedSessionId,
+      quizMode:         getQuizMode(result, resolvedSubject),
+      sourceCollection: result?.collection || '',
+      startedAt:        result?.startedAt || '',
+      timeSpentSeconds: Number(result?.timeSpentSeconds || 0),
+      isDailyChallenge: resolvedSubject === 'Daily Challenge',
+    };
+
     setSavingCoins(true);
-    fetch('/api/score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        correctAnswers:   Number(correct   || result?.correct          || 0),
-        incorrectAnswers: Number(incorrect || result?.incorrect        || 0),
-        skipped:          Number(skipped   || result?.skipped          || 0),
-        totalQuestions:   Number(total     || result?.totalQuestions   || 0),
-        rawScore:         Number(score     || result?.rawScore         || 0),
-        subject:          resolvedSubject,
-        topic:            resolvedTopic,
-        sessionId:        resolvedSessionId,
-        clientSessionId:  result?.clientSessionId || resolvedSessionId,
-        quizMode:         getQuizMode(result, resolvedSubject),
-        sourceCollection: result?.collection || '',
-        startedAt:        result?.startedAt || '',
-        timeSpentSeconds: Number(result?.timeSpentSeconds || 0),
-        isDailyChallenge: resolvedSubject === 'Daily Challenge',
-      }),
-    })
-      .then(r => r.json())
+    saveQuizSession(result, resolvedSessionId, scoreFields)
       .then(data => {
-        saveQuizSession(result, resolvedSessionId).catch(err => {
-          console.warn('[result] quiz session save failed:', err.message);
-        });
         setSavingCoins(false);
-        if (data.ok) {
+        if (data && (data.ok || data.success)) {
           setCoinsResult(data);
-          patchProfileCaches(data.profileSnapshot);
+          patchProfileCaches(data.profileSnapshot, getUserCacheScope(session));
+          // Step 9: this quiz added a new session → mark account-scoped History
+          // landing/summary/subjects/score caches stale (no immediate refetch;
+          // next History open renders cached data + one background refresh).
+          markHistoryCachesStale(getUserCacheScope(session));
+          // Step 10: this quiz changed the user's real activity → mark the
+          // account-scoped Analysis activity cache stale (no immediate refetch;
+          // next Analysis open renders cached + one background refresh).
+          markAnalysisActivityStale(getUserCacheScope(session));
           if (!leaderboardRefreshedAfterScoreRef.current) {
             leaderboardRefreshedAfterScoreRef.current = true;
             loadWeeklyLeaderboard({ forceRefresh: true, background: true });
@@ -324,14 +434,57 @@ export default function Result() {
           }
         }
       })
-      .catch(() => {
-        saveQuizSession(result, resolvedSessionId).catch(err => {
-          console.warn('[result] quiz session save failed:', err.message);
-        });
+      .catch(err => {
+        console.warn('[result] quiz completion save failed:', err.message);
         setSavingCoins(false);
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router.isReady, result]);
+
+  useEffect(() => {
+    if (!router.isReady || status !== 'authenticated' || !result) return;
+    if (mentorReturnSavedRef.current) return;
+    const mentorContext = readMentorReturnContext(result);
+    if (!mentorContext?.sourceTaskId) return;
+    mentorReturnSavedRef.current = true;
+    const counts = getResultCounts(result);
+    fetch('/api/mentor/quiz-return', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        taskId: mentorContext.sourceTaskId,
+        planId: mentorContext.planId || result.planId || '',
+        quizSessionId: result.clientSessionId || result.sessionId || router.query.sessionId || '',
+        subject: result.subject || router.query.subject || '',
+        topic: result.topic || router.query.topic || '',
+        correct: counts.correctAnswers,
+        incorrect: counts.incorrectAnswers,
+        skipped: counts.skipped,
+        totalQuestions: counts.totalQuestions,
+      }),
+    })
+      .then(() => {
+        // Step 8: quiz-return changed Mentor task/topic state. Its response
+        // carries no snapshot, so mark the scoped Mentor cache stale (do NOT
+        // delete it, do NOT fetch a plan here). Next Mentor open renders the
+        // cached plan instantly and background-refreshes once.
+        markMentorCacheStale(getUserCacheScope(session));
+      })
+      .catch(err => {
+        console.warn('[result] mentor return save failed:', err.message);
+        mentorReturnSavedRef.current = false;
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, router.isReady, router.query.sessionId, router.query.subject, router.query.topic, status]);
+
+  useEffect(() => {
+    if (!router.isReady || status !== 'unauthenticated' || !result || !isGuestMode()) return;
+    if (mentorReturnSavedRef.current) return;
+    const mentorContext = readMentorReturnContext(result);
+    if (!mentorContext?.sourceTaskId) return;
+    mentorReturnSavedRef.current = true;
+    completeGuestMentorTask(result, mentorContext);
+  }, [result, router.isReady, status]);
 
   useEffect(() => {
     if (!result || status !== 'unauthenticated') return;
@@ -340,32 +493,25 @@ export default function Result() {
 
   useEffect(() => {
     if (!result || !router.isReady) return;
-    const key = getAIResultKey(router.query.sessionId || result.sessionId);
-    try {
-      const cached = sessionStorage.getItem(key);
-      if (cached) setAiAnalysis(JSON.parse(cached));
-    } catch {}
+    // Read-only: show previously generated attempt insight without a Gemini call.
+    const sessionId = router.query.sessionId || result.sessionId;
+    const cached = readAIInsightsCache({ scope: getUserCacheScope(session), sessionId });
+    if (cached) setAiAnalysis({ summary: cached });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, router.isReady, router.query.sessionId]);
 
   async function handleGenerateAIAnalysis() {
     if (!result || aiLoading) return;
-    const key = getAIResultKey(router.query.sessionId || result.sessionId);
-    try {
-      const cached = sessionStorage.getItem(key);
-      if (cached) {
-        setAiAnalysis(JSON.parse(cached));
-        setAiError('');
-        return;
-      }
-    } catch {}
-
+    const sessionId = router.query.sessionId || result.sessionId;
     setAiLoading(true);
     setAiError('');
     try {
-      const res = await fetch('/api/ai/result-insights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      // Attempt-scoped helper: cache-hit → no POST; else one POST (deduped),
+      // cached for 24h keyed by account scope + stable session id.
+      const { text, source } = await getAIResultInsights({
+        scope: getUserCacheScope(session),
+        sessionId,
+        payload: {
           subject:          result.subject,
           topic:            result.topic,
           totalQuestions:   result.totalQuestions,
@@ -374,14 +520,10 @@ export default function Result() {
           skipped:          result.skipped,
           rawScore:         result.rawScore,
           accuracy:         result.accuracy,
-        }),
+        },
       });
-      if (!res.ok) throw new Error('AI request failed');
-      const data = await res.json();
-      const analysis = { summary: data.aiSummary || data.summary || '' };
-      if (!analysis.summary) throw new Error('Empty AI response');
-      sessionStorage.setItem(key, JSON.stringify(analysis));
-      setAiAnalysis(analysis);
+      if (source === 'fallback' || !text) throw new Error('AI unavailable');
+      setAiAnalysis({ summary: text });
     } catch {
       setAiError("Couldn’t generate AI analysis. Try again.");
     } finally {
@@ -462,6 +604,11 @@ export default function Result() {
   }, [result]);
 
   function handleContinue() {
+    const mentorContext = readMentorReturnContext(result);
+    if (mentorContext?.sourceTaskId) {
+      router.push(mentorContext.returnUrl || '/mentor');
+      return;
+    }
     const subject = result?.subject || router.query.subject;
     const collection = result?.collection || router.query.collection || 'general';
     if (subject === 'Mixed') {
@@ -469,6 +616,31 @@ export default function Result() {
       return;
     }
     router.push('/dashboard');
+  }
+
+  function handleMentorPracticeMore() {
+    const mentorContext = readMentorReturnContext(result);
+    const subject = result?.subject || router.query.subject || '';
+    const topic = result?.topic || router.query.topic || '';
+    const params = new URLSearchParams({
+      subject,
+      topic,
+      count: '25',
+      sourcePage: 'mentor',
+      sourceScreen: 'mentor_plan',
+      sourceTaskId: mentorContext?.sourceTaskId || '',
+      planId: mentorContext?.planId || '',
+      returnUrl: mentorContext?.returnUrl || '/mentor',
+    });
+    if (mentorContext?.planId) {
+      sessionStorage.setItem('ssc_mentor_return_context', JSON.stringify({
+        ...mentorContext,
+        subject,
+        topic,
+        questionCount: 25,
+      }));
+    }
+    router.push(`/quiz?${params.toString()}`);
   }
 
   function handleShareWhatsApp() {
@@ -673,6 +845,43 @@ export default function Result() {
         })()}
 
         {/* ── 2. COINS + STREAK STRIP ── */}
+        {readMentorReturnContext(result)?.sourceTaskId ? (
+          <div className="mentor-in" style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.22)', borderRadius: 20, padding: 16, borderLeft: '4px solid #14B8A6' }}>
+            <p className="t-stat-label" style={{ color: '#14B8A6', marginBottom: 6 }}>Mentor Next Step</p>
+            <p style={{ color: '#F8FAFC', fontWeight: 800, fontSize: 15, marginBottom: 4 }}>
+              Result Mentor plan mein save ho jayega.
+            </p>
+            <p style={{ color: '#93A4BC', fontSize: 12, lineHeight: 1.55, marginBottom: 12 }}>
+              Ab aap Mentor tab par return kar sakte hain, same topic practice kar sakte hain, ya result review kar sakte hain.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => router.push(readMentorReturnContext(result)?.returnUrl || '/mentor')}
+                className="t-button-sm"
+                style={{ width: '100%', height: 44, borderRadius: 14, border: 'none', background: '#14B8A6', color: '#FFFFFF', cursor: 'pointer' }}
+              >
+                Return to Mentor Tab
+              </button>
+              <button
+                type="button"
+                onClick={handleMentorPracticeMore}
+                className="t-button-sm"
+                style={{ width: '100%', height: 44, borderRadius: 14, border: '1px solid rgba(255,255,255,0.10)', background: '#1E3554', color: '#F8FAFC', cursor: 'pointer' }}
+              >
+                Practice More
+              </button>
+              <button
+                type="button"
+                className="t-button-sm"
+                style={{ width: '100%', height: 40, borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#93A4BC', cursor: 'default' }}
+              >
+                Stay on Results
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {savingCoins && !coinsResult && (
           <div style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.22)', borderRadius: 20, padding: 16, display: 'flex', alignItems: 'center', gap: 10, borderLeft: '4px solid #14B8A6' }}>
             <Loader size="sm" />
@@ -801,6 +1010,91 @@ export default function Result() {
                 </button>
               )}
               {aiError && <p style={{ marginTop: 8, fontSize: 12, color: '#F87171' }}>{aiError}</p>}
+            </div>
+          );
+        })()}
+
+        {/* ── Mentor Feedback Section ── */}
+        {result && (() => {
+          const counts = getResultCounts(result);
+          const cat = classifyPerformance(
+            counts.correctAnswers,
+            counts.incorrectAnswers,
+            counts.skipped,
+            counts.totalQuestions
+          );
+          const mentorContext = readMentorReturnContext(result);
+          const variant = cat === 'EXCELLENT' ? 'success' : cat === 'WEAK' ? 'strict' : 'info';
+          return (
+            <div className="mt-4 space-y-3">
+              <MentorMessage message={MENTOR_COPY[`RESULT_${cat}`]} variant={variant} />
+
+              {!chipSent ? (
+                <div>
+                  <p className="text-xs text-slate-400 mb-2">How did this feel?</p>
+                  <div className="flex flex-wrap gap-2">
+                    {FEEDBACK_CHIPS.map(chip => (
+                      <button
+                        key={chip}
+                        onClick={async () => {
+                          setFeedbackChip(chip);
+                          setChipSent(true);
+                          try {
+                            await fetch('/api/mentor/task-feedback', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                subject: result.subject || '',
+                                topic: result.topic || '',
+                                quizSessionId: coinsResult?.sessionId || '',
+                                feedbackChip: chip,
+                                resultCategory: cat,
+                                correctRate: counts.totalQuestions > 0
+                                  ? (counts.correctAnswers / counts.totalQuestions) * 100 : 0,
+                                wrongRate: counts.totalQuestions > 0
+                                  ? (counts.incorrectAnswers / counts.totalQuestions) * 100 : 0,
+                                skippedRate: counts.totalQuestions > 0
+                                  ? (counts.skipped / counts.totalQuestions) * 100 : 0,
+                                totalQuestions: counts.totalQuestions,
+                                quizMode: result.quizMode || 'subject_topic',
+                                sourceTaskId: mentorContext?.sourceTaskId || '',
+                                sourcePage: mentorContext?.sourcePage || '',
+                                mentorNextAction: cat === 'EXCELLENT' || cat === 'GOOD' ? 'spaced_revision' : 'revision_followup',
+                                mentorActionSavedAt: new Date().toISOString(),
+                              }),
+                            });
+                          } catch { /* silent — feedback is non-critical */ }
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-xs border transition-all ${
+                          feedbackChip === chip
+                            ? 'border-orange-500 bg-orange-500/10 text-orange-400'
+                            : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                        }`}
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-orange-400">Feedback recorded. Plan is updating.</p>
+              )}
+
+              {(cat === 'WEAK' || cat === 'AVERAGE' || cat === 'LOW_CONFIDENCE') ? (
+                <button
+                  onClick={() => router.push('/history/mistakes')}
+                  className="w-full py-3 rounded-2xl border border-red-500/30 bg-red-500/10 text-red-400 text-sm font-semibold"
+                >
+                  Review Mistakes
+                </button>
+              ) : (
+                <button
+                  onClick={() => router.push('/mentor')}
+                  className="w-full py-3 rounded-2xl bg-orange-500 text-white text-sm font-semibold"
+                >
+                  Next Task
+                </button>
+              )}
             </div>
           );
         })()}

@@ -6,6 +6,8 @@ import Image from 'next/image';
 
 import GoogleSignInCard from '@/components/GoogleSignInCard';
 import DreamPostCard from '@/components/DreamPostCard';
+import { getUserCacheScope } from '@/lib/userCacheScope';
+import { getUserProfile } from '@/lib/data/profileData';
 
 function isGuestMode() {
   if (typeof document === 'undefined') return false;
@@ -44,10 +46,12 @@ export default function Profile() {
 
   useEffect(() => {
     if (!isLoggedIn) { setLoading(false); return; }
-    fetch('/api/user-profile')
-      .then(r => r.json())
-      .then(d => { setProfile(d); setLoading(false); })
+    // Shared account-scoped profile cache (warmed by Dashboard bootstrap):
+    // fresh → 0 network; stale/missing → 1 GET /api/user-profile (Step 5 deduped).
+    getUserProfile({ scope: getUserCacheScope(session) })
+      .then(res => { if (res?.data) setProfile(res.data); setLoading(false); })
       .catch(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn]);
 
   const level      = profile?.level || 'Aspirant';

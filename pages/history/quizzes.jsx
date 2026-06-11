@@ -1,32 +1,79 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
+import { markJourney } from '@/lib/journeyDiagnostics';
+import { getUserCacheScope } from '@/lib/userCacheScope';
+import { getHistoryLanding, getHistoryQuizzes, getHistoryTopics, getHistoryQuestions, normalizeHistoryQuery } from '@/lib/data/historyClientData';
+import { toggleSavedQuestion } from '@/lib/data/savedData';
+import { getAIExplanation as getAIExplanationHelper } from '@/lib/data/aiData';
 import Head from 'next/head';
-import GoogleSignInCard from '@/components/GoogleSignInCard';
 import HistoryTopBar from '@/components/HistoryTopBar';
+import GoogleSignInCard from '@/components/GoogleSignInCard';
 import Loader from '@/components/ui/Loader';
 
-const FILTERS = [
-  { key: 'all', label: 'All', query: {} },
-  { key: '7d', label: '7 Days', query: { dateRange: '7d' } },
-  { key: '30d', label: '30 Days', query: { dateRange: '30d' } },
-  { key: 'weak', label: 'Weak', query: { status: 'weak' } },
-  { key: 'wrong_skipped', label: 'Wrong + Skipped', query: { answerType: 'wrong_skipped' } },
-  { key: 'daily', label: 'Daily Challenge', query: { quizMode: 'daily_challenge' } },
+const MODES = [
+  { key: 'quiz', label: 'Quiz-wise', shortLabel: 'Quizzes' },
+  { key: 'subject', label: 'Subject-wise', shortLabel: 'Subjects' },
+  { key: 'topic', label: 'Topic-wise', shortLabel: 'Topics' },
+  { key: 'mistakes', label: 'Mistakes', shortLabel: 'Mistakes' },
 ];
 
-const BADGE_COLORS = {
-  green: ['#22C55E', 'rgba(34,197,94,0.12)'],
-  amber: ['#F59E0B', 'rgba(245,158,11,0.12)'],
-  red: ['#EF4444', 'rgba(239,68,68,0.12)'],
-  blue: ['#38BDF8', 'rgba(56,189,248,0.12)'],
-  purple: ['#A78BFA', 'rgba(167,139,250,0.14)'],
-  orange: ['#FF7A1A', 'rgba(255,122,26,0.14)'],
+const QUICK_FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: '7d', label: '7 Days' },
+  { key: '30d', label: '30 Days' },
+  { key: 'custom', label: 'Custom' },
+];
+
+const QUESTION_TYPES = [
+  { key: 'wrong', label: 'Wrong' },
+  { key: 'skipped', label: 'Skipped' },
+  { key: 'repeated', label: 'Repeated' },
+  { key: 'saved', label: 'Saved' },
+  { key: 'never_correct', label: 'Never Correct' },
+];
+
+const TONES = {
+  green: ['#86efac', 'rgba(34,197,94,.12)'],
+  amber: ['#fcd34d', 'rgba(245,158,11,.12)'],
+  red: ['#fca5a5', 'rgba(239,68,68,.12)'],
+  blue: ['#93c5fd', 'rgba(59,130,246,.12)'],
+  orange: ['#fdba74', 'rgba(255,122,26,.12)'],
+  grey: ['#cbd5e1', 'rgba(148,163,184,.10)'],
 };
 
-function qs(query) {
-  const params = new URLSearchParams({ page: '1', limit: '10', ...query });
-  return params.toString();
+function HistoryHeaderIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 3" />
+    </svg>
+  );
+}
+
+function CountUp({ value, suffix = '' }) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const target = Number(value) || 0;
+    const start = performance.now();
+    let frame;
+    function tick(now) {
+      const pct = Math.min(1, (now - start) / 600);
+      setDisplay(Math.round(target * (1 - Math.pow(1 - pct, 3))));
+      if (pct < 1) frame = requestAnimationFrame(tick);
+    }
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [value]);
+  return <>{display}{suffix}</>;
+}
+
+function BookmarkIcon({ filled }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? '#14B8A6' : 'none'} stroke={filled ? '#14B8A6' : '#64748b'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" />
+    </svg>
+  );
 }
 
 function formatDate(value) {
@@ -35,340 +82,900 @@ function formatDate(value) {
   if (!Number.isFinite(date.getTime())) return 'Recently';
   const diff = Date.now() - date.getTime();
   const days = Math.floor(diff / 86400000);
-  if (days === 0) return `Today, ${date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+  if (days === 0) return 'Today';
   if (days === 1) return 'Yesterday';
   if (days < 7) return `${days}d ago`;
   return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
 }
 
-function CountUp({ value, suffix = '' }) {
-  const [display, setDisplay] = useState(0);
-  useEffect(() => {
-    const target = Number(value) || 0;
-    const start = performance.now();
-    let raf;
-    function tick(now) {
-      const pct = Math.min(1, (now - start) / 800);
-      setDisplay(Math.round(target * (1 - Math.pow(1 - pct, 3))));
-      if (pct < 1) raf = requestAnimationFrame(tick);
-    }
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [value]);
-  return <>{display}{suffix}</>;
+function formatRangeDate(value) {
+  if (!value) return '';
+  const date = new Date(`${value}T00:00:00`);
+  if (!Number.isFinite(date.getTime())) return value;
+  return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
 }
 
-function AccuracyRing({ accuracy }) {
-  const pct = Math.max(0, Math.min(100, Number(accuracy) || 0));
-  const color = pct >= 75 ? '#22C55E' : pct >= 50 ? '#F59E0B' : '#F97316';
-  const radius = 17;
-  const circ = 2 * Math.PI * radius;
-  return (
-    <svg width="42" height="42" viewBox="0 0 42 42" style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx="21" cy="21" r={radius} fill="none" stroke="rgba(255,255,255,0.09)" strokeWidth="4" />
-      <circle cx="21" cy="21" r={radius} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={circ * (1 - pct / 100)} />
-      <text x="21" y="24" textAnchor="middle" fill="#F8FAFC" fontSize="10" fontWeight="800" transform="rotate(90 21 21)">{Math.round(pct)}%</text>
-    </svg>
-  );
+function todayInputValue() {
+  return new Date().toISOString().slice(0, 10);
 }
 
-function QuizCard({ session, onReview, onPractice, onFull }) {
-  const hasMistakes = session.incorrect > 0 || session.skipped > 0;
-  const colors = BADGE_COLORS[session.badgeTone] || BADGE_COLORS.amber;
-  return (
-    <div className="history-card">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="min-w-0">
-          <p className="font-display font-bold text-white text-[15px] truncate">{session.subject} <span className="text-slate-500">•</span> {session.topic}</p>
-          <p className="font-sans text-xs text-slate-500 mt-0.5">{formatDate(session.completedAt)}</p>
-        </div>
-        <span className="badge" style={{ color: colors[0], background: colors[1], borderColor: `${colors[0]}55` }}>{session.badge}</span>
-      </div>
-
-      <div className="flex items-center gap-4 mb-3">
-        <AccuracyRing accuracy={session.accuracy} />
-        <div>
-          <p className="font-display font-black text-2xl text-white">{session.score} <span className="text-sm text-slate-500">/ {session.questionCount * 2}</span></p>
-          <p className="font-sans text-xs text-slate-500">Score</p>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between text-sm mb-4">
-        <div className="flex items-center gap-3">
-          <span className="text-emerald-400 font-bold">✓{session.correct}</span>
-          <span className="text-red-300 font-bold">✕{session.incorrect}</span>
-          <span className="text-amber-300 font-bold">↷{session.skipped}</span>
-        </div>
-        <span className="text-orange-300 font-black">+{session.coinsEarned} Coins</span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <button onClick={() => hasMistakes ? onPractice(session) : onReview(session)} className="primary-btn">
-          {hasMistakes ? 'Practice Mistakes ->' : 'Review'}
-        </button>
-        <button onClick={() => hasMistakes ? onReview(session) : onFull(session)} className="secondary-btn">
-          {hasMistakes ? 'Review' : 'Re-attempt'}
-        </button>
-      </div>
-    </div>
-  );
+function optionText(question, option) {
+  return question[`option${String(option || '').toUpperCase()}`] || '';
 }
 
 function EmptyPanel({ title, body, action, onClick }) {
   return (
-    <div className="empty-panel">
-      <p className="font-display font-bold text-white">{title}</p>
-      <p className="font-sans text-sm text-slate-400 mt-1 mb-4">{body}</p>
-      <button onClick={onClick} className="primary-btn inline-flex px-5">{action}</button>
-    </div>
+    <section className="history-card text-center">
+      <p className="font-display font-black text-white">{title}</p>
+      <p className="text-sm text-slate-400 mt-1 mb-4">{body}</p>
+      {action && <button type="button" className="primary-btn" onClick={onClick}>{action}</button>}
+    </section>
   );
 }
 
-function ReattemptModal({ modal, onClose, onConfirm, busy }) {
+function Modal({ modal, onClose, onConfirm, busy }) {
   if (!modal) return null;
+  const sizes = modal.count > 25 ? [10, 25, 50].filter(size => size <= modal.count || size === 50) : [];
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center px-5" style={{ background: 'rgba(0,0,0,0.68)' }}>
-      <div className="w-full max-w-[360px] rounded-[22px] p-5" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.10)' }}>
-        <h2 className="font-display text-xl font-black text-white mb-2">{modal.title}</h2>
-        <p className="text-sm text-slate-300 font-semibold">{modal.session?.subject} • {modal.session?.topic}</p>
-        <p className="text-sm text-slate-500 mt-1 mb-5">{modal.body}</p>
-        <div className="grid grid-cols-2 gap-2">
-          <button onClick={onClose} className="secondary-btn" disabled={busy}>Cancel</button>
-          <button onClick={onConfirm} className="primary-btn" disabled={busy}>{busy ? 'Starting...' : modal.confirm}</button>
+    <div className="modal-backdrop">
+      <div className="modal-card">
+        <h2 className="font-display text-xl font-black text-white">{modal.title}</h2>
+        <p className="text-sm font-bold text-slate-300 mt-3">{modal.subject}{modal.topic ? ` · ${modal.topic}` : ''}</p>
+        <p className="text-sm text-slate-400 mt-2">{modal.body}</p>
+        {sizes.length > 0 && (
+          <div className="mt-4">
+            <p className="text-xs font-bold text-slate-500 mb-2">Choose practice size:</p>
+            <div className="grid grid-cols-3 gap-2">
+              {sizes.map(size => (
+                <button key={size} type="button" className={`chip ${modal.limit === size ? 'active' : ''}`} onClick={() => modal.setLimit(size)}>{size}</button>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-2 mt-5">
+          <button type="button" className="secondary-btn" disabled={busy} onClick={onClose}>Cancel</button>
+          <button type="button" className="primary-btn" disabled={busy} onClick={onConfirm}>{busy ? 'Starting...' : <>Start Practice &rarr;</>}</button>
         </div>
       </div>
     </div>
   );
 }
 
-export default function QuizHistoryPage() {
-  const { status } = useSession();
+function DateRangeModal({
+  open,
+  startDate,
+  endDate,
+  error,
+  onStartChange,
+  onEndChange,
+  onApply,
+  onClose,
+  onReset,
+}) {
+  if (!open) return null;
+  return (
+    <div className="date-modal-backdrop" onClick={onClose}>
+      <section className="date-modal-card" onClick={event => event.stopPropagation()}>
+        <div className="date-modal-top">
+          <div>
+            <h2 className="font-display">Select Date Range</h2>
+            <p>Choose the quiz attempt period you want to review.</p>
+          </div>
+          <button type="button" className="date-close-btn" onClick={onClose} aria-label="Close date range modal">&times;</button>
+        </div>
+
+        <div className="date-field-group">
+          <label htmlFor="quiz-history-start-date">From</label>
+          <input id="quiz-history-start-date" type="date" value={startDate} max={todayInputValue()} onChange={event => onStartChange(event.target.value)} />
+        </div>
+
+        <div className="date-field-group">
+          <label htmlFor="quiz-history-end-date">To</label>
+          <input id="quiz-history-end-date" type="date" value={endDate} max={todayInputValue()} onChange={event => onEndChange(event.target.value)} />
+        </div>
+
+        {error && <p className="date-error">{error}</p>}
+
+        <div className="date-modal-actions">
+          <button type="button" className="secondary-btn" onClick={onReset}>Reset</button>
+          <button type="button" className="primary-btn" onClick={onApply}>Apply &rarr;</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function QuizCard({ session, onReview, onPractice }) {
+  const mistakes = (Number(session.incorrect) || 0) + (Number(session.skipped) || 0);
+  const maxScore = session.maxScore || session.questionCount * 2;
+  const tone = TONES[session.badgeTone] || TONES.amber;
+  return (
+    <article className="history-card quiz-card">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h3 className="quiz-title font-display">{session.subject} &middot; {session.topic}</h3>
+          <p className="quiz-date">{formatDate(session.completedAt)}</p>
+        </div>
+        <span className="tone-pill quiz-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{session.badge}</span>
+      </div>
+
+      <div className="quiz-metric-row">
+        <div className="quiz-metric">
+          <strong className="font-display">{session.score} / {maxScore}</strong>
+          <span>Score</span>
+        </div>
+        <div className="quiz-metric quiz-metric-coins">
+          <strong className="font-display">+{session.coinsEarned}</strong>
+          <span>Coins</span>
+        </div>
+      </div>
+
+      <div className="quiz-result-row">
+        <span className="text-slate-400">{session.questionCount} Qs</span>
+        <span className="text-emerald-300">&#10003; {session.correct}</span>
+        <span className="text-red-300">&times; {session.incorrect}</span>
+        <span className="text-slate-400">&#9675; {session.skipped}</span>
+      </div>
+
+      <div className="quiz-action-row">
+        {mistakes > 0 ? (
+          <>
+            <button type="button" className="primary-btn" onClick={() => onPractice(session)}>Practice Mistakes</button>
+            <button type="button" className="secondary-btn" onClick={() => onReview(session)}>Review Quiz</button>
+          </>
+        ) : (
+          <>
+            <button type="button" className="primary-btn" onClick={() => onReview(session)}>Review Quiz</button>
+            <button type="button" className="secondary-btn" disabled>Practice Mistakes</button>
+          </>
+        )}
+      </div>
+    </article>
+  );
+}
+function StatEntityCard({ item, type, onPractice, onReview }) {
+  const tone = TONES[item.statusTone] || TONES.grey;
+  const title = type === 'topic' ? item.topic : item.subject;
+  const hasMistakes = item.hasMistakes || ((Number(item.wrongCount) || 0) + (Number(item.skippedCount) || 0)) > 0;
+  const revisionLabel = item.statusLabel === 'Improve' ? 'Needs Revision' : item.statusLabel;
+
+  if (type === 'subject') {
+    return (
+      <article className="history-card entity-card subject-entity-card">
+        <div className="entity-top">
+          <h3 className="entity-title font-display">{title}</h3>
+          <span className="tone-pill entity-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{revisionLabel}</span>
+        </div>
+
+        <p className="subject-meta-line">Last practiced {formatDate(item.lastPracticedAt)}</p>
+
+        <div className="entity-stat-row subject-stat-row">
+          <span className="text-slate-400">{item.questionCount} Qs</span>
+          <span className="text-emerald-300">&#10003; {item.correctCount}</span>
+          <span className="text-red-300">&times; {item.wrongCount}</span>
+          <span className="text-slate-400">&#9675; {item.skippedCount}</span>
+        </div>
+
+        <div className="subject-action-row">
+          {hasMistakes ? (
+            <>
+              <button type="button" className="primary-btn" onClick={() => onPractice(item)}>Practice Mistakes</button>
+              <button type="button" className="secondary-btn" onClick={() => onReview(item)}>Review Questions</button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="primary-btn" onClick={() => onReview(item)}>Review Questions</button>
+              <button type="button" className="secondary-btn" disabled>Practice Mistakes</button>
+            </>
+          )}
+        </div>
+      </article>
+    );
+  }
+
+  if (type === 'topic') {
+    return (
+      <article className="history-card entity-card topic-entity-card">
+        <div className="entity-top">
+          <h3 className="entity-title font-display">{title}</h3>
+          <span className="tone-pill entity-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{revisionLabel}</span>
+        </div>
+
+        <p className="topic-subject-line">{item.subject}</p>
+        <p className="subject-meta-line">Last practiced {formatDate(item.lastPracticedAt)}</p>
+
+        <div className="entity-stat-row subject-stat-row">
+          <span className="text-slate-400">{item.questionCount} Qs</span>
+          <span className="text-emerald-300">&#10003; {item.correctCount}</span>
+          <span className="text-red-300">&times; {item.wrongCount}</span>
+          <span className="text-slate-400">&#9675; {item.skippedCount}</span>
+        </div>
+
+        <div className="subject-action-row">
+          {hasMistakes ? (
+            <>
+              <button type="button" className="primary-btn" onClick={() => onPractice(item)}>Practice Mistakes</button>
+              <button type="button" className="secondary-btn" onClick={() => onReview(item)}>Review</button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="primary-btn" onClick={() => onReview(item)}>Review</button>
+              <button type="button" className="secondary-btn" disabled>Practice Mistakes</button>
+            </>
+          )}
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <article className="history-card entity-card">
+      <div className="entity-top">
+        <div className="min-w-0 flex-1">
+          <h3 className="entity-title font-display">{title}</h3>
+          {type === 'topic' && (
+            <p className="entity-subtitle">{item.subject} &middot; {item.statusLabel}</p>
+          )}
+        </div>
+        <div className="entity-accuracy">
+          <p className="font-display" style={{ color: tone[0] }}>{item.accuracy}%</p>
+          {type !== 'topic' && (
+            <span className="tone-pill entity-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{item.statusLabel}</span>
+          )}
+        </div>
+      </div>
+
+      <div className="entity-meta">
+        <span>{item.questionCount} questions attempted</span>
+        <span>Last practiced: {formatDate(item.lastPracticedAt)}</span>
+      </div>
+
+      <div className="entity-stat-row">
+        <span className="text-emerald-300">&#10003; {item.correctCount}</span>
+        <span className="text-red-300">&times; {item.wrongCount}</span>
+        <span className="text-amber-300">~ {item.skippedCount}</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 mt-4">
+        {hasMistakes ? (
+          <>
+            <button type="button" className="primary-btn" onClick={() => onPractice(item)}>Practice Mistakes</button>
+            <button type="button" className="secondary-btn" onClick={() => onReview(item)}>{type === 'topic' ? 'Review' : 'Review Questions'}</button>
+          </>
+        ) : (
+          <>
+            <button type="button" className="primary-btn" onClick={() => onReview(item)}>{type === 'topic' ? 'Review' : 'Review Questions'}</button>
+            <button type="button" className="secondary-btn" disabled>Practice Mistakes</button>
+          </>
+        )}
+      </div>
+    </article>
+  );
+}
+function QuestionCard({ item, isOpen, onToggleOpen, aiCache, setAiCache, onPracticeOne, onToggleSave }) {
+  const cache = aiCache[item.questionId] || { official: item.explanation || '', ai: null, loading: false };
+  const statusText = item.lastAttemptStatus === 'skipped' ? 'Skipped' : item.lastAttemptStatus === 'correct' ? 'Correct' : 'Wrong';
+  const correctCount = Number(item.correctCount) || 0;
+  const wrongCount = Number(item.wrongCount) || 0;
+  const skippedCount = Number(item.skippedCount) || 0;
+  const lastAnswerText = item.lastUserAnswer ? optionText(item, item.lastUserAnswer) : '';
+  const correctAnswerText = item.correctOption ? optionText(item, item.correctOption) : '';
+  const lastAnswerTone = !item.lastUserAnswer ? 'skipped' : item.lastUserAnswer === item.correctOption ? 'correct' : 'wrong';
+  let smartTag = 'Needs Revision';
+  let tagTone = TONES.amber;
+  if (wrongCount >= 2 && correctCount === 0) {
+    smartTag = 'Never Correct';
+    tagTone = TONES.red;
+  } else if (wrongCount >= 2) {
+    smartTag = 'Repeated Mistake';
+    tagTone = TONES.red;
+  } else if (skippedCount >= 2) {
+    smartTag = 'Often Skipped';
+    tagTone = TONES.blue;
+  } else if (correctCount > 0 && wrongCount > 0) {
+    smartTag = 'Improving';
+    tagTone = TONES.amber;
+  } else if (correctCount >= 2 && item.lastAttemptStatus === 'correct') {
+    smartTag = 'Mastered';
+    tagTone = TONES.green;
+  }
+
+  async function getAIExplanation() {
+    if (cache.ai || cache.loading) return;
+    setAiCache(prev => ({ ...prev, [item.questionId]: { ...cache, loading: true } }));
+    try {
+      const { text, source } = await getAIExplanationHelper({
+        question: item.question,
+        optionA: item.optionA, optionB: item.optionB, optionC: item.optionC, optionD: item.optionD,
+        correctOption: item.correctOption,
+        userOption: item.lastUserAnswer,
+        sheetExplanation: item.explanation || '',
+        subject: item.subject, topic: item.topic,
+      });
+      setAiCache(prev => ({ ...prev, [item.questionId]: { ...cache, ai: source === 'ai' ? text : null, loading: false } }));
+    } catch {
+      setAiCache(prev => ({ ...prev, [item.questionId]: { ...cache, loading: false } }));
+    }
+  }
+
+  return (
+    <article className={`history-card question-card ${isOpen ? 'open' : ''}`}>
+      <div className="question-top-row">
+        <p className="question-kicker">{item.subject} &middot; {item.topic}</p>
+        <span className="tone-pill question-badge" style={{ color: tagTone[0], background: tagTone[1], borderColor: `${tagTone[0]}55` }}>{smartTag}</span>
+      </div>
+
+      <p className="question-preview font-display">{item.questionPreview || item.question}</p>
+
+      <div className="question-stat-row">
+        <span className="text-red-300">Wrong {wrongCount}x</span>
+        <span className="text-slate-400">Skipped {skippedCount}x</span>
+      </div>
+
+      {isOpen && (
+        <div className="question-expanded">
+          <div className="expanded-block">
+            <p className="expanded-label">Full Question</p>
+            <p className="expanded-question font-display">{item.question}</p>
+          </div>
+          <div className="answer-detail-grid">
+            <div className={`answer-detail ${lastAnswerTone}`}>
+              <span>Your Last Answer</span>
+              <b>{lastAnswerText || 'Skipped'}</b>
+            </div>
+            <div className="answer-detail correct">
+              <span>Correct Answer</span>
+              <b>{correctAnswerText || item.correctOption || 'Not available'}</b>
+            </div>
+          </div>
+          <p className="expanded-attempt">Last attempt: {statusText} &middot; {formatDate(item.lastAttemptedAt)}</p>
+          <div className="divider" />
+          <p className="expanded-label">Explanation</p>
+          {item.explanation ? <p className="text-sm text-slate-300 leading-relaxed">{item.explanation}</p> : <p className="text-sm text-slate-500">No official explanation available.</p>}
+          {cache.ai ? <p className="text-sm text-orange-100 leading-relaxed mt-3">{cache.ai}</p> : null}
+          <button type="button" className="secondary-btn mt-3 w-full" onClick={getAIExplanation} disabled={cache.loading}>
+            {cache.loading ? 'Loading...' : 'Get AI Explanation'}
+          </button>
+        </div>
+      )}
+
+      <div className="question-actions">
+        <button type="button" className="primary-btn" onClick={() => onPracticeOne(item)}>Practice Again</button>
+        <button type="button" className="secondary-btn" onClick={onToggleOpen}>{isOpen ? 'Close' : 'Open'}</button>
+        <button type="button" className={`save-icon-btn ${item.isSaved ? 'saved' : ''}`} onClick={event => { event.stopPropagation(); onToggleSave(item); }} aria-label={item.isSaved ? 'Remove bookmark' : 'Save question'} title={item.isSaved ? 'Saved' : 'Save'}>
+          <BookmarkIcon filled={item.isSaved} />
+        </button>
+      </div>
+    </article>
+  );
+}
+function MoreFiltersSheet({ open, filters, subjects, onClose, onApply, onReset }) {
+  const [draft, setDraft] = useState(filters);
+  useEffect(() => { setDraft(filters); }, [filters, open]);
+  if (!open) return null;
+  return (
+    <div className="sheet-backdrop">
+      <section className="filter-sheet">
+        <div className="sheet-handle" />
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display font-black text-white">Filter Attempted Questions</h2>
+          <button type="button" className="secondary-btn px-3" onClick={onClose}>× Close</button>
+        </div>
+        {[
+          ['Answer Status', 'answerStatus', ['all', 'correct', 'wrong', 'skipped', 'wrong_skipped']],
+          ['Question History', 'questionHistory', ['all', 'repeated', 'never_correct', 'mastered']],
+          ['Date Range', 'dateRange', ['all', 'today', '7d', '30d']],
+          ['Quiz Type', 'quizType', ['all', 'normal', 'daily_challenge', 'reattempt']],
+        ].map(([label, key, values]) => (
+          <div key={key} className="mb-4">
+            <p className="filter-label">{label}</p>
+            <div className="chip-row sheet-chip-row">
+              {values.map(value => <button key={value} type="button" className={`chip ${draft[key] === value ? 'active' : ''}`} onClick={() => setDraft(prev => ({ ...prev, [key]: value }))}>{value.replaceAll('_', ' ')}</button>)}
+            </div>
+          </div>
+        ))}
+        <div className="mb-5">
+          <p className="filter-label">Subject</p>
+          <select className="filter-select" value={draft.subject || ''} onChange={event => setDraft(prev => ({ ...prev, subject: event.target.value, topic: '' }))}>
+            <option value="">All Subjects</option>
+            {subjects.map(item => <option key={item.subject} value={item.subject}>{item.subject}</option>)}
+          </select>
+        </div>
+        <div className="mb-5">
+          <p className="filter-label">Topic</p>
+          <select className="filter-select" disabled value="">
+            <option>{draft.subject ? 'Select from Topic-wise mode' : 'Select subject first'}</option>
+          </select>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" className="secondary-btn" onClick={onReset}>Reset All</button>
+          <button type="button" className="primary-btn" onClick={() => onApply(draft)}>Apply Filters &rarr;</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export default function HistoryPage() {
+  const { data: session, status } = useSession();
+  const cacheScope = getUserCacheScope(session);
   const router = useRouter();
-  const [landing, setLanding] = useState(null);
-  const [expanded, setExpanded] = useState(false);
-  const [expandedSessions, setExpandedSessions] = useState([]);
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [filterResult, setFilterResult] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [activeMode, setActiveMode] = useState('quiz');
+  const [summary, setSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState('');
+  const [quizData, setQuizData] = useState({ sessions: [], total: 0, hasMore: false });
+  const [quizExpanded, setQuizExpanded] = useState(false);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [quickFilter, setQuickFilter] = useState('all');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [appliedCustomRange, setAppliedCustomRange] = useState({ start: '', end: '' });
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  const [dateValidationError, setDateValidationError] = useState('');
+  const [subjects, setSubjects] = useState(null);
+  const [subjectsLoading, setSubjectsLoading] = useState(false);
+  const [subjectFilter, setSubjectFilter] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [topicsBySubject, setTopicsBySubject] = useState({});
+  const [topicsLoading, setTopicsLoading] = useState(false);
+  const [questionType, setQuestionType] = useState('wrong');
+  const [questionSubject, setQuestionSubject] = useState('');
+  const [questionsData, setQuestionsData] = useState(null);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [expandedQuestionId, setExpandedQuestionId] = useState('');
+  const [aiCache, setAiCache] = useState({});
   const [modal, setModal] = useState(null);
   const [starting, setStarting] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState({ answerStatus: 'all', questionHistory: 'all', dateRange: 'all', quizType: 'all', subject: '' });
 
   const isGuest = status === 'unauthenticated';
+  const allZero = summary && summary.totalQuizzes === 0 && summary.totalQuestions === 0 && summary.savedCount === 0;
 
-  async function loadLanding() {
-    setLoading(true);
-    setError('');
+  // Step 9: summary, default quiz page, and subjects all come from ONE
+  // cache-aware GET /api/history/landing. The three loaders share the same
+  // scoped key, so Step 5 in-flight dedup collapses the mount to one network
+  // request (cold) and zero (warm).
+  const loadSummary = useCallback(async () => {
+    setSummaryLoading(true);
+    setSummaryError('');
     try {
-      const res = await fetch('/api/history/landing');
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
-      setLanding(data.data);
+      markJourney({ journey: 'history-landing', route: '/api/history/landing', trigger: 'mount', cache: 'helper', helper: 'getHistoryLanding' });
+      const res = await getHistoryLanding({ scope: cacheScope });
+      const payload = res?.data?.data;
+      if (!payload) throw new Error('Failed');
+      setSummary(payload.summary);
     } catch {
-      setError("Couldn't load history. Check connection.");
+      setSummaryError("Couldn't load. Check connection.");
     } finally {
-      setLoading(false);
+      setSummaryLoading(false);
     }
-  }
+  }, [cacheScope]);
+
+  const loadQuizzes = useCallback(async (limit = 3, filter = 'all', range = appliedCustomRange) => {
+    setQuizLoading(true);
+    try {
+      // Default landing page (all, page 1, limit ≤ 3) → served by the shared
+      // landing payload (no extra request). Any filter/expansion → cache-aware
+      // GET /api/history/quizzes keyed by the exact query.
+      const isDefault = filter === 'all' && !range.start && !range.end && limit <= 3;
+      if (isDefault) {
+        const res = await getHistoryLanding({ scope: cacheScope });
+        if (res?.data?.data?.quizzes) setQuizData(res.data.data.quizzes);
+        return;
+      }
+      const params = { page: 1, limit };
+      if (filter === '7d' || filter === '30d') params.dateRange = filter;
+      if (filter === 'custom' && range.start && range.end) { params.startDate = range.start; params.endDate = range.end; }
+      const query = normalizeHistoryQuery(params);
+      const res = await getHistoryQuizzes({ scope: cacheScope, query });
+      const data = res?.data;
+      if (!data?.success) throw new Error(data?.error || 'Failed');
+      setQuizData(data.data);
+    } finally {
+      setQuizLoading(false);
+    }
+  }, [appliedCustomRange, cacheScope]);
+
+  const loadSubjects = useCallback(async () => {
+    if (subjects) return subjects;
+    setSubjectsLoading(true);
+    try {
+      const res = await getHistoryLanding({ scope: cacheScope });
+      const list = res?.data?.data?.subjects || [];
+      setSubjects(list);
+      return list;
+    } finally {
+      setSubjectsLoading(false);
+    }
+  }, [subjects, cacheScope]);
+
+  const loadTopics = useCallback(async (subject) => {
+    if (!subject || topicsBySubject[subject]) return;
+    setTopicsLoading(true);
+    try {
+      const res = await getHistoryTopics({ scope: cacheScope, subject });
+      const data = res?.data;
+      if (!data?.success) throw new Error(data?.error || 'Failed');
+      setTopicsBySubject(prev => ({ ...prev, [subject]: data.data.topics || [] }));
+    } finally {
+      setTopicsLoading(false);
+    }
+  }, [topicsBySubject, cacheScope]);
+
+  const loadQuestions = useCallback(async () => {
+    setQuestionsLoading(true);
+    try {
+      const params = { limit: 10 };
+      if (questionType === 'repeated') params.questionHistory = 'repeated';
+      else if (questionType === 'never_correct') params.questionHistory = 'never_correct';
+      else params.status = questionType;
+      if (questionSubject) params.subject = questionSubject;
+      Object.entries(advancedFilters).forEach(([key, value]) => {
+        if (value && value !== 'all') params[key === 'answerStatus' ? 'status' : key] = value;
+      });
+      const query = normalizeHistoryQuery(params);
+      const res = await getHistoryQuestions({ scope: cacheScope, query });
+      const data = res?.data;
+      if (!data?.success) throw new Error(data?.error || 'Failed');
+      setQuestionsData(data.data);
+    } finally {
+      setQuestionsLoading(false);
+    }
+  }, [advancedFilters, questionSubject, questionType, cacheScope]);
 
   useEffect(() => {
-    if (status === 'loading') return;
-    if (isGuest) { setLoading(false); return; }
-    loadLanding();
-  }, [status, isGuest]);
+    if (status === 'loading' || isGuest) return;
+    loadSummary();
+  }, [status, isGuest, loadSummary]);
 
-  async function loadExpanded() {
-    if (expanded) {
-      setExpanded(false);
+  useEffect(() => {
+    if (status === 'loading' || isGuest) return;
+    loadQuizzes(3, quickFilter, appliedCustomRange);
+  }, [status, isGuest, loadQuizzes, quickFilter, appliedCustomRange]);
+
+  useEffect(() => {
+    if (status === 'loading' || isGuest) return;
+    if (activeMode === 'subject') loadSubjects();
+    if (activeMode === 'topic') {
+      loadSubjects().then(items => {
+        const subject = selectedSubject || items?.[0]?.subject || '';
+        if (subject) {
+          setSelectedSubject(subject);
+          loadTopics(subject);
+        }
+      });
+    }
+    if (activeMode === 'mistakes') {
+      loadSubjects();
+      loadQuestions();
+    }
+  }, [activeMode, isGuest, loadQuestions, loadSubjects, loadTopics, selectedSubject, status]);
+
+  useEffect(() => {
+    if (activeMode === 'topic' && selectedSubject) loadTopics(selectedSubject);
+  }, [activeMode, loadTopics, selectedSubject]);
+
+  useEffect(() => {
+    if (activeMode === 'mistakes' && status !== 'loading' && !isGuest) loadQuestions();
+  }, [activeMode, isGuest, loadQuestions, status]);
+
+  useEffect(() => {
+    if (sheetOpen && status !== 'loading' && !isGuest) loadSubjects();
+  }, [isGuest, loadSubjects, sheetOpen, status]);
+
+  useEffect(() => {
+    setExpandedQuestionId('');
+  }, [questionType, questionSubject, advancedFilters]);
+
+  const filteredQuizzes = useMemo(() => {
+    const sessions = quizData.sessions || [];
+    return sessions;
+  }, [quizData.sessions]);
+
+  const filteredSubjects = useMemo(() => {
+    const items = subjects || [];
+    if (!subjectFilter) return items;
+    return items.filter(item => item.subject === subjectFilter);
+  }, [subjectFilter, subjects]);
+  const topics = topicsBySubject[selectedSubject] || [];
+  const questionSubjects = subjects || [];
+  const practiceCount = questionsData?.total || 0;
+  const activeMistakeLabel = QUESTION_TYPES.find(type => type.key === questionType)?.label || 'Filtered';
+  const mistakePhrase = {
+    wrong: 'wrong questions',
+    skipped: 'skipped questions',
+    repeated: 'repeated mistakes',
+    saved: 'saved questions',
+    never_correct: 'never correct questions',
+  }[questionType] || `${activeMistakeLabel.toLowerCase()} questions`;
+  const summaryPhrase = questionType === 'repeated' ? 'repeated questions' : mistakePhrase;
+  const activeMistakeSummary = `${mistakePhrase} in ${questionSubject || 'All subjects'}`;
+  const customRangeSummary = appliedCustomRange.start && appliedCustomRange.end
+    ? `Showing quizzes from ${formatRangeDate(appliedCustomRange.start)} to ${formatRangeDate(appliedCustomRange.end)}`
+    : '';
+
+  async function expandQuizzes() {
+    const next = !quizExpanded;
+    setQuizExpanded(next);
+    await loadQuizzes(next ? 10 : 3, quickFilter, appliedCustomRange);
+  }
+
+  function handleQuickFilter(nextFilter) {
+    if (nextFilter === 'custom') {
+      setDateValidationError('');
+      setCustomStartDate(appliedCustomRange.start || '');
+      setCustomEndDate(appliedCustomRange.end || '');
+      setIsDateModalOpen(true);
       return;
     }
-    const res = await fetch('/api/history/quizzes?page=1&limit=10');
-    const data = await res.json();
-    setExpandedSessions(data.data?.sessions || []);
-    setExpanded(true);
+    setIsDateModalOpen(false);
+    setDateValidationError('');
+    setCustomStartDate('');
+    setCustomEndDate('');
+    setAppliedCustomRange({ start: '', end: '' });
+    setQuickFilter(nextFilter);
+    setQuizExpanded(false);
   }
 
-  async function selectFilter(filter) {
-    setActiveFilter(filter.key);
-    const res = await fetch(`/api/history/quizzes?${qs(filter.query)}`);
-    const data = await res.json();
-    setFilterResult(data.data || null);
+  function resetDateFilter() {
+    setCustomStartDate('');
+    setCustomEndDate('');
+    setAppliedCustomRange({ start: '', end: '' });
+    setDateValidationError('');
+    setQuickFilter('all');
+    setQuizExpanded(false);
   }
 
-  function openReview(session) {
-    router.push(`/history/session/${session.sessionId}`);
+  function applyCustomDateRange() {
+    const today = todayInputValue();
+    if (!customStartDate) {
+      setDateValidationError('Select a start date.');
+      return;
+    }
+    if (!customEndDate) {
+      setDateValidationError('Select an end date.');
+      return;
+    }
+    if (customStartDate > customEndDate) {
+      setDateValidationError('Start date cannot be after end date.');
+      return;
+    }
+    if (customEndDate > today) {
+      setDateValidationError('End date cannot be in the future.');
+      return;
+    }
+    setAppliedCustomRange({ start: customStartDate, end: customEndDate });
+    setQuickFilter('custom');
+    setQuizExpanded(false);
+    setDateValidationError('');
+    setIsDateModalOpen(false);
   }
 
-  function openPractice(session) {
+  function openPracticeModal(payload) {
+    const count = payload.count || 0;
     setModal({
-      type: 'session_mistakes',
-      session,
-      title: 'Practice your mistakes?',
-      body: `${session.incorrect + session.skipped} wrong + skipped questions. Your old result stays saved.`,
-      confirm: 'Start Practice ->',
+      ...payload,
+      title: payload.title || 'Practice your mistakes?',
+      body: payload.body || `${count} wrong + skipped questions. Your old result stays saved.`,
+      limit: count > 25 ? 25 : count || 10,
+      setLimit: limit => setModal(prev => ({ ...prev, limit })),
     });
   }
 
-  function openFull(session) {
-    setModal({
-      type: 'session_full',
-      session,
-      title: 'Re-attempt this quiz?',
-      body: `${session.questionCount} questions. This creates a new quiz session.`,
-      confirm: 'Start Re-attempt ->',
-    });
-  }
-
-  async function confirmReattempt() {
-    if (!modal) return;
+  async function startFilteredPractice(payload = modal) {
+    if (!payload) return;
     setStarting(true);
     try {
-      const res = await fetch('/api/history/reattempt', {
+      if (payload.singleQuestion) {
+        sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
+          questions: [payload.singleQuestion],
+          quizMode: 'filtered_mistakes',
+          subject: payload.singleQuestion.subject,
+          topic: payload.singleQuestion.topic,
+          sourceCollection: payload.singleQuestion.sourceCollection || 'general',
+        }));
+        router.push('/quiz?mode=history&count=1&sourceScreen=history');
+        return;
+      }
+      const res = await fetch('/api/history/reattempt-filtered', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceType: modal.type, sessionId: modal.session.sessionId }),
+        body: JSON.stringify({
+          subject: payload.subject || '',
+          topic: payload.topic || '',
+          answerStatus: payload.answerStatus || 'wrong_skipped',
+          questionHistory: payload.questionHistory || 'all',
+          limit: payload.limit || 25,
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
-      const payload = data.data;
       sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
-        questions: payload.questions,
-        quizMode: payload.quizMode,
-        parentSessionId: payload.parentSessionId,
-        attemptNumber: (modal.session.attemptNumber || 1) + 1,
-        subject: payload.subject,
-        topic: payload.topic,
-        sourceCollection: payload.sourceCollection,
+        questions: data.data.questions,
+        quizMode: data.data.quizMode,
+        subject: payload.subject || 'History',
+        topic: payload.topic || 'Filtered Practice',
+        sourceCollection: 'general',
       }));
-      router.push(`/quiz?mode=history&count=${payload.questionCount}&sourceScreen=history`);
-    } catch {
+      router.push(`/quiz?mode=history&count=${data.data.questionCount}&sourceScreen=history`);
+    } finally {
       setStarting(false);
     }
   }
 
-  const summary = landing?.summary || {};
-  const allZero = summary.totalQuizzes === 0 && summary.totalQuestions === 0 && summary.savedCount === 0;
-  const visibleLatest = expanded ? expandedSessions : (landing?.latestQuizzes || []);
-  const selectedFilter = FILTERS.find(item => item.key === activeFilter) || FILTERS[0];
-  const filteredSessions = filterResult?.sessions || [];
-  const filterWrongSkipped = filterResult?.filterSummary?.totalWrongSkipped || 0;
-
-  if (status === 'loading' || loading) {
-    return (
-      <div className="min-h-screen [background:var(--bg-app)] pb-24">
-        <Head><title>History - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Quiz History" showBack />
-        <main className="px-4 pt-5">
-          <h1 className="t-page-title font-display text-white mb-1">My History</h1>
-          <p className="t-page-subtitle text-slate-400 mb-5">Review quizzes, revise mistakes, and re-attempt weak areas.</p>
-          <Loader card size="md" label="Loading history..." />
-        </main>
-      </div>
-    );
+  async function startSessionPractice(session, full = false) {
+    if (full) {
+      openPracticeModal({ subject: session.subject, topic: session.topic, count: session.questionCount, answerStatus: 'all', title: 'Re-attempt this quiz?' });
+      return;
+    }
+    openPracticeModal({ subject: session.subject, topic: session.topic, count: session.incorrect + session.skipped, answerStatus: 'wrong_skipped' });
   }
 
-  if (isGuest) {
-    return (
-      <div className="min-h-screen [background:var(--bg-app)] pb-24">
-        <Head><title>History - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Quiz History" showBack />
-        <main className="px-4 pt-5">
-          <h1 className="t-page-title font-display text-white mb-1">My History</h1>
-          <p className="t-page-subtitle text-slate-400 mb-5">Sign in to see your history.</p>
-          <GoogleSignInCard title="Sign in to see your history" subtitle="Review quizzes, mistakes, saved questions and Coins." buttonText="Continue with Google" callbackUrl="/history" />
-        </main>
-      </div>
-    );
+  async function toggleSave(question) {
+    setQuestionsData(prev => ({
+      ...prev,
+      questions: prev.questions.map(item => item.questionId === question.questionId ? { ...item, isSaved: !item.isSaved } : item),
+    }));
+    try {
+      const r = await toggleSavedQuestion({ scope: cacheScope, action: question.isSaved ? 'unsave' : 'save', question });
+      if (!r.ok) loadQuestions();
+    } catch { loadQuestions(); }
   }
+
+  function applyMoreFilters(next) {
+    setAdvancedFilters(next);
+    setQuizExpanded(false);
+    if (activeMode === 'quiz') {
+      if (next.dateRange === '7d' || next.dateRange === '30d') setQuickFilter(next.dateRange);
+      else if (next.answerStatus === 'wrong_skipped') setQuickFilter('wrong_skipped');
+      else setQuickFilter('all');
+    }
+    setSheetOpen(false);
+  }
+
+  const styles = `
+    .history-shell{padding:16px 16px calc(158px + env(safe-area-inset-bottom))}
+    .intro-block{margin-bottom:12px}.intro-subtitle{color:#94a3b8;font-size:13px;line-height:1.45;margin:0}
+    .mode-selector{background:#112236;border:1px solid rgba(255,255,255,.08)}
+    .summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 14px}.stat-card,.history-card{background:#172d47;border:1px solid rgba(255,255,255,.08);border-radius:16px}.stat-card{padding:10px 12px}.stat-card strong{display:block;color:#f8fafc;font-size:20px;line-height:1;font-weight:900}.stat-card span{display:block;color:#64748b;font-size:11px;margin-top:5px;font-weight:700}.history-card{padding:16px;margin-bottom:12px}
+    .quiz-card{padding:13px 15px}.quiz-title{color:#f8fafc;font-size:15px;font-weight:900;line-height:1.25;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}.quiz-date{color:#64748b;font-size:11px;font-weight:700;margin-top:5px}.quiz-badge{max-width:124px;overflow:hidden;text-overflow:ellipsis}.quiz-metric-row{display:grid;grid-template-columns:1fr auto;align-items:end;gap:18px;margin-top:14px}.quiz-metric strong{display:block;color:#f8fafc;font-size:22px;line-height:1;font-weight:900}.quiz-metric span{display:block;color:#64748b;font-size:11px;font-weight:800;margin-top:6px}.quiz-metric-coins{text-align:right}.quiz-metric-coins strong{color:#fdba74}.quiz-result-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:13px;padding:10px 0;border-top:1px solid rgba(148,163,184,.10);border-bottom:1px solid rgba(148,163,184,.10);font-size:13px;font-weight:900;white-space:nowrap}.quiz-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
+    .entity-card{padding:14px 15px}.entity-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.entity-title{color:#f8fafc;font-size:15px;font-weight:900;line-height:1.3;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.entity-subtitle{color:#64748b;font-size:11px;font-weight:800;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.entity-accuracy{text-align:right;flex:0 0 auto}.entity-accuracy p{font-size:24px;line-height:1;font-weight:900;margin:0 0 5px}.entity-badge{font-size:10px;padding:4px 8px;flex:0 0 auto}.entity-meta{display:flex;flex-direction:column;gap:4px;margin-top:11px;color:#94a3b8;font-size:12px;font-weight:700}.entity-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;font-size:13px;font-weight:900}.subject-entity-card,.topic-entity-card{padding:13px 15px}.subject-entity-card .entity-top,.topic-entity-card .entity-top{align-items:flex-start}.subject-entity-card .entity-title{-webkit-line-clamp:1}.topic-entity-card .entity-title{-webkit-line-clamp:2}.topic-subject-line{color:#cbd5e1;font-size:12px;font-weight:800;line-height:1.35;margin:8px 0 0}.subject-meta-line{color:#94a3b8;font-size:12px;font-weight:800;line-height:1.45;margin:8px 0 0}.subject-stat-row{justify-content:space-between;gap:8px;margin-top:13px;padding:10px 0;border-top:1px solid rgba(148,163,184,.10);border-bottom:1px solid rgba(148,163,184,.10);white-space:nowrap}.subject-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
+    .question-card{padding:11px 14px}.question-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.question-kicker{color:#5eead4;font-size:11px;font-weight:900;margin:0;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.question-badge{font-size:10px;padding:4px 8px;max-width:132px;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.question-preview{color:#f8fafc;font-size:13px;font-weight:900;line-height:1.38;margin:9px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.question-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;padding:8px 0 0;border-top:1px solid rgba(148,163,184,.10);font-size:12px;font-weight:900;white-space:nowrap}.question-stat-row span+span:before{content:'';margin:0}.question-actions{display:grid;grid-template-columns:1fr .72fr 40px;gap:8px;margin-top:11px;align-items:center}.save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid rgba(148,163,184,.14);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;transition:transform .12s ease,background .12s ease,border-color .12s ease}.save-icon-btn:active{transform:scale(.92)}.save-icon-btn.saved{border-color:rgba(20,184,166,.40);background:rgba(20,184,166,.18)}
+    .mode-selector{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;border-radius:999px;padding:3px;margin-bottom:16px}.mode-selector button{border:0;border-radius:999px;background:transparent;color:#8da0b8;font-family:inherit;font-size:11px;font-weight:900;padding:9px 4px;white-space:nowrap}.mode-selector button.active{background:rgba(120,53,15,.42);color:white;box-shadow:inset 0 0 0 1px rgba(255,122,26,.48),0 4px 18px rgba(255,90,0,.10)}
+    .chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin-left:-16px;margin-right:-16px;padding:0 16px 14px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.sheet-chip-row{margin-left:0;margin-right:0;padding:0 0 4px}.chip{border:1px solid rgba(148,163,184,.14);border-radius:999px;background:rgba(23,45,71,.92);color:#8da0b8;font-size:12px;font-weight:800;padding:7px 13px;white-space:nowrap;text-transform:capitalize;flex:0 0 auto}.chip.active{background:rgba(255,122,26,.17);border-color:rgba(255,122,26,.52);color:#fdba74;box-shadow:0 5px 16px rgba(255,90,0,.08)}
+    .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;min-height:40px}.primary-btn{border:0;background:linear-gradient(135deg,#ff7a1a,#ff4d00);color:white;box-shadow:0 8px 22px rgba(255,90,0,.16)}.secondary-btn{border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.04);color:#cbd5e1}.primary-btn:disabled,.secondary-btn:disabled{opacity:.45;cursor:default;box-shadow:none}
+    .section-title{color:#f8fafc;font-size:17px;font-weight:900;line-height:1.25;margin:0}.section-subtitle{color:#64748b;font-size:13px;line-height:1.45;margin:5px 0 12px}
+    .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}.divider{height:1px;background:rgba(255,255,255,.07);margin:12px 0}.question-expanded{overflow:hidden;margin-top:12px;padding:11px;border:1px solid rgba(148,163,184,.10);border-radius:14px;background:rgba(15,23,42,.30)}.expanded-block{margin-bottom:10px}.expanded-label{color:#94a3b8;font-size:10px;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px}.expanded-question{color:#f8fafc;font-size:13px;font-weight:900;line-height:1.48;margin:0}.expanded-attempt{color:#64748b;font-size:11px;font-weight:800;margin:9px 0 0}.answer-detail-grid{display:grid;gap:8px}.answer-detail{border:1px solid rgba(148,163,184,.10);background:rgba(255,255,255,.035);border-radius:12px;padding:9px 10px}.answer-detail span{display:block;color:#94a3b8;font-size:10px;font-weight:900;margin-bottom:4px}.answer-detail b{display:block;font-size:12px;line-height:1.4}.answer-detail.correct b{color:#5eead4}.answer-detail.wrong b{color:#fca5a5}.answer-detail.skipped b{color:#93a4ba}.option-row{display:flex;justify-content:space-between;gap:10px;border:1px solid rgba(148,163,184,.12);background:rgba(255,255,255,.035);border-radius:12px;padding:10px;margin-top:8px;color:#cbd5e1;font-size:13px}.option-row.correct{border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.10);color:#bbf7d0}.option-row.wrong{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.10);color:#fecaca}
+    .modal-backdrop,.sheet-backdrop{position:fixed;inset:0;z-index:80;background:rgba(4,12,24,.72);backdrop-filter:blur(10px);display:flex}.modal-backdrop{align-items:center;justify-content:center;padding:22px}.modal-card{width:min(100%,360px);background:#172d47;border:1px solid rgba(255,255,255,.10);border-radius:22px;padding:20px}.sheet-backdrop{align-items:flex-end}.filter-sheet{width:100%;max-width:430px;margin:0 auto;background:#112236;border:1px solid rgba(255,255,255,.10);border-radius:24px 24px 0 0;padding:12px 16px 20px}.sheet-handle{width:42px;height:4px;border-radius:99px;background:rgba(148,163,184,.35);margin:0 auto 14px}.filter-label{font-size:12px;color:#94a3b8;font-weight:900;margin-bottom:8px}.filter-select{width:100%;background:#172d47;border:1px solid rgba(148,163,184,.16);border-radius:14px;color:#e2e8f0;padding:11px;font-family:inherit}
+    .date-modal-backdrop{position:fixed;inset:0;z-index:90;background:rgba(4,12,24,.74);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:18px}.date-modal-card{width:min(100%,420px);background:#172d47;border:1px solid rgba(148,163,184,.16);border-radius:22px;padding:20px;box-shadow:0 24px 60px rgba(0,0,0,.34)}.date-modal-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}.date-modal-top h2{color:#f8fafc;font-size:20px;font-weight:900;line-height:1.2;margin:0}.date-modal-top p{color:#94a3b8;font-size:13px;line-height:1.45;margin:7px 0 0;font-weight:700}.date-close-btn{height:34px;width:34px;border-radius:999px;border:1px solid rgba(148,163,184,.14);background:rgba(255,255,255,.04);color:#cbd5e1;font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center}.date-field-group{display:grid;gap:8px;margin-bottom:14px}.date-field-group label{color:#cbd5e1;font-size:12px;font-weight:900}.date-field-group input{width:100%;height:46px;border-radius:14px;border:1px solid rgba(148,163,184,.16);background:#112236;color:#f8fafc;padding:0 12px;font-family:inherit;font-size:14px;font-weight:800;color-scheme:dark}.date-field-group input::-webkit-calendar-picker-indicator{filter:invert(72%) sepia(67%) saturate(675%) hue-rotate(343deg) brightness(103%);opacity:.9}.date-error{color:#fca5a5;font-size:12px;font-weight:800;line-height:1.35;margin:0 0 14px}.date-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}.custom-range-summary{color:#94a3b8;font-size:12px;font-weight:800;line-height:1.4;margin:-3px 2px 13px}
+    .mistake-filter-group{margin-bottom:16px}.mistake-filter-group .chip-row{padding-bottom:0}.mistake-filter-label{display:block;margin:0 0 10px 2px;color:#cbd5e1;font-size:12px;font-weight:900;line-height:1}.active-filter-summary{margin:-2px 2px 14px;color:#94a3b8;font-size:12px;font-weight:800;line-height:1.4}
+    @media(max-width:380px){.mode-long{display:none}}@media(min-width:381px){.mode-short{display:none}}
+  `;
 
   return (
     <>
-      <Head><title>History - SSC GK Score Booster</title></Head>
+      <Head><title>Quiz History - SSC GK Score Booster</title></Head>
       <div className="min-h-screen [background:var(--bg-app)] pb-28">
-        <style>{`
-          .history-card,.empty-panel{background:#172D47;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;margin-bottom:12px}
-          .stat-card{background:#172D47;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px}
-          .badge{border:1px solid;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:800;white-space:nowrap}
-          .primary-btn{border:0;border-radius:14px;background:linear-gradient(135deg,#FF7A1A,#FF4D00);color:white;font-size:13px;font-weight:800;padding:11px 12px;text-align:center;cursor:pointer}
-          .secondary-btn{border:1px solid rgba(148,163,184,.16);border-radius:14px;background:rgba(255,255,255,.04);color:#CBD5E1;font-size:13px;font-weight:800;padding:11px 12px;text-align:center;cursor:pointer}
-          .chip{border:1px solid rgba(148,163,184,.16);border-radius:999px;background:#172D47;color:#94A3B8;font-size:12px;font-weight:800;padding:8px 13px;white-space:nowrap}
-          .chip.active{background:rgba(255,122,26,.16);border-color:rgba(255,122,26,.45);color:#FDBA74}
-        `}</style>
-        <HistoryTopBar title="Quiz History" showBack />
-        <main className="px-4 pt-5">
-        <div className="mb-5">
-          <h1 className="t-page-title font-display text-white">My History</h1>
-          <p className="t-page-subtitle text-slate-400">Review quizzes, revise mistakes, and re-attempt weak areas.</p>
-        </div>
+        <style>{styles}</style>
+        <HistoryTopBar title="Quiz History" badge="REVISION ENGINE" icon={<HistoryHeaderIcon />} showBack />
+        <main className="history-shell">
+          <section className="intro-block">
+            <p className="intro-subtitle">Filter attempted questions and fix weak areas.</p>
+          </section>
 
-        {error ? (
-          <EmptyPanel title="Couldn't load history" body="Check connection." action="Retry" onClick={loadLanding} />
-        ) : allZero ? (
-          <EmptyPanel title="No quiz history yet." body="Attempt your first quiz and your progress will appear here." action="Start Daily Challenge" onClick={() => router.push('/quiz?mode=daily')} />
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-3 mb-5">
-              {[
-                ['Quizzes', summary.totalQuizzes],
-                ['Questions', summary.totalQuestions],
-                ['Accuracy', summary.overallAccuracy, '%'],
-                ['Saved', summary.savedCount],
-              ].map(([label, value, suffix]) => (
-                <div key={label} className="stat-card">
-                  <p className="font-display font-black text-2xl text-white"><CountUp value={value} suffix={suffix || ''} /></p>
-                  <p className="font-sans text-xs text-slate-500 mt-1">{label}</p>
-                </div>
-              ))}
-            </div>
+          {status === 'loading' || summaryLoading ? (
+            <Loader card size="md" label="Loading quiz history..." />
+          ) : isGuest ? (
+            <GoogleSignInCard title="Your quiz history is waiting" subtitle="Sign in to review attempted questions and mistakes." buttonText="Continue with Google" callbackUrl="/history" />
+          ) : summaryError ? (
+            <EmptyPanel title="Couldn't load." body="Check connection." action="Retry" onClick={loadSummary} />
+          ) : allZero ? (
+            <EmptyPanel title="No quiz history yet." body="Start a quiz and your attempted questions will appear here." action="Start Daily Challenge →" onClick={() => router.push('/quiz?mode=daily')} />
+          ) : (
+            <>
+              <section className="summary-grid">
+                {[
+                  ['Quizzes', summary?.totalQuizzes || 0, ''],
+                  ['Questions', summary?.totalQuestions || 0, ''],
+                ].map(([label, value, suffix]) => <div key={label} className="stat-card"><strong className="font-display"><CountUp value={value} suffix={suffix} /></strong><span>{label}</span></div>)}
+              </section>
 
-            <section className="mb-5">
-              <h2 className="font-display text-lg font-black text-white">Latest Quiz History</h2>
-              <p className="font-sans text-sm text-slate-500 mb-3">Your recent practice sessions</p>
-              {visibleLatest.map(item => <QuizCard key={item.sessionId} session={item} onReview={openReview} onPractice={openPractice} onFull={openFull} />)}
-              {(landing?.latestQuizzes || []).length > 0 && (
-                <button onClick={loadExpanded} className="secondary-btn w-full">{expanded ? 'Show Less' : 'View More Quizzes -&gt;'}</button>
-              )}
-            </section>
+              <section className="mode-selector">
+                {MODES.map(mode => <button key={mode.key} type="button" className={activeMode === mode.key ? 'active' : ''} onClick={() => setActiveMode(mode.key)}><span className="mode-long">{mode.label}</span><span className="mode-short">{mode.shortLabel}</span></button>)}
+              </section>
 
-            <section className="mb-5">
-              <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
-                {FILTERS.map(filter => (
-                  <button key={filter.key} onClick={() => selectFilter(filter)} className={`chip ${activeFilter === filter.key ? 'active' : ''}`}>{filter.label}</button>
-                ))}
-              </div>
-              {filterResult && (
+              {activeMode === 'quiz' && (
                 <>
-                  <div className="history-card">
-                    <p className="text-sm font-bold text-white">{selectedFilter.label} practice</p>
-                    <p className="text-xs text-slate-500">{filterResult.filterSummary.quizCount} quizzes found · {filterWrongSkipped} wrong/skipped questions</p>
-                    {filterWrongSkipped > 0 && <button className="primary-btn mt-3 w-full" onClick={() => filteredSessions[0] && openPractice(filteredSessions[0])}>Practice {filterWrongSkipped} Mistakes -&gt;</button>}
+                  <div className="chip-row">
+                    {QUICK_FILTERS.map(filter => <button key={filter.key} type="button" className={`chip ${quickFilter === filter.key ? 'active' : ''}`} onClick={() => handleQuickFilter(filter.key)}>{filter.label}</button>)}
                   </div>
-                  {filteredSessions.length === 0 ? (
-                    <EmptyPanel title="No quizzes found." body="Try different filters." action="Reset Filters" onClick={() => { setFilterResult(null); setActiveFilter('all'); }} />
-                  ) : filteredSessions.map(item => <QuizCard key={item.sessionId} session={item} onReview={openReview} onPractice={openPractice} onFull={openFull} />)}
+                  {quickFilter === 'custom' && customRangeSummary && <p className="custom-range-summary">{customRangeSummary}</p>}
+                  {quizLoading ? <Loader card size="sm" label="Loading quizzes..." /> : filteredQuizzes.length ? filteredQuizzes.map(item => (
+                    <QuizCard key={item.sessionId} session={item} onReview={session => router.push(`/history/session/${session.sessionId}`)} onPractice={session => startSessionPractice(session)} onFull={session => startSessionPractice(session, true)} />
+                  )) : quickFilter === 'custom' ? <EmptyPanel title="No quizzes found in this date range." body="Try changing the dates or reset the filter." action="Reset Date Filter" onClick={resetDateFilter} /> : <EmptyPanel title="No quizzes found." body="Try another date filter." action="Reset Filters" onClick={resetDateFilter} />}
+                  {(quizData.sessions || []).length > 0 && <button type="button" className="secondary-btn w-full" onClick={expandQuizzes}>{quizExpanded ? 'Show Less' : 'View More Quizzes →'}</button>}
                 </>
               )}
-            </section>
 
-            <section className="mb-5">
-              <h2 className="font-display text-lg font-black text-white">Repeated Mistakes</h2>
-              <p className="font-sans text-sm text-slate-500 mb-3">Questions you got wrong more than once</p>
-              {(landing?.repeatedMistakesPreview || []).length ? landing.repeatedMistakesPreview.map(item => (
-                <div key={item.questionId} className="history-card">
-                  <p className="text-xs font-bold text-teal-400">{item.subject} • {item.topic}</p>
-                  <p className="text-sm font-semibold text-white my-3">"{item.questionPreview}"</p>
-                  <p className="text-sm text-red-300 font-bold">Wrong {item.wrongCount}x <span className="text-amber-300 ml-2">Skipped {item.skippedCount}x</span></p>
-                  <p className="text-xs text-red-200 mt-1">Repeated Mistake</p>
-                </div>
-              )) : <EmptyPanel title="No repeated mistakes yet." body="Good work - keep practicing to build your history." action="Start Quiz" onClick={() => router.push('/dashboard')} />}
-              {(landing?.repeatedMistakesPreview || []).length > 0 && <button className="primary-btn w-full" onClick={() => router.push('/dashboard')}>Practice All Repeated Mistakes -&gt;</button>}
-            </section>
+              {activeMode === 'subject' && (
+                <section>
+                  <h2 className="section-title font-display">Choose a Subject</h2>
+                  {subjectsLoading ? <Loader card size="sm" label="Loading subjects..." /> : subjects?.length ? (
+                    <>
+                      <div className="chip-row">
+                        <button type="button" className={`chip ${!subjectFilter ? 'active' : ''}`} onClick={() => setSubjectFilter('')}>All</button>
+                        {subjects.map(item => <button key={item.subject} type="button" className={`chip ${subjectFilter === item.subject ? 'active' : ''}`} onClick={() => setSubjectFilter(item.subject)}>{item.subject}</button>)}
+                      </div>
+                      {filteredSubjects.map(item => (
+                        <StatEntityCard key={item.subject} item={item} type="subject" onPractice={subject => openPracticeModal({ subject: subject.subject, count: subject.wrongCount + subject.skippedCount })} onReview={subject => router.push(`/history/questions?subject=${encodeURIComponent(subject.subject)}`)} />
+                      ))}
+                    </>
+                  ) : <EmptyPanel title="No attempted subjects yet." body="Start a quiz to build your subject-wise history." action="Start Practice →" onClick={() => router.push('/dashboard')} />}
+                </section>
+              )}
 
-          </>
-        )}
+              {activeMode === 'topic' && (
+                <section>
+                  <p className="filter-label">Select Subject</p>
+                  <div className="chip-row">
+                    {(subjects || []).map(item => <button key={item.subject} type="button" className={`chip ${selectedSubject === item.subject ? 'active' : ''}`} onClick={() => setSelectedSubject(item.subject)}>{item.subject}</button>)}
+                  </div>
+                  {!selectedSubject ? <EmptyPanel title="Select a subject to see topics." body="Choose a subject above to see attempted topics." /> : topicsLoading ? <Loader card size="sm" label="Loading topics..." /> : topics.length ? (
+                    <>
+                      <h2 className="section-title font-display">{selectedSubject} - Attempted Topics</h2>
+                      <div className="mt-3">{topics.map(item => <StatEntityCard key={item.topic} item={item} type="topic" onPractice={topic => openPracticeModal({ subject: topic.subject, topic: topic.topic, count: topic.wrongCount + topic.skippedCount })} onReview={topic => router.push(`/history/questions?subject=${encodeURIComponent(topic.subject)}&topic=${encodeURIComponent(topic.topic)}`)} />)}</div>
+                    </>
+                  ) : <EmptyPanel title={`No topics attempted in ${selectedSubject} yet.`} body={`Start a ${selectedSubject} quiz to build topic history.`} action={`Practice ${selectedSubject} →`} onClick={() => router.push('/dashboard')} />}
+                </section>
+              )}
+
+              {activeMode === 'mistakes' && (
+                <section>
+                  <div className="mistake-filter-group">
+                    <p className="mistake-filter-label">Mistake Type</p>
+                    <div className="chip-row">
+                      {QUESTION_TYPES.map(type => <button key={type.key} type="button" className={`chip ${questionType === type.key ? 'active' : ''}`} onClick={() => setQuestionType(type.key)}>{type.label}</button>)}
+                    </div>
+                  </div>
+                  <div className="mistake-filter-group">
+                    <p className="mistake-filter-label">Subject / Source</p>
+                    <div className="chip-row">
+                      <button type="button" className={`chip ${!questionSubject ? 'active' : ''}`} onClick={() => setQuestionSubject('')}>All</button>
+                      {questionSubjects.map(item => <button key={item.subject} type="button" className={`chip ${questionSubject === item.subject ? 'active' : ''}`} onClick={() => setQuestionSubject(item.subject)}>{item.subject}</button>)}
+                    </div>
+                  </div>
+                  <p className="active-filter-summary">Showing: {activeMistakeSummary}</p>
+                  {questionsLoading ? <Loader card size="sm" label="Loading questions..." /> : (
+                    <>
+                      <div className="history-card">
+                        <p className="font-display font-black text-white">{practiceCount} {summaryPhrase} found</p>
+                        {practiceCount > 0 && <button type="button" className="primary-btn mt-3 w-full" onClick={() => openPracticeModal({ subject: questionSubject, count: practiceCount, answerStatus: questionType === 'repeated' || questionType === 'never_correct' ? 'wrong_skipped' : questionType, questionHistory: questionType === 'repeated' ? 'repeated' : questionType === 'never_correct' ? 'never_correct' : 'all' })}>Practice All {practiceCount}</button>}
+                      </div>
+                      {questionsData?.questions?.length ? questionsData.questions.map(item => <QuestionCard key={item.questionId} item={item} isOpen={expandedQuestionId === item.questionId} onToggleOpen={() => setExpandedQuestionId(current => current === item.questionId ? '' : item.questionId)} aiCache={aiCache} setAiCache={setAiCache} onPracticeOne={question => startFilteredPractice({ singleQuestion: question })} onToggleSave={toggleSave} />) : <EmptyPanel title={`No ${questionType.replace('_', ' ')} questions found.`} body="Practice more to build this list." action="Practice More →" onClick={() => router.push('/dashboard')} />}
+                    </>
+                  )}
+                </section>
+              )}
+            </>
+          )}
         </main>
       </div>
-      <ReattemptModal modal={modal} onClose={() => setModal(null)} onConfirm={confirmReattempt} busy={starting} />
+
+      <Modal modal={modal} busy={starting} onClose={() => setModal(null)} onConfirm={() => startFilteredPractice()} />
+      <DateRangeModal
+        open={isDateModalOpen}
+        startDate={customStartDate}
+        endDate={customEndDate}
+        error={dateValidationError}
+        onStartChange={value => { setCustomStartDate(value); setDateValidationError(''); }}
+        onEndChange={value => { setCustomEndDate(value); setDateValidationError(''); }}
+        onApply={applyCustomDateRange}
+        onClose={() => { setIsDateModalOpen(false); setDateValidationError(''); }}
+        onReset={resetDateFilter}
+      />
+      <MoreFiltersSheet open={sheetOpen} filters={advancedFilters} subjects={subjects || []} onClose={() => setSheetOpen(false)} onApply={applyMoreFilters} onReset={() => { setAdvancedFilters({ answerStatus: 'all', questionHistory: 'all', dateRange: 'all', quizType: 'all', subject: '' }); setSheetOpen(false); }} />
     </>
   );
 }

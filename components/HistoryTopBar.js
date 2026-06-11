@@ -16,6 +16,18 @@ const BackIcon = (
 export default function HistoryTopBar({ title, badge = 'HISTORY', icon = DEFAULT_ICON, backHref = '/history', showBack = false }) {
   const router = useRouter();
 
+  function handleBack() {
+    if (!showBack) {
+      router.push(backHref);
+      return;
+    }
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push(backHref);
+  }
+
   return (
     <div
       className="sticky top-0 z-50 px-4 flex items-center justify-between"
@@ -31,7 +43,7 @@ export default function HistoryTopBar({ title, badge = 'HISTORY', icon = DEFAULT
     >
       <button
         type="button"
-        onClick={() => router.push(backHref)}
+        onClick={handleBack}
         className="flex items-center gap-2.5 min-w-0 text-left"
         style={{ border: 0, background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}
       >

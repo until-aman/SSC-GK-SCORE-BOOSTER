@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -47,6 +47,12 @@ export default function PersonalAIAnalysis() {
   const [interestRecorded, setInterestRecorded] = useState(false);
   const [ctaLoading, setCtaLoading] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
+
+  // Step 10: this page has no in-app navigation/link (verified via repo search).
+  // Kept (not deleted), flagged as a later cleanup candidate. No new caller added.
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production') console.debug('[apidiag] {"kind":"analysis","event":"personal-ai-analysis-unused"}');
+  }, []);
 
   const recordInterest = useCallback(async () => {
     setCtaLoading(true);

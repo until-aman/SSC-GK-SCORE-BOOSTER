@@ -5,6 +5,7 @@ import Head from 'next/head';
 import Image from 'next/image';
 
 import GoogleSignInCard from '@/components/GoogleSignInCard';
+import MentorMessage from '@/components/MentorMessage';
 import NotificationBell from '@/components/NotificationBell';
 import WhatsAppBell from '@/components/WhatsAppBell';
 import Loader from '@/components/ui/Loader';
@@ -19,8 +20,12 @@ import {
 } from '@/lib/clientCache';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 import { getDashboardBootstrap } from '@/lib/data/appData';
+import { getUserCacheScope, buildUserScopedKey } from '@/lib/userCacheScope';
+import { migrateGuestSavedQuestions } from '@/lib/data/savedData';
+import { readMentorSnapshotCache } from '@/lib/data/mentorData';
 import { getLeaderboard } from '@/lib/data/leaderboardData';
 import { getDailyChallenge, getTopics } from '@/lib/data/questionData';
+import { MENTOR_COPY } from '@/lib/mentorCopy';
 
 const SUBJECTS = Object.keys(subjectStyles);
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -132,34 +137,6 @@ function Avatar({ imageUrl, name, size = 36, borderClass = 'border-2 border-whit
    so every hour looks like a natural jump without hitting an API.
    Resets back to the base each midnight so the "today" framing stays honest.
 ──────────────────────────────────────────────────────────────────────────── */
-function getLiveStudentCount() {
-  const now = new Date();
-  const midnight = new Date(now);
-  midnight.setHours(0, 0, 0, 0);
-  const hoursSinceMidnight = (now - midnight) / (1000 * 60 * 60);
-  const hourIndex = Math.floor(hoursSinceMidnight);
-  const jitter = (hourIndex * 31 + 17) % 9; // deterministic 0-8 per hour
-  return Math.round(1842 + hoursSinceMidnight * 10 + jitter);
-}
-
-// Grows by ~20/day since epoch — deterministic per hour so all users see same number
-function getRankedStudentCount() {
-  const EPOCH = new Date('2026-04-01').getTime();
-  const BASE  = 1_247; // believable non-round starting count
-  const now   = Date.now();
-  const MS_DAY  = 86_400_000;
-  const MS_HOUR = 3_600_000;
-  const daysSince = Math.floor((now - EPOCH) / MS_DAY);
-  const hourOfDay = Math.floor(((now - EPOCH) % MS_DAY) / MS_HOUR);
-  // ~20/day → add 0, 1, or 2 per hour (avg ~0.83) using seeded LCG
-  let hourly = 0;
-  for (let h = 0; h <= hourOfDay; h++) {
-    const seed = (daysSince * 24 + h) * 1_664_525 + 1_013_904_223;
-    hourly += (seed >>> 0) % 3; // 0, 1, or 2
-  }
-  return BASE + daysSince * 20 + hourly;
-}
-
 /* ─── Daily Challenge cache helpers (module-level — used by both Dashboard and SocialProofCarousel) ── */
 function getDCCacheKey() {
   return CACHE_KEYS.DAILY_CHALLENGE(getISTDateString());
@@ -174,13 +151,6 @@ async function prefetchDailyChallenge() {
 /* ─── Social Proof Carousel ───────────────────────────────────────────────── */
 function SocialProofCarousel({ userProfile, topPlayers, isLoggedIn, session, playedToday }) {
   const [slide, setSlide]             = useState(0);
-  const [studentCount, setStudentCount] = useState(getLiveStudentCount);
-
-  // Refresh count every minute so the number ticks up while the user is on screen
-  useEffect(() => {
-    const t = setInterval(() => setStudentCount(getLiveStudentCount()), 60_000);
-    return () => clearInterval(t);
-  }, []);
 
   useEffect(() => {
     prefetchDailyChallenge();
@@ -190,11 +160,12 @@ function SocialProofCarousel({ userProfile, topPlayers, isLoggedIn, session, pla
   const slides = useMemo(() => {
     const items = [];
 
-    // ① Live student count — always first
+    // ① Honest, non-numeric encouragement — always first.
+    // (Replaces a previously fabricated daily-activity count, Step 7 PHASE J.)
     items.push({
       emoji: '🔥',
-      main:  `${studentCount.toLocaleString()} students practiced today`,
-      sub:   'Join them and push your score higher',
+      main:  'Practise GK daily to boost your score',
+      sub:   'Consistency is what pushes your rank up',
       color: '#f97316',
     });
 
@@ -257,17 +228,18 @@ function SocialProofCarousel({ userProfile, topPlayers, isLoggedIn, session, pla
       }
 
     } else {
-      // Guest slides
+      // Guest slides — honest, non-numeric copy.
+      // (Replaces a previously fabricated weekly-ranked count, Step 7 PHASE J.)
       items.push(
         {
           emoji: '🏆',
-          main:  `${getRankedStudentCount().toLocaleString()} students ranked this week`,
+          main:  'Climb the weekly leaderboard',
           sub:   'Sign in to claim your spot on the board',
           color: '#f59e0b',
         },
         {
           emoji: '📈',
-          main:  'Top rankers practice 3× daily',
+          main:  'Build a daily practice habit',
           sub:   'Sign in to track your streak & rank',
           color: '#6366f1',
         },
@@ -275,7 +247,7 @@ function SocialProofCarousel({ userProfile, topPlayers, isLoggedIn, session, pla
     }
 
     return items;
-  }, [studentCount, userProfile, topPlayers, isLoggedIn, session, playedToday]);
+  }, [userProfile, topPlayers, isLoggedIn, session, playedToday]);
 
   // Auto-advance every 3.5 s
   const slideCount = slides.length;
@@ -384,6 +356,7 @@ export default function Dashboard() {
   const [bootstrapUpdatedAt, setBootstrapUpdatedAt] = useState(null);
   const [bootstrapMsg, setBootstrapMsg] = useState(null);
   const [leaderboardMsg, setLeaderboardMsg] = useState(null);
+  const [showMentorSetupBanner, setShowMentorSetupBanner] = useState(false);
   const profileFallbackRequested = useRef(false);
   const savedQuestionsMigrated = useRef(false);
 
@@ -498,13 +471,34 @@ export default function Dashboard() {
 
   const isGuest    = typeof window !== 'undefined' ? isGuestMode() : false;
   const isLoggedIn = status === 'authenticated';
+  const cacheScope = getUserCacheScope(session);
 
   useEffect(() => {
     if (status === 'loading') return;
     if (!isLoggedIn && !isGuest) router.replace('/');
   }, [status, isLoggedIn, isGuest, router]);
 
-  // Migrate any locally-saved guest questions to the cloud (runs once on login)
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+    // Show the "Build My GK Plan" banner only when the account genuinely has no
+    // mentor plan. The legacy `mentor_onboarded` flag is device-local and can be
+    // missing even when a plan exists (built on another device / cleared storage),
+    // which made Home disagree with the Mentor tab. Prefer the account-scoped
+    // mentor snapshot that the Mentor tab populates; self-heal the flag.
+    const onboarded = localStorage.getItem('mentor_onboarded') === 'true';
+    const snapshot = readMentorSnapshotCache(cacheScope);
+    const hasPlan = Boolean(snapshot && (snapshot.exists || snapshot.profile || snapshot.plan?.tasks?.length));
+    if (hasPlan && !onboarded) {
+      try { localStorage.setItem('mentor_onboarded', 'true'); } catch {}
+    }
+    setShowMentorSetupBanner(!onboarded && !hasPlan);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, cacheScope]);
+
+  // Migrate any locally-saved guest questions to the cloud (runs once on login).
+  // Step 11: ONE batched POST /api/saved-questions (server appends only missing
+  // rows, idempotent). Guest keys are cleared ONLY after a confirmed success, so
+  // a failed migration can be retried without data loss.
   async function migrateLocalSavedQuestions() {
     try {
       const raw = localStorage.getItem('ssc_saved_questions') || localStorage.getItem('savedQuestions');
@@ -515,29 +509,35 @@ export default function Dashboard() {
         localStorage.removeItem('savedQuestions');
         return;
       }
-      for (const q of questions) {
-        if (!q.questionId || !q.question || !q.correctOption) continue;
-        try {
-          await fetch('/api/saved-questions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(q),
-          });
-        } catch {}
+      const valid = questions.filter(q => q && (q.questionId || q.id) && q.question && q.correctOption);
+      if (valid.length === 0) {
+        localStorage.removeItem('ssc_saved_questions');
+        localStorage.removeItem('savedQuestions');
+        return;
       }
-      localStorage.removeItem('ssc_saved_questions');
-      localStorage.removeItem('savedQuestions');
+      const result = await migrateGuestSavedQuestions({ scope: cacheScope, questions: valid });
+      if (result.ok) {
+        localStorage.removeItem('ssc_saved_questions');
+        localStorage.removeItem('savedQuestions');
+      }
+      // On failure: keep guest keys for a later retry (do NOT clear).
     } catch {}
   }
 
-  function loadUserProfileFallback() {
+  // Profile fallback WITHOUT /api/user-profile (Step 7): when bootstrap returns
+  // no usable profile for a signed-in user, retry the SAME canonical route once
+  // (force-refresh). New-user detection (isNewUser) now comes from bootstrap, so
+  // the onboarding redirect is preserved without a second route.
+  function loadProfileViaBootstrap() {
     if (profileFallbackRequested.current) return;
     profileFallbackRequested.current = true;
-    fetch('/api/user-profile')
-      .then(r => r.json())
-      .then(data => {
-        if (data.isNewUser === true) { router.replace('/onboarding'); return; }
-        setUserProfile(data);
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[apidiag] {"kind":"journey","journey":"dashboard","trigger":"dashboard-user-profile-call-removed","route":"/api/dashboard-bootstrap"}');
+    }
+    getDashboardBootstrap({ forceRefresh: true, scope: cacheScope })
+      .then(result => {
+        if (result.data?.profile?.isNewUser) { router.replace('/onboarding'); return; }
+        applyBootstrapData(result.data, result.timestamp || Date.now());
         setProfileLoading(false);
       })
       .catch(() => setProfileLoading(false));
@@ -545,6 +545,11 @@ export default function Dashboard() {
 
   function applyBootstrapData(data, timestamp) {
     if (!data) return;
+    // Brand-new account (no Users row yet) → onboarding, never render as profile.
+    if (data.profile?.isNewUser) {
+      router.replace('/onboarding');
+      return;
+    }
     if (data.profile) {
       setUserProfile(data.profile);
       setProfileLoading(false);
@@ -628,15 +633,16 @@ export default function Dashboard() {
     try {
       const result = await getDashboardBootstrap({
         forceRefresh: true,
+        scope: cacheScope,
       });
       applyBootstrapData(result.data, result.timestamp || Date.now());
       setBootstrapMsg(null);
       sessionStorage.setItem(SESSION_REFRESH_KEY, '1');
       if (result.stale) setBootstrapMsg('Showing saved data. Tap refresh for latest.');
-      if (isLoggedIn && !result.data?.profile) loadUserProfileFallback();
+      if (isLoggedIn && !result.data?.profile) loadProfileViaBootstrap();
     } catch {
       setBootstrapMsg("Couldn't refresh right now. Showing saved data.");
-      if (isLoggedIn && !userProfile) loadUserProfileFallback();
+      if (isLoggedIn && !userProfile) loadProfileViaBootstrap();
     } finally {
       setBootstrapRefreshing(false);
     }
@@ -645,7 +651,7 @@ export default function Dashboard() {
   // Bootstrap: load dashboard data from cache then silently refresh once per session.
   useEffect(() => {
     if (status === 'loading') return;
-    const cached = readCache(CACHE_KEYS.DASHBOARD_BOOTSTRAP, CACHE_TTL.ONE_DAY);
+    const cached = readCache(buildUserScopedKey(CACHE_KEYS.DASHBOARD_BOOTSTRAP, cacheScope), CACHE_TTL.ONE_DAY);
     if (cached) {
       applyBootstrapData(cached.data, cached.timestamp);
       if (!cached.isFresh) setBootstrapMsg('Showing saved data. Tap refresh for latest.');
@@ -656,23 +662,38 @@ export default function Dashboard() {
     const cachedHasProfile = Boolean(cached?.data?.profile);
     if (cached) {
       if (!cachedHasLeaderboard) loadWeeklyLeaderboard();
-      if (isLoggedIn && !cachedHasProfile) loadUserProfileFallback();
+      if (isLoggedIn && !cachedHasProfile) {
+        loadProfileViaBootstrap();
+      } else if (isLoggedIn && cachedHasProfile && !cached.data?.profile?.isNewUser) {
+        // PHASE D: dynamic profile fields (coins/streak/level) must not be shown
+        // up to a day stale. Cached profile renders instantly above; then freshen
+        // silently via the SAME /api/dashboard-bootstrap route if the cache is
+        // older than the dynamic-data window. Background only — no /api/user-profile.
+        const ageMs = Date.now() - (cached.timestamp || 0);
+        if (ageMs > CACHE_TTL.TEN_MINUTES && !profileFallbackRequested.current) {
+          profileFallbackRequested.current = true;
+          getDashboardBootstrap({ forceRefresh: true, scope: cacheScope })
+            .then(result => applyBootstrapData(result.data, result.timestamp || Date.now()))
+            .catch(() => {});
+        }
+      }
       setWeeklyLoading(false);
       return;
     }
     getDashboardBootstrap({
       forceRefresh: false,
+      scope: cacheScope,
     }).then(result => {
       applyBootstrapData(result.data, result.timestamp || Date.now());
       sessionStorage.setItem(SESSION_REFRESH_KEY, '1');
       if (result.stale) setBootstrapMsg('Showing saved data. Tap refresh for latest.');
       if (getWeeklyPlayers(result.data).length === 0) loadWeeklyLeaderboard();
-      if (isLoggedIn && !result.data?.profile) loadUserProfileFallback();
+      if (isLoggedIn && !result.data?.profile) loadProfileViaBootstrap();
       setWeeklyLoading(false);
     }).catch(() => {
       if (cached) setBootstrapMsg("Couldn't refresh right now. Showing saved data.");
       if (!cachedHasLeaderboard) loadWeeklyLeaderboard();
-      if (isLoggedIn && !cachedHasProfile) loadUserProfileFallback();
+      if (isLoggedIn && !cachedHasProfile) loadProfileViaBootstrap();
       setWeeklyLoading(false);
     });
   }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -691,6 +712,7 @@ export default function Dashboard() {
     if (!userProfile || savedQuestionsMigrated.current) return;
     savedQuestionsMigrated.current = true;
     migrateLocalSavedQuestions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn, userProfile]);
 
   const hour = new Date().getHours();
@@ -819,6 +841,27 @@ export default function Dashboard() {
           {/* Right: WhatsApp bell */}
           <WhatsAppBell />
         </div>
+
+        {showMentorSetupBanner && (
+          <div className="mx-4 mb-4 rounded-2xl border border-white/[0.06] bg-slate-800 p-4">
+            <MentorMessage
+              message={MENTOR_COPY.NO_PLAN}
+              variant="info"
+            />
+            <button
+              onClick={() => router.push('/mentor-setup')}
+              className="mt-3 w-full py-3 rounded-2xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 active:bg-orange-700 transition-colors"
+            >
+              Build My GK Plan
+            </button>
+            <button
+              onClick={() => setShowMentorSetupBanner(false)}
+              className="mt-2 w-full py-2 text-xs text-slate-400"
+            >
+              Remind me later
+            </button>
+          </div>
+        )}
 
         {/* ── GREETING ── */}
         <div style={{ padding: '18px 20px 8px' }}>

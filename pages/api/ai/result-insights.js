@@ -1,6 +1,9 @@
 import { getPerformanceSummary } from '@/lib/gemini';
+import { withApiTrace, markGemini } from '@/lib/apiDiagnostics';
+import { buildAiDedupKey, dedupeAiRequest } from '@/lib/server/aiRequestDedup';
 
-export default async function handler(req, res) {
+export default withApiTrace('/api/ai/result-insights', handler);
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
@@ -17,7 +20,9 @@ export default async function handler(req, res) {
   } = req.body || {};
 
   try {
-    const summary = await getPerformanceSummary({
+    markGemini();
+    const key = buildAiDedupKey('result-insights', [subject, topic, totalQuestions, correctAnswers, incorrectAnswers, skipped, rawScore, accuracy]);
+    const summary = await dedupeAiRequest(key, () => getPerformanceSummary({
       subject,
       topic,
       totalQuestions,
@@ -26,7 +31,7 @@ export default async function handler(req, res) {
       skipped,
       rawScore,
       accuracy,
-    });
+    }));
 
     return res.status(200).json({ aiSummary: summary });
   } catch (error) {

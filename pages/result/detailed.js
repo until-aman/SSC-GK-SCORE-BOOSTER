@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { fetchAIExplain, fetchAITip } from '@/lib/fetchAI';
+import { getAIExplanation, getAITip } from '@/lib/data/aiData';
 
 const OPTION_KEYS = { A: 'optionA', B: 'optionB', C: 'optionC', D: 'optionD' };
 
@@ -264,8 +264,10 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
     if (aiLoading || aiInsight) return;
     setAiLoading(true);
     try {
+      // Step 13: cached + deduped helpers. Tip ONLY for skipped, explain ONLY
+      // for wrong (unchanged applicability). Sheet explanation is the fallback.
       const { text } = isSkipped
-        ? await fetchAITip({
+        ? await getAITip({
             question: question.question,
             correctOption: question.correctOption,
             correctOptionText: question[OPTION_KEYS[question.correctOption]],
@@ -273,7 +275,7 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
             subject,
             topic,
           })
-        : await fetchAIExplain({
+        : await getAIExplanation({
             question: question.question,
             optionA: question.optionA,
             optionB: question.optionB,

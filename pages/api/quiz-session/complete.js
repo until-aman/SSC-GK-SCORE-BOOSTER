@@ -1,7 +1,9 @@
+import { withApiTrace } from '@/lib/apiDiagnostics';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import { getSheetsClient } from '@/lib/sheets';
 import { getAppConfig } from '@/lib/config/appConfig';
+import { persistScore } from '@/lib/server/scorePersistence';
 
 function buildHeaderIndex(headers) {
   return (headers || []).reduce((index, header, position) => {
@@ -143,7 +145,8 @@ function calculateSessionCoins({ correct, accuracy, completionStatus }) {
   return baseCoins + accuracyBonus + completionBonus;
 }
 
-export default async function handler(req, res) {
+export default withApiTrace('/api/quiz-session/complete', handler);
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed' } });
   }
@@ -194,6 +197,48 @@ export default async function handler(req, res) {
     const duplicateCheckKey = clientSessionId || `${userEmail}_${subject}_${topic}_${startedAt}`;
     const questionIdsList = buildQuestionIdsList(answers);
     const answersSummaryJSON = buildAnswersSummaryJSON(answers);
+
+    // ── Score / coins / Users persistence (canonical completion) ─────────
+    // Ordered before the QuizSessions write so that if a later write fails, a
+    // retry re-runs cleanly: persistScore has its own independent Scores dedup
+    // (hasDuplicateScore) so coins are never awarded twice. Prefer explicit
+    // score fields from the body (identical to what /api/score received), with
+    // a fallback to the values derived from `answers`.
+    const scoreInput = {
+      correctAnswers:   typeof req.body.correctAnswers   === 'number' ? req.body.correctAnswers   : correct,
+      incorrectAnswers: typeof req.body.incorrectAnswers === 'number' ? req.body.incorrectAnswers : incorrect,
+      skipped:          typeof req.body.skipped          === 'number' ? req.body.skipped          : skipped,
+      totalQuestions:   typeof req.body.totalQuestions   === 'number' ? req.body.totalQuestions   : answers.length,
+      rawScore:         typeof req.body.rawScore         === 'number' ? req.body.rawScore         : score,
+      subject,
+      topic,
+      sessionId:        req.body.sessionId || clientSessionId || sessionId,
+      clientSessionId,
+      quizMode,
+      sourceCollection,
+      startedAt,
+      timeSpentSeconds: Number(timeSpentSeconds) || 0,
+    };
+
+    let scoreData = null;
+    try {
+      const scoreResult = await persistScore({ email: userEmail, name: userName, input: scoreInput });
+      if (scoreResult.kind === 'success') {
+        scoreData = scoreResult.data;
+      } else if (scoreResult.kind === 'validation') {
+        // Invalid score fields — do not fail the completion; session still saves.
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('[quiz-session/complete] score validation skipped:', scoreResult.error);
+        }
+      }
+      // kind === 'duplicate' → Scores already saved earlier; no fresh coin data.
+    } catch (scoreErr) {
+      // Real persistence failure BEFORE the QuizSessions write — return a
+      // controlled error so the client retry re-runs and converges (Scores dedup
+      // prevents double coins). Do not hide the failure.
+      console.error('[quiz-session/complete] score persistence failed:', scoreErr.message);
+      return res.status(500).json({ success: false, error: { code: 'SCORE_PERSIST_FAILED', message: 'Could not save score. Please retry.' } });
+    }
 
     await appendHeaderRow(sheets, 'QuizSessions', {
       SessionId: sessionId,
@@ -261,6 +306,21 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
+      ok: true,
+      sessionId,
+      clientSessionId,
+      // Score / coin fields (top-level) — consumed by pages/result.js coinsResult.
+      ...(scoreData ? {
+        coins:            scoreData.coins,
+        totalCoins:       scoreData.totalCoins,
+        level:            scoreData.level,
+        streakCount:      scoreData.streakCount,
+        lastAttemptDate:  scoreData.lastAttemptDate,
+        isFirstQuizOfDay: scoreData.isFirstQuizOfDay,
+        streakMilestone:  scoreData.streakMilestone,
+        profileSnapshot:  scoreData.profileSnapshot,
+      } : {}),
+      // Existing completion payload (kept for backward compatibility).
       data: {
         sessionId,
         correct,
