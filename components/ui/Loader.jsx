@@ -37,7 +37,7 @@ function Spinner({ size = 'md' }) {
         cy={s / 2}
         r={r}
         fill="none"
-        stroke="rgba(255,255,255,0.08)"
+        stroke="#E8F8F6"
         strokeWidth={stroke}
       />
       {/* Arc — 75 % of circumference */}
@@ -46,7 +46,7 @@ function Spinner({ size = 'md' }) {
         cy={s / 2}
         r={r}
         fill="none"
-        stroke="#14B8A6"
+        stroke="#0EA5A4"
         strokeWidth={stroke}
         strokeLinecap="round"
         strokeDasharray={`${circ * 0.75} ${circ * 0.25}`}
@@ -62,7 +62,7 @@ export default function Loader({ label = '', size = 'md', fullScreen = false, ca
     <div className="flex flex-col items-center justify-center gap-3">
       <Spinner size={size} />
       {label && (
-        <p className="font-sans font-medium text-sm text-slate-400 text-center leading-snug max-w-[220px]">
+        <p className="font-sans font-medium text-sm text-ssc-text-secondary text-center leading-snug max-w-[220px]">
           {label}
         </p>
       )}
@@ -73,7 +73,7 @@ export default function Loader({ label = '', size = 'md', fullScreen = false, ca
     return (
       <div
         className="fixed inset-0 z-50 flex items-center justify-center"
-        style={{ background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(4px)' }}
+        style={{ background: 'rgba(16,32,51,0.45)', backdropFilter: 'blur(4px)' }}
       >
         {inner}
       </div>
@@ -82,7 +82,7 @@ export default function Loader({ label = '', size = 'md', fullScreen = false, ca
 
   if (card) {
     return (
-      <div className="bg-slate-800/70 border border-slate-700/50 rounded-3xl p-8 flex items-center justify-center">
+      <div className="bg-ssc-surface border border-ssc-border rounded-[22px] p-8 flex items-center justify-center shadow-[var(--ssc-shadow-card)]">
         {inner}
       </div>
     );

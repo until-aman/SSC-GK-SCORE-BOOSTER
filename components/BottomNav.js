@@ -102,7 +102,7 @@ export default function BottomNav() {
         }
       `}</style>
 
-      <div style={{
+      <div className="ssc-bottom-nav-safe-area" style={{
         position: 'fixed',
         bottom: 0,
         left: 0,
@@ -112,19 +112,20 @@ export default function BottomNav() {
         <div style={{
           maxWidth: '430px',
           margin: '0 auto',
-          padding: '6px 20px 5px',
+          padding: '8px 20px 7px',
         }}>
           <div style={{
-            background: 'rgba(13, 27, 46, 0.95)',
+            background: 'rgba(255, 255, 255, 0.96)',
             backdropFilter: 'blur(18px)',
             WebkitBackdropFilter: 'blur(18px)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            border: '1px solid #DDE8F0',
             borderRadius: '28px',
             padding: '8px 12px',
             display: 'flex',
             justifyContent: 'space-around',
             alignItems: 'center',
             width: '100%',
+            boxShadow: '0 16px 40px rgba(16, 32, 51, 0.12)',
           }}>
             {items.map(({ Icon, route, label }) => {
               const active = route === '/history' ? path === route || path.startsWith('/history/') : path === route;
@@ -155,7 +156,7 @@ export default function BottomNav() {
                     minWidth: 56,
                     padding: '6px 8px',
                     borderRadius: 16,
-                    background: active ? 'rgba(255, 107, 22, 0.15)' : 'transparent',
+                    background: active ? '#FFF1E8' : 'transparent',
                     flexShrink: 0,
                     boxSizing: 'border-box',
                   }}
@@ -170,7 +171,7 @@ export default function BottomNav() {
                         left: '50%',
                         transform: 'translateX(-50%)',
                         width: 250,
-                        filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.55))',
+                        filter: 'drop-shadow(0 16px 34px rgba(16,32,51,0.18))',
                         pointerEvents: 'auto',
                         cursor: 'pointer',
                         zIndex: 60,
@@ -178,15 +179,15 @@ export default function BottomNav() {
                       }}>
                       {/* Bubble body */}
                       <div style={{
-                        background: 'linear-gradient(135deg, #1E3A5A 0%, #172D47 100%)',
-                        border: '1px solid rgba(255, 107, 22, 0.4)',
+                        background: '#FFFFFF',
+                        border: '1px solid #FDBA74',
                         borderRadius: 16,
                         padding: '12px 14px 13px',
                       }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#F0F4F8', lineHeight: 1.35, marginBottom: 4 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#102033', lineHeight: 1.35, marginBottom: 4 }}>
                           New: AI GK Analysis ✨
                         </div>
-                        <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.4 }}>
+                        <div style={{ fontSize: 12, color: '#5B6B82', lineHeight: 1.4 }}>
                           Find weak topics &amp; your next revision plan.
                         </div>
                       </div>
@@ -201,7 +202,7 @@ export default function BottomNav() {
                         height: 0,
                         borderLeft: '10px solid transparent',
                         borderRight: '10px solid transparent',
-                        borderTop: '10px solid rgba(255, 107, 22, 0.4)',
+                        borderTop: '10px solid #FDBA74',
                       }} />
                       <div style={{
                         position: 'absolute',
@@ -212,14 +213,14 @@ export default function BottomNav() {
                         height: 0,
                         borderLeft: '9px solid transparent',
                         borderRight: '9px solid transparent',
-                        borderTop: '9px solid #172D47',
+                        borderTop: '9px solid #FFFFFF',
                       }} />
                     </div>
                   )}
 
-                  <Icon color={active ? '#FF6B16' : '#7A8FA6'} />
+                  <Icon color={active ? '#FF6A00' : '#8A98AA'} />
                   <span className={active ? 't-nav-label-active' : 't-nav-label'} style={{
-                    color: active ? '#FF6B16' : '#7A8FA6',
+                    color: active ? '#FF6A00' : '#8A98AA',
                     fontFamily: 'inherit',
                   }}>
                     {label}
