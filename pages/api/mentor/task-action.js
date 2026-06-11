@@ -12,6 +12,49 @@ import { loadOrCreateMentorSnapshot } from './plan';
 import { isMentorTaskStateMachineV2Enabled } from '@/lib/mentor/repository/featureFlags';
 import { evaluateTaskTransition, TASK_ACTION } from '@/lib/mentor/domain/taskStateMachine';
 import { COMPLETION_SOURCE, PENDING_REASON } from '@/lib/mentor/domain/enums';
+import { shouldRouteActionThroughV2ForUser } from '@/lib/mentor/read/taskActionRouting';
+import { createSheetsMentorRepository } from '@/lib/mentor/repository';
+import { createSheetsMutationRepository, createSheetsIdempotencyStore } from '@/lib/mentor/repository/sheetsMutationRepository';
+import { executeV2TaskActionCutover } from '@/lib/mentor/read/v2TaskActionHandler';
+import { applyRepoV2Compatibility } from '@/lib/mentor/read/serveCompatibleSnapshot';
+
+// Phase 9B1 — real V2 cut-over handler (INACTIVE while mutation flags are false).
+// Reachable only when ALL THREE mutation flags are true AND the action is
+// whitelisted (`snooze`/Maybe Later -> POSTPONE). Fails CLOSED: it never falls back
+// to the legacy write once the request has entered the V2 branch (no dual-write).
+async function handleV2TaskActionCutover({ res, sheets, email, taskId, planId, actionType, requestId }) {
+  try {
+    // Generation isolation comes from the Repository V2 snapshot (read-only).
+    const repoSnap = await createSheetsMentorRepository().getMentorSnapshotData({ email });
+    const currentGenerationTaskIds = new Set((repoSnap.currentTasks || []).map(t => t.taskId));
+    const hiddenTaskIds = new Set((repoSnap.hiddenLegacyTasks || []).map(t => t.taskId));
+    const repository = createSheetsMutationRepository({ sheets, email, currentGenerationTaskIds, hiddenTaskIds });
+    const idempotencyStore = createSheetsIdempotencyStore({ sheets, email });
+
+    const result = await executeV2TaskActionCutover({
+      userIdentity: { email },
+      repository,
+      idempotencyStore,
+      request: { taskId, planId, actionType, requestId },
+      now: new Date().toISOString(),
+      // Post-mutation response uses the SAME shared overlay as GET /api/mentor/plan.
+      buildResponseSnapshot: async () => {
+        const legacy = await loadOrCreateMentorSnapshot(email);
+        const repo = await createSheetsMentorRepository().getMentorSnapshotData({ email });
+        return applyRepoV2Compatibility(legacy, repo);
+      },
+    });
+
+    if (!result.ok) {
+      return res.status(result.httpStatus || 409).json({ success: false, code: result.code, error: result.message || 'Mentor task update could not be saved.' });
+    }
+    return res.status(200).json({ success: true, snapshot: result.snapshot, idempotent: result.idempotent });
+  } catch (err) {
+    // Fail closed — do NOT fall back to the legacy write after entering the V2 branch.
+    console.error('[mentor/task-action] v2 cutover error:', err.message);
+    return res.status(500).json({ success: false, code: 'V2_CUTOVER_ERROR', error: 'Task save failed. Please retry.' });
+  }
+}
 
 const ACTION_TO_STATUS = {
   complete: 'completed',
@@ -34,7 +77,7 @@ async function handler(req, res) {
     topic = '',
   } = req.body || {};
 
-  if (!taskId || !['complete', 'snooze', 'response', 'launch_practice'].includes(actionType)) {
+  if (!taskId || !['complete', 'snooze', 'response', 'launch_practice', 'resume'].includes(actionType)) {
     return res.status(400).json({ error: 'Invalid mentor task action' });
   }
 
@@ -42,6 +85,13 @@ async function handler(req, res) {
     const sheets = await getSheetsClient();
     if (isMentorTaskStateMachineV2Enabled()) {
       await shadowValidateTaskAction({ sheets, email: session.user.email, taskId, planId, actionType, actionValue }).catch(() => {});
+    }
+    // Phase 9B-Prep: gated V2 cut-over routing. INACTIVE while mutation flags are
+    // false (shouldRouteActionThroughV2 requires all three mutation flags + the
+    // `snooze` whitelist). Every other action — and all actions while flags are
+    // false — continues to the legacy write path unchanged.
+    if (shouldRouteActionThroughV2ForUser(actionType, { email: session.user.email })) {
+      return handleV2TaskActionCutover({ res, sheets, email: session.user.email, taskId, planId, actionType, requestId: req.headers['x-request-id'] || '' });
     }
     const now = new Date().toISOString();
     const status = ACTION_TO_STATUS[actionType];

@@ -12,8 +12,11 @@ const {
   materializeTasksForPlanDay,
   extendSnapshotWithPending,
   rolloverKey,
+  isCanonicalPendingTask,
 } = require('../lib/mentor/services/dailyRolloverService');
 const { TASK_STATUS, TASK_TYPE, PENDING_REASON } = require('../lib/mentor/domain/enums');
+const { buildSnapshotFromRawData } = require('../lib/mentor/repository/mentorRepository');
+const { buildLegacyRawData, EMAIL } = require('../scripts/fixtures/mentor-legacy-fixture');
 
 const NOW = '2026-06-10T06:00:00.000Z';
 const activePlan = { planId: 'plan_1', planVersion: 1, activeDayNumber: 1 };
@@ -372,6 +375,67 @@ test('54. completed evidence is preserved by exclusion, not mutation', async () 
 test('55. hidden legacy task cannot be featured', () => {
   const pending = listPendingTasks([task({ taskId: 'hidden', status: TASK_STATUS.PENDING, isLegacyHidden: true })], activePlan, { serverGeneratedAt: NOW });
   assert.equal(selectFeaturedPendingTask(pending, {}, 2).featuredPendingTask, null);
+});
+
+// ── Phase 8A: legacy snoozed pending reconciliation ──────────────────────────
+// A "legacy snoozed" row = read-normalized pending (status pending) with
+// rawLegacyStatus 'snoozed' and blank v2 pending fields.
+const legacySnoozed = o => task({ status: TASK_STATUS.PENDING, rawLegacyStatus: 'snoozed', pendingReason: '', movedToPendingAt: '', ...o });
+
+test('56. legacy snoozed HISTORICAL task is hidden', () => {
+  const pending = listPendingTasks([legacySnoozed({ taskId: 'h', isCurrentGeneration: false })], activePlan, { serverGeneratedAt: NOW });
+  assert.equal(pending.length, 0);
+});
+test('57. legacy snoozed CURRENT-generation task is hidden', () => {
+  const pending = listPendingTasks([legacySnoozed({ taskId: 'c', isCurrentGeneration: true })], activePlan, { serverGeneratedAt: NOW });
+  assert.equal(pending.length, 0);
+});
+test('58. legacy snoozed current-gen with blank PendingReason is not canonical pending', () => {
+  assert.equal(isCanonicalPendingTask(legacySnoozed({ taskId: 'c' })), false);
+});
+test('59. current-gen legacy snoozed is NOT selected as featured pending', () => {
+  const pending = listPendingTasks([legacySnoozed({ taskId: 'c' })], activePlan, { serverGeneratedAt: NOW });
+  assert.equal(selectFeaturedPendingTask(pending, {}, 2).featuredPendingTask, null);
+});
+test('60. current-gen legacy snoozed does not affect nudge tier (count 0 -> hidden)', () => {
+  const pending = listPendingTasks(Array.from({ length: 3 }, (_, i) => legacySnoozed({ taskId: `c${i}` })), activePlan, { serverGeneratedAt: NOW });
+  assert.equal(pending.length, 0);
+  assert.equal(pendingNudgeTier(pending.length), 'hidden');
+});
+test('61. v2 pending task with PendingReason IS included', () => {
+  const pending = listPendingTasks([legacySnoozed({ taskId: 'v2', pendingReason: PENDING_REASON.USER_POSTPONED })], activePlan, { serverGeneratedAt: NOW });
+  assert.deepEqual(pending.map(t => t.taskId), ['v2']);
+});
+test('62. v2 pending task with MovedToPendingAt IS included', () => {
+  const pending = listPendingTasks([legacySnoozed({ taskId: 'v2', movedToPendingAt: '2026-06-10T00:00:00Z' })], activePlan, { serverGeneratedAt: NOW });
+  assert.deepEqual(pending.map(t => t.taskId), ['v2']);
+});
+test('63. genuine v2 pending (no legacy snoozed marker) still included', () => {
+  const pending = listPendingTasks([task({ taskId: 'p', status: TASK_STATUS.PENDING })], activePlan, { serverGeneratedAt: NOW });
+  assert.deepEqual(pending.map(t => t.taskId), ['p']);
+});
+test('64. migrated legacy fixture: repository canonical pending = 0', () => {
+  const snap = buildSnapshotFromRawData(buildLegacyRawData(), { email: EMAIL });
+  assert.equal(snap.canonicalPendingTasks.length, 0);
+  assert.equal(snap.hiddenLegacyTasks.length, 10);
+});
+test('65. migrated legacy fixture: rollover shadow pending = 0', async () => {
+  const snap = buildSnapshotFromRawData(buildLegacyRawData(), { email: EMAIL });
+  const result = await processDailyRollover({
+    userScope: 'shadow', activePlan: snap.activePlan, repositorySnapshot: snap,
+    currentServerTime: snap.serverGeneratedAt, idempotencyStore: { get: async () => null, save: async () => {} },
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.pendingCount, 0);
+  assert.equal(Boolean(result.featuredPendingTaskId), false);
+  assert.equal(result.pendingNudgeTier, 'hidden');
+});
+test('66. predicate: completed/cancelled/expired never canonical pending', () => {
+  [TASK_STATUS.COMPLETED, TASK_STATUS.CANCELLED, TASK_STATUS.EXPIRED].forEach(s =>
+    assert.equal(isCanonicalPendingTask(task({ status: s })), false));
+});
+test('67. predicate: quick-check pending never canonical pending', () => {
+  assert.equal(isCanonicalPendingTask(task({ status: TASK_STATUS.PENDING, type: TASK_TYPE.COVERAGE_CHECK })), false);
 });
 
 (async () => {

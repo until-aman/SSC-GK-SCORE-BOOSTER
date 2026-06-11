@@ -12,8 +12,21 @@
     "test:mentor-state-machine": "node scripts/test-mentor-task-state-machine.js",
     "test:mentor-rollover": "node scripts/test-mentor-daily-rollover.js",
     "test:mentor-sheets": "node scripts/test-mentor-sheets-migration.js",
+    "test:mentor-sheets-writer": "node scripts/test-mentor-sheets-writer.js",
+    "test:mentor-mutation-service": "node scripts/test-mentor-mutation-service.js",
+    "test:mentor-read-overlay": "node scripts/test-mentor-read-overlay.js",
+    "test:mentor-v2-postpone": "node scripts/test-mentor-v2-postpone.js",
+    "test:mentor-v2-cohort": "node scripts/test-mentor-v2-cohort.js",
+    "mentor:v2-monitor": "node scripts/mentor-v2-mutation-monitor.js",
     "mentor:sheets-migration:dry-run": "node scripts/mentor-sheets-migration.js",
-    "mentor:sheets-migration:apply": "node scripts/mentor-sheets-migration.js --apply"
+    "mentor:sheets-migration:write-plan": "node scripts/mentor-sheets-migration.js --plan",
+    "mentor:sheets-migration:apply": "node scripts/mentor-sheets-migration.js --apply",
+    "test:mentor-pending-surfacing": "node scripts/test-mentor-pending-surfacing.js",
+    "test:mentor-v2-resume": "node scripts/test-mentor-v2-resume.js",
+    "test:mentor-pending-ui": "node scripts/test-mentor-pending-ui.js",
+    "test:mentor-v2-complete-design": "node scripts/test-mentor-v2-complete-design.js",
+    "test:mentor-v2-complete": "node scripts/test-mentor-v2-complete.js",
+    "test:mentor-route-readiness": "node scripts/test-mentor-route-readiness.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
