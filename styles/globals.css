@@ -63,11 +63,50 @@
 
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.30), 0 0 0 0.5px rgba(255, 255, 255, 0.06);
   --shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.25);
+
+  /* SSC Quest Light tokens - Step 2 */
+  --ssc-bg: #F3FBFA;
+  --ssc-bg-alt: #F8FAFC;
+  --ssc-surface: #FFFFFF;
+  --ssc-surface-soft: #F8FEFD;
+  --ssc-surface-elevated: #FFFFFF;
+  --ssc-border-soft: #DDE8F0;
+  --ssc-text-primary: #102033;
+  --ssc-text-secondary: #5B6B82;
+  --ssc-text-muted: #8A98AA;
+  --ssc-text-inverse: #FFFFFF;
+  --ssc-orange: #FF6A00;
+  --ssc-orange-deep: #F45100;
+  --ssc-teal: #0EA5A4;
+  --ssc-teal-soft: #E8F8F6;
+  --ssc-coin: #F6B331;
+  --ssc-rank: #6D5DF6;
+  --ssc-streak: #F59E0B;
+  --ssc-success: #12B886;
+  --ssc-success-soft: #E7FAF3;
+  --ssc-warning: #F59E0B;
+  --ssc-warning-soft: #FFF7E6;
+  --ssc-danger: #EF4444;
+  --ssc-danger-soft: #FEECEC;
+  --ssc-info: #2563EB;
+  --ssc-info-soft: #EFF6FF;
+  --ssc-disabled-bg: #EEF3F7;
+  --ssc-disabled-text: #9AA8B8;
+  --ssc-focus-ring: #0EA5A4;
+  --ssc-overlay: rgba(16,32,51,0.45);
+  --ssc-radius-card: 18px;
+  --ssc-radius-hero: 22px;
+  --ssc-radius-button: 16px;
+  --ssc-radius-chip: 999px;
+  --ssc-radius-modal: 24px;
+  --ssc-shadow-card: 0 8px 24px rgba(16, 32, 51, 0.08);
+  --ssc-shadow-float: 0 16px 40px rgba(16, 32, 51, 0.12);
+  --ssc-shadow-cta: 0 10px 22px rgba(255, 106, 0, 0.22);
 }
 
 body {
   font-family: 'Inter', sans-serif;
-  background-color: var(--color-bg-base);
+  background-color: var(--ssc-bg);
   color: var(--color-text-2);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -88,13 +127,36 @@ html {
     var(--bg-app);
 }
 
+/* SSC Quest Light app shell - Step 3 */
+.ssc-app-root {
+  background:
+    radial-gradient(circle at top right, rgba(14, 165, 164, 0.10), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(255, 106, 0, 0.08), transparent 34%),
+    var(--ssc-bg);
+}
+
+.ssc-app-frame {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(248, 250, 252, 0.78)),
+    var(--ssc-bg);
+  box-shadow: 0 0 0 1px rgba(221, 232, 240, 0.72);
+}
+
+.ssc-app-frame-with-nav {
+  padding-bottom: calc(88px + env(safe-area-inset-bottom));
+}
+
+.ssc-bottom-nav-safe-area {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 /* ── Animations ── */
 .app-page {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top right, rgba(124, 58, 237, 0.10), transparent 34%),
-    radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.07), transparent 35%),
-    var(--bg-app);
+    radial-gradient(circle at top right, rgba(14, 165, 164, 0.10), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(255, 106, 0, 0.07), transparent 35%),
+    var(--ssc-bg);
   color: var(--text-primary);
 }
 
@@ -171,6 +233,74 @@ html {
   background: rgba(148, 163, 184, 0.12);
   border: 1px solid rgba(148, 163, 184, 0.14);
   color: var(--text-secondary);
+}
+
+/* SSC Quest Light additive utility classes - Step 2 */
+.ssc-light-page {
+  min-height: 100vh;
+  background: var(--ssc-bg);
+  color: var(--ssc-text-primary);
+}
+
+.ssc-light-card {
+  background: var(--ssc-surface);
+  border: 1px solid var(--ssc-border-soft);
+  border-radius: var(--ssc-radius-card);
+  box-shadow: var(--ssc-shadow-card);
+  color: var(--ssc-text-primary);
+}
+
+.ssc-light-card-soft {
+  background: var(--ssc-surface-soft);
+  border: 1px solid var(--ssc-border-soft);
+  border-radius: var(--ssc-radius-card);
+  color: var(--ssc-text-primary);
+}
+
+.ssc-light-button-primary {
+  background: linear-gradient(135deg, var(--ssc-orange), var(--ssc-orange-deep));
+  border-radius: var(--ssc-radius-button);
+  box-shadow: var(--ssc-shadow-cta);
+  color: var(--ssc-text-inverse);
+  font-weight: 800;
+}
+
+.ssc-light-button-secondary {
+  background: var(--ssc-surface);
+  border: 1px solid var(--ssc-border-soft);
+  border-radius: var(--ssc-radius-button);
+  color: var(--ssc-text-secondary);
+  font-weight: 700;
+}
+
+.ssc-light-chip {
+  background: var(--ssc-teal-soft);
+  border: 1px solid rgba(14, 165, 164, 0.18);
+  border-radius: var(--ssc-radius-chip);
+  color: var(--ssc-teal);
+  font-weight: 700;
+}
+
+.ssc-light-progress-track {
+  background: var(--ssc-disabled-bg);
+  border-radius: var(--ssc-radius-chip);
+  overflow: hidden;
+}
+
+.ssc-light-progress-fill {
+  background: linear-gradient(90deg, var(--ssc-teal), var(--ssc-orange));
+  border-radius: inherit;
+}
+
+.ssc-light-skeleton {
+  background: linear-gradient(90deg, #EEF3F7 25%, #F8FEFD 50%, #EEF3F7 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.ssc-focus-ring:focus-visible {
+  outline: 3px solid rgba(14, 165, 164, 0.28);
+  outline-offset: 2px;
 }
 
 @keyframes shimmer {
