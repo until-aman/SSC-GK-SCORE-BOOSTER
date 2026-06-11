@@ -281,6 +281,20 @@ html {
   font-weight: 700;
 }
 
+.ssc-light-badge {
+  align-items: center;
+  background: var(--ssc-surface-soft);
+  border: 1px solid var(--ssc-border-soft);
+  border-radius: var(--ssc-radius-chip);
+  color: var(--ssc-text-secondary);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 800;
+  gap: 4px;
+  line-height: 1;
+  padding: 6px 9px;
+}
+
 .ssc-light-progress-track {
   background: var(--ssc-disabled-bg);
   border-radius: var(--ssc-radius-chip);
@@ -293,7 +307,7 @@ html {
 }
 
 .ssc-light-skeleton {
-  background: linear-gradient(90deg, #EEF3F7 25%, #F8FEFD 50%, #EEF3F7 75%);
+  background: linear-gradient(90deg, #E8F8F6 25%, #F8FAFC 50%, #E8F8F6 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
@@ -303,12 +317,54 @@ html {
   outline-offset: 2px;
 }
 
+.ssc-light-input {
+  background: var(--ssc-surface);
+  border: 1px solid var(--ssc-border-soft);
+  border-radius: var(--ssc-radius-button);
+  color: var(--ssc-text-primary);
+}
+
+.ssc-light-input::placeholder {
+  color: var(--ssc-text-muted);
+}
+
+.ssc-light-input:focus {
+  border-color: var(--ssc-teal);
+  box-shadow: 0 0 0 3px rgba(14, 165, 164, 0.16);
+  outline: none;
+}
+
+.ssc-light-disabled {
+  background: var(--ssc-disabled-bg) !important;
+  color: var(--ssc-disabled-text) !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+.ssc-state-success-soft {
+  background: var(--ssc-success-soft);
+  border-color: rgba(18, 184, 134, 0.22);
+  color: var(--ssc-text-primary);
+}
+
+.ssc-state-warning-soft {
+  background: var(--ssc-warning-soft);
+  border-color: rgba(245, 158, 11, 0.24);
+  color: var(--ssc-text-primary);
+}
+
+.ssc-state-danger-soft {
+  background: var(--ssc-danger-soft);
+  border-color: rgba(239, 68, 68, 0.24);
+  color: var(--ssc-text-primary);
+}
+
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg,#172D47 25%,#1E3554 50%,#172D47 75%);
+  background: linear-gradient(90deg,#E8F8F6 25%,#F8FAFC 50%,#E8F8F6 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: 0.5rem;
