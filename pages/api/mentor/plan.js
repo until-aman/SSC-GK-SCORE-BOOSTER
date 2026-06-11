@@ -12,7 +12,9 @@ import {
 import { getUserAttemptAnswers } from '@/lib/historyData';
 import { generateTodaysPlan } from '@/lib/mentorPlanEngine';
 import { getMentorDayMessage } from '@/lib/mentorCopy';
-import { runMentorShadowComparison } from '@/lib/mentor/repository';
+import { createSheetsMentorRepository, runMentorShadowComparison } from '@/lib/mentor/repository';
+import { isMentorCanonicalDayReadEnabled, isMentorDailyRolloverV2Enabled, isMentorPendingLifecycleV2Enabled } from '@/lib/mentor/repository/featureFlags';
+import { processDailyRollover } from '@/lib/mentor/services/dailyRolloverService';
 
 function normalizeSubjectId(subjectId) {
   return String(subjectId || '').replace(/^Q_PYQ_/, '');
@@ -186,6 +188,30 @@ async function handler(req, res) {
   if (!session?.user?.email) return res.status(401).json({ error: 'Unauthorized' });
   try {
     const snapshot = await loadOrCreateMentorSnapshot(session.user.email);
+    if (isMentorCanonicalDayReadEnabled()) {
+      const repo = createSheetsMentorRepository();
+      const canonical = await repo.getMentorSnapshotData({ email: session.user.email });
+      snapshot.canonicalPlanDay = {
+        planStartLocalDate: canonical.planStartLocalDate,
+        planStartSource: canonical.planStartSource,
+        timezone: canonical.timezone,
+        totalPlanDays: canonical.totalPlanDays,
+        calendarDay: canonical.calendarDay,
+        unlockedDay: canonical.unlockedDay,
+        activePlanDay: canonical.activePlanDay,
+        isPlanComplete: canonical.isPlanComplete,
+        daysRemaining: canonical.daysRemaining,
+        serverGeneratedAt: canonical.serverGeneratedAt,
+      };
+      if (snapshot.plan) {
+        snapshot.plan = {
+          ...snapshot.plan,
+          canonicalDayNumber: canonical.activePlanDay,
+          canonicalCalendarDay: canonical.calendarDay,
+          canonicalDaysTotal: canonical.totalPlanDays,
+        };
+      }
+    }
     // Phase 2: read-only shadow comparison (Mentor Repository v2). No-op unless
     // MENTOR_REPO_V2_SHADOW is enabled; fire-and-forget; never alters the response.
     if (process.env.MENTOR_REPO_V2_SHADOW === 'true') {
@@ -193,6 +219,34 @@ async function handler(req, res) {
         { email: session.user.email },
         { ...snapshot, studentTopicState: snapshot.profile?.studentTopicState || [] }
       ).catch(() => {});
+    }
+    if (isMentorDailyRolloverV2Enabled() || isMentorPendingLifecycleV2Enabled()) {
+      const repo = createSheetsMentorRepository();
+      repo.getMentorSnapshotData({ email: session.user.email })
+        .then(canonical => processDailyRollover({
+          userScope: canonical.profile?.email ? 'authenticated' : 'unknown',
+          activePlan: canonical.activePlan,
+          repositorySnapshot: canonical,
+          currentServerTime: canonical.serverGeneratedAt,
+          idempotencyStore: {
+            get: async () => null,
+            save: async () => {},
+          },
+        }))
+        .then(result => {
+          if (!result?.ok) return;
+          console.log('[mentor-rollover-shadow]', {
+            calendarDay: result.calendarDay,
+            lastProcessedCalendarDay: result.lastProcessedCalendarDay,
+            rolloverRequired: result.rolloverRequired,
+            wouldMoveToPendingCount: result.movedToPendingCount || 0,
+            wouldRescheduleCount: result.rescheduledCount || 0,
+            wouldFeatureTask: Boolean(result.featuredPendingTaskId),
+            currentGenerationTaskCount: snapshot.activeTasks?.length || 0,
+            diagnosticCodes: result.diagnostics || [],
+          });
+        })
+        .catch(() => {});
     }
     return res.status(200).json(snapshot);
   } catch (err) {

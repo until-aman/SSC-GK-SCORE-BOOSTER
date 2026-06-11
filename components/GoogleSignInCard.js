@@ -26,22 +26,23 @@ export default function GoogleSignInCard({
     <div
       className={className}
       style={{
-        background: '#172235',
-        border: '1px solid #2A3A52',
+        background: '#FFFFFF',
+        border: '1px solid #DDE8F0',
         borderRadius: 22,
         padding: '18px 22px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 14,
+        boxShadow: '0 8px 24px rgba(16, 32, 51, 0.08)',
         ...style,
       }}
     >
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p className="font-display" style={{ fontSize: 16, fontWeight: 800, color: '#F8FAFC', lineHeight: 1.2, marginBottom: 6 }}>
+        <p className="font-display" style={{ fontSize: 16, fontWeight: 800, color: '#102033', lineHeight: 1.2, marginBottom: 6 }}>
           {title}
         </p>
-        <p className="font-sans" style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.35 }}>
+        <p className="font-sans" style={{ fontSize: 13, color: '#5B6B82', lineHeight: 1.35 }}>
           {subtitle}
         </p>
       </div>
@@ -59,7 +60,8 @@ export default function GoogleSignInCard({
           gap: 8,
           background: '#FFFFFF',
           color: '#0F172A',
-          border: 'none',
+          border: '1px solid #DDE8F0',
+          boxShadow: '0 4px 14px rgba(16, 32, 51, 0.08)',
           fontSize: 14,
           fontWeight: 800,
           cursor: 'pointer',

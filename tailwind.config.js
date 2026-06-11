@@ -53,6 +53,54 @@ module.exports = {
         'border-strong':   'rgba(255, 255, 255, 0.20)',
         'border-orange':   'rgba(255, 107, 22, 0.40)',
         'border-teal':     'rgba(20, 184, 166, 0.40)',
+
+        // === SSC QUEST LIGHT TOKENS (additive foundation) ===
+        ssc: {
+          bg: '#F3FBFA',
+          bgAlt: '#F8FAFC',
+          surface: '#FFFFFF',
+          surfaceSoft: '#F8FEFD',
+          surfaceElevated: '#FFFFFF',
+          border: '#DDE8F0',
+          text: {
+            primary: '#102033',
+            secondary: '#5B6B82',
+            muted: '#8A98AA',
+            inverse: '#FFFFFF',
+          },
+          orange: {
+            DEFAULT: '#FF6A00',
+            deep: '#F45100',
+          },
+          teal: {
+            DEFAULT: '#0EA5A4',
+            soft: '#E8F8F6',
+          },
+          coin: '#F6B331',
+          rank: '#6D5DF6',
+          streak: '#F59E0B',
+          success: {
+            DEFAULT: '#12B886',
+            soft: '#E7FAF3',
+          },
+          warning: {
+            DEFAULT: '#F59E0B',
+            soft: '#FFF7E6',
+          },
+          danger: {
+            DEFAULT: '#EF4444',
+            soft: '#FEECEC',
+          },
+          info: {
+            DEFAULT: '#2563EB',
+            soft: '#EFF6FF',
+          },
+          disabled: {
+            bg: '#EEF3F7',
+            text: '#9AA8B8',
+          },
+          focus: '#0EA5A4',
+        },
       },
       animation: {
         'fadeInDown': 'fadeInDown 0.4s ease-out',
