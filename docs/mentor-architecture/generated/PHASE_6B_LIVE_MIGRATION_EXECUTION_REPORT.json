@@ -1,0 +1,115 @@
+{
+  "status": "completed",
+  "manifestHash": "b31fe07b8f20107526281c2e00378dd0d1495ecaa7b56cbf6ec3412a62556fcc",
+  "backupNoteHash": "1c454c0f8e8a9278",
+  "appliedAt": "2026-06-11T01:49:04.128Z",
+  "tabsCreated": [
+    "MentorMutationRequests",
+    "MentorSchema"
+  ],
+  "columnsAdded": {
+    "MentorProfile": [
+      "ActivePlanVersion",
+      "Timezone",
+      "SnapshotRevision",
+      "PlanStartLocalDate",
+      "LastProcessedCalendarDay",
+      "UnlockedDay"
+    ],
+    "MentorPlans": [
+      "PlanVersion",
+      "GenerationId",
+      "TaskSetRevision",
+      "NextTaskNumber",
+      "Timezone",
+      "PlanStartLocalDate",
+      "TotalPlanDays",
+      "UnlockedDay",
+      "LastProcessedCalendarDay",
+      "LastDailyRolloverAt",
+      "FeaturedPendingTaskId",
+      "FeaturedPendingForCalendarDay",
+      "GenerationStatus",
+      "RowVersion",
+      "SupersededByPlanId",
+      "SupersededAt"
+    ],
+    "MentorTasks": [
+      "PlanVersion",
+      "GenerationId",
+      "TaskNumber",
+      "QuestionCount",
+      "OriginalScheduledDay",
+      "ScheduledLocalDate",
+      "PendingReason",
+      "MovedToPendingAt",
+      "NextEligibleAt",
+      "NextEligibleResurfaceAt",
+      "ResurfacedCount",
+      "LastResurfacedAt",
+      "CompletionSource",
+      "LinkedQuizSessionId",
+      "ParentTaskId",
+      "RelatedTaskId",
+      "TriggerReason",
+      "CancellationReason",
+      "RowVersion"
+    ],
+    "MentorTaskLogs": [
+      "EventId",
+      "FromStatus",
+      "ToStatus",
+      "CanonicalAction",
+      "IdempotencyKey",
+      "RequestId",
+      "EventPayloadJSON"
+    ]
+  },
+  "rowsBackfilled": 20,
+  "batches": [
+    {
+      "name": "CREATE_TABS",
+      "ok": true,
+      "verified": true
+    },
+    {
+      "name": "APPEND_COLUMNS",
+      "ok": true,
+      "verified": true
+    },
+    {
+      "name": "BACKFILL_ROWS",
+      "ok": true,
+      "verified": true
+    },
+    {
+      "name": "SCHEMA_MARKER",
+      "ok": true,
+      "verified": true,
+      "note": "marker"
+    }
+  ],
+  "noopItems": [],
+  "warnings": [],
+  "errors": [],
+  "finalSchemaMarker": true,
+  "finalRowCounts": {
+    "MentorProfile": 2,
+    "MentorPlans": 5,
+    "MentorTasks": 15,
+    "MentorTaskLogs": 29,
+    "StudentTopicState": 4,
+    "MentorMutationRequests": 0,
+    "MentorSchema": 1
+  },
+  "finalHeaderFingerprints": {
+    "MentorProfile": "933fa18b5ed30fd8aece48c766f81c6a582dfd96c361288cb55f099910d6f153",
+    "MentorPlans": "289a580c1fae70e8bfa0e2560c06a7111231e6c3131b0c1318b05178f4f76c73",
+    "MentorTasks": "86ab1f515aad7598d3e95071af4a9aacd40b295b704b8be2a2c76d1441e17aae",
+    "MentorTaskLogs": "76d644622abc4aad49743c3b46ab77b2fe2acb90a6c572f7a09324fbf973ed49",
+    "StudentTopicState": "85e28aab42bb8059e38c449a00c9f86be8e581a233cce07e0d3b1e6c3e24144c",
+    "MentorMutationRequests": "4e23c9c0b63c16d17877f1970b7b9531c244382411f43caefb01738158704582",
+    "MentorSchema": "cb7a6c4b40ab7be19e4934f00ec1af0cc0427c9371c19f974b641ee3c3cebe0c"
+  },
+  "flagsRemainFalse": true
+}
