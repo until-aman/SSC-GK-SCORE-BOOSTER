@@ -47,9 +47,9 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
     <QueryClientProvider client={queryClient}>
       <SessionProvider session={session}>
         <CacheScopeGuard />
-        <div className="min-h-screen app-premium-bg flex justify-center">
+        <div className="min-h-screen ssc-app-root flex justify-center">
           <div
-            className="w-full max-w-[430px] min-h-screen app-premium-bg relative overflow-x-clip flex flex-col"
+            className={`w-full max-w-[430px] min-h-screen ssc-app-frame relative overflow-x-clip flex flex-col${showNav ? ' ssc-app-frame-with-nav' : ''}`}
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             <PageLoader />
