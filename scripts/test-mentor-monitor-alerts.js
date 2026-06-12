@@ -79,16 +79,27 @@ test('6. rollover/pending lifecycle write flags reported as CRITICAL when true',
   assert.strictEqual(evaluateMonitorAlerts(base, { flags: { MENTOR_PENDING_LIFECYCLE_V2: true } }).status, 'CRITICAL');
   assert.strictEqual(evaluateMonitorAlerts(base, { flags: { MENTOR_DAILY_ROLLOVER_V2: false, MENTOR_PENDING_LIFECYCLE_V2: false } }).status, 'OK');
 });
-test('7. affected real plan drift is visible as CRITICAL', async () => {
-  // a real-plan task flipped to completed (6 completed / 9 snoozed) -> drift
+test('7. affected real plan change is INFORMATIONAL only, NOT CRITICAL (real users change their own plans under allow-all)', async () => {
+  // real user added 3 active tasks (plan generation) — must not trip a CRITICAL.
   const taskRows = [];
-  for (let i = 0; i < 6; i++) taskRows.push([`RT${i}`, REAL, 'completed', '', '', '1', '']);
-  for (let i = 0; i < 9; i++) taskRows.push([`RS${i}`, REAL, 'snoozed', '', '', '1', '']);
+  for (let i = 0; i < 5; i++) taskRows.push([`RT${i}`, REAL, 'completed', '', '', '1', '']);
+  for (let i = 0; i < 10; i++) taskRows.push([`RS${i}`, REAL, 'snoozed', '', '', '1', '']);
+  for (let i = 0; i < 3; i++) taskRows.push([`RA${i}`, REAL, 'active', '', '', '1', '']);
   const audit = await auditV2Mutations(fakeSheets(tabs({ tasks: taskRows })), { allowedUserHashes: [] });
-  assert.deepStrictEqual(audit.affectedRealPlanStatus, { completed: 6, snoozed: 9 });
+  assert.deepStrictEqual(audit.affectedRealPlanStatus, { completed: 5, snoozed: 10, active: 3 }); // still reported (visibility)
   const { status, alerts } = evaluateMonitorAlerts(audit);
-  assert.strictEqual(status, 'CRITICAL');
-  assert.ok(alerts.some(a => a.code === 'AFFECTED_REAL_PLAN_DRIFT'));
+  assert.strictEqual(status, 'OK');
+  assert.ok(!alerts.some(a => a.code === 'AFFECTED_REAL_PLAN_DRIFT'), 'no exact-drift CRITICAL');
+  assert.ok(!alerts.some(a => /AFFECTED_REAL_PLAN/.test(a.code)), 'pure growth raises no real-plan alert');
+});
+test('7b. data-loss floor: completed below 5 -> CRITICAL; snoozed below 10 -> WARNING; growth stays OK', () => {
+  const loss = evaluateMonitorAlerts({ affectedRealPlanStatus: { completed: 4, snoozed: 10 } });
+  assert.strictEqual(loss.status, 'CRITICAL');
+  assert.ok(loss.alerts.some(a => a.code === 'AFFECTED_REAL_PLAN_DATA_LOSS'));
+  const snoozeDrop = evaluateMonitorAlerts({ affectedRealPlanStatus: { completed: 5, snoozed: 8, active: 2 } });
+  assert.strictEqual(snoozeDrop.status, 'WARNING');
+  assert.ok(snoozeDrop.alerts.some(a => a.code === 'AFFECTED_REAL_PLAN_SNOOZED_DROP'));
+  assert.strictEqual(evaluateMonitorAlerts({ affectedRealPlanStatus: { completed: 6, snoozed: 12, active: 4 } }).status, 'OK');
 });
 test('8. clean steady-state -> OK (no alerts)', () => {
   const r = evaluateMonitorAlerts({ unexpectedMutationsOutsideAllowlist: 0, duplicateIdempotencyKeys: 0, failedMutationRequests: 0, affectedRealPlanStatus: { ...EXPECTED_AFFECTED_REAL_PLAN }, affectedRealPlanId: REAL }, { flags: { MENTOR_DAILY_ROLLOVER_V2: false, MENTOR_PENDING_LIFECYCLE_V2: false } });

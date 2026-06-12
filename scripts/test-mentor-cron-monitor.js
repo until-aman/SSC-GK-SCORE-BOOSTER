@@ -46,14 +46,20 @@ test('4. OK -> HTTP 200', () => {
   assert.strictEqual(httpStatus, 200);
   assert.strictEqual(body.alertStatus, 'OK');
 });
-test('5. CRITICAL -> HTTP 500 (duplicate keys / real-plan drift / rollover flag)', () => {
+test('5. CRITICAL -> HTTP 500 (duplicate keys / >=3 failed / rollover flag / real-plan data loss)', () => {
   const dup = cronMonitorResult({ duplicateIdempotencyKeys: 1, affectedRealPlanStatus: REAL }, {});
   assert.strictEqual(dup.httpStatus, 500);
   assert.strictEqual(dup.body.alertStatus, 'CRITICAL');
-  const drift = cronMonitorResult({ duplicateIdempotencyKeys: 0, affectedRealPlanStatus: { completed: 6, snoozed: 9 } }, {});
-  assert.strictEqual(drift.httpStatus, 500);
-  const rollover = cronMonitorResult({ affectedRealPlanStatus: REAL }, { MENTOR_DAILY_ROLLOVER_V2: true });
-  assert.strictEqual(rollover.httpStatus, 500);
+  assert.strictEqual(cronMonitorResult({ failedMutationRequests: 3 }, {}).httpStatus, 500);
+  assert.strictEqual(cronMonitorResult({ affectedRealPlanStatus: REAL }, { MENTOR_DAILY_ROLLOVER_V2: true }).httpStatus, 500);
+  // completed dropped below the historical floor (5) -> data loss -> 500
+  assert.strictEqual(cronMonitorResult({ affectedRealPlanStatus: { completed: 4, snoozed: 10 } }, {}).httpStatus, 500);
+});
+test('5b. a real-user plan change (active tasks grow) is NOT CRITICAL -> 200', () => {
+  const r = cronMonitorResult({ duplicateIdempotencyKeys: 0, failedMutationRequests: 0, unexpectedMutationsOutsideAllowlist: 3, affectedRealPlanStatus: { completed: 5, snoozed: 10, active: 3 } }, { MENTOR_V2_MUTATION_ALLOW_ALL: true });
+  assert.strictEqual(r.httpStatus, 200);
+  assert.strictEqual(r.body.alertStatus, 'WARNING'); // only ALLOW_ALL_ENABLED
+  assert.ok(!r.body.alerts.some(a => a.code === 'AFFECTED_REAL_PLAN_DRIFT'));
 });
 test('6. response body exposes the required fields', () => {
   const { body } = cronMonitorResult({ unexpectedMutationsOutsideAllowlist: 0, duplicateIdempotencyKeys: 0, failedMutationRequests: 0, affectedRealPlanStatus: REAL }, { MENTOR_V2_MUTATION_ALLOW_ALL: true, MENTOR_DAILY_ROLLOVER_V2: false, MENTOR_PENDING_LIFECYCLE_V2: false });
