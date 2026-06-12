@@ -28,7 +28,8 @@
     "test:mentor-v2-complete": "node scripts/test-mentor-v2-complete.js",
     "test:mentor-route-readiness": "node scripts/test-mentor-route-readiness.js",
     "test:mentor-monitor-alerts": "node scripts/test-mentor-monitor-alerts.js",
-    "test:mentor-allow-all": "node scripts/test-mentor-allow-all.js"
+    "test:mentor-allow-all": "node scripts/test-mentor-allow-all.js",
+    "test:mentor-monitor-workflow": "node scripts/test-mentor-monitor-workflow.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

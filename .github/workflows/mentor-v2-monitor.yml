@@ -1,0 +1,48 @@
+name: Mentor V2 Production Monitor
+
+# Read-only guardrail check for the Mentor Repository V2 rollout.
+# Runs `npm run mentor:v2-monitor`, which performs ONLY Google Sheets reads and
+# exits 2 on CRITICAL (fails this job). The expected ALLOW_ALL_ENABLED WARNING
+# (exit 0) does NOT fail the job. No writes, no mutations, no deploy.
+
+on:
+  schedule:
+    # every 6 hours
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Mentor V2 monitor (read-only; exits 2 on CRITICAL)
+        env:
+          # --- Google Sheets read access (actual names used by lib/sheets.js) ---
+          GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+          # --- mutation scope (mirror production) ---
+          MENTOR_MUTATION_IDEMPOTENCY_V2: "true"
+          MENTOR_SHEETS_MUTATIONS_V2: "true"
+          MENTOR_TASK_MUTATIONS_V2: "true"
+          MENTOR_V2_MUTATION_ALLOW_ALL: "true"
+          MENTOR_V2_MUTATION_ALLOWED_USER_HASHES: ${{ secrets.MENTOR_V2_MUTATION_ALLOWED_USER_HASHES }}
+          # --- write flags MUST stay off ---
+          MENTOR_DAILY_ROLLOVER_V2: "false"
+          MENTOR_PENDING_LIFECYCLE_V2: "false"
+        run: npm run mentor:v2-monitor
