@@ -13,8 +13,11 @@ import { getUserAttemptAnswers } from '@/lib/historyData';
 import { generateTodaysPlan } from '@/lib/mentorPlanEngine';
 import { getMentorDayMessage } from '@/lib/mentorCopy';
 import { createSheetsMentorRepository, runMentorShadowComparison } from '@/lib/mentor/repository';
-import { isMentorRepoV2Enabled, isMentorCanonicalDayReadEnabled, isMentorDailyRolloverV2Enabled, isMentorPendingLifecycleV2Enabled } from '@/lib/mentor/repository/featureFlags';
+import { isMentorRepoV2Enabled, isMentorCanonicalDayReadEnabled, isMentorDailyRolloverV2Enabled, isMentorPendingLifecycleV2Enabled, isMentorDailyRolloverUserAllowed } from '@/lib/mentor/repository/featureFlags';
 import { processDailyRollover } from '@/lib/mentor/services/dailyRolloverService';
+import { executeDailyRolloverWrite } from '@/lib/mentor/services/rolloverWriteExecutor';
+import { userScopeFromIdentity } from '@/lib/mentor/services/taskMutationService';
+import { createSheetsMutationRepository, createSheetsIdempotencyStore, createSheetsPlanWriter } from '@/lib/mentor/repository/sheetsMutationRepository';
 import { applyRepoV2Compatibility } from '@/lib/mentor/read/serveCompatibleSnapshot';
 
 function normalizeSubjectId(subjectId) {
@@ -237,19 +240,38 @@ async function handler(req, res) {
       ).catch(() => {});
     }
     if (isMentorDailyRolloverV2Enabled() || isMentorPendingLifecycleV2Enabled()) {
+      // Phase 10C: real user scope hash (no full email in keys/logs/monitor).
+      const userScope = userScopeFromIdentity({ email: session.user.email });
       const repo = createSheetsMentorRepository();
       repo.getMentorSnapshotData({ email: session.user.email })
-        .then(canonical => processDailyRollover({
-          userScope: canonical.profile?.email ? 'authenticated' : 'unknown',
-          activePlan: canonical.activePlan,
-          repositorySnapshot: canonical,
-          currentServerTime: canonical.serverGeneratedAt,
-          idempotencyStore: {
-            get: async () => null,
-            save: async () => {},
-          },
-        }))
-        .then(result => {
+        .then(async canonical => {
+          // WRITE path — gated by the rollover master flag + rollover cohort. Default OFF
+          // (isMentorDailyRolloverUserAllowed returns false unless MENTOR_DAILY_ROLLOVER_V2
+          // is true AND the user is allow-all/allowlisted), so this branch is dead until
+          // a controlled enablement phase.
+          if (isMentorDailyRolloverUserAllowed(userScope)) {
+            const sheets = await getSheetsClient();
+            const result = await executeDailyRolloverWrite({
+              snapshot: canonical,
+              userScope,
+              activePlan: canonical.activePlan,
+              now: canonical.serverGeneratedAt,
+              mutationRepository: createSheetsMutationRepository({ sheets, email: session.user.email }),
+              idempotencyStore: createSheetsIdempotencyStore({ sheets, email: session.user.email }),
+              planWriter: createSheetsPlanWriter({ sheets, email: session.user.email }),
+              totalPlanDays: canonical.totalPlanDays,
+            });
+            console.log('[mentor-rollover-write]', { ok: result.ok, code: result.code, idempotent: result.idempotent, rolloverRequired: result.rolloverRequired, applied: result.appliedCount, finalDay: result.finalDay, diagnostics: result.diagnostics });
+            return;
+          }
+          // SHADOW path — compute only, log-only, no-op store (no writes).
+          const result = await processDailyRollover({
+            userScope,
+            activePlan: canonical.activePlan,
+            repositorySnapshot: canonical,
+            currentServerTime: canonical.serverGeneratedAt,
+            idempotencyStore: { get: async () => null, save: async () => {} },
+          });
           if (!result?.ok) return;
           console.log('[mentor-rollover-shadow]', {
             calendarDay: result.calendarDay,
