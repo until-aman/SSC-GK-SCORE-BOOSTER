@@ -109,6 +109,32 @@ Healthy baseline (allowlist mode) = `ALERT STATUS: OK`, all guardrails 0, real p
 In allow-all mode the healthy baseline is `ALERT STATUS: WARNING` with only `ALLOW_ALL_ENABLED`.
 The monitor prints `Mutation scope: allowAll=<bool> allowlistSize=<n>` and reports `mutationAllowAll`.
 
+## 5a. Scheduled monitor / alerting (GitHub Actions)
+
+- **Workflow:** `.github/workflows/mentor-v2-monitor.yml`
+- **Schedule:** every 6 hours (`cron: "0 */6 * * *"`) + manual **`workflow_dispatch`** (Actions tab → "Mentor V2 Production Monitor" → Run workflow).
+- **What it runs:** `npm run mentor:v2-monitor` — read-only, no writes/mutations/deploy. `permissions: contents: read`.
+- **Pass/fail:** the job fails **only** when the monitor exits non-zero, i.e. **CRITICAL**. The expected `ALLOW_ALL_ENABLED` **WARNING is exit 0** and does **not** fail the job.
+- **Expected healthy result (allow-all on):** `ALERT STATUS: WARNING`, alert `ALLOW_ALL_ENABLED`, no CRITICAL, `mutationAllowAll=true`, guardrails 0/0/0, real plan `{completed:5, snoozed:10}`.
+- **What FAILS the job (CRITICAL → red run):**
+  - `unexpectedMutationsOutsideAllowlist > 0` **while allow-all is off**,
+  - `duplicateIdempotencyKeys > 0`,
+  - `failedMutationRequests ≥ 3`,
+  - affected real plan drift from `{completed:5, snoozed:10}`,
+  - `MENTOR_DAILY_ROLLOVER_V2` or `MENTOR_PENDING_LIFECYCLE_V2` = `true`.
+
+**Required GitHub repo Secrets** (Settings → Secrets and variables → Actions). Names match the app's actual env (`lib/sheets.js`):
+
+| Secret | Value |
+|---|---|
+| `GOOGLE_SERVICE_ACCOUNT_KEY` | the service-account JSON (same as Vercel) |
+| `GOOGLE_SHEET_ID` | the production Sheet id |
+| `MENTOR_V2_MUTATION_ALLOWED_USER_HASHES` | current allowlist value (or blank — ignored while allow-all is on) |
+
+The workflow hard-codes the mutation/scope flags (`MENTOR_*_V2=true`, allow-all `true`, rollover/pending `false`) to mirror production, so only the two Google secrets + the allowlist need to be set. **Add no write-capable secrets.**
+
+**If the scheduled job goes CRITICAL (red):** open the run log to see the alert code, then apply the matching rollback from §4 (e.g. `unexpectedMutationsOutsideAllowlist>0` with allow-all off → check the allowlist; a real-plan drift or a rollover/pending flag true → disable mutations via `MENTOR_TASK_MUTATIONS_V2=false` and investigate; restore the `.xlsx` backup if data changed). Re-run via `workflow_dispatch` to confirm green.
+
 ## 6. Cohort expansion procedure
 
 1. Confirm monitor `ALERT STATUS: OK` and the latest report is clean.
