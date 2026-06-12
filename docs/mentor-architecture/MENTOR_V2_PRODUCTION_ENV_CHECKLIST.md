@@ -21,19 +21,35 @@ MENTOR_CANONICAL_DAY_READ=true
 MENTOR_REPO_V2_SHADOW=true
 MENTOR_TASK_STATE_MACHINE_V2=true
 
-# Mutation path — scoped to the allowlist
+# Mutation path — enable the three flags, then choose the scope (allowlist vs allow-all)
 MENTOR_MUTATION_IDEMPOTENCY_V2=true
 MENTOR_SHEETS_MUTATIONS_V2=true
 MENTOR_TASK_MUTATIONS_V2=true
-MENTOR_V2_MUTATION_ALLOWED_USER_HASHES=<comma-separated approved u_ hashes>   # currently: u_1d929728f3beaa74
+
+# Mutation scope (pick ONE mode — see "Mutation scope modes" below)
+MENTOR_V2_MUTATION_ALLOW_ALL=false                                           # true = ALL authenticated users
+MENTOR_V2_MUTATION_ALLOWED_USER_HASHES=<comma-separated approved u_ hashes>   # used only when allow-all is false; currently: u_1d929728f3beaa74
 
 # MUST stay OFF (unset or false) until a dedicated controlled phase
 MENTOR_DAILY_ROLLOVER_V2=false
 MENTOR_PENDING_LIFECYCLE_V2=false
 ```
 
-User scope hashes are `u_<sha256(lowercased email).slice(0,16)>`. Only listed hashes route
-mutations through V2; everyone else stays on the legacy write path.
+User scope hashes are `u_<sha256(lowercased email).slice(0,16)>`. Full emails are never
+required or logged. The mutation routes (`/api/mentor/task-action` for snooze/resume,
+`/api/mentor/quiz-return` for quiz_sync complete) all consult the same user gate; manual
+`complete` is **never** V2 regardless of these flags.
+
+### Mutation scope modes (`isMentorV2MutationUserAllowed`)
+
+| Mode | Config | Who routes to V2 |
+|---|---|---|
+| **Allow-all** | `MENTOR_V2_MUTATION_ALLOW_ALL=true` (exact string) | **every authenticated user** (allowlist ignored) |
+| **Allowlist** | allow-all unset/false + `MENTOR_V2_MUTATION_ALLOWED_USER_HASHES` non-empty | only the listed `u_` hashes |
+| **Fail-closed** | allow-all unset/false + empty allowlist | nobody → legacy write path |
+
+`MENTOR_V2_MUTATION_ALLOW_ALL` is true **only** when the value is exactly `true`; any other
+value (unset / blank / `TRUE` / `1` / `false`) means false (fail-closed default).
 
 ## 2. `MENTOR_REPO_V2` (global read overlay) — choose deliberately
 
@@ -61,9 +77,11 @@ MENTOR_REPO_V2=true
 
 ## 4. Disable / rollback paths (fastest first)
 
-1. **Stop all V2 mutations instantly** — clear `MENTOR_V2_MUTATION_ALLOWED_USER_HASHES`
-   (empty ⇒ fail-closed, nobody routes to V2) **or** set `MENTOR_TASK_MUTATIONS_V2=false`.
-   Then **Redeploy**. Reads are unaffected.
+1. **Stop all V2 mutations instantly** — set `MENTOR_V2_MUTATION_ALLOW_ALL=false` **and**
+   clear `MENTOR_V2_MUTATION_ALLOWED_USER_HASHES` (⇒ fail-closed, nobody routes to V2),
+   **or** simply set `MENTOR_TASK_MUTATIONS_V2=false`. Then **Redeploy**. Reads unaffected.
+   - To revert from **allow-all back to the allowlist** without disabling V2: set
+     `MENTOR_V2_MUTATION_ALLOW_ALL=false` (the allowlist takes over), Redeploy.
 2. **Revert reads to legacy for all users** — set `MENTOR_REPO_V2=false`, Redeploy.
 3. **Full revert** — set all `MENTOR_*_V2` to false (or use Vercel **Instant Rollback**
    to the previous Production deployment). Behaviour returns to 100% legacy.
@@ -80,13 +98,16 @@ CRITICAL** (so it can gate a cron/CI alert).
 
 | Signal | Threshold | Severity |
 |---|---|---|
-| `unexpectedMutationsOutsideAllowlist` | `> 0` | **CRITICAL** — a non-allowlisted scope mutated |
+| `MENTOR_V2_MUTATION_ALLOW_ALL` | `true` | **WARNING** — V2 mutations enabled for all authenticated users (deliberate, visible) |
+| `unexpectedMutationsOutsideAllowlist` | `> 0` **and** allow-all is `false` | **CRITICAL** — a non-allowlisted scope mutated (suppressed when allow-all is on, since that's expected) |
 | `duplicateIdempotencyKeys` | `> 0` | **CRITICAL** — possible double-write |
 | `failedMutationRequests` | `1–2` / `≥3` | **WARNING / CRITICAL** |
 | `affectedRealPlanStatus` (`MP_1780920810055`) | `≠ {completed:5, snoozed:10}` | **CRITICAL** — a real-user plan changed |
 | `MENTOR_DAILY_ROLLOVER_V2` / `MENTOR_PENDING_LIFECYCLE_V2` | `true` | **CRITICAL** — write flag enabled before its phase |
 
-Healthy baseline = `ALERT STATUS: OK`, all guardrails 0, real plan unchanged.
+Healthy baseline (allowlist mode) = `ALERT STATUS: OK`, all guardrails 0, real plan unchanged.
+In allow-all mode the healthy baseline is `ALERT STATUS: WARNING` with only `ALLOW_ALL_ENABLED`.
+The monitor prints `Mutation scope: allowAll=<bool> allowlistSize=<n>` and reports `mutationAllowAll`.
 
 ## 6. Cohort expansion procedure
 

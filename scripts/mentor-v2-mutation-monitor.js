@@ -13,15 +13,17 @@ const JSON_ONLY = process.argv.includes('--json');
   const sheets = await getSheetsClient();
   const allowedUserHashes = flags.getV2MutationAllowedUserHashes();
   const audit = await auditV2Mutations(sheets, { allowedUserHashes });
+  const mutationAllowAll = flags.isMentorV2MutationAllowAllEnabled();
   const flagState = {
     MENTOR_TASK_MUTATIONS_V2: flags.isMentorTaskMutationsV2Enabled(),
     MENTOR_SHEETS_MUTATIONS_V2: flags.isMentorSheetsMutationsV2Enabled(),
     MENTOR_MUTATION_IDEMPOTENCY_V2: flags.isMentorMutationIdempotencyV2Enabled(),
+    MENTOR_V2_MUTATION_ALLOW_ALL: mutationAllowAll,
     MENTOR_DAILY_ROLLOVER_V2: flags.isMentorDailyRolloverV2Enabled(),
     MENTOR_PENDING_LIFECYCLE_V2: flags.isMentorPendingLifecycleV2Enabled(),
   };
   const { status, alerts } = evaluateMonitorAlerts(audit, { flags: flagState });
-  const out = { alertStatus: status, alerts, ...audit, allowlistSize: allowedUserHashes.length, flags: flagState };
+  const out = { alertStatus: status, alerts, mutationAllowAll, ...audit, allowlistSize: allowedUserHashes.length, flags: flagState };
 
   if (JSON_ONLY) { console.log(JSON.stringify(out, null, 2)); if (status === 'CRITICAL') process.exitCode = 2; return; }
 
@@ -34,7 +36,7 @@ const JSON_ONLY = process.argv.includes('--json');
   console.log(`Canonical events: POSTPONE ${audit.canonicalPostponeEvents} / RESUME ${audit.canonicalResumeEvents} / COMPLETE ${audit.canonicalCompleteEvents}`);
   console.log(`Guardrails: unexpectedOutsideAllowlist=${audit.unexpectedMutationsOutsideAllowlist}  duplicateIdempotencyKeys=${audit.duplicateIdempotencyKeys}  failed=${audit.failedMutationRequests}`);
   console.log(`Affected real plan (${audit.affectedRealPlanId}): ${JSON.stringify(audit.affectedRealPlanStatus)}  (expected {completed:5, snoozed:10})`);
-  console.log(`Allowlist size: ${allowedUserHashes.length}  |  rollover/pending write flags: ${flagState.MENTOR_DAILY_ROLLOVER_V2}/${flagState.MENTOR_PENDING_LIFECYCLE_V2}`);
+  console.log(`Mutation scope: allowAll=${mutationAllowAll}  allowlistSize=${allowedUserHashes.length}  |  rollover/pending write flags: ${flagState.MENTOR_DAILY_ROLLOVER_V2}/${flagState.MENTOR_PENDING_LIFECYCLE_V2}`);
   console.log(`\n--- full audit JSON ---`);
   console.log(JSON.stringify(out, null, 2));
 
