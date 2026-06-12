@@ -27,6 +27,8 @@ export default async function handler(req, res) {
       MENTOR_MUTATION_IDEMPOTENCY_V2: flags.isMentorMutationIdempotencyV2Enabled(),
       MENTOR_V2_MUTATION_ALLOW_ALL: flags.isMentorV2MutationAllowAllEnabled(),
       MENTOR_DAILY_ROLLOVER_V2: flags.isMentorDailyRolloverV2Enabled(),
+      MENTOR_DAILY_ROLLOVER_ALLOW_ALL: flags.isMentorDailyRolloverAllowAllEnabled(),
+      rolloverAllowlistCount: flags.getDailyRolloverAllowedUserHashes().length,
       MENTOR_PENDING_LIFECYCLE_V2: flags.isMentorPendingLifecycleV2Enabled(),
     };
     const { httpStatus, body } = cronMonitorResult(audit, flagState);

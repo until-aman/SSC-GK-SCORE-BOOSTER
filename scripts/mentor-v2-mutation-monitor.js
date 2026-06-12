@@ -14,12 +14,15 @@ const JSON_ONLY = process.argv.includes('--json');
   const allowedUserHashes = flags.getV2MutationAllowedUserHashes();
   const audit = await auditV2Mutations(sheets, { allowedUserHashes });
   const mutationAllowAll = flags.isMentorV2MutationAllowAllEnabled();
+  const rolloverAllowlist = flags.getDailyRolloverAllowedUserHashes();
   const flagState = {
     MENTOR_TASK_MUTATIONS_V2: flags.isMentorTaskMutationsV2Enabled(),
     MENTOR_SHEETS_MUTATIONS_V2: flags.isMentorSheetsMutationsV2Enabled(),
     MENTOR_MUTATION_IDEMPOTENCY_V2: flags.isMentorMutationIdempotencyV2Enabled(),
     MENTOR_V2_MUTATION_ALLOW_ALL: mutationAllowAll,
     MENTOR_DAILY_ROLLOVER_V2: flags.isMentorDailyRolloverV2Enabled(),
+    MENTOR_DAILY_ROLLOVER_ALLOW_ALL: flags.isMentorDailyRolloverAllowAllEnabled(),
+    rolloverAllowlistCount: rolloverAllowlist.length,
     MENTOR_PENDING_LIFECYCLE_V2: flags.isMentorPendingLifecycleV2Enabled(),
   };
   const { status, alerts } = evaluateMonitorAlerts(audit, { flags: flagState });
@@ -37,6 +40,11 @@ const JSON_ONLY = process.argv.includes('--json');
   console.log(`Guardrails: unexpectedOutsideAllowlist=${audit.unexpectedMutationsOutsideAllowlist}  duplicateIdempotencyKeys=${audit.duplicateIdempotencyKeys}  failed=${audit.failedMutationRequests}`);
   console.log(`Affected real plan (${audit.affectedRealPlanId}): ${JSON.stringify(audit.affectedRealPlanStatus)}  (expected {completed:5, snoozed:10})`);
   console.log(`Mutation scope: allowAll=${mutationAllowAll}  allowlistSize=${allowedUserHashes.length}  |  rollover/pending write flags: ${flagState.MENTOR_DAILY_ROLLOVER_V2}/${flagState.MENTOR_PENDING_LIFECYCLE_V2}`);
+  console.log(`Rollover:`);
+  console.log(`  dailyRolloverFlagEnabled=${flagState.MENTOR_DAILY_ROLLOVER_V2}  rolloverAllowAllEnabled=${flagState.MENTOR_DAILY_ROLLOVER_ALLOW_ALL}  rolloverAllowlistedUsersCount=${rolloverAllowlist.length}`);
+  console.log(`  rolloverMutationRequestCount=${audit.rolloverMutationRequestCount}  duplicateRolloverIdempotencyKeys=${audit.duplicateRolloverIdempotencyKeys}  failedRolloverMutationRequests=${audit.failedRolloverMutationRequests}`);
+  console.log(`  tasksMovedToPendingByRollover=${audit.tasksMovedToPendingByRollover}  quickChecksIncorrectlyPendingByRollover=${audit.quickChecksIncorrectlyPendingByRollover}  activeTaskCountOverLimit=${audit.activeTaskCountOverLimit}`);
+  console.log(`  maxPendingBacklogByPlan=${audit.maxPendingBacklogByPlan}  rolloverPlansMissingLastProcessedCalendarDay=${audit.rolloverPlansMissingLastProcessedCalendarDay}`);
   console.log(`\n--- full audit JSON ---`);
   console.log(JSON.stringify(out, null, 2));
 

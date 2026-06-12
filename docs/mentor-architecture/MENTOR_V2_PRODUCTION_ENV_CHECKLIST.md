@@ -103,11 +103,47 @@ CRITICAL** (so it can gate a cron/CI alert).
 | `duplicateIdempotencyKeys` | `> 0` | **CRITICAL** — possible double-write |
 | `failedMutationRequests` | `1–2` / `≥3` | **WARNING / CRITICAL** |
 | `affectedRealPlanStatus` (`MP_1780920810055`) | growth = informational · `completed < 5` = **CRITICAL** (data loss) · `snoozed < 10` = **WARNING** | After global rollout this is **informational** — real users legitimately grow their plans (new generations / active tasks). Only a **drop below the historical floor** `{completed:5, snoozed:10}` alerts. (The old exact-count drift CRITICAL was a rollout canary, retired once real-user Mentor activity began.) |
-| `MENTOR_DAILY_ROLLOVER_V2` / `MENTOR_PENDING_LIFECYCLE_V2` | `true` | **CRITICAL** — write flag enabled before its phase |
+| `MENTOR_PENDING_LIFECYCLE_V2` | `true` | **CRITICAL** — write flag enabled before its phase |
 
 Healthy baseline (allowlist mode) = `ALERT STATUS: OK`, all guardrails 0, real plan unchanged.
 In allow-all mode the healthy baseline is `ALERT STATUS: WARNING` with only `ALLOW_ALL_ENABLED`.
 The monitor prints `Mutation scope: allowAll=<bool> allowlistSize=<n>` and reports `mutationAllowAll`.
+
+### 5b. Daily-rollover guardrails (Phase 10E)
+
+The monitor is now **rollover-aware**. `MENTOR_DAILY_ROLLOVER_V2=true` is **no longer auto-CRITICAL** just for being on — it is judged by rollout stage, and real rollover anomalies are detected from existing sheets (read-only). The monitor prints a `Rollover:` block (flags + counters).
+
+**Rollover flag behavior**
+
+| Config | Severity / code |
+|---|---|
+| `MENTOR_DAILY_ROLLOVER_V2` off/unset | OK (no rollover alert) |
+| `MENTOR_DAILY_ROLLOVER_V2=true` **+** `MENTOR_DAILY_ROLLOVER_ALLOWED_USER_HASHES` non-empty **+** allow-all off | **WARNING** `DAILY_ROLLOVER_PILOT_ENABLED` — the expected **Phase 10D narrow pilot** state |
+| `MENTOR_DAILY_ROLLOVER_V2=true` with **no** allowlist and **no** allow-all | **CRITICAL** `DAILY_ROLLOVER_FLAG_NO_COHORT` — flag on, nobody eligible (misconfig) |
+| `MENTOR_DAILY_ROLLOVER_ALLOW_ALL=true` | **CRITICAL** `DAILY_ROLLOVER_ALLOW_ALL_ENABLED` — rollover is **forbidden for all users** until after the controlled pilot |
+| `MENTOR_PENDING_LIFECYCLE_V2=true` | **CRITICAL** `PENDING_LIFECYCLE_WRITE_ENABLED` — must stay off |
+
+> The rollover allowlist (`MENTOR_DAILY_ROLLOVER_ALLOWED_USER_HASHES`) is **separate** from the action-mutation allowlist, and `MENTOR_DAILY_ROLLOVER_ALLOW_ALL` is **not** reused from the action `MENTOR_V2_MUTATION_ALLOW_ALL`. Rollover allow-all stays CRITICAL even while action allow-all is the deliberate WARNING.
+
+**Rollover anomaly alerts (data-driven, no flag required)**
+
+| Counter | Threshold | Severity |
+|---|---|---|
+| `duplicateRolloverIdempotencyKeys` | `> 0` | **CRITICAL** — possible double rollover |
+| `failedRolloverMutationRequests` | `≥ 1` | **CRITICAL** |
+| `quickChecksIncorrectlyPendingByRollover` | `> 0` | **CRITICAL** — quick checks must never become pending |
+| `activeTaskCountOverLimit` | `> 0` | **CRITICAL** — a rollover-processed plan exceeds 3 active tasks |
+| `maxPendingBacklogByPlan` | `> 25` | **WARNING** — backlog unusually high |
+| `tasksMovedToPendingByRollover` | `> 50` | **WARNING** — rollover pending volume unusually high |
+| `rolloverPlansMissingLastProcessedCalendarDay` | `> 0` (with rollover events present) | **WARNING** — day-marker not written after rollover |
+
+> **False-positive guard (Phase 9M3 lesson, reapplied):** `activeTaskCountOverLimit` and `quickChecksIncorrectlyPendingByRollover` are scoped to **plans rollover actually processed** (plans with `daily_rollover` events or a `mentor-rollover:*` idempotency row). A plan the **normal generator** created with >3 active tasks is *not* a rollover anomaly and does **not** alert. Pre-pilot (no rollover has run) these counters are **0**.
+
+**Expected monitor state — BEFORE Phase 10D** (rollover flags off):
+`dailyRolloverFlagEnabled=false`, `rolloverAllowAllEnabled=false`, `rolloverAllowlistedUsersCount=0`, `rolloverMutationRequestCount=0`, `duplicateRolloverIdempotencyKeys=0`, `failedRolloverMutationRequests=0`, `tasksMovedToPendingByRollover=0`, `quickChecksIncorrectlyPendingByRollover=0`, `activeTaskCountOverLimit=0`. No rollover alert (overall status driven only by the existing mutation guardrails — `WARNING ALLOW_ALL_ENABLED` in allow-all mode).
+
+**Expected monitor state — DURING Phase 10D pilot** (`MENTOR_DAILY_ROLLOVER_V2=true` + one allowlisted test user, allow-all off):
+`WARNING DAILY_ROLLOVER_PILOT_ENABLED`, `rolloverAllowlistedUsersCount=1`, anomaly counters all `0`, `rolloverPlansMissingLastProcessedCalendarDay=0` after the day-marker writes. Any CRITICAL rollover code ⇒ stop and apply §4 rollback (set `MENTOR_DAILY_ROLLOVER_V2=false`).
 
 ## 5a. Scheduled monitor / alerting (Vercel Cron — Phase 9M2)
 
