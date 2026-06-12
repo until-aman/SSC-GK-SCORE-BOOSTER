@@ -26,7 +26,8 @@
     "test:mentor-pending-ui": "node scripts/test-mentor-pending-ui.js",
     "test:mentor-v2-complete-design": "node scripts/test-mentor-v2-complete-design.js",
     "test:mentor-v2-complete": "node scripts/test-mentor-v2-complete.js",
-    "test:mentor-route-readiness": "node scripts/test-mentor-route-readiness.js"
+    "test:mentor-route-readiness": "node scripts/test-mentor-route-readiness.js",
+    "test:mentor-monitor-alerts": "node scripts/test-mentor-monitor-alerts.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
