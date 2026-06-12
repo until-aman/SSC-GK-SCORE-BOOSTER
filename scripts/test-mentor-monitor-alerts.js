@@ -10,10 +10,13 @@ const assert = require('assert');
 const { auditV2Mutations, evaluateMonitorAlerts, EXPECTED_AFFECTED_REAL_PLAN } = require('../lib/mentor/read/v2MutationMonitor');
 
 const MR_H = ['IdempotencyKey', 'UserScopeHash', 'PlanId', 'TaskId', 'Action', 'Status'];
-const LOG_H = ['CanonicalAction', 'TaskId'];
-const TASK_H = ['TaskId', 'PlanId', 'Status', 'PendingReason', 'MovedToPendingAt', 'RowVersion', 'CompletionSource'];
+const LOG_H = ['CanonicalAction', 'TaskId', 'SourcePage', 'ToStatus', 'IdempotencyKey', 'PlanId'];
+// `Type` appended LAST so existing 7-field task fixtures stay valid (missing => '').
+const TASK_H = ['TaskId', 'PlanId', 'Status', 'PendingReason', 'MovedToPendingAt', 'RowVersion', 'CompletionSource', 'Type'];
+const PLAN_H = ['PlanId', 'LastProcessedCalendarDay'];
 const REAL = 'MP_1780920810055';
 const key = (scope, action, op) => `mentor-task:${scope}:P:T:${action}:${op}`;
+const rKey = (scope, plan, day) => `mentor-rollover:${scope}:${plan}:${day}`;
 
 // Read-only fake sheets — writes THROW so any accidental write fails the test.
 function fakeSheets(tabs) {
@@ -23,8 +26,8 @@ function fakeSheets(tabs) {
     async append() { throw new Error('WRITE attempted (append)'); },
   } } };
 }
-function tabs({ mr = [], logs = [], tasks = [] } = {}) {
-  return { MentorMutationRequests: [MR_H, ...mr], MentorTaskLogs: [LOG_H, ...logs], MentorTasks: [TASK_H, ...tasks] };
+function tabs({ mr = [], logs = [], tasks = [], plans = [] } = {}) {
+  return { MentorMutationRequests: [MR_H, ...mr], MentorTaskLogs: [LOG_H, ...logs], MentorTasks: [TASK_H, ...tasks], MentorPlans: [PLAN_H, ...plans] };
 }
 
 let passed = 0, failed = 0; const T = []; const test = (n, fn) => T.push({ n, fn });
@@ -105,6 +108,129 @@ test('8. clean steady-state -> OK (no alerts)', () => {
   const r = evaluateMonitorAlerts({ unexpectedMutationsOutsideAllowlist: 0, duplicateIdempotencyKeys: 0, failedMutationRequests: 0, affectedRealPlanStatus: { ...EXPECTED_AFFECTED_REAL_PLAN }, affectedRealPlanId: REAL }, { flags: { MENTOR_DAILY_ROLLOVER_V2: false, MENTOR_PENDING_LIFECYCLE_V2: false } });
   assert.strictEqual(r.status, 'OK');
   assert.strictEqual(r.alerts.length, 0);
+});
+
+// ── Phase 10E: daily-rollover monitor guardrails ──────────────────────────────
+const cleanBase = { affectedRealPlanStatus: { completed: 5, snoozed: 10 } };
+
+test('R1. rollover flag OFF => no rollover alert (OK)', () => {
+  const r = evaluateMonitorAlerts(cleanBase, { flags: { MENTOR_DAILY_ROLLOVER_V2: false } });
+  assert.strictEqual(r.status, 'OK');
+  assert.ok(!r.alerts.some(a => /ROLLOVER/.test(a.code)));
+});
+test('R2. rollover flag ON + allowlisted cohort => WARNING only (not CRITICAL)', () => {
+  const r = evaluateMonitorAlerts(cleanBase, { flags: { MENTOR_DAILY_ROLLOVER_V2: true, rolloverAllowlistCount: 1 } });
+  assert.strictEqual(r.status, 'WARNING');
+  assert.ok(r.alerts.some(a => a.code === 'DAILY_ROLLOVER_PILOT_ENABLED'));
+  assert.ok(!r.alerts.some(a => a.level === 'CRITICAL'));
+});
+test('R3. rollover flag ON + no cohort => CRITICAL (flag on, nobody eligible)', () => {
+  const r = evaluateMonitorAlerts(cleanBase, { flags: { MENTOR_DAILY_ROLLOVER_V2: true, rolloverAllowlistCount: 0 } });
+  assert.strictEqual(r.status, 'CRITICAL');
+  assert.ok(r.alerts.some(a => a.code === 'DAILY_ROLLOVER_FLAG_NO_COHORT'));
+});
+test('R4. rollover allow-all TRUE => CRITICAL', () => {
+  const r = evaluateMonitorAlerts(cleanBase, { flags: { MENTOR_DAILY_ROLLOVER_V2: true, MENTOR_DAILY_ROLLOVER_ALLOW_ALL: true, rolloverAllowlistCount: 5 } });
+  assert.strictEqual(r.status, 'CRITICAL');
+  assert.ok(r.alerts.some(a => a.code === 'DAILY_ROLLOVER_ALLOW_ALL_ENABLED'));
+});
+test('R5. duplicate rollover idempotency key => CRITICAL (audit-derived)', async () => {
+  const dup = rKey('u_a', 'P1', '3');
+  const audit = await auditV2Mutations(fakeSheets(tabs({ mr: [
+    [dup, 'u_a', 'P1', '', 'ROLLOVER', 'completed'],
+    [dup, 'u_a', 'P1', '', 'ROLLOVER', 'completed'],
+  ] })), { allowedUserHashes: [] });
+  assert.strictEqual(audit.duplicateRolloverIdempotencyKeys, 1);
+  const r = evaluateMonitorAlerts(audit);
+  assert.strictEqual(r.status, 'CRITICAL');
+  assert.ok(r.alerts.some(a => a.code === 'DUPLICATE_ROLLOVER_IDEMPOTENCY_KEYS'));
+});
+test('R6. failed rollover mutation request => CRITICAL', async () => {
+  const audit = await auditV2Mutations(fakeSheets(tabs({ mr: [[rKey('u_a', 'P1', '3'), 'u_a', 'P1', '', 'ROLLOVER', 'failed']] })), { allowedUserHashes: [] });
+  assert.strictEqual(audit.failedRolloverMutationRequests, 1);
+  const r = evaluateMonitorAlerts(audit);
+  assert.strictEqual(r.status, 'CRITICAL');
+  assert.ok(r.alerts.some(a => a.code === 'FAILED_ROLLOVER_MUTATIONS'));
+});
+const rolloverLog = (plan) => ['POSTPONE', `${plan}-t`, 'daily_rollover', 'pending', rKey('u_a', plan, '2'), plan];
+test('R7. quick-check pending by rollover evidence (on a rollover-processed plan) => CRITICAL', async () => {
+  // coverage_check moved to pending with day_ended_incomplete — must never happen.
+  const audit = await auditV2Mutations(fakeSheets(tabs({
+    tasks: [['QC1', 'P1', 'pending', 'day_ended_incomplete', '2026-06-12T06:00:00Z', '2', '', 'coverage_check']],
+    logs: [rolloverLog('P1')],
+  })), { allowedUserHashes: [] });
+  assert.strictEqual(audit.quickChecksIncorrectlyPendingByRollover, 1);
+  const r = evaluateMonitorAlerts(audit);
+  assert.strictEqual(r.status, 'CRITICAL');
+  assert.ok(r.alerts.some(a => a.code === 'QUICK_CHECK_PENDING_ANOMALY'));
+});
+test('R7b. quick-check pending on a NON-rollover plan => no anomaly (scoped, avoids false positive)', async () => {
+  const audit = await auditV2Mutations(fakeSheets(tabs({
+    tasks: [['QC1', 'P9', 'pending', 'day_ended_incomplete', '2026-06-12T06:00:00Z', '2', '', 'coverage_check']],
+  })), { allowedUserHashes: [] });
+  assert.strictEqual(audit.quickChecksIncorrectlyPendingByRollover, 0);
+});
+test('R8. active task count > 3 on a rollover-processed plan => CRITICAL', async () => {
+  const taskRows = [];
+  for (let i = 0; i < 4; i++) taskRows.push([`AT${i}`, 'P1', 'active', '', '', '1', '', 'practice_task']);
+  const audit = await auditV2Mutations(fakeSheets(tabs({ tasks: taskRows, logs: [rolloverLog('P1')] })), { allowedUserHashes: [] });
+  assert.strictEqual(audit.activeTaskCountOverLimit, 1);
+  const r = evaluateMonitorAlerts(audit);
+  assert.strictEqual(r.status, 'CRITICAL');
+  assert.ok(r.alerts.some(a => a.code === 'ACTIVE_TASK_LIMIT_EXCEEDED'));
+});
+test('R8b. >3 active on a NON-rollover plan (normal generator output) => OK (Phase 9M3-style false-positive guard)', async () => {
+  const taskRows = [];
+  for (let i = 0; i < 5; i++) taskRows.push([`AT${i}`, 'P9', 'active', '', '', '1', '', 'practice_task']);
+  const audit = await auditV2Mutations(fakeSheets(tabs({ tasks: taskRows })), { allowedUserHashes: [] });
+  assert.strictEqual(audit.activeTaskCountOverLimit, 0);
+  assert.strictEqual(evaluateMonitorAlerts(audit).status, 'OK');
+});
+test('R9. successful rollover events but blank LastProcessedCalendarDay => WARNING', async () => {
+  const audit = await auditV2Mutations(fakeSheets(tabs({
+    logs: [['POSTPONE', 'T1', 'daily_rollover', 'pending', rKey('u_a', 'P1', '2'), 'P1']],
+    plans: [['P1', '']], // blank LastProcessedCalendarDay
+    mr: [[rKey('u_a', 'P1', '2'), 'u_a', 'P1', '', 'ROLLOVER', 'completed']],
+  })), { allowedUserHashes: [] });
+  assert.strictEqual(audit.rolloverTaskEventCount, 1);
+  assert.strictEqual(audit.rolloverPlansMissingLastProcessedCalendarDay, 1);
+  const r = evaluateMonitorAlerts(audit);
+  assert.strictEqual(r.status, 'WARNING');
+  assert.ok(r.alerts.some(a => a.code === 'ROLLOVER_LAST_PROCESSED_MISSING'));
+  // and when the column IS populated, no such warning
+  const audit2 = await auditV2Mutations(fakeSheets(tabs({
+    logs: [['POSTPONE', 'T1', 'daily_rollover', 'pending', rKey('u_a', 'P1', '2'), 'P1']],
+    plans: [['P1', '2']],
+  })), { allowedUserHashes: [] });
+  assert.strictEqual(audit2.rolloverPlansMissingLastProcessedCalendarDay, 0);
+});
+test('R10. pending lifecycle flag TRUE => CRITICAL', () => {
+  const r = evaluateMonitorAlerts(cleanBase, { flags: { MENTOR_PENDING_LIFECYCLE_V2: true } });
+  assert.strictEqual(r.status, 'CRITICAL');
+  assert.ok(r.alerts.some(a => a.code === 'PENDING_LIFECYCLE_WRITE_ENABLED'));
+});
+test('R11. existing action-mutation allow-all remains WARNING (not CRITICAL)', () => {
+  const r = evaluateMonitorAlerts(cleanBase, { flags: { MENTOR_V2_MUTATION_ALLOW_ALL: true } });
+  assert.strictEqual(r.status, 'WARNING');
+  assert.ok(r.alerts.some(a => a.code === 'ALLOW_ALL_ENABLED'));
+  assert.ok(!r.alerts.some(a => a.level === 'CRITICAL'));
+});
+test('R12. existing general duplicate/failed mutation alerts still fire', async () => {
+  const dup = key('u_a', 'POSTPONE', 'same');
+  const audit = await auditV2Mutations(fakeSheets(tabs({ mr: [
+    [dup, 'u_a', 'P', 'T', 'POSTPONE', 'completed'],
+    [dup, 'u_a', 'P', 'T', 'POSTPONE', 'completed'],
+    [key('u_a', 'RESUME', '9'), 'u_a', 'P', 'T', 'RESUME', 'failed'],
+  ] })), { allowedUserHashes: ['u_a'] });
+  assert.strictEqual(audit.duplicateIdempotencyKeys, 1);
+  assert.strictEqual(audit.failedMutationRequests, 1);
+  const r = evaluateMonitorAlerts(audit);
+  assert.strictEqual(r.status, 'CRITICAL'); // dup => CRITICAL
+  assert.ok(r.alerts.some(a => a.code === 'DUPLICATE_IDEMPOTENCY_KEYS'));
+  assert.ok(r.alerts.some(a => a.code === 'FAILED_MUTATIONS'));
+  // rollover counters must NOT false-fire on pure action-mutation data
+  assert.strictEqual(audit.rolloverMutationRequestCount, 0);
+  assert.ok(!r.alerts.some(a => /ROLLOVER/.test(a.code)));
 });
 
 (async () => { for (const t of T) { try { await t.fn(); passed++; console.log(`ok  ${t.n}`); } catch (e) { failed++; console.error(`FAIL ${t.n}\n     ${e.message}`); } } console.log(`\n${passed}/${T.length} Mentor monitor-alert tests passed.`); process.exit(failed ? 1 : 0); })();
