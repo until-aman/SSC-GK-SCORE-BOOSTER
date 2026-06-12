@@ -112,22 +112,23 @@ function GKFactCarousel({ subject, mode, accentColor = '#14B8A6', statusText }) 
     <div style={{
       height: '100vh', display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      padding: '0 22px', background: 'var(--bg-app)',
+      padding: '0 22px',
+      background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)',
       width: '100%', maxWidth: 480, margin: '0 auto',
     }}>
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 26 }}>
-        <p style={{ fontFamily: 'var(--font-display,inherit)', fontSize: 20, fontWeight: 800, color: '#F8FAFC', marginBottom: 6, lineHeight: 1.25 }}>
+        <p style={{ fontFamily: 'var(--font-display,inherit)', fontSize: 20, fontWeight: 800, color: 'var(--ssc-text-primary)', marginBottom: 6, lineHeight: 1.25 }}>
           {title}
         </p>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', lineHeight: 1.45 }}>
+        <p style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', lineHeight: 1.45 }}>
           {subtext}
         </p>
       </div>
 
       {/* Progress bar with glow */}
       <div style={{ width: '100%', marginBottom: 18 }}>
-        <div style={{ width: '100%', background: 'rgba(255,255,255,0.07)', borderRadius: 8, height: 7, overflow: 'visible', position: 'relative' }}>
+        <div style={{ width: '100%', background: 'var(--ssc-border-soft)', borderRadius: 8, height: 7, overflow: 'visible', position: 'relative' }}>
           <div style={{
             height: '100%', borderRadius: 8,
             background: `linear-gradient(90deg, ${accentColor}bb, ${accentColor})`,
@@ -137,7 +138,7 @@ function GKFactCarousel({ subject, mode, accentColor = '#14B8A6', statusText }) 
           }} />
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
+          <span style={{ fontSize: 12, color: 'var(--ssc-text-muted)' }}>
             {PROGRESS_STAGES[stageIdx]?.label ?? 'Starting quiz'}
           </span>
           <span style={{ fontSize: 12, color: accentColor, fontWeight: 700 }}>{pct}%</span>
@@ -146,8 +147,9 @@ function GKFactCarousel({ subject, mode, accentColor = '#14B8A6', statusText }) 
 
       {/* Stage checklist */}
       <div style={{
-        width: '100%', background: '#172D47', borderRadius: 16,
-        padding: '14px 16px', border: '1px solid rgba(255,255,255,0.08)',
+        width: '100%', background: 'var(--ssc-surface)', borderRadius: 16,
+        padding: '14px 16px', border: '1px solid var(--ssc-border-soft)',
+        boxShadow: 'var(--ssc-shadow-card)',
         marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 11,
       }}>
         {PROGRESS_STAGES.map((stage, i) => {
@@ -159,8 +161,8 @@ function GKFactCarousel({ subject, mode, accentColor = '#14B8A6', statusText }) 
               <div style={{
                 width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: done ? `${accentColor}22` : active ? `${accentColor}15` : 'rgba(255,255,255,0.04)',
-                border: `1.5px solid ${done ? accentColor + '55' : active ? accentColor : 'rgba(255,255,255,0.10)'}`,
+                background: done ? `${accentColor}18` : active ? `${accentColor}12` : 'var(--ssc-surface-soft)',
+                border: `1.5px solid ${done ? accentColor + '55' : active ? accentColor : 'var(--ssc-border-soft)'}`,
               }}>
                 {done ? (
                   <svg width="10" height="10" viewBox="0 0 10 10">
@@ -174,9 +176,9 @@ function GKFactCarousel({ subject, mode, accentColor = '#14B8A6', statusText }) 
               {/* Label */}
               <span style={{
                 fontSize: 13, fontWeight: active ? 600 : 400, flex: 1,
-                color: done ? 'rgba(255,255,255,0.28)' : active ? '#F1F5F9' : 'rgba(255,255,255,0.22)',
+                color: done ? 'var(--ssc-text-muted)' : active ? 'var(--ssc-text-primary)' : 'var(--ssc-text-muted)',
                 textDecoration: done ? 'line-through' : 'none',
-                textDecorationColor: 'rgba(255,255,255,0.18)',
+                textDecorationColor: 'var(--ssc-border-soft)',
               }}>
                 {stage.label}
               </span>
@@ -198,14 +200,15 @@ function GKFactCarousel({ subject, mode, accentColor = '#14B8A6', statusText }) 
 
       {/* Rotating tip card */}
       <div style={{
-        width: '100%', background: '#172D47', borderRadius: 16,
-        padding: '15px 18px', border: '1px solid rgba(255,255,255,0.08)',
+        width: '100%', background: 'var(--ssc-surface)', borderRadius: 16,
+        padding: '15px 18px', border: '1px solid var(--ssc-border-soft)',
+        boxShadow: 'var(--ssc-shadow-card)',
         marginBottom: 14, minHeight: 76,
       }}>
         <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: accentColor, marginBottom: 6 }}>
           {fact.label}
         </p>
-        <p style={{ fontSize: 14, color: '#CBD5E1', lineHeight: 1.6, fontWeight: 500 }}>
+        <p style={{ fontSize: 14, color: 'var(--ssc-text-secondary)', lineHeight: 1.6, fontWeight: 500 }}>
           {fact.fact}
         </p>
       </div>
@@ -215,7 +218,7 @@ function GKFactCarousel({ subject, mode, accentColor = '#14B8A6', statusText }) 
         {[0, 1, 2].map(i => (
           <div key={i} style={{
             width: i === factIndex % 3 ? 16 : 5, height: 5, borderRadius: 3,
-            background: i === factIndex % 3 ? accentColor : 'rgba(255,255,255,0.15)',
+            background: i === factIndex % 3 ? accentColor : 'var(--ssc-border-soft)',
             transition: 'width 0.3s ease, background 0.3s ease',
           }} />
         ))}
@@ -408,7 +411,7 @@ function TimerRing({ timeLeft, duration = QUESTION_DURATION_SECONDS }) {
       >
         <circle
           cx={SIZE / 2} cy={SIZE / 2} r={RADIUS}
-          fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3.5"
+          fill="none" stroke="var(--ssc-border-soft)" strokeWidth="3.5"
         />
         <circle
           cx={SIZE / 2} cy={SIZE / 2} r={RADIUS}
@@ -429,7 +432,7 @@ function TimerRing({ timeLeft, duration = QUESTION_DURATION_SECONDS }) {
         }}>
           {timeLeft}
         </span>
-        <span style={{ fontSize: 8, fontWeight: 600, color: 'rgba(255,255,255,0.3)', lineHeight: 1, marginTop: 1 }}>
+        <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--ssc-text-muted)', lineHeight: 1, marginTop: 1 }}>
           sec
         </span>
       </div>
@@ -449,7 +452,7 @@ function BookmarkIcon({ filled, size = 20, animKey }) {
       <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/>
     </svg>
   ) : (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/>
     </svg>
   );
@@ -1327,20 +1330,20 @@ export default function Quiz() {
     const isExpiredPrompt = recoveryPrompt.type === 'expired';
 
     return (
-      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: 'var(--bg-app)' }}>
+      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
         <Head><title>{isExpiredPrompt ? 'Quiz Expired' : 'Resume Quiz'} — SSC GK Score Booster</title></Head>
         <AppCard
           variant="premium"
           className="w-full max-w-[370px] p-5"
           style={{
-            background: 'var(--bg-card)',
-            border: '1px solid rgba(148,163,184,0.16)',
-            boxShadow: '0 24px 60px rgba(0,0,0,0.42)',
+            background: 'var(--ssc-surface)',
+            border: '1px solid var(--ssc-border-soft)',
+            boxShadow: 'var(--ssc-shadow-float)',
           }}
         >
           <div
             className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-            style={{ background: 'rgba(255,122,26,0.14)', color: '#FF7A1A' }}
+            style={{ background: 'rgba(255,106,0,0.12)', color: 'var(--ssc-orange)' }}
           >
             {isExpiredPrompt ? (
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -1356,17 +1359,17 @@ export default function Quiz() {
             )}
           </div>
 
-          <h1 className="font-display font-black text-2xl mb-2" style={{ color: '#F8FAFC' }}>
+          <h1 className="font-display font-black text-2xl mb-2" style={{ color: 'var(--ssc-text-primary)' }}>
             {isExpiredPrompt ? 'Quiz Attempt Expired' : 'Resume Quiz?'}
           </h1>
-          <p className="text-sm leading-relaxed mb-5" style={{ color: '#CBD5E1' }}>
+          <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--ssc-text-secondary)' }}>
             {isExpiredPrompt
               ? `Your previous quiz was inactive for too long. You answered ${sessionAnsweredCount} questions.`
               : `You have an unfinished ${getDisplaySubject(session.subject, session.collection) || 'Quiz'} · ${session.topic || 'Mixed'} quiz. You answered ${sessionAnsweredCount} of ${session.totalQuestions || session.questions?.length || 0} questions.`}
           </p>
 
           {sessionAttemptedCount > 0 && (
-            <p className="text-xs leading-relaxed rounded-2xl px-3 py-2 mb-4" style={{ color: '#94A3B8', background: 'var(--bg-card-soft)', border: '1px solid rgba(148,163,184,0.16)' }}>
+            <p className="text-xs leading-relaxed rounded-2xl px-3 py-2 mb-4" style={{ color: 'var(--ssc-text-secondary)', background: 'var(--ssc-surface-soft)', border: '1px solid var(--ssc-border-soft)' }}>
               Progress saved locally: {sessionAttemptedCount} attempted of {session.totalQuestions || session.questions?.length || 0}.
             </p>
           )}
@@ -1377,9 +1380,9 @@ export default function Quiz() {
               onClick={isExpiredPrompt ? handleEndStoredAttempt : handleResumeStoredQuiz}
               className="w-full py-3.5"
               style={{
-                background: 'linear-gradient(90deg, #FF7A1A, #FF5A00)',
-                color: '#F8FAFC',
-                boxShadow: '0 16px 36px rgba(255,106,0,0.30)',
+                background: 'linear-gradient(90deg, var(--ssc-orange), var(--ssc-orange-deep))',
+                color: 'var(--ssc-text-inverse)',
+                boxShadow: 'var(--ssc-shadow-cta)',
               }}
             >
               {isExpiredPrompt ? 'View Partial Result' : 'Resume Quiz'}
@@ -1390,9 +1393,9 @@ export default function Quiz() {
               onClick={isExpiredPrompt ? startFreshAfterRecovery : handleDiscardStoredAttempt}
               className="w-full py-3.5"
               style={{
-                background: isExpiredPrompt ? 'rgba(148,163,184,0.10)' : 'rgba(239,68,68,0.10)',
-                border: isExpiredPrompt ? '1px solid rgba(148,163,184,0.20)' : '1px solid rgba(248,113,113,0.30)',
-                color: isExpiredPrompt ? '#CBD5E1' : '#FCA5A5',
+                background: isExpiredPrompt ? 'var(--ssc-surface)' : 'var(--ssc-danger-soft)',
+                border: isExpiredPrompt ? '1px solid var(--ssc-border-soft)' : '1px solid rgba(239,68,68,0.24)',
+                color: isExpiredPrompt ? 'var(--ssc-text-secondary)' : 'var(--ssc-danger)',
               }}
             >
               {isExpiredPrompt ? 'Start Fresh' : 'End Attempt'}
@@ -1404,7 +1407,7 @@ export default function Quiz() {
   }
 
   if (loading) return (
-    <div className="h-screen flex flex-col items-center justify-center [background:var(--bg-app)] px-4">
+    <div className="h-screen flex flex-col items-center justify-center px-4" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
       <Head><title>Loading — SSC GK Score Booster</title></Head>
       {mode === 'daily' ? (
         <DailyChallengeLoader statusText={loadingCopy} />
@@ -1436,13 +1439,13 @@ export default function Quiz() {
   );
 
   if (error) return (
-    <div className="h-screen flex flex-col items-center justify-center px-5 [background:var(--bg-app)]">
+    <div className="h-screen flex flex-col items-center justify-center px-5" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
       <Head><title>Couldn&apos;t load quiz — SSC GK Score Booster</title></Head>
       <div style={{
-        width: '100%', maxWidth: 380, background: 'var(--bg-card)',
+        width: '100%', maxWidth: 380, background: 'var(--ssc-surface)',
         borderRadius: 24, padding: '28px 24px',
-        border: '1px solid rgba(148,163,184,0.14)',
-        boxShadow: '0 24px 56px rgba(0,0,0,0.45)',
+        border: '1px solid var(--ssc-border-soft)',
+        boxShadow: 'var(--ssc-shadow-float)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0,
       }}>
         {/* Icon */}
@@ -1452,7 +1455,7 @@ export default function Quiz() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 24,
         }}>⚠️</div>
-        <p style={{ fontFamily: 'var(--font-display,inherit)', fontSize: 20, fontWeight: 800, color: '#F8FAFC', textAlign: 'center', marginBottom: 8 }}>
+        <p style={{ fontFamily: 'var(--font-display,inherit)', fontSize: 20, fontWeight: 800, color: 'var(--ssc-text-primary)', textAlign: 'center', marginBottom: 8 }}>
           Couldn&apos;t load quiz
         </p>
         <p style={{ fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 1.55, marginBottom: 28 }}>
@@ -1472,9 +1475,9 @@ export default function Quiz() {
               }}
               style={{
                 width: '100%', padding: '14px 0', borderRadius: 14, border: 'none', cursor: 'pointer',
-                fontFamily: 'var(--font-display,inherit)', fontWeight: 700, fontSize: 15, color: '#0f172a',
-                background: 'linear-gradient(90deg, #FF7A1A, #FF5A00)',
-                boxShadow: '0 8px 24px rgba(255,90,0,0.28)',
+                fontFamily: 'var(--font-display,inherit)', fontWeight: 700, fontSize: 15, color: 'var(--ssc-text-inverse)',
+                background: 'linear-gradient(90deg, var(--ssc-orange), var(--ssc-orange-deep))',
+                boxShadow: 'var(--ssc-shadow-cta)',
               }}
             >
               Try Again
@@ -1485,8 +1488,8 @@ export default function Quiz() {
             style={{
               width: '100%', padding: '14px 0', borderRadius: 14, cursor: 'pointer',
               fontFamily: 'var(--font-display,inherit)', fontWeight: 700, fontSize: 15,
-              color: '#94A3B8', background: 'transparent',
-              border: '1.5px solid rgba(148,163,184,0.20)',
+              color: 'var(--ssc-text-secondary)', background: 'var(--ssc-surface)',
+              border: '1.5px solid var(--ssc-border-soft)',
             }}
           >
             Go Back
@@ -1497,10 +1500,10 @@ export default function Quiz() {
   );
 
   if (quizComplete) return (
-    <div className="h-screen flex flex-col items-center justify-center [background:var(--bg-app)] gap-4">
+    <div className="h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
       <Head><title>Results — SSC GK Score Booster</title></Head>
       <div className="w-12 h-12 rounded-full border-4 animate-spin" style={{ borderColor: 'rgba(20,184,166,0.25)', borderTopColor: '#14B8A6' }} />
-      <p className="font-display font-bold text-lg text-white">Loading your results…</p>
+      <p className="font-display font-bold text-lg" style={{ color: 'var(--ssc-text-primary)' }}>Loading your results…</p>
     </div>
   );
 
@@ -1508,7 +1511,7 @@ export default function Quiz() {
   if (!q) return null;
 
   return (
-    <div className="h-screen flex flex-col [background:var(--bg-app)] overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
       <Head><title>Q{currentIndex + 1} — SSC GK Score Booster</title></Head>
       <style suppressHydrationWarning>{`
         @keyframes timerPanic {
@@ -1543,12 +1546,12 @@ export default function Quiz() {
         }
         .opt-btn:not(:disabled):hover {
           transform: translateY(-2px);
-          border-color: rgba(255,255,255,0.28) !important;
-          box-shadow: 0 6px 18px rgba(0,0,0,0.35) !important;
+          border-color: var(--ssc-teal) !important;
+          box-shadow: 0 8px 20px rgba(16,32,51,0.10) !important;
         }
         .opt-btn:not(:disabled):hover .opt-badge {
-          background: rgba(255,255,255,0.18) !important;
-          box-shadow: 0 0 10px rgba(255,255,255,0.15);
+          background: var(--ssc-teal-soft) !important;
+          box-shadow: 0 0 0 3px rgba(14,165,164,0.10);
         }
         .opt-btn:not(:disabled):active {
           transform: scale(0.97) translateY(0) !important;
@@ -1558,7 +1561,7 @@ export default function Quiz() {
       {showExitModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center px-5"
-          style={{ background: 'rgba(0,0,0,0.68)', backdropFilter: 'blur(3px)' }}
+          style={{ background: 'var(--ssc-overlay)', backdropFilter: 'blur(3px)' }}
           role="dialog"
           aria-modal="true"
           aria-labelledby="exit-quiz-title"
@@ -1566,11 +1569,11 @@ export default function Quiz() {
           <div
             className="w-full max-w-[360px]"
             style={{
-              background: '#172D47',
-              border: '1px solid rgba(255,255,255,0.10)',
+              background: 'var(--ssc-surface)',
+              border: '1px solid var(--ssc-border-soft)',
               borderRadius: 28,
               padding: 24,
-              boxShadow: '0 24px 60px rgba(0,0,0,0.42)',
+              boxShadow: 'var(--ssc-shadow-float)',
             }}
           >
             <div
@@ -1583,32 +1586,32 @@ export default function Quiz() {
               </svg>
             </div>
 
-            <h2 id="exit-quiz-title" className="t-page-title font-display mb-3" style={{ color: '#F8FAFC' }}>
+            <h2 id="exit-quiz-title" className="t-page-title font-display mb-3" style={{ color: 'var(--ssc-text-primary)' }}>
               Leave quiz?
             </h2>
 
             {attemptedCount > 0 && (
               <div className="w-full mb-4">
                 <div className="t-badge inline-flex items-center mb-2" style={{
-                  color: '#FF7A1A',
-                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+                  color: 'var(--ssc-orange)',
+                  background: 'rgba(255,106,0,0.10)', border: '1px solid rgba(255,106,0,0.18)',
                   borderRadius: 999, padding: '4px 12px',
                 }}>
                   {attemptedCount} / {questions.length} attempted
                 </div>
-                <div style={{ height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                <div style={{ height: 4, borderRadius: 999, background: 'var(--ssc-border-soft)', overflow: 'hidden' }}>
                   <div style={{
                     height: '100%',
                     borderRadius: 999,
                     width: `${Math.round((attemptedCount / questions.length) * 100)}%`,
-                    background: 'linear-gradient(90deg, #FF7A1A, #FF5A00)',
+                    background: 'linear-gradient(90deg, var(--ssc-orange), var(--ssc-orange-deep))',
                     transition: 'width 0.4s ease',
                   }} />
                 </div>
               </div>
             )}
 
-            <p className="t-body mb-5" style={{ color: '#94A3B8' }}>
+            <p className="t-body mb-5" style={{ color: 'var(--ssc-text-secondary)' }}>
               End now to see your current result, or continue the quiz.
             </p>
 
@@ -1617,9 +1620,9 @@ export default function Quiz() {
                 onClick={handleContinueQuiz}
                 className="t-button-lg w-full rounded-2xl py-3.5 font-display active:scale-[0.98] transition-transform flex items-center justify-center"
                 style={{
-                  background: 'linear-gradient(90deg, #FF7A1A, #FF5A00)',
-                  color: '#F8FAFC',
-                  boxShadow: '0 16px 36px rgba(255,106,0,0.30)',
+                  background: 'linear-gradient(90deg, var(--ssc-orange), var(--ssc-orange-deep))',
+                  color: 'var(--ssc-text-inverse)',
+                  boxShadow: 'var(--ssc-shadow-cta)',
                 }}
               >
                 Continue Quiz
@@ -1629,9 +1632,9 @@ export default function Quiz() {
                 className="t-button-sm w-full rounded-2xl font-display active:scale-[0.98] transition-transform flex items-center justify-center"
                 style={{
                   padding: '11px 16px',
-                  background: 'rgba(255,255,255,0.03)',
+                  background: 'var(--ssc-danger-soft)',
                   border: '1px solid rgba(248,113,113,0.35)',
-                  color: '#fca5a5',
+                  color: 'var(--ssc-danger)',
                 }}
               >
                 End &amp; See Result
@@ -1643,7 +1646,7 @@ export default function Quiz() {
 
       {/* Guest bookmark banner */}
       {showGuestBanner && (
-        <div className="fixed top-4 left-4 right-4 z-50 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl max-w-[400px] mx-auto" style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.30)' }}>
+        <div className="fixed top-4 left-4 right-4 z-50 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl max-w-[400px] mx-auto" style={{ background: 'var(--ssc-surface)', border: '1px solid rgba(14,165,164,0.24)' }}>
           <span className="text-xl flex-shrink-0">🔖</span>
           <p className="font-sans font-medium text-sm text-slate-300 leading-snug flex-1">
             Saved! Sign in to sync across devices.
@@ -1655,14 +1658,14 @@ export default function Quiz() {
       <div className="px-4 pt-3 flex-shrink-0">
         {/* Row 1: subject · topic | Q X/Y | earn coins */}
         <div className="h-10 flex items-center justify-between">
-          <span className="t-badge font-sans text-slate-400 truncate max-w-[150px]">
+          <span className="t-badge font-sans truncate max-w-[150px]" style={{ color: 'var(--ssc-text-secondary)' }}>
             {getDisplaySubject(effectiveSubject, collection)} · {effectiveTopic}
           </span>
-          <span className="t-stat-sm font-display text-white">
+          <span className="t-stat-sm font-display" style={{ color: 'var(--ssc-text-primary)' }}>
             Q {currentIndex + 1}
-            <span className="t-badge font-sans font-normal text-slate-500">/{questions.length}</span>
+            <span className="t-badge font-sans font-normal" style={{ color: 'var(--ssc-text-muted)' }}>/{questions.length}</span>
           </span>
-          <span className="t-badge font-sans text-orange-400">⚡ Earn Coins</span>
+          <span className="t-badge font-sans" style={{ color: 'var(--ssc-orange)' }}>⚡ Earn Coins</span>
         </div>
         {cacheWarning && (
           <p className="text-xs pb-2" style={{ color: '#fbbf24' }}>
@@ -1672,18 +1675,18 @@ export default function Quiz() {
 
         {/* Row 2: progress bar + completed count */}
         <div className="flex items-center gap-2 pb-3">
-          <div className="flex-1 rounded-full overflow-hidden" style={{ height: 4, background: 'rgba(255,255,255,0.08)' }}>
+          <div className="flex-1 rounded-full overflow-hidden" style={{ height: 5, background: 'var(--ssc-border-soft)' }}>
             <div
               style={{
                 height: '100%',
                 width: `${(currentIndex / questions.length) * 100}%`,
-                background: 'linear-gradient(90deg, #14B8A6, #2DD4BF)',
+                background: 'linear-gradient(90deg, var(--ssc-teal), #14B8A6)',
                 borderRadius: 999,
                 transition: 'width 0.5s cubic-bezier(0.22,1,0.36,1)',
               }}
             />
           </div>
-          <span className="font-sans font-semibold flex-shrink-0" style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
+          <span className="font-sans font-semibold flex-shrink-0" style={{ fontSize: 11, color: 'var(--ssc-text-muted)' }}>
             {currentIndex}/{questions.length}
           </span>
         </div>
@@ -1692,17 +1695,21 @@ export default function Quiz() {
       {/* ── Quiz status row ── */}
       <div
         className="flex items-center gap-3 px-4 py-2 flex-shrink-0"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+        style={{
+          borderTop: '1px solid var(--ssc-border-soft)',
+          borderBottom: '1px solid var(--ssc-border-soft)',
+          background: 'rgba(255,255,255,0.70)',
+        }}
       >
         <TimerRing timeLeft={timeLeft} duration={QUESTION_DURATION_SECONDS} />
 
-        <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+        <div style={{ width: 1, height: 32, background: 'var(--ssc-border-soft)', flexShrink: 0 }} />
 
         <div className="flex flex-col gap-0.5 min-w-0">
-          <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ssc-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             Scoring
           </span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.75)' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ssc-text-primary)' }}>
             ⚡ +2 correct &nbsp;·&nbsp; <span style={{ color: '#f87171' }}>−0.5 wrong</span>
           </span>
         </div>
@@ -1712,7 +1719,14 @@ export default function Quiz() {
       <div className="flex-1 overflow-y-auto px-4 pb-4">
 
         {/* Question card */}
-        <AppCard className="mt-3 relative" style={{ background: '#1E3554', border: '1px solid rgba(255,255,255,0.10)' }}>
+        <AppCard
+          className="mt-3 relative"
+          style={{
+            background: 'var(--ssc-surface)',
+            border: '1px solid var(--ssc-border-soft)',
+            boxShadow: 'var(--ssc-shadow-card)',
+          }}
+        >
           {/* Bookmark button */}
           <button
             onClick={() => handleBookmarkToggle(q)}
@@ -1723,8 +1737,8 @@ export default function Quiz() {
             <div
               className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
               style={{
-                background: savedIds.has(q.id) ? 'rgba(20,184,166,0.18)' : 'rgba(255,255,255,0.08)',
-                border: savedIds.has(q.id) ? '1px solid rgba(20,184,166,0.40)' : '1px solid rgba(255,255,255,0.12)',
+                background: savedIds.has(q.id) ? 'var(--ssc-teal-soft)' : 'var(--ssc-surface-soft)',
+                border: savedIds.has(q.id) ? '1px solid rgba(14,165,164,0.35)' : '1px solid var(--ssc-border-soft)',
               }}
             >
               <BookmarkIcon filled={savedIds.has(q.id)} size={16} animKey={bmAnimKey} />
@@ -1740,7 +1754,7 @@ export default function Quiz() {
             )}
           </button>
 
-          <p className="font-display font-bold text-sm text-white leading-relaxed whitespace-pre-line pr-10">
+          <p className="font-display font-bold text-sm leading-relaxed whitespace-pre-line pr-10" style={{ color: 'var(--ssc-text-primary)' }}>
             {q.question}
           </p>
         </AppCard>
@@ -1759,8 +1773,9 @@ export default function Quiz() {
               display: 'flex', alignItems: 'center', gap: 12,
               width: '100%', textAlign: 'left',
               cursor: showFeedback ? 'default' : 'pointer',
-              background: '#172D47',
-              border: '1px solid rgba(255,255,255,0.10)',
+              background: 'var(--ssc-surface)',
+              border: '1px solid var(--ssc-border-soft)',
+              boxShadow: '0 4px 14px rgba(16,32,51,0.04)',
             };
 
             /* ── Badge style ── */
@@ -1769,35 +1784,35 @@ export default function Quiz() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
               fontFamily: 'var(--font-display,inherit)', fontWeight: 800, fontSize: 12,
-              background: 'rgba(255,255,255,0.1)',
-              color: 'rgba(255,255,255,0.65)',
+              background: 'var(--ssc-teal-soft)',
+              color: 'var(--ssc-teal)',
+              border: '1px solid rgba(14,165,164,0.20)',
               transition: 'background 0.15s ease, box-shadow 0.15s ease',
             };
 
-            let extraAnim = {};
             let badgeContent = label; // A / B / C / D
 
             if (showFeedback) {
               if (isCorrect) {
                 rowStyle = { ...rowStyle,
-                  background: 'rgba(34,197,94,0.12)',
-                  border: '1px solid #22C55E',
-                  boxShadow: '0 0 20px rgba(34,197,94,0.18)',
+                  background: 'var(--ssc-success-soft)',
+                  border: '1px solid var(--ssc-success)',
+                  boxShadow: '0 8px 22px rgba(18,184,134,0.14)',
                   animation: 'optCorrect 0.32s cubic-bezier(0.34,1.56,0.64,1) both',
                 };
                 badgeStyle = { ...badgeStyle,
-                  background: '#22C55E', color: '#fff',
-                  boxShadow: '0 0 10px rgba(34,197,94,0.55)',
+                  background: 'var(--ssc-success)', color: '#fff',
+                  boxShadow: '0 0 0 3px rgba(18,184,134,0.14)',
                 };
                 badgeContent = 'check';
               } else if (isSelected) {
                 rowStyle = { ...rowStyle,
-                  background: 'rgba(239,68,68,0.1)',
-                  border: '1px solid #ef4444',
+                  background: 'var(--ssc-danger-soft)',
+                  border: '1px solid var(--ssc-danger)',
                   animation: 'optWrong 0.35s ease both',
                 };
                 badgeStyle = { ...badgeStyle,
-                  background: '#ef4444', color: '#fff',
+                  background: 'var(--ssc-danger)', color: '#fff',
                 };
               } else {
                 rowStyle = { ...rowStyle, opacity: 0.32 };
@@ -1819,7 +1834,7 @@ export default function Quiz() {
                     </svg>
                   ) : label}
                 </span>
-                <span style={{ fontSize: 14, fontWeight: 500, color: '#ffffff', flex: 1, lineHeight: 1.5 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: showFeedback && isSelected && !isCorrect ? 'var(--ssc-danger)' : showFeedback && isCorrect ? 'var(--ssc-text-primary)' : 'var(--ssc-text-primary)', flex: 1, lineHeight: 1.5 }}>
                   {optText}
                 </span>
               </button>
@@ -1833,7 +1848,7 @@ export default function Quiz() {
             <button
               onClick={handleSkip}
               className="font-sans text-xs font-medium active:opacity-40 transition-opacity"
-              style={{ color: 'rgba(255,255,255,0.28)', padding: '6px 2px', minHeight: 36 }}
+              style={{ color: 'var(--ssc-teal)', padding: '6px 2px', minHeight: 36 }}
             >
               Not sure? Skip →
             </button>

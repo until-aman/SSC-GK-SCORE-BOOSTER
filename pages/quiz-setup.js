@@ -6,8 +6,6 @@ import Head from 'next/head';
 import Loader from '@/components/ui/Loader';
 import RefreshStatus from '@/components/ui/RefreshStatus';
 import AppButton from '@/components/ui/AppButton';
-import AppCard from '@/components/ui/AppCard';
-import SectionHeader from '@/components/ui/SectionHeader';
 import { fetchWithClientCache, readCache } from '@/lib/clientCache';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 import { getQuestionBank } from '@/lib/data/questionData';
@@ -54,16 +52,19 @@ const SUBJECT_SHEET_SECTIONS = [
 ];
 
 const COLORS = {
-  page: 'var(--bg-app)',
-  card: 'var(--bg-card)',
-  border: 'rgba(148,163,184,0.16)',
-  selected: '#14B8A6',
-  selectedGlow: 'rgba(20,184,166,0.16)',
-  primary: '#F8FAFC',
-  secondary: '#CBD5E1',
-  muted: '#94A3B8',
-  disabled: '#64748B',
-  sheetBg: '#162032',
+  page: 'var(--ssc-bg)',
+  card: 'var(--ssc-surface)',
+  cardSoft: 'var(--ssc-surface-soft)',
+  border: 'var(--ssc-border-soft)',
+  selected: 'var(--ssc-teal)',
+  selectedGlow: 'rgba(14,165,164,0.14)',
+  primary: 'var(--ssc-text-primary)',
+  secondary: 'var(--ssc-text-secondary)',
+  muted: 'var(--ssc-text-muted)',
+  inverse: 'var(--ssc-text-inverse)',
+  disabledBg: 'var(--ssc-disabled-bg)',
+  disabled: 'var(--ssc-disabled-text)',
+  sheetBg: 'var(--ssc-surface)',
 };
 
 function isGuestMode() {
@@ -109,9 +110,9 @@ function TopicRow({ label, count, isSelected, isLast, onClick, bold = false }) {
       onClick={onClick}
       className="w-full flex items-start gap-3 px-4 py-3 text-left transition-opacity active:opacity-60"
       style={{
-        background: isSelected ? 'rgba(20,184,166,0.08)' : 'rgba(255,255,255,0.02)',
-        borderBottom: isLast ? 'none' : '1px solid rgba(148,163,184,0.1)',
-        borderLeft: isSelected ? '3px solid #14B8A6' : '3px solid transparent',
+        background: isSelected ? 'var(--ssc-teal-soft)' : 'var(--ssc-surface)',
+        borderBottom: isLast ? 'none' : '1px solid var(--ssc-border-soft)',
+        borderLeft: isSelected ? '3px solid var(--ssc-teal)' : '3px solid transparent',
         WebkitTapHighlightColor: 'transparent',
       }}
     >
@@ -121,7 +122,7 @@ function TopicRow({ label, count, isSelected, isLast, onClick, bold = false }) {
           fontSize: 14,
           lineHeight: '20px',
           fontWeight: isSelected ? 700 : bold ? 600 : 500,
-          color: isSelected ? '#14B8A6' : '#F8FAFC',
+          color: isSelected ? 'var(--ssc-teal)' : 'var(--ssc-text-primary)',
           display: '-webkit-box',
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
@@ -134,7 +135,7 @@ function TopicRow({ label, count, isSelected, isLast, onClick, bold = false }) {
             fontSize: 11,
             fontWeight: 600,
             lineHeight: '16px',
-            color: isSelected ? '#14B8A6' : '#64748B',
+            color: isSelected ? 'var(--ssc-teal)' : 'var(--ssc-text-secondary)',
             marginTop: 2,
           }}>
             {count} questions
@@ -144,7 +145,7 @@ function TopicRow({ label, count, isSelected, isLast, onClick, bold = false }) {
 
       {/* Checkmark — aligns to first line of text */}
       {isSelected ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: '#14B8A6', flexShrink: 0, marginTop: 2 }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--ssc-teal)', flexShrink: 0, marginTop: 2 }}>
           <path d="M20 6 9 17l-5-5"/>
         </svg>
       ) : (
@@ -405,82 +406,105 @@ export default function QuizSetup() {
   return (
     <>
       <Head><title>Set Up Your Quiz — SSC GK Score Booster</title></Head>
-      <div className="min-h-screen pb-28" style={{ background: COLORS.page }}>
+      <div
+        className="min-h-screen pb-28"
+        style={{
+          background: COLORS.page,
+          '--bg-app': 'var(--ssc-bg)',
+          '--bg-card': 'var(--ssc-surface)',
+          '--border-soft': 'var(--ssc-border-soft)',
+          '--text-primary': 'var(--ssc-text-primary)',
+          '--text-secondary': 'var(--ssc-text-secondary)',
+          '--text-muted': 'var(--ssc-text-muted)',
+        }}
+      >
 
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 pt-10 pb-4">
+        <div className="grid grid-cols-[40px_1fr_40px] items-center gap-2 px-4 pt-10 pb-5">
           <button
             onClick={() => router.back()}
             className="w-10 h-10 rounded-full border flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform"
-            style={{ background: COLORS.card, borderColor: COLORS.border, color: COLORS.primary }}
+            style={{ background: COLORS.card, borderColor: COLORS.border, color: COLORS.primary, boxShadow: 'var(--ssc-shadow-card)' }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M19 12H5M12 5l-7 7 7 7"/>
             </svg>
           </button>
-          <SectionHeader
-            title="Set Up Your Quiz"
-            subtitle="Choose your practice mode"
-            titleClassName="text-slate-50"
-            subtitleClassName="text-slate-300"
-          />
+          <div className="text-center min-w-0">
+            <h1 className="font-display font-black" style={{ color: COLORS.primary, fontSize: 18, lineHeight: 1.2 }}>
+              Quiz Setup
+            </h1>
+            <p className="font-sans" style={{ color: COLORS.secondary, fontSize: 12, marginTop: 2 }}>
+              Customize your quiz
+            </p>
+          </div>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: COLORS.card, border: `1px solid ${COLORS.border}`, boxShadow: 'var(--ssc-shadow-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.primary, fontWeight: 800 }}>
+            ?
+          </div>
         </div>
 
         <div className="px-4 flex flex-col gap-4">
 
           {/* Question count */}
           <div>
-            <p className="t-section-label" style={{ color: COLORS.muted }}>
-              Number of Questions
+            <p className="font-display font-bold mb-3" style={{ color: COLORS.primary, fontSize: 14 }}>
+              1. Select Number of Questions
             </p>
-            <div className="flex gap-3">
+            <div className="grid grid-cols-5 gap-2">
               {[
-                { count: 10, title: 'Quick Practice', duration: '~3 min', icon: '⚡' },
-                { count: 25, title: 'Full Practice',  duration: '~8 min', icon: '🎯' },
-              ].map(({ count, title, duration, icon }) => {
+                { count: 10 },
+                { count: 15 },
+                { count: 25 },
+                { count: 50 },
+                { count: 100 },
+              ].map(({ count }) => {
                 const sel = selectedCount === count;
                 return (
-                  <AppCard
-                    as="button"
+                  <button
+                    type="button"
                     key={count}
                     onClick={() => setSelectedCount(count)}
-                    interactive
-                    className={`question-mode-card flex-1 text-left ${sel ? 'question-mode-card-selected' : ''}`}
+                    className="relative active:scale-[0.98] transition-transform"
                     style={{
                       background: COLORS.card,
                       border: sel ? `1.5px solid ${COLORS.selected}` : `1px solid ${COLORS.border}`,
                       boxShadow: sel
-                        ? `0 0 0 1px ${COLORS.selectedGlow}, 0 12px 28px ${COLORS.selectedGlow}`
-                        : 'none',
+                        ? `0 0 0 2px ${COLORS.selectedGlow}, var(--ssc-shadow-card)`
+                        : 'var(--ssc-shadow-card)',
+                      borderRadius: 12,
+                      minHeight: 70,
+                      padding: '10px 4px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xl" aria-hidden="true">{icon}</span>
-                      {sel && (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: COLORS.selected }}>
-                          <path d="M20 6 9 17l-5-5"/>
-                        </svg>
-                      )}
-                    </div>
-                    <p className="t-card-subtitle font-display font-bold mt-2" style={{ color: COLORS.primary }}>
-                      {title}
+                    {sel && (
+                      <span style={{ position: 'absolute', top: -7, right: -5, width: 18, height: 18, borderRadius: 999, background: COLORS.selected, color: COLORS.inverse, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900 }}>
+                        ✓
+                      </span>
+                    )}
+                    <p className="font-display font-black" style={{ color: COLORS.primary, fontSize: 15, margin: 0 }}>
+                      {count}
                     </p>
-                    <p className="t-stat-lg font-display mt-1" style={{ color: COLORS.primary }}>
-                      {count} Questions
+                    <p className="font-sans" style={{ color: COLORS.secondary, fontSize: 10, margin: '3px 0 0' }}>
+                      Questions
                     </p>
-                    <p className="t-badge mt-1" style={{ color: COLORS.muted }}>
-                      {duration}
-                    </p>
-                  </AppCard>
+                  </button>
                 );
               })}
+            </div>
+            <div className="mt-4 flex items-center gap-2" style={{ color: COLORS.secondary, fontSize: 12 }}>
+              <span style={{ color: COLORS.selected }}>▣</span>
+              Recommended for quick practice
             </div>
           </div>
 
           {/* Subject picker trigger */}
           <div>
-            <label className="t-section-label" style={{ color: COLORS.muted }}>
-              Subject
+            <label className="font-display font-bold mb-3 block" style={{ color: COLORS.primary, fontSize: 14 }}>
+              2. Select Subject
             </label>
             <button
               type="button"
@@ -490,14 +514,12 @@ export default function QuizSetup() {
                 background: COLORS.card,
                 borderColor: selectedSubject ? COLORS.selected : COLORS.border,
                 borderWidth: selectedSubject ? 1.5 : 1,
-                boxShadow: selectedSubject ? `0 0 0 3px ${COLORS.selectedGlow}` : 'none',
+                boxShadow: 'var(--ssc-shadow-card)',
               }}
             >
-              {selectedSubject && (
-                <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }} aria-hidden="true">
-                  {SUBJECT_ICON[selectedSubject] || '📖'}
-                </span>
-              )}
+              <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0, color: COLORS.selected }} aria-hidden="true">
+                {selectedSubject ? (SUBJECT_ICON[selectedSubject] || '📖') : '□'}
+              </span>
               <span style={{ flex: 1, fontSize: 15, lineHeight: '22px', fontWeight: selectedSubject ? 600 : 500, color: selectedSubject ? COLORS.primary : COLORS.disabled }}>
                 {selectedSubject || '— Choose a subject —'}
               </span>
@@ -509,8 +531,8 @@ export default function QuizSetup() {
 
           {/* Topic picker trigger */}
           <div>
-            <label className="t-section-label" style={{ color: COLORS.muted }}>
-              Topic
+            <label className="font-display font-bold mb-3 block" style={{ color: COLORS.primary, fontSize: 14 }}>
+              3. Select Topic <span style={{ color: COLORS.secondary, fontWeight: 500 }}>(Optional)</span>
             </label>
 
             <button
@@ -524,7 +546,7 @@ export default function QuizSetup() {
                 background: COLORS.card,
                 borderColor: selectedTopic ? COLORS.selected : COLORS.border,
                 borderWidth: selectedTopic ? 1.5 : 1,
-                boxShadow: selectedTopic ? `0 0 0 3px ${COLORS.selectedGlow}` : 'none',
+                boxShadow: 'var(--ssc-shadow-card)',
               }}
             >
               <span style={{ flex: 1, fontSize: 15, lineHeight: '22px', fontWeight: selectedTopic ? 600 : 500, color: selectedTopic ? COLORS.primary : COLORS.disabled }}>
@@ -548,7 +570,7 @@ export default function QuizSetup() {
 
             {/* Question count hint */}
             {selectedTopic && !topicsLoading && (
-              <p className="text-xs mt-1.5 ml-1" style={{ color: COLORS.muted }}>
+              <p className="text-xs mt-1.5 ml-1" style={{ color: COLORS.selected }}>
                 {selectedTopic === ALL_TOPICS
                   ? allTopicsCount > 0 ? `${allTopicsCount} questions available` : 'All questions for this subject'
                   : `${topics.find(t => t.name === selectedTopic)?.count || 0} questions available`}
@@ -577,23 +599,30 @@ export default function QuizSetup() {
             )}
           </div>
 
-          {/* Info strip */}
+          {/* Quiz summary */}
           {isReady && (
-            <div className="border rounded-2xl px-4 py-3 flex items-center gap-3 animate-fade-in-down" style={{ background: COLORS.card, borderColor: COLORS.border }}>
-              <span className="text-2xl">📋</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p className="t-card-subtitle font-semibold" style={{ color: COLORS.primary }}>
-                  {selectedSubject} · {selectedTopicLabel}
-                </p>
-                <p className="t-badge" style={{ color: COLORS.secondary, marginTop: 2 }}>
-                  {selectedCount} questions · +2 per correct, −0.5 per wrong
-                </p>
+            <div className="border rounded-2xl px-4 py-4 animate-fade-in-down" style={{ background: COLORS.card, borderColor: COLORS.border, boxShadow: 'var(--ssc-shadow-card)' }}>
+              <p className="font-display font-bold mb-3" style={{ color: COLORS.primary, fontSize: 14 }}>
+                Quiz Summary
+              </p>
+              <div style={{ display: 'grid', gap: 9, borderTop: `1px solid ${COLORS.border}`, paddingTop: 12 }}>
+                {[
+                  ['Questions', selectedCount],
+                  ['Subject', selectedSubject],
+                  ['Topic', selectedTopicLabel],
+                  ['Available Questions', selectedTopic === ALL_TOPICS ? (allTopicsCount || 'All') : (topics.find(t => t.name === selectedTopic)?.count || 0)],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex items-center justify-between gap-3">
+                    <span className="font-sans" style={{ color: COLORS.secondary, fontSize: 12 }}>{label}</span>
+                    <span className="font-sans font-bold text-right" style={{ color: COLORS.primary, fontSize: 12 }}>{value}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
           {isReady && selectedSubject !== 'Mixed' && (
-            <div className="px-1">
+            <div className="rounded-2xl border px-4 py-3" style={{ background: COLORS.card, borderColor: COLORS.border, boxShadow: 'var(--ssc-shadow-card)' }}>
               <RefreshStatus
                 updatedAt={questionBankUpdatedAt}
                 label={questionBankUpdatedAt ? 'Question pool saved today' : 'Question pool not saved yet'}
@@ -609,17 +638,19 @@ export default function QuizSetup() {
             as="button"
             onClick={handleStartQuiz}
             disabled={!isReady}
-            className={`start-quiz-button w-full py-4 flex items-center justify-center gap-2 ${
+            className={`start-quiz-button w-full rounded-[16px] py-4 flex items-center justify-center gap-2 ${
               isReady
                 ? 'btn-breathe-orange active:scale-95 duration-100'
                 : 'border cursor-not-allowed'
             }`}
             style={isReady ? {
               background: 'linear-gradient(90deg, #FF7A1A, #FF5A00)',
+              borderRadius: 'var(--ssc-radius-button)',
               boxShadow: '0 16px 36px rgba(255,106,0,0.30)',
-              color: COLORS.primary,
+              color: COLORS.inverse,
             } : {
-              background: COLORS.card,
+              background: COLORS.disabledBg,
+              borderRadius: 'var(--ssc-radius-button)',
               borderColor: COLORS.border,
               color: COLORS.disabled,
             }}
@@ -668,7 +699,7 @@ export default function QuizSetup() {
                   onChange={e => setSubjectSearch(e.target.value)}
                   className="w-full rounded-xl pl-10 pr-4 py-3"
                   style={{
-                    background: 'rgba(255,255,255,0.06)',
+                    background: COLORS.cardSoft,
                     border: `1px solid ${COLORS.border}`,
                     color: COLORS.primary,
                     fontSize: 15,
@@ -712,7 +743,7 @@ export default function QuizSetup() {
                             onClick={() => handleSubjectSelect(subj)}
                             className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:opacity-70 transition-opacity"
                             style={{
-                              background: isSelected ? 'rgba(20,184,166,0.10)' : 'rgba(255,255,255,0.03)',
+                              background: isSelected ? 'var(--ssc-teal-soft)' : COLORS.card,
                               borderBottom: isLast ? 'none' : `1px solid ${COLORS.border}`,
                             }}
                           >
@@ -783,7 +814,7 @@ export default function QuizSetup() {
                   onChange={e => setTopicSearch(e.target.value)}
                   className="w-full rounded-xl pl-10 pr-4 py-3"
                   style={{
-                    background: 'rgba(255,255,255,0.06)',
+                    background: COLORS.cardSoft,
                     border: `1px solid ${COLORS.border}`,
                     color: COLORS.primary,
                     fontSize: 15,
@@ -814,7 +845,7 @@ export default function QuizSetup() {
               {/* ── Full skeleton: loading and no cached topics yet ── */}
               {topicsLoading && topics.length === 0 && (
                 <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${COLORS.border}` }}>
-                  <div className="px-4 py-3.5 flex items-center gap-3" style={{ borderBottom: `1px solid ${COLORS.border}`, background: 'rgba(255,255,255,0.03)' }}>
+                  <div className="px-4 py-3.5 flex items-center gap-3" style={{ borderBottom: `1px solid ${COLORS.border}`, background: COLORS.cardSoft }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: COLORS.muted, flexShrink: 0, animation: 'spin 1s linear infinite' }}>
                       <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                     </svg>
@@ -824,7 +855,7 @@ export default function QuizSetup() {
                     <div
                       key={i}
                       className="px-4 py-3.5 flex flex-col gap-2"
-                      style={{ borderBottom: i < 3 ? `1px solid ${COLORS.border}` : 'none', background: 'rgba(255,255,255,0.02)' }}
+                      style={{ borderBottom: i < 3 ? `1px solid ${COLORS.border}` : 'none', background: COLORS.card }}
                       aria-hidden="true"
                     >
                       <div className="skeleton h-4 rounded" style={{ width: `${w}px` }} />

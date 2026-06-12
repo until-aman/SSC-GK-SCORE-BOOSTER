@@ -115,12 +115,11 @@ async function fetchSubjectCounts(collection) {
    Renders a 2-column grid of subject cards. Used both for sectioned layout
    and for flat search results. startIdx offsets the enter-animation delay.
 ──────────────────────────────────────────────────────────────────────────── */
-function SubjectGrid({ subjects, displayCounts, selected, setSelected, startIdx = 0 }) {
+function SubjectGrid({ subjects, displayCounts, collection, router, startIdx = 0 }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, padding: '0 20px 14px' }}>
       {subjects.map((subject, i) => {
         const theme      = THEME[subject] ?? {};
-        const isSelected = selected === subject;
         const hex        = theme.accent || '#64748B';
         const glow       = theme.glow   || 'rgba(100,116,139,0.18)';
         const rgb        = hexRgb(hex);
@@ -131,11 +130,10 @@ function SubjectGrid({ subjects, displayCounts, selected, setSelected, startIdx 
           <button
             key={subject}
             onClick={() => {
-              setSelected(isSelected ? null : subject);
-              // Short haptic pulse on selection; silent on deselect
-              if (!isSelected) navigator.vibrate?.(8);
+              navigator.vibrate?.(8);
+              router.push(`/quiz-setup?subject=${encodeURIComponent(subject)}&collection=${encodeURIComponent(collection)}&sourceScreen=dashboard`);
             }}
-            className={`subject-card ${isSelected ? 'selected' : ''} ${enterClass}`}
+            className={`subject-card ${enterClass}`}
             style={{ '--accent': hex, '--accent-glow': glow }}
           >
             {/* Icon box */}
@@ -144,31 +142,23 @@ function SubjectGrid({ subjects, displayCounts, selected, setSelected, startIdx 
             </div>
 
             {/* Name + subtitle + bottom row */}
-            <div style={{ position: 'relative', zIndex: 1, paddingTop: 4 }}>
-              <p className="t-card-title font-display" style={{ color: '#ffffff', marginBottom: 2 }}>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', marginBottom: 2 }}>
                 {subject}
               </p>
-              <p className="t-badge" style={{ color: 'rgba(148,163,184,0.55)', marginBottom: 6, marginTop: 0, lineHeight: 1.5 }}>
+              <p className="t-badge" style={{ color: 'var(--ssc-text-secondary)', marginBottom: 6, marginTop: 0, lineHeight: 1.5 }}>
                 {theme.subtitle || ''}
               </p>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
-                {isSelected ? (
-                  <span className="t-badge" style={{ color: hex, background: `color-mix(in srgb, ${hex} 15%, transparent)`, border: `1px solid color-mix(in srgb, ${hex} 30%, transparent)`, borderRadius: 20, padding: '2px 8px', lineHeight: 1.6 }}>
-                    ✓ Selected
-                  </span>
-                ) : count != null ? (
-                  <span className="t-badge" style={{ color: 'rgba(148,163,184,0.70)', background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.14)', borderRadius: 20, padding: '2px 8px', lineHeight: 1.6 }}>
-                    {count.toLocaleString()} Qs
+                {count != null ? (
+                  <span className="t-badge" style={{ color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)', border: '1px solid rgba(14,165,164,0.16)', borderRadius: 20, padding: '2px 8px', lineHeight: 1.6 }}>
+                    {count.toLocaleString()} Questions
                   </span>
                 ) : (
-                  <span style={{ fontSize: 10, color: 'rgba(148,163,184,0.35)' }}>—</span>
+                  <span style={{ fontSize: 10, color: 'var(--ssc-text-muted)' }}>—</span>
                 )}
-                <div style={{ width: 20, height: 20, borderRadius: '50%', flexShrink: 0, background: `rgba(${rgb},0.15)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {isSelected ? (
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={hex} strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
-                  ) : (
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={hex} strokeWidth="2.8" opacity="0.8"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                  )}
+                <div style={{ width: 20, height: 20, borderRadius: '50%', flexShrink: 0, background: `rgba(${rgb},0.12)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={hex} strokeWidth="2.8" opacity="0.8"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </div>
               </div>
             </div>
@@ -181,7 +171,6 @@ function SubjectGrid({ subjects, displayCounts, selected, setSelected, startIdx 
 
 export default function SubjectsPage() {
   const router = useRouter();
-  const [selected, setSelected] = useState(null);
   const [search, setSearch]     = useState('');
 
   const collection = router.query.collection || 'general';
@@ -201,7 +190,7 @@ export default function SubjectsPage() {
   // Reset selection if the collection changes (e.g. user navigates to a
   // different quiz set — a subject valid in one set may not exist in another)
   useEffect(() => {
-    setSelected(null);
+    // no selected state; cards navigate directly to setup
   }, [collection]);
 
   useEffect(() => {
@@ -238,17 +227,17 @@ export default function SubjectsPage() {
           100% { background-position: -200% 0; }
         }
         .skeleton-card {
-          background: linear-gradient(90deg, #172D47 25%, #1E3554 50%, #172D47 75%);
+          background: linear-gradient(90deg, #E8F8F6 25%, #F8FAFC 50%, #E8F8F6 75%);
           background-size: 200% 100%;
           animation: shimmer 1.2s infinite;
           border-radius: 22px;
-          border: 1px solid rgba(255,255,255,0.07);
+          border: 1px solid var(--ssc-border-soft);
         }
         .skeleton-bone {
           background: linear-gradient(90deg,
-            rgba(255,255,255,0.04) 25%,
-            rgba(255,255,255,0.10) 50%,
-            rgba(255,255,255,0.04) 75%
+            rgba(221,232,240,0.45) 25%,
+            rgba(232,248,246,0.95) 50%,
+            rgba(221,232,240,0.45) 75%
           );
           background-size: 200% 100%;
           animation: shimmer 1.2s infinite;
@@ -258,20 +247,22 @@ export default function SubjectsPage() {
         /* ── Subject card base ── */
         .subject-card {
           position: relative;
-          min-height: 130px;
+          min-height: 116px;
           padding: 14px;
-          border-radius: 22px;
-          background: #172D47;
-          border: 1px solid rgba(255, 255, 255, 0.10);
+          border-radius: 18px;
+          background: var(--ssc-surface);
+          border: 1px solid var(--ssc-border-soft);
           overflow: hidden;
           cursor: pointer;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
+          display: grid;
+          grid-template-columns: 40px 1fr;
+          align-items: center;
+          gap: 12px;
           text-align: left;
           transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1),
                       box-shadow 0.18s ease,
                       border-color 0.18s ease;
+          box-shadow: var(--ssc-shadow-card);
         }
 
         /* Per-card accent glow — top-left radial */
@@ -289,9 +280,9 @@ export default function SubjectsPage() {
 
         /* Selected state */
         .subject-card.selected {
-          border: 1.5px solid var(--accent);
-          box-shadow: 0 0 0 1px var(--accent-glow),
-                      0 12px 32px var(--accent-glow);
+          border: 1.5px solid var(--ssc-teal);
+          box-shadow: 0 0 0 3px rgba(14,165,164,0.12),
+                      var(--ssc-shadow-card);
           transform: translateY(-2px);
         }
 
@@ -304,24 +295,24 @@ export default function SubjectsPage() {
 
         /* ── Icon container ── */
         .subject-icon-box {
-          width: 34px;
-          height: 34px;
-          border-radius: 11px;
+          width: 40px;
+          height: 40px;
+          border-radius: 999px;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
           position: relative;
           z-index: 1;
-          background: color-mix(in srgb, var(--accent) 20%, transparent);
-          border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+          background: color-mix(in srgb, var(--accent) 16%, white);
+          border: 1px solid color-mix(in srgb, var(--accent) 20%, white);
           font-size: 18px;
           line-height: 1;
           /* Force consistent emoji rendering across platforms */
           font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
         }
 
-        .subj-search::placeholder { color: #94A3B8; }
+        .subj-search::placeholder { color: var(--ssc-text-muted); }
         .subj-search:focus { outline: none; }
 
         /* Search container focus ring */
@@ -329,23 +320,35 @@ export default function SubjectsPage() {
           transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
         .subj-search-wrap:focus-within {
-          border-color: rgba(255, 107, 22, 0.45) !important;
-          box-shadow: 0 0 0 3px rgba(255, 107, 22, 0.12);
+          border-color: rgba(14, 165, 164, 0.45) !important;
+          box-shadow: 0 0 0 3px rgba(14, 165, 164, 0.12);
         }
       `}</style>
 
-      <div className="min-h-screen pb-28" style={{ background: 'var(--bg-app)' }}>
+      <div
+        className="min-h-screen pb-28"
+        style={{
+          background: 'var(--ssc-bg)',
+          '--bg-app': 'var(--ssc-bg)',
+          '--bg-card': 'var(--ssc-surface)',
+          '--border-soft': 'var(--ssc-border-soft)',
+          '--text-primary': 'var(--ssc-text-primary)',
+          '--text-secondary': 'var(--ssc-text-secondary)',
+          '--text-muted': 'var(--ssc-text-muted)',
+        }}
+      >
 
         {/* ── HEADER ── */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '24px 20px 12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 40px', alignItems: 'center', gap: 8, padding: '24px 20px 16px' }}>
           <button
             onClick={() => router.back()}
             className="active:scale-95 transition-transform"
             style={{
               width: 36, height: 36, borderRadius: '50%',
-              background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.10)',
+              background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', flexShrink: 0, marginTop: 2,
+              color: 'var(--ssc-text-primary)', flexShrink: 0, marginTop: 2,
+              boxShadow: 'var(--ssc-shadow-card)',
             }}
             aria-label="Go back"
           >
@@ -353,13 +356,16 @@ export default function SubjectsPage() {
               <path d="M19 12H5M12 5l-7 7 7 7"/>
             </svg>
           </button>
-          <div>
-            <h1 className="t-page-title font-display" style={{ color: '#ffffff' }}>
-              Choose a Subject
+          <div style={{ textAlign: 'center', minWidth: 0 }}>
+            <h1 className="t-page-title font-display" style={{ color: 'var(--ssc-text-primary)', fontSize: 18 }}>
+              Select Subject
             </h1>
-            <p className="t-page-subtitle" style={{ color: 'rgba(148,163,184,0.8)' }}>
-              Select one to start your GK quiz
+            <p className="t-page-subtitle" style={{ color: 'var(--ssc-text-secondary)', fontSize: 12 }}>
+              Choose a subject to continue
             </p>
+          </div>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ssc-text-primary)', fontWeight: 800 }}>
+            ?
           </div>
         </div>
 
@@ -367,12 +373,13 @@ export default function SubjectsPage() {
         <div style={{ padding: '0 20px 12px' }}>
           <div className="subj-search-wrap" style={{
             display: 'flex', alignItems: 'center', gap: 10,
-            background: 'var(--bg-card)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'var(--ssc-surface)',
+            border: '1px solid var(--ssc-border-soft)',
             borderRadius: 14,
             padding: '10px 14px',
+            boxShadow: 'var(--ssc-shadow-card)',
           }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(148,163,184,0.7)" strokeWidth="2.3" style={{ flexShrink: 0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-muted)" strokeWidth="2.3" style={{ flexShrink: 0 }}>
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input
@@ -384,7 +391,7 @@ export default function SubjectsPage() {
               onChange={e => setSearch(e.target.value)}
               style={{
                 flex: 1, background: 'transparent', border: 'none',
-                color: '#fff', fontSize: 15, lineHeight: '22px', fontFamily: 'inherit',
+                color: 'var(--ssc-text-primary)', fontSize: 15, lineHeight: '22px', fontFamily: 'inherit',
               }}
             />
             {search && (
@@ -414,14 +421,14 @@ export default function SubjectsPage() {
               width: '100%',
               padding: '12px 16px',
               borderRadius: 20,
-              background: 'linear-gradient(135deg, #7C3AED 0%, #C2410C 100%)',
-              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'linear-gradient(135deg, #FFF8F4 0%, #E8F8F6 100%)',
+              border: '1px solid var(--ssc-border-soft)',
               overflow: 'hidden',
               display: 'flex',
               alignItems: 'center',
               gap: 14,
               textAlign: 'left',
-              boxShadow: '0 8px 28px rgba(124,58,237,0.30)',
+              boxShadow: 'var(--ssc-shadow-card)',
             }}
           >
             {/* Subtle shimmer streak */}
@@ -434,8 +441,8 @@ export default function SubjectsPage() {
             {/* Icon box */}
             <div style={{
               width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-              background: 'rgba(255,255,255,0.15)',
-              border: '1px solid rgba(255,255,255,0.22)',
+              background: '#FFF1E8',
+              border: '1px solid rgba(255,106,0,0.18)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 20, lineHeight: 1,
             }}>
@@ -445,20 +452,20 @@ export default function SubjectsPage() {
             {/* Text */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
-                <p className="t-card-title font-display" style={{ color: '#ffffff', margin: 0 }}>
+                <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', margin: 0 }}>
                   Mixed GK Challenge
                 </p>
                 <span className="t-badge" style={{
-                  letterSpacing: '0.06em', color: '#fde68a',
-                  background: 'rgba(253,230,138,0.18)',
-                  border: '1px solid rgba(253,230,138,0.35)',
+                  letterSpacing: '0.06em', color: 'var(--ssc-teal)',
+                  background: 'var(--ssc-teal-soft)',
+                  border: '1px solid rgba(14,165,164,0.20)',
                   borderRadius: 20, padding: '2px 7px',
                   textTransform: 'uppercase', flexShrink: 0,
                 }}>
                   Recommended
                 </span>
               </div>
-              <p className="t-card-subtitle" style={{ color: 'rgba(255,255,255,0.65)', margin: '4px 0 0' }}>
+              <p className="t-card-subtitle" style={{ color: 'var(--ssc-text-secondary)', margin: '4px 0 0' }}>
                 All subjects • Exam-like practice
               </p>
             </div>
@@ -466,11 +473,11 @@ export default function SubjectsPage() {
             {/* Arrow */}
             <div style={{
               width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-              background: 'rgba(255,255,255,0.15)',
-              border: '1px solid rgba(255,255,255,0.20)',
+              background: 'var(--ssc-surface)',
+              border: '1px solid var(--ssc-border-soft)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-primary)" strokeWidth="2.8">
                 <path d="M5 12h14M12 5l7 7-7 7"/>
               </svg>
             </div>
@@ -481,7 +488,7 @@ export default function SubjectsPage() {
         {isFetching && slow && !isError && displayCounts === null && (
           <div style={{
             margin: '0 20px 10px', padding: '10px 14px', borderRadius: 14,
-            background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)',
+            background: 'var(--ssc-warning-soft)', border: '1px solid rgba(245,158,11,0.24)',
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
             <span style={{ fontSize: 14, flexShrink: 0 }}>⏳</span>
@@ -503,8 +510,8 @@ export default function SubjectsPage() {
                 <p style={{ fontSize: 13, fontWeight: 700, color: '#fca5a5', margin: '0 0 2px' }}>
                   Couldn't load subjects
                 </p>
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0, lineHeight: 1.4 }}>
-                  Check your connection and try again.
+                <p style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', margin: 0, lineHeight: 1.4 }}>
+              Check your connection and try again.
                 </p>
               </div>
               <button
@@ -524,7 +531,7 @@ export default function SubjectsPage() {
         {/* ── NO SEARCH RESULTS ── */}
         {search && searchResults && searchResults.length === 0 && (
           <p style={{
-            fontSize: 13, color: 'rgba(148,163,184,0.45)',
+            fontSize: 13, color: 'var(--ssc-text-muted)',
             textAlign: 'center', margin: '28px 20px 8px', lineHeight: 1.5,
           }}>
             No subjects match &ldquo;{search}&rdquo;
@@ -548,7 +555,7 @@ export default function SubjectsPage() {
 
         {/* ── SEARCH RESULTS — flat grid, no section labels ── */}
         {searchResults && searchResults.length > 0 && (
-          <SubjectGrid subjects={searchResults} displayCounts={displayCounts} selected={selected} setSelected={setSelected} startIdx={0} />
+          <SubjectGrid subjects={searchResults} displayCounts={displayCounts} collection={collection} router={router} startIdx={0} />
         )}
 
         {/* ── SECTIONED LAYOUT — shown when not searching ── */}
@@ -559,75 +566,18 @@ export default function SubjectsPage() {
             <div key={section.label} style={{ marginBottom: 20 }}>
               {/* Section label */}
               <p className="t-section-label" style={{
-                color: '#7A8FA6',
+                color: 'var(--ssc-text-secondary)',
                 margin: '0 20px 8px',
               }}>
                 {section.label}
               </p>
-              <SubjectGrid subjects={subjects} displayCounts={displayCounts} selected={selected} setSelected={setSelected} startIdx={0} />
+              <SubjectGrid subjects={subjects} displayCounts={displayCounts} collection={collection} router={router} startIdx={0} />
             </div>
           );
         })}
 
-        {/* bottom breathing room above sticky CTA */}
-        <div style={{ height: 24 }} />
-      </div>
-
-      {/* ── FIXED BOTTOM CTA ── */}
-      <div className="fixed bottom-0 left-0 right-0 z-40">
-        <div style={{
-          maxWidth: 430, margin: '0 auto',
-          padding: '10px 16px',
-          paddingBottom: 'max(20px, env(safe-area-inset-bottom, 20px))',
-          background: 'linear-gradient(to top, var(--bg-app) 72%, transparent)',
-        }}>
-
-          {/* Main CTA button */}
-          <button
-            onClick={() => {
-              if (!selected) return;
-              const col = router.query.collection || 'general';
-              router.push(`/quiz-setup?subject=${encodeURIComponent(selected)}&collection=${encodeURIComponent(col)}&sourceScreen=dashboard`);
-            }}
-            disabled={!selected || displayCounts === null}
-            className={selected ? 'active:scale-[0.98]' : ''}
-            style={{
-              width: '100%',
-              padding: '15px 20px',
-              borderRadius: 18,
-              border: selected ? 'none' : '1px solid rgba(148,163,184,0.16)',
-              background: displayCounts === null
-                ? '#172D47'
-                : selected
-                  ? 'linear-gradient(135deg, #FF8A1F, #FF5A00)'
-                  : '#172D47',
-              boxShadow: selected ? '0 12px 28px rgba(255,106,0,0.28)' : 'none',
-              color: selected ? '#ffffff' : '#64748B',
-              fontSize: 15,
-              fontWeight: 700,
-              fontFamily: 'inherit',
-              cursor: selected ? 'pointer' : 'not-allowed',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              transition: 'box-shadow 0.2s ease, transform 0.1s ease',
-            }}
-          >
-            {displayCounts === null ? (
-              'Loading subjects…'
-            ) : selected ? (
-              <>
-                Start {selected} Quiz
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </>
-            ) : (
-              'Choose any subject to continue'
-            )}
-          </button>
-        </div>
+        {/* bottom breathing room above bottom nav */}
+        <div style={{ height: 88 }} />
       </div>
     </>
   );
