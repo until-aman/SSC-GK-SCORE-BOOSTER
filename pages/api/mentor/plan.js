@@ -13,8 +13,9 @@ import { getUserAttemptAnswers } from '@/lib/historyData';
 import { generateTodaysPlan } from '@/lib/mentorPlanEngine';
 import { getMentorDayMessage } from '@/lib/mentorCopy';
 import { createSheetsMentorRepository, runMentorShadowComparison } from '@/lib/mentor/repository';
-import { isMentorCanonicalDayReadEnabled, isMentorDailyRolloverV2Enabled, isMentorPendingLifecycleV2Enabled } from '@/lib/mentor/repository/featureFlags';
+import { isMentorRepoV2Enabled, isMentorCanonicalDayReadEnabled, isMentorDailyRolloverV2Enabled, isMentorPendingLifecycleV2Enabled } from '@/lib/mentor/repository/featureFlags';
 import { processDailyRollover } from '@/lib/mentor/services/dailyRolloverService';
+import { applyRepoV2Compatibility } from '@/lib/mentor/read/serveCompatibleSnapshot';
 
 function normalizeSubjectId(subjectId) {
   return String(subjectId || '').replace(/^Q_PYQ_/, '');
@@ -145,6 +146,10 @@ function buildSnapshot(profile, plan) {
   };
 }
 
+// Phase 9B-Prep: the Repository V2 read overlay was extracted to
+// `lib/mentor/read/serveCompatibleSnapshot.js` (imported above) so GET
+// /api/mentor/plan and the future V2 task-action response share one contract.
+
 export async function loadOrCreateMentorSnapshot(email, { forceRefresh = false, revealCount, unlockNextDay = false } = {}) {
   const sheets = await getSheetsClient();
   const profile = await getMentorProfileWithPlanState(sheets, email);
@@ -187,7 +192,18 @@ async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.email) return res.status(401).json({ error: 'Unauthorized' });
   try {
-    const snapshot = await loadOrCreateMentorSnapshot(session.user.email);
+    let snapshot = await loadOrCreateMentorSnapshot(session.user.email);
+    // Phase 8C: serve Mentor reads via Repository V2 (generation isolation +
+    // canonical day) when enabled. Read-only; falls back to legacy on any error.
+    if (isMentorRepoV2Enabled() && snapshot && snapshot.exists) {
+      try {
+        const repo = createSheetsMentorRepository();
+        const repoSnapshot = await repo.getMentorSnapshotData({ email: session.user.email });
+        snapshot = applyRepoV2Compatibility(snapshot, repoSnapshot);
+      } catch (repoErr) {
+        console.error('[mentor/plan] repo-v2 overlay failed, serving legacy:', repoErr.message);
+      }
+    }
     if (isMentorCanonicalDayReadEnabled()) {
       const repo = createSheetsMentorRepository();
       const canonical = await repo.getMentorSnapshotData({ email: session.user.email });

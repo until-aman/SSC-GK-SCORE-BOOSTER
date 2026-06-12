@@ -6,6 +6,10 @@ import {
   updateMentorTaskStatus,
   upsertStudentTopicState,
 } from '@/lib/sheets';
+import { shouldRouteQuizCompletionThroughV2 } from '@/lib/mentor/read/taskActionRouting';
+import { createSheetsMentorRepository } from '@/lib/mentor/repository';
+import { createSheetsMutationRepository, createSheetsIdempotencyStore } from '@/lib/mentor/repository/sheetsMutationRepository';
+import { executeV2QuizComplete } from '@/lib/mentor/read/v2TaskActionHandler';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -29,6 +33,36 @@ export default async function handler(req, res) {
   try {
     const sheets = await getSheetsClient();
     const now = new Date().toISOString();
+
+    // Phase 9G1: gated V2 quiz-sync COMPLETE (allowlisted users only). Fail-closed:
+    // once entered, it does NOT fall back to the legacy write. Manual `complete`
+    // (task-action) stays legacy regardless.
+    if (shouldRouteQuizCompletionThroughV2({ email: session.user.email })) {
+      try {
+        const repoSnap = await createSheetsMentorRepository().getMentorSnapshotData({ email: session.user.email });
+        const repository = createSheetsMutationRepository({
+          sheets,
+          email: session.user.email,
+          currentGenerationTaskIds: new Set((repoSnap.currentTasks || []).map(t => t.taskId)),
+          hiddenTaskIds: new Set((repoSnap.hiddenLegacyTasks || []).map(t => t.taskId)),
+        });
+        const idempotencyStore = createSheetsIdempotencyStore({ sheets, email: session.user.email });
+        const result = await executeV2QuizComplete({
+          userIdentity: { email: session.user.email },
+          repository,
+          idempotencyStore,
+          now,
+          request: { taskId, planId, quizSessionId, subject, topic, correct, incorrect, skipped, totalQuestions },
+          upsertTopicState: async (update) => { await upsertStudentTopicState(sheets, session.user.email, update); },
+        });
+        if (!result.ok) return res.status(result.httpStatus || 409).json({ success: false, code: result.code, error: result.message || 'Quiz completion could not be saved.' });
+        return res.status(200).json({ success: true, idempotent: result.idempotent });
+      } catch (v2err) {
+        console.error('[mentor/quiz-return] v2 complete error:', v2err.message);
+        return res.status(500).json({ success: false, code: 'V2_QUIZ_COMPLETE_ERROR', error: 'Could not update mentor task.' });
+      }
+    }
+
     await updateMentorTaskStatus(sheets, session.user.email, taskId, {
       Status: 'completed',
       CompletedAt: now,

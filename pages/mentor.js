@@ -657,6 +657,7 @@ export default function MentorPage() {
 
   function getGuestTaskStatus(item, actionType, fallbackStatus) {
     if (actionType === 'response') return 'completed';
+    if (actionType === 'resume') return 'active';
     if (actionType === 'snooze' && Number(item.snoozeCount || 0) + 1 >= 3) return 'active';
     return fallbackStatus;
   }
@@ -729,6 +730,18 @@ export default function MentorPage() {
       await runTaskAction(task, 'snooze');
     } catch (err) {
       setError(err.message || 'Task later save nahi ho paya.');
+      setBusyTaskId('');
+    }
+  }
+
+  // Phase 9E: Resume a previously-postponed (pending) task. Reuses the existing
+  // task-action client flow with actionType=resume; the backend decides V2 vs
+  // legacy (the frontend stays unaware of V2 flags).
+  async function handleResume(task) {
+    try {
+      await runTaskAction(task, 'resume');
+    } catch (err) {
+      setError(err.message || 'Task resume nahi ho paya.');
       setBusyTaskId('');
     }
   }
@@ -1013,6 +1026,42 @@ export default function MentorPage() {
                       onShowNextDay={handleShowNextDay}
                     />
                   </section>
+
+                  {/* Phase 9E: Previously Pending — read-only surfacing of canonical
+                      pending tasks (V2 postponed). Hidden when empty; legacy snoozed
+                      tasks are NOT here (they are deferred, not pending). */}
+                  {(snapshot?.pendingTasks || []).length > 0 && (
+                    <section className="space-y-3" aria-label="Previously Pending">
+                      <div>
+                        <h2 className="font-display text-xl font-black leading-none text-slate-100">Previously Pending</h2>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">Tasks you paused for later. Resume when you&apos;re ready.</p>
+                      </div>
+                      <div className="space-y-2">
+                        {(snapshot?.pendingTasks || []).map(task => (
+                          <div key={task.taskId} className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-[#172d47] p-3.5">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="shrink-0 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-300">Paused for later</span>
+                                {(task.subject || task.subjectName) && (
+                                  <span className="truncate text-[11px] font-semibold text-slate-400">{task.subject || task.subjectName}{task.topic ? ` · ${task.topic}` : ''}</span>
+                                )}
+                              </div>
+                              <h3 className="mt-1 truncate font-display text-base font-black text-white">{task.title || task.topic || 'Mentor Task'}</h3>
+                              <p className="mt-0.5 text-xs font-medium text-slate-500">Continue when you want.</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleResume(task)}
+                              disabled={busyTaskId === task.taskId}
+                              className="shrink-0 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-black text-[#0b1a2e] disabled:opacity-60"
+                            >
+                              {busyTaskId === task.taskId ? 'Resuming…' : 'Resume'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
                 </>
               )}
             </div>

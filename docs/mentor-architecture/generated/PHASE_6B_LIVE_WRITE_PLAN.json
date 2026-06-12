@@ -1,0 +1,817 @@
+{
+  "schemaVersion": "mentor-sheets-v2",
+  "manifestHash": "b31fe07b8f20107526281c2e00378dd0d1495ecaa7b56cbf6ec3412a62556fcc",
+  "workbookIdHash": "b5dbd520776c48ff",
+  "generatedAt": "2026-06-11T01:49:04.128Z",
+  "batches": [
+    "CREATE_TABS",
+    "APPEND_COLUMNS",
+    "BACKFILL_ROWS",
+    "SCHEMA_MARKER"
+  ],
+  "tabsToCreate": [
+    {
+      "tab": "MentorMutationRequests",
+      "headers": [
+        "IdempotencyKey",
+        "UserScopeHash",
+        "PlanId",
+        "TaskId",
+        "Action",
+        "PayloadHash",
+        "Status",
+        "ResultJSON",
+        "CreatedAt",
+        "CompletedAt",
+        "ExpiresAt"
+      ]
+    },
+    {
+      "tab": "MentorSchema",
+      "headers": [
+        "SchemaName",
+        "SchemaVersion",
+        "AppliedAt",
+        "ManifestHash"
+      ]
+    }
+  ],
+  "columnsToAppend": [
+    {
+      "tab": "MentorProfile",
+      "add": [
+        "ActivePlanVersion",
+        "Timezone",
+        "SnapshotRevision",
+        "PlanStartLocalDate",
+        "LastProcessedCalendarDay",
+        "UnlockedDay"
+      ],
+      "requiredAdd": [
+        "ActivePlanVersion",
+        "Timezone",
+        "SnapshotRevision"
+      ]
+    },
+    {
+      "tab": "MentorPlans",
+      "add": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskSetRevision",
+        "NextTaskNumber",
+        "Timezone",
+        "PlanStartLocalDate",
+        "TotalPlanDays",
+        "UnlockedDay",
+        "LastProcessedCalendarDay",
+        "LastDailyRolloverAt",
+        "FeaturedPendingTaskId",
+        "FeaturedPendingForCalendarDay",
+        "GenerationStatus",
+        "RowVersion",
+        "SupersededByPlanId",
+        "SupersededAt"
+      ],
+      "requiredAdd": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskSetRevision",
+        "NextTaskNumber",
+        "Timezone",
+        "PlanStartLocalDate",
+        "TotalPlanDays",
+        "UnlockedDay",
+        "LastProcessedCalendarDay",
+        "LastDailyRolloverAt",
+        "FeaturedPendingTaskId",
+        "FeaturedPendingForCalendarDay",
+        "GenerationStatus",
+        "RowVersion"
+      ]
+    },
+    {
+      "tab": "MentorTasks",
+      "add": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "PendingReason",
+        "MovedToPendingAt",
+        "NextEligibleAt",
+        "NextEligibleResurfaceAt",
+        "ResurfacedCount",
+        "LastResurfacedAt",
+        "CompletionSource",
+        "LinkedQuizSessionId",
+        "ParentTaskId",
+        "RelatedTaskId",
+        "TriggerReason",
+        "CancellationReason",
+        "RowVersion"
+      ],
+      "requiredAdd": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "PendingReason",
+        "MovedToPendingAt",
+        "NextEligibleAt",
+        "NextEligibleResurfaceAt",
+        "ResurfacedCount",
+        "LastResurfacedAt",
+        "CompletionSource",
+        "LinkedQuizSessionId",
+        "ParentTaskId",
+        "RelatedTaskId",
+        "TriggerReason",
+        "CancellationReason",
+        "RowVersion"
+      ]
+    },
+    {
+      "tab": "MentorTaskLogs",
+      "add": [
+        "EventId",
+        "FromStatus",
+        "ToStatus",
+        "CanonicalAction",
+        "IdempotencyKey",
+        "RequestId",
+        "EventPayloadJSON"
+      ],
+      "requiredAdd": [
+        "EventId",
+        "FromStatus",
+        "ToStatus",
+        "CanonicalAction",
+        "IdempotencyKey",
+        "RequestId",
+        "EventPayloadJSON"
+      ]
+    }
+  ],
+  "backfillRowCount": 20,
+  "backfills": [
+    {
+      "tab": "MentorPlans",
+      "matchBy": "CreatedAt",
+      "matchValue": "2026-06-08T12:13:30.089Z",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskSetRevision",
+        "NextTaskNumber",
+        "Timezone",
+        "PlanStartLocalDate",
+        "TotalPlanDays",
+        "UnlockedDay",
+        "LastProcessedCalendarDay",
+        "GenerationStatus",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g1",
+        "TaskSetRevision": 1,
+        "NextTaskNumber": 1,
+        "Timezone": "Asia/Kolkata",
+        "PlanStartLocalDate": "2026-06-08",
+        "TotalPlanDays": 46,
+        "UnlockedDay": 1,
+        "LastProcessedCalendarDay": 1,
+        "GenerationStatus": "superseded",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorPlans",
+      "matchBy": "CreatedAt",
+      "matchValue": "2026-06-08T12:19:16.660Z",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskSetRevision",
+        "NextTaskNumber",
+        "Timezone",
+        "PlanStartLocalDate",
+        "TotalPlanDays",
+        "UnlockedDay",
+        "LastProcessedCalendarDay",
+        "GenerationStatus",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g2",
+        "TaskSetRevision": 1,
+        "NextTaskNumber": 1,
+        "Timezone": "Asia/Kolkata",
+        "PlanStartLocalDate": "2026-06-08",
+        "TotalPlanDays": 46,
+        "UnlockedDay": 1,
+        "LastProcessedCalendarDay": 1,
+        "GenerationStatus": "superseded",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorPlans",
+      "matchBy": "CreatedAt",
+      "matchValue": "2026-06-08T14:01:19.707Z",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskSetRevision",
+        "NextTaskNumber",
+        "Timezone",
+        "PlanStartLocalDate",
+        "TotalPlanDays",
+        "UnlockedDay",
+        "LastProcessedCalendarDay",
+        "GenerationStatus",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g3",
+        "TaskSetRevision": 1,
+        "NextTaskNumber": 1,
+        "Timezone": "Asia/Kolkata",
+        "PlanStartLocalDate": "2026-06-08",
+        "TotalPlanDays": 46,
+        "UnlockedDay": 1,
+        "LastProcessedCalendarDay": 1,
+        "GenerationStatus": "superseded",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorPlans",
+      "matchBy": "CreatedAt",
+      "matchValue": "2026-06-08T14:01:20.314Z",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskSetRevision",
+        "NextTaskNumber",
+        "Timezone",
+        "PlanStartLocalDate",
+        "TotalPlanDays",
+        "UnlockedDay",
+        "LastProcessedCalendarDay",
+        "GenerationStatus",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g4",
+        "TaskSetRevision": 1,
+        "NextTaskNumber": 1,
+        "Timezone": "Asia/Kolkata",
+        "PlanStartLocalDate": "2026-06-08",
+        "TotalPlanDays": 46,
+        "UnlockedDay": 1,
+        "LastProcessedCalendarDay": 1,
+        "GenerationStatus": "superseded",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorPlans",
+      "matchBy": "CreatedAt",
+      "matchValue": "2026-06-08T14:01:22.132Z",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskSetRevision",
+        "NextTaskNumber",
+        "Timezone",
+        "PlanStartLocalDate",
+        "TotalPlanDays",
+        "UnlockedDay",
+        "LastProcessedCalendarDay",
+        "GenerationStatus",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g5",
+        "TaskSetRevision": 1,
+        "NextTaskNumber": 16,
+        "Timezone": "Asia/Kolkata",
+        "PlanStartLocalDate": "2026-06-08",
+        "TotalPlanDays": 46,
+        "UnlockedDay": 1,
+        "LastProcessedCalendarDay": 4,
+        "GenerationStatus": "succeeded",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorTasks",
+      "matchBy": "TaskId",
+      "matchValue": "MT_1780920810054_mistake",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "CompletionSource",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g1",
+        "TaskNumber": 1,
+        "QuestionCount": 25,
+        "OriginalScheduledDay": 1,
+        "ScheduledLocalDate": "2026-06-08",
+        "CompletionSource": "",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorTasks",
+      "matchBy": "TaskId",
+      "matchValue": "MT_1780920810054_Polity_2",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "CompletionSource",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g1",
+        "TaskNumber": 2,
+        "QuestionCount": 25,
+        "OriginalScheduledDay": 1,
+        "ScheduledLocalDate": "2026-06-08",
+        "CompletionSource": "",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorTasks",
+      "matchBy": "TaskId",
+      "matchValue": "MT_1780920810054_Polity_3",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "CompletionSource",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g1",
+        "TaskNumber": 3,
+        "QuestionCount": 25,
+        "OriginalScheduledDay": 1,
+        "ScheduledLocalDate": "2026-06-08",
+        "CompletionSource": "",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorTasks",
+      "matchBy": "TaskId",
+      "matchValue": "MT_1780921156659_mistake",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "CompletionSource",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g2",
+        "TaskNumber": 4,
+        "QuestionCount": 25,
+        "OriginalScheduledDay": 1,
+        "ScheduledLocalDate": "2026-06-08",
+        "CompletionSource": "",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorTasks",
+      "matchBy": "TaskId",
+      "matchValue": "MT_1780921156659_Polity_2",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "CompletionSource",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g2",
+        "TaskNumber": 5,
+        "QuestionCount": 25,
+        "OriginalScheduledDay": 1,
+        "ScheduledLocalDate": "2026-06-08",
+        "CompletionSource": "",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorTasks",
+      "matchBy": "TaskId",
+      "matchValue": "MT_1780921156659_Polity_3",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "CompletionSource",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g2",
+        "TaskNumber": 6,
+        "QuestionCount": 25,
+        "OriginalScheduledDay": 1,
+        "ScheduledLocalDate": "2026-06-08",
+        "CompletionSource": "",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorTasks",
+      "matchBy": "TaskId",
+      "matchValue": "MT_1780927279677_mistake",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "CompletionSource",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g3",
+        "TaskNumber": 7,
+        "QuestionCount": 25,
+        "OriginalScheduledDay": 1,
+        "ScheduledLocalDate": "2026-06-08",
+        "CompletionSource": "",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorTasks",
+      "matchBy": "TaskId",
+      "matchValue": "MT_1780927279677_Polity_2",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "CompletionSource",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g3",
+        "TaskNumber": 8,
+        "QuestionCount": 25,
+        "OriginalScheduledDay": 1,
+        "ScheduledLocalDate": "2026-06-08",
+        "CompletionSource": "",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorTasks",
+      "matchBy": "TaskId",
+      "matchValue": "MT_1780927279677_Polity_3",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "CompletionSource",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g3",
+        "TaskNumber": 9,
+        "QuestionCount": 25,
+        "OriginalScheduledDay": 1,
+        "ScheduledLocalDate": "2026-06-08",
+        "CompletionSource": "",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorTasks",
+      "matchBy": "TaskId",
+      "matchValue": "MT_1780927280313_mistake",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "CompletionSource",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g4",
+        "TaskNumber": 10,
+        "QuestionCount": 25,
+        "OriginalScheduledDay": 1,
+        "ScheduledLocalDate": "2026-06-08",
+        "CompletionSource": "",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorTasks",
+      "matchBy": "TaskId",
+      "matchValue": "MT_1780927280313_Polity_2",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "CompletionSource",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g4",
+        "TaskNumber": 11,
+        "QuestionCount": 25,
+        "OriginalScheduledDay": 1,
+        "ScheduledLocalDate": "2026-06-08",
+        "CompletionSource": "",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorTasks",
+      "matchBy": "TaskId",
+      "matchValue": "MT_1780927280313_Polity_3",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "CompletionSource",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g4",
+        "TaskNumber": 12,
+        "QuestionCount": 25,
+        "OriginalScheduledDay": 1,
+        "ScheduledLocalDate": "2026-06-08",
+        "CompletionSource": "",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorTasks",
+      "matchBy": "TaskId",
+      "matchValue": "MT_1780927282132_mistake",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "CompletionSource",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g5",
+        "TaskNumber": 13,
+        "QuestionCount": 25,
+        "OriginalScheduledDay": 1,
+        "ScheduledLocalDate": "2026-06-08",
+        "CompletionSource": "",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorTasks",
+      "matchBy": "TaskId",
+      "matchValue": "MT_1780927282132_Polity_2",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "CompletionSource",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g5",
+        "TaskNumber": 14,
+        "QuestionCount": 25,
+        "OriginalScheduledDay": 1,
+        "ScheduledLocalDate": "2026-06-08",
+        "CompletionSource": "",
+        "RowVersion": 1
+      }
+    },
+    {
+      "tab": "MentorTasks",
+      "matchBy": "TaskId",
+      "matchValue": "MT_1780927282132_Polity_3",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "CompletionSource",
+        "RowVersion"
+      ],
+      "expectedOld": "blank_or_absent",
+      "newValues": {
+        "PlanVersion": 1,
+        "GenerationId": "MP_1780920810055#g5",
+        "TaskNumber": 15,
+        "QuestionCount": 25,
+        "OriginalScheduledDay": 1,
+        "ScheduledLocalDate": "2026-06-08",
+        "CompletionSource": "",
+        "RowVersion": 1
+      }
+    }
+  ],
+  "schemaMarker": {
+    "tab": "MentorSchema",
+    "row": [
+      "mentor",
+      "2",
+      "<appliedAt>",
+      "b31fe07b8f20107526281c2e00378dd0d1495ecaa7b56cbf6ec3412a62556fcc"
+    ]
+  },
+  "verifications": [
+    {
+      "type": "tab_exists_with_headers",
+      "tab": "MentorMutationRequests"
+    },
+    {
+      "type": "tab_exists_with_headers",
+      "tab": "MentorSchema"
+    },
+    {
+      "type": "required_columns_present",
+      "tab": "MentorProfile",
+      "columns": [
+        "ActivePlanVersion",
+        "Timezone",
+        "SnapshotRevision"
+      ]
+    },
+    {
+      "type": "required_columns_present",
+      "tab": "MentorPlans",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskSetRevision",
+        "NextTaskNumber",
+        "Timezone",
+        "PlanStartLocalDate",
+        "TotalPlanDays",
+        "UnlockedDay",
+        "LastProcessedCalendarDay",
+        "LastDailyRolloverAt",
+        "FeaturedPendingTaskId",
+        "FeaturedPendingForCalendarDay",
+        "GenerationStatus",
+        "RowVersion"
+      ]
+    },
+    {
+      "type": "required_columns_present",
+      "tab": "MentorTasks",
+      "columns": [
+        "PlanVersion",
+        "GenerationId",
+        "TaskNumber",
+        "QuestionCount",
+        "OriginalScheduledDay",
+        "ScheduledLocalDate",
+        "PendingReason",
+        "MovedToPendingAt",
+        "NextEligibleAt",
+        "NextEligibleResurfaceAt",
+        "ResurfacedCount",
+        "LastResurfacedAt",
+        "CompletionSource",
+        "LinkedQuizSessionId",
+        "ParentTaskId",
+        "RelatedTaskId",
+        "TriggerReason",
+        "CancellationReason",
+        "RowVersion"
+      ]
+    },
+    {
+      "type": "required_columns_present",
+      "tab": "MentorTaskLogs",
+      "columns": [
+        "EventId",
+        "FromStatus",
+        "ToStatus",
+        "CanonicalAction",
+        "IdempotencyKey",
+        "RequestId",
+        "EventPayloadJSON"
+      ]
+    },
+    {
+      "type": "backfill_cells_match",
+      "count": 20
+    },
+    {
+      "type": "schema_marker_present",
+      "tab": "MentorSchema",
+      "expect": [
+        "mentor",
+        "2"
+      ]
+    }
+  ],
+  "rollbackNotes": [
+    "Google Sheets writes are not transactional.",
+    "Rollback = restore the founder-downloaded .xlsx backup recorded in MENTOR_BACKUP_NOTE.",
+    "All operations are additive (create tab / append column / fill blank cell); existing legacy data is never deleted, reordered, renamed, or overwritten.",
+    "On any batch verification failure the writer stops before later batches and emits a failure report."
+  ]
+}
