@@ -17,7 +17,10 @@ const wf = exists ? fs.readFileSync(WF, 'utf8') : '';
 let passed = 0, failed = 0; const T = []; const test = (n, fn) => T.push({ n, fn });
 
 test('1. workflow file exists', () => assert.ok(exists, '.github/workflows/mentor-v2-monitor.yml missing'));
-test('2. has a schedule (cron)', () => { assert.ok(/schedule:/.test(wf)); assert.ok(/cron:\s*["']?0 \*\/6 \* \* \*/.test(wf), 'expected every-6h cron'); });
+test('2. Phase 9M2: scheduled trigger REMOVED (manual-only; scheduling moved to Vercel Cron)', () => {
+  assert.ok(!/^\s*schedule:/m.test(wf), 'workflow must NOT have a schedule trigger (no GitHub secrets -> would always fail)');
+  assert.ok(!/^\s*-\s*cron:/m.test(wf), 'workflow must NOT have a cron entry');
+});
 test('3. supports manual workflow_dispatch', () => assert.ok(/workflow_dispatch/.test(wf)));
 test('4. runs npm run mentor:v2-monitor', () => assert.ok(/npm run mentor:v2-monitor/.test(wf)));
 test('5. NO deploy commands (deploy actions/CLIs, not the word in comments)', () => {
