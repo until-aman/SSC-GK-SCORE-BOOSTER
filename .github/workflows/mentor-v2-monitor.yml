@@ -4,11 +4,16 @@ name: Mentor V2 Production Monitor
 # Runs `npm run mentor:v2-monitor`, which performs ONLY Google Sheets reads and
 # exits 2 on CRITICAL (fails this job). The expected ALLOW_ALL_ENABLED WARNING
 # (exit 0) does NOT fail the job. No writes, no mutations, no deploy.
+#
+# Phase 9M2: the SCHEDULED trigger is intentionally REMOVED — this repo has no
+# GitHub Actions secrets configured (GitHub Actions cannot read Vercel env vars),
+# so a scheduled run would always fail. Scheduled monitoring now runs via Vercel
+# Cron (vercel.json -> /api/internal/mentor-v2-monitor), which reuses the existing
+# Vercel env. This workflow is kept MANUAL-ONLY (workflow_dispatch) so it can be
+# used later if the three repo secrets (GOOGLE_SERVICE_ACCOUNT_KEY, GOOGLE_SHEET_ID,
+# MENTOR_V2_MUTATION_ALLOWED_USER_HASHES) are ever added.
 
 on:
-  schedule:
-    # every 6 hours
-    - cron: "0 */6 * * *"
   workflow_dispatch: {}
 
 permissions:

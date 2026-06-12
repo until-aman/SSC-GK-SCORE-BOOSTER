@@ -109,31 +109,25 @@ Healthy baseline (allowlist mode) = `ALERT STATUS: OK`, all guardrails 0, real p
 In allow-all mode the healthy baseline is `ALERT STATUS: WARNING` with only `ALLOW_ALL_ENABLED`.
 The monitor prints `Mutation scope: allowAll=<bool> allowlistSize=<n>` and reports `mutationAllowAll`.
 
-## 5a. Scheduled monitor / alerting (GitHub Actions)
+## 5a. Scheduled monitor / alerting (Vercel Cron — Phase 9M2)
 
-- **Workflow:** `.github/workflows/mentor-v2-monitor.yml`
-- **Schedule:** every 6 hours (`cron: "0 */6 * * *"`) + manual **`workflow_dispatch`** (Actions tab → "Mentor V2 Production Monitor" → Run workflow).
-- **What it runs:** `npm run mentor:v2-monitor` — read-only, no writes/mutations/deploy. `permissions: contents: read`.
-- **Pass/fail:** the job fails **only** when the monitor exits non-zero, i.e. **CRITICAL**. The expected `ALLOW_ALL_ENABLED` **WARNING is exit 0** and does **not** fail the job.
-- **Expected healthy result (allow-all on):** `ALERT STATUS: WARNING`, alert `ALLOW_ALL_ENABLED`, no CRITICAL, `mutationAllowAll=true`, guardrails 0/0/0, real plan `{completed:5, snoozed:10}`.
-- **What FAILS the job (CRITICAL → red run):**
-  - `unexpectedMutationsOutsideAllowlist > 0` **while allow-all is off**,
-  - `duplicateIdempotencyKeys > 0`,
-  - `failedMutationRequests ≥ 3`,
-  - affected real plan drift from `{completed:5, snoozed:10}`,
-  - `MENTOR_DAILY_ROLLOVER_V2` or `MENTOR_PENDING_LIFECYCLE_V2` = `true`.
+**Scheduled monitoring runs via Vercel Cron**, which executes inside the Vercel runtime and reuses the **existing** production env vars (`GOOGLE_SERVICE_ACCOUNT_KEY`, `GOOGLE_SHEET_ID`, all `MENTOR_*` flags). No GitHub secrets, no Sheets-credential duplication.
 
-**Required GitHub repo Secrets** (Settings → Secrets and variables → Actions). Names match the app's actual env (`lib/sheets.js`):
+> **Why not GitHub Actions?** GitHub Actions has its own secret store and **cannot read Vercel env vars**. This repo has **no** Actions secrets configured, so a scheduled GitHub run would always fail. The GitHub workflow `.github/workflows/mentor-v2-monitor.yml` is therefore **manual-only** (`workflow_dispatch`) — usable later only if the three repo secrets are ever added.
 
-| Secret | Value |
-|---|---|
-| `GOOGLE_SERVICE_ACCOUNT_KEY` | the service-account JSON (same as Vercel) |
-| `GOOGLE_SHEET_ID` | the production Sheet id |
-| `MENTOR_V2_MUTATION_ALLOWED_USER_HASHES` | current allowlist value (or blank — ignored while allow-all is on) |
+- **Cron config:** `vercel.json` → `crons: [{ path: "/api/internal/mentor-v2-monitor", schedule: "0 */6 * * *" }]` (every 6h).
+  - *Plan note:* on the **Hobby** plan Vercel may throttle cron to ~once/day regardless of the schedule string; the route/result are unchanged either way. Upgrade if a strict 6h cadence is required.
+- **Route:** `pages/api/internal/mentor-v2-monitor.js` — **read-only** (`auditV2Mutations` → `cronMonitorResult`); never mutates the Sheet.
+- **Auth (`CRON_SECRET`):** the route is fail-closed — it requires `Authorization: Bearer ${CRON_SECRET}`. Vercel Cron sends this header automatically **when `CRON_SECRET` is set on the project**. There is no pre-existing cron/internal secret in this repo, so **one new Vercel env var `CRON_SECRET` must be added** (Production; any strong random string). It is **not** a Google/Sheets secret. Without it the route returns `401` and the cron is effectively disabled (safe).
+- **HTTP semantics:** `CRITICAL → 500` (Vercel marks the cron run failed → surfaces in the Vercel dashboard / logs), `WARNING/OK → 200`.
+- **Expected healthy result (allow-all on):** `200` with `alertStatus: "WARNING"`, alert `ALLOW_ALL_ENABLED`, `mutationAllowAll: true`, `duplicateIdempotencyKeys: 0`, `failedMutationRequests: 0`, `unexpectedMutationsOutsideAllowlist: 0`, `affectedRealPlanStatus: {completed:5, snoozed:10}`, `flags.MENTOR_DAILY_ROLLOVER_V2/PENDING_LIFECYCLE_V2: false`.
+- **What returns 500 (CRITICAL):** `unexpectedMutationsOutsideAllowlist > 0` while allow-all off · `duplicateIdempotencyKeys > 0` · `failedMutationRequests ≥ 3` · affected real plan drift from `{completed:5, snoozed:10}` · `MENTOR_DAILY_ROLLOVER_V2` or `MENTOR_PENDING_LIFECYCLE_V2` = `true`.
 
-The workflow hard-codes the mutation/scope flags (`MENTOR_*_V2=true`, allow-all `true`, rollover/pending `false`) to mirror production, so only the two Google secrets + the allowlist need to be set. **Add no write-capable secrets.**
+**Required Vercel env for the cron** (all but `CRON_SECRET` already exist): `GOOGLE_SERVICE_ACCOUNT_KEY`, `GOOGLE_SHEET_ID`, the `MENTOR_*` mutation/scope flags, **plus `CRON_SECRET` (new, one-time)**.
 
-**If the scheduled job goes CRITICAL (red):** open the run log to see the alert code, then apply the matching rollback from §4 (e.g. `unexpectedMutationsOutsideAllowlist>0` with allow-all off → check the allowlist; a real-plan drift or a rollover/pending flag true → disable mutations via `MENTOR_TASK_MUTATIONS_V2=false` and investigate; restore the `.xlsx` backup if data changed). Re-run via `workflow_dispatch` to confirm green.
+**Manual check (local, anytime):** `DOTENV_CONFIG_PATH=.env.local node -r dotenv/config scripts/mentor-v2-mutation-monitor.js` (exits 2 on CRITICAL). The GitHub workflow can also be run manually from the Actions tab **if** the three repo secrets are added.
+
+**If a cron run returns 500 (CRITICAL):** check the Vercel function logs for the alert code, then apply the matching rollback from §4 (e.g. real-plan drift or a rollover/pending flag true → disable mutations via `MENTOR_TASK_MUTATIONS_V2=false`, investigate, restore the `.xlsx` backup if data changed).
 
 ## 6. Cohort expansion procedure
 
