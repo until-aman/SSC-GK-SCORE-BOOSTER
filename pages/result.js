@@ -681,7 +681,7 @@ export default function Result() {
   }
 
   if (!result) return (
-    <div suppressHydrationWarning style={{ minHeight: '100vh', background: '#0D1B2E', padding: '32px 16px 0' }}>
+    <div suppressHydrationWarning style={{ minHeight: '100vh', background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)', padding: '32px 16px 0' }}>
       <Head><title>Result — SSC GK Score Booster</title></Head>
       <div className="skeleton h-6 w-48 rounded-lg mx-auto mb-4" />
       <div className="skeleton h-56 rounded-3xl mb-4" />
@@ -691,7 +691,7 @@ export default function Result() {
   );
 
   return (
-    <div suppressHydrationWarning style={{ minHeight: '100vh', background: '#0D1B2E', paddingBottom: 112 }}>
+    <div suppressHydrationWarning style={{ minHeight: '100vh', background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)', paddingBottom: 112 }}>
       <Head><title>Result — SSC GK Score Booster</title></Head>
 
       <canvas
@@ -741,32 +741,32 @@ export default function Result() {
           const score = rawScore % 1 === 0 ? rawScore : Number(rawScore).toFixed(1);
           const answeredCount = (result.correct || 0) + (result.incorrect || 0);
           const scoreNum = Number(rawScore);
-          const scoreColor = scoreNum < 0 ? '#FBBF24' : scoreNum === 0 ? '#F8FAFC' : '#F97316';
+          const scoreColor = scoreNum < 0 ? 'var(--ssc-warning)' : scoreNum === 0 ? 'var(--ssc-text-secondary)' : 'var(--ssc-orange)';
 
           let statusLabel, statusBg, statusBorder, statusColor;
           if (acc <= 30) {
             statusLabel = 'Needs Revision';
-            statusBg = 'rgba(251,191,36,0.10)'; statusBorder = 'rgba(251,191,36,0.30)'; statusColor = '#FBBF24';
+            statusBg = 'var(--ssc-warning-soft)'; statusBorder = 'rgba(245,158,11,0.28)'; statusColor = 'var(--ssc-warning)';
           } else if (acc <= 50) {
             statusLabel = 'Keep Practicing';
-            statusBg = 'rgba(96,165,250,0.10)'; statusBorder = 'rgba(96,165,250,0.30)'; statusColor = '#60A5FA';
+            statusBg = 'var(--ssc-info-soft)'; statusBorder = 'rgba(37,99,235,0.20)'; statusColor = 'var(--ssc-info)';
           } else if (acc <= 70) {
             statusLabel = 'Good Attempt';
-            statusBg = 'rgba(20,184,166,0.10)'; statusBorder = 'rgba(20,184,166,0.30)'; statusColor = '#14B8A6';
+            statusBg = 'var(--ssc-teal-soft)'; statusBorder = 'rgba(14,165,164,0.26)'; statusColor = 'var(--ssc-teal)';
           } else if (acc <= 85) {
             statusLabel = 'Strong Score';
-            statusBg = 'rgba(20,184,166,0.14)'; statusBorder = 'rgba(20,184,166,0.35)'; statusColor = '#14B8A6';
+            statusBg = 'var(--ssc-success-soft)'; statusBorder = 'rgba(18,184,134,0.28)'; statusColor = 'var(--ssc-success)';
           } else {
             statusLabel = 'Excellent';
-            statusBg = 'rgba(251,191,36,0.12)'; statusBorder = 'rgba(251,191,36,0.35)'; statusColor = '#FCD34D';
+            statusBg = 'rgba(246,179,49,0.14)'; statusBorder = 'rgba(246,179,49,0.32)'; statusColor = '#B77900';
           }
 
           const cardLabel = result.isDailyChallenge ? 'Daily Challenge Result'
             : `${getDisplaySubject(result.subject, result.collection) || 'Quiz'} Result`;
 
           return (
-            <div className="card-in" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 28, padding: '18px 20px', boxShadow: '0 16px 40px rgba(0,0,0,0.22)' }}>
-              <p className="t-stat-label" style={{ color: '#7EA0C4', marginBottom: 8, textAlign: 'center' }}>
+            <div className="card-in" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', borderRadius: 28, padding: '18px 20px', boxShadow: 'var(--ssc-shadow-card)' }}>
+              <p className="t-stat-label" style={{ color: 'var(--ssc-text-secondary)', marginBottom: 8, textAlign: 'center' }}>
                 {cardLabel}
               </p>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
@@ -776,32 +776,32 @@ export default function Result() {
               </div>
               {/* Score + Accuracy tiles */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                <div style={{ flex: 1, background: '#112236', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '12px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <div style={{ flex: 1, background: 'var(--ssc-surface-soft)', border: '1px solid var(--ssc-border-soft)', borderRadius: 16, padding: '12px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                   <span className="t-stat-lg font-display" style={{ color: scoreColor }}>{score}</span>
-                  <span className="t-stat-label" style={{ color: '#7EA0C4' }}>Score</span>
+                  <span className="t-stat-label" style={{ color: 'var(--ssc-text-secondary)' }}>Score</span>
                 </div>
-                <div style={{ flex: 1, background: '#112236', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '12px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                  <span className="t-stat-lg font-display" style={{ color: '#F8FAFC' }}>{Math.round(acc)}%</span>
-                  <span className="t-stat-label" style={{ color: '#7EA0C4' }}>Accuracy</span>
+                <div style={{ flex: 1, background: 'var(--ssc-surface-soft)', border: '1px solid var(--ssc-border-soft)', borderRadius: 16, padding: '12px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                  <span className="t-stat-lg font-display" style={{ color: 'var(--ssc-teal)' }}>{Math.round(acc)}%</span>
+                  <span className="t-stat-label" style={{ color: 'var(--ssc-text-secondary)' }}>Accuracy</span>
                 </div>
               </div>
 
               {/* Correct / Wrong / Skipped */}
-              <div style={{ display: 'flex', justifyContent: 'space-around', paddingTop: 10, paddingBottom: 10, borderTop: '1px solid rgba(255,255,255,0.08)', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-around', paddingTop: 10, paddingBottom: 10, borderTop: '1px solid var(--ssc-border-soft)', borderBottom: '1px solid var(--ssc-border-soft)', marginBottom: 16 }}>
                 {[
-                  { val: result.correct,   label: 'Correct', color: '#22C55E' },
-                  { val: result.incorrect, label: 'Wrong',   color: '#F87171' },
-                  { val: result.skipped,   label: 'Skipped', color: '#94A3B8' },
+                  { val: result.correct,   label: 'Correct', color: 'var(--ssc-success)' },
+                  { val: result.incorrect, label: 'Wrong',   color: 'var(--ssc-danger)' },
+                  { val: result.skipped,   label: 'Skipped', color: 'var(--ssc-text-muted)' },
                 ].map(({ val, label, color: c }) => (
                   <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                     <span className="t-stat-sm font-display" style={{ color: c }}>{val}</span>
-                    <span className="t-stat-label" style={{ color: '#7EA0C4' }}>{label}</span>
+                    <span className="t-stat-label" style={{ color: 'var(--ssc-text-secondary)' }}>{label}</span>
                   </div>
                 ))}
               </div>
 
               {/* CTAs */}
-              <p className="t-badge" style={{ textAlign: 'center', color: '#93A4BC', marginBottom: 10 }}>
+              <p className="t-badge" style={{ textAlign: 'center', color: 'var(--ssc-text-secondary)', marginBottom: 10 }}>
                 You answered {answeredCount} of {result.totalQuestions || 0} questions
               </p>
               <button
@@ -809,7 +809,7 @@ export default function Result() {
                 onClick={() => { setLoadingDetailed(true); setTimeout(() => router.push('/result/detailed'), 100); }}
                 style={{
                   width: '100%', height: 52, borderRadius: 16, cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #FF7A1A, #FF5A00)',
+                  background: 'linear-gradient(135deg, var(--ssc-orange), var(--ssc-orange-deep))',
                   color: '#FFFFFF', border: 'none',
                   marginBottom: 10,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -829,14 +829,14 @@ export default function Result() {
                 className="t-button-sm"
                 style={{
                   width: '100%', height: 46, borderRadius: 14, cursor: 'pointer',
-                  background: '#1E3554', color: '#F8FAFC',
-                  border: '1px solid rgba(255,255,255,0.10)',
+                  background: 'var(--ssc-surface-soft)', color: 'var(--ssc-text-primary)',
+                  border: '1px solid var(--ssc-border-soft)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transform: 'scale(1)', transition: 'transform 140ms ease, background 140ms ease',
                 }}
-                onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.background = '#243D60'; }}
-                onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#1E3554'; }}
-                onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#1E3554'; }}
+                onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.background = 'var(--ssc-teal-soft)'; }}
+                onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'var(--ssc-surface-soft)'; }}
+                onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'var(--ssc-surface-soft)'; }}
               >
                 Practice Again
               </button>
@@ -846,12 +846,12 @@ export default function Result() {
 
         {/* ── 2. COINS + STREAK STRIP ── */}
         {readMentorReturnContext(result)?.sourceTaskId ? (
-          <div className="mentor-in" style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.22)', borderRadius: 20, padding: 16, borderLeft: '4px solid #14B8A6' }}>
-            <p className="t-stat-label" style={{ color: '#14B8A6', marginBottom: 6 }}>Mentor Next Step</p>
-            <p style={{ color: '#F8FAFC', fontWeight: 800, fontSize: 15, marginBottom: 4 }}>
+          <div className="mentor-in" style={{ background: 'var(--ssc-surface)', border: '1px solid rgba(14,165,164,0.22)', borderRadius: 20, padding: 16, borderLeft: '4px solid var(--ssc-teal)', boxShadow: 'var(--ssc-shadow-card)' }}>
+            <p className="t-stat-label" style={{ color: 'var(--ssc-teal)', marginBottom: 6 }}>Mentor Next Step</p>
+            <p style={{ color: 'var(--ssc-text-primary)', fontWeight: 800, fontSize: 15, marginBottom: 4 }}>
               Result Mentor plan mein save ho jayega.
             </p>
-            <p style={{ color: '#93A4BC', fontSize: 12, lineHeight: 1.55, marginBottom: 12 }}>
+            <p style={{ color: 'var(--ssc-text-secondary)', fontSize: 12, lineHeight: 1.55, marginBottom: 12 }}>
               Ab aap Mentor tab par return kar sakte hain, same topic practice kar sakte hain, ya result review kar sakte hain.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
@@ -859,7 +859,7 @@ export default function Result() {
                 type="button"
                 onClick={() => router.push(readMentorReturnContext(result)?.returnUrl || '/mentor')}
                 className="t-button-sm"
-                style={{ width: '100%', height: 44, borderRadius: 14, border: 'none', background: '#14B8A6', color: '#FFFFFF', cursor: 'pointer' }}
+                style={{ width: '100%', height: 44, borderRadius: 14, border: 'none', background: 'var(--ssc-teal)', color: '#FFFFFF', cursor: 'pointer' }}
               >
                 Return to Mentor Tab
               </button>
@@ -867,14 +867,14 @@ export default function Result() {
                 type="button"
                 onClick={handleMentorPracticeMore}
                 className="t-button-sm"
-                style={{ width: '100%', height: 44, borderRadius: 14, border: '1px solid rgba(255,255,255,0.10)', background: '#1E3554', color: '#F8FAFC', cursor: 'pointer' }}
+                style={{ width: '100%', height: 44, borderRadius: 14, border: '1px solid var(--ssc-border-soft)', background: 'var(--ssc-surface-soft)', color: 'var(--ssc-text-primary)', cursor: 'pointer' }}
               >
                 Practice More
               </button>
               <button
                 type="button"
                 className="t-button-sm"
-                style={{ width: '100%', height: 40, borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#93A4BC', cursor: 'default' }}
+                style={{ width: '100%', height: 40, borderRadius: 14, border: '1px solid var(--ssc-border-soft)', background: 'transparent', color: 'var(--ssc-text-muted)', cursor: 'default' }}
               >
                 Stay on Results
               </button>
@@ -883,20 +883,20 @@ export default function Result() {
         ) : null}
 
         {savingCoins && !coinsResult && (
-          <div style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.22)', borderRadius: 20, padding: 16, display: 'flex', alignItems: 'center', gap: 10, borderLeft: '4px solid #14B8A6' }}>
+          <div style={{ background: 'var(--ssc-surface)', border: '1px solid rgba(14,165,164,0.22)', borderRadius: 20, padding: 16, display: 'flex', alignItems: 'center', gap: 10, borderLeft: '4px solid var(--ssc-teal)', boxShadow: 'var(--ssc-shadow-card)' }}>
             <Loader size="sm" />
-            <span style={{ fontSize: 13, color: '#14B8A6', fontWeight: 600 }}>Saving your Coins…</span>
+            <span style={{ fontSize: 13, color: 'var(--ssc-teal)', fontWeight: 600 }}>Saving your Coins…</span>
           </div>
         )}
         {coinsResult && (
-          <div className="coins-strip-in" style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.22)', borderRadius: 20, padding: 16, borderLeft: '4px solid #14B8A6' }}>
+          <div className="coins-strip-in" style={{ background: 'linear-gradient(135deg, var(--ssc-success-soft), #fffaf0)', border: '1px solid rgba(18,184,134,0.20)', borderRadius: 20, padding: 16, borderLeft: '4px solid var(--ssc-success)', boxShadow: 'var(--ssc-shadow-card)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC' }}>+{coinsResult.coins ?? 0} coins</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--ssc-text-primary)' }}>+{coinsResult.coins ?? 0} coins</span>
               {coinsResult.streakCount > 0 && (
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#FDBA74' }}>🔥 {coinsResult.streakCount} day streak</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ssc-streak)' }}>🔥 {coinsResult.streakCount} day streak</span>
               )}
             </div>
-            <p style={{ fontSize: 12, color: '#93A4BC' }}>
+            <p style={{ fontSize: 12, color: 'var(--ssc-text-secondary)' }}>
               Level: {coinsResult.level} · {coinsResult.totalCoins ?? 0} coins total
             </p>
           </div>
@@ -909,11 +909,12 @@ export default function Result() {
           style={{
             position: 'relative',
             overflow: 'hidden',
-            background: '#172D47',
-            border: '1px solid rgba(255,255,255,0.10)',
+            background: 'var(--ssc-surface)',
+            border: '1px solid rgba(255,106,0,0.18)',
             borderRadius: 24,
             padding: 20,
             cursor: 'pointer',
+            boxShadow: 'var(--ssc-shadow-card)',
           }}
         >
           <div
@@ -931,21 +932,21 @@ export default function Result() {
             }}
           />
           <div style={{ display: 'inline-flex', alignItems: 'center', marginBottom: 14, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: 999, padding: '3px 12px' }}>
-            <span className="t-badge" style={{ color: '#FDBA74', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most Useful Next Step</span>
+            <span className="t-badge" style={{ color: 'var(--ssc-orange-deep)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most Useful Next Step</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <span style={{ fontSize: 16 }}>📚</span>
             </div>
-            <p className="t-card-title font-display" style={{ color: '#F8FAFC', margin: 0 }}>SSC PYQ Practice</p>
+            <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', margin: 0 }}>SSC PYQ Practice</p>
           </div>
-          <p className="t-card-subtitle" style={{ color: '#93A4BC', marginBottom: 14 }}>
+          <p className="t-card-subtitle" style={{ color: 'var(--ssc-text-secondary)', marginBottom: 14 }}>
             Practice previous year SSC questions by subject.<br />
             Choose Polity, History, Science, Geography and more.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
             {["7,000+ Q's", 'Exam-level Practice', 'Subject-wise'].map(tag => (
-              <span key={tag} className="t-badge" style={{ color: '#7EA0C4', background: 'rgba(126,160,196,0.10)', border: '1px solid rgba(126,160,196,0.20)', borderRadius: 999, padding: '3px 10px' }}>
+              <span key={tag} className="t-badge" style={{ color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)', border: '1px solid rgba(14,165,164,0.18)', borderRadius: 999, padding: '3px 10px' }}>
                 {tag}
               </span>
             ))}
@@ -955,7 +956,7 @@ export default function Result() {
             onClick={() => router.push('/subjects?collection=PYQ')}
             style={{
               width: '100%', height: 52, borderRadius: 18, cursor: 'pointer',
-              background: 'linear-gradient(135deg, #FF7A1A, #FF5A00)',
+              background: 'linear-gradient(135deg, var(--ssc-orange), var(--ssc-orange-deep))',
               color: '#FFFFFF', border: 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transform: 'translateY(0)', transition: 'transform 140ms ease, box-shadow 140ms ease',
@@ -982,17 +983,17 @@ export default function Result() {
             ? 'Good base. Your next goal should be reducing negative marks by improving accuracy.'
             : 'Strong attempt. Now practice mixed quizzes daily to improve speed and consistency.';
           return (
-            <div className="mentor-in" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 24, padding: 20, borderLeft: '4px solid #14B8A6' }}>
+            <div className="mentor-in" style={{ background: 'var(--ssc-surface)', border: '1px solid rgba(14,165,164,0.20)', borderRadius: 24, padding: 20, borderLeft: '4px solid var(--ssc-teal)', boxShadow: 'var(--ssc-shadow-card)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 4px rgba(20,184,166,0.65))' }}>
                   <path d="M9 18h6M10 22h4M12 2a7 7 0 017 7c0 2.6-1.4 4.9-3.5 6.2-.5.3-.5.8-.5 1.3V17H9v-.5c0-.5 0-1-.5-1.3A7 7 0 0112 2z"/>
                 </svg>
                 <p className="t-section-label" style={{ color: '#14B8A6', marginBottom: 0 }}>Smart Review Tip</p>
               </div>
-              <p className="t-body" style={{ color: '#93A4BC', marginBottom: 14 }}>{tip}</p>
+              <p className="t-body" style={{ color: 'var(--ssc-text-secondary)', marginBottom: 14 }}>{tip}</p>
               {aiAnalysis?.summary ? (
-                <div style={{ borderRadius: 12, border: '1px solid rgba(20,184,166,0.20)', background: 'rgba(20,184,166,0.07)', padding: '12px 14px' }}>
-                  <p className="t-body" style={{ color: '#99F6E4' }}>{aiAnalysis.summary}</p>
+                <div style={{ borderRadius: 12, border: '1px solid rgba(14,165,164,0.20)', background: 'var(--ssc-teal-soft)', padding: '12px 14px' }}>
+                  <p className="t-body" style={{ color: 'var(--ssc-text-primary)' }}>{aiAnalysis.summary}</p>
                 </div>
               ) : (
                 <button
@@ -1002,14 +1003,14 @@ export default function Result() {
                   style={{
                     background: 'none', border: 'none', padding: 0,
                     cursor: aiLoading ? 'default' : 'pointer',
-                    color: '#14B8A6', fontSize: 13, fontWeight: 600,
+                    color: 'var(--ssc-teal)', fontSize: 13, fontWeight: 600,
                     opacity: aiLoading ? 0.5 : 1,
                   }}
                 >
                   {aiLoading ? 'Generating analysis...' : 'Generate Analysis →'}
                 </button>
               )}
-              {aiError && <p style={{ marginTop: 8, fontSize: 12, color: '#F87171' }}>{aiError}</p>}
+              {aiError && <p style={{ marginTop: 8, fontSize: 12, color: 'var(--ssc-danger)' }}>{aiError}</p>}
             </div>
           );
         })()}
@@ -1031,7 +1032,7 @@ export default function Result() {
 
               {!chipSent ? (
                 <div>
-                  <p className="text-xs text-slate-400 mb-2">How did this feel?</p>
+                  <p className="text-xs mb-2" style={{ color: 'var(--ssc-text-secondary)' }}>How did this feel?</p>
                   <div className="flex flex-wrap gap-2">
                     {FEEDBACK_CHIPS.map(chip => (
                       <button
@@ -1067,8 +1068,8 @@ export default function Result() {
                         }}
                         className={`px-3 py-1.5 rounded-full text-xs border transition-all ${
                           feedbackChip === chip
-                            ? 'border-orange-500 bg-orange-500/10 text-orange-400'
-                            : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                            ? 'border-orange-500 bg-orange-500/10 text-orange-600'
+                            : 'border-slate-200 bg-white text-slate-600 hover:bg-teal-50'
                         }`}
                       >
                         {chip}
@@ -1077,20 +1078,22 @@ export default function Result() {
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-orange-400">Feedback recorded. Plan is updating.</p>
+                <p className="text-xs" style={{ color: 'var(--ssc-orange-deep)' }}>Feedback recorded. Plan is updating.</p>
               )}
 
               {(cat === 'WEAK' || cat === 'AVERAGE' || cat === 'LOW_CONFIDENCE') ? (
                 <button
                   onClick={() => router.push('/history/mistakes')}
-                  className="w-full py-3 rounded-2xl border border-red-500/30 bg-red-500/10 text-red-400 text-sm font-semibold"
+                  className="w-full py-3 rounded-2xl border text-sm font-semibold"
+                  style={{ background: 'var(--ssc-danger-soft)', borderColor: 'rgba(239,68,68,0.28)', color: 'var(--ssc-danger)' }}
                 >
                   Review Mistakes
                 </button>
               ) : (
                 <button
                   onClick={() => router.push('/mentor')}
-                  className="w-full py-3 rounded-2xl bg-orange-500 text-white text-sm font-semibold"
+                  className="w-full py-3 rounded-2xl text-white text-sm font-semibold"
+                  style={{ background: 'linear-gradient(135deg, var(--ssc-orange), var(--ssc-orange-deep))', boxShadow: 'var(--ssc-shadow-cta)' }}
                 >
                   Next Task
                 </button>
@@ -1122,10 +1125,10 @@ export default function Result() {
             }
           }}
           style={{
-            background: '#172D47',
-            border: '1px solid rgba(255,255,255,0.10)',
+            background: 'var(--ssc-surface)',
+            border: '1px solid var(--ssc-border-soft)',
             borderRadius: 24,
-            boxShadow: '0 12px 35px rgba(0,0,0,0.20)',
+            boxShadow: 'var(--ssc-shadow-card)',
             padding: 18,
             cursor: 'pointer',
             transition: 'transform 150ms ease',
@@ -1140,7 +1143,7 @@ export default function Result() {
           {/* Header */}
           <div className="flex items-start justify-between gap-3 mb-3">
             <div>
-              <p className="t-card-title font-display" style={{ color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', display: 'flex', alignItems: 'center', gap: 7 }}>
                 <span style={{ fontSize: 16, lineHeight: 1 }}>🔥</span>
                 Weekly Champions
               </p>
@@ -1167,7 +1170,7 @@ export default function Result() {
               <Loader card size="sm" label="Loading weekly champions..." />
             </div>
           ) : topPerformers.length === 0 ? (
-            <p className="font-sans text-xs text-slate-500 text-center py-4">
+            <p className="font-sans text-xs text-center py-4" style={{ color: 'var(--ssc-text-muted)' }}>
               Showing last saved leaderboard
             </p>
           ) : (
@@ -1208,7 +1211,7 @@ export default function Result() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         <p className="font-display font-bold truncate"
-                          style={{ fontSize: 15, color: isSelf ? '#14B8A6' : '#ffffff', margin: 0 }}>
+                          style={{ fontSize: 15, color: isSelf ? 'var(--ssc-teal)' : 'var(--ssc-text-primary)', margin: 0 }}>
                           {(player.name || 'User').split(' ')[0]}
                         </p>
                         <span style={{
@@ -1261,10 +1264,10 @@ export default function Result() {
 
               {/* Your rank row */}
               {isLoggedIn && (
-                <div className="mt-3 pt-3 border-t border-white/[0.07] flex items-center justify-between">
+                  <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--ssc-border-soft)' }}>
                   <div className="flex items-center gap-2">
-                    <span className="font-sans text-xs text-slate-400">Your Rank</span>
-                    <span className="font-display font-black text-base text-white">
+                    <span className="font-sans text-xs" style={{ color: 'var(--ssc-text-secondary)' }}>Your Rank</span>
+                    <span className="font-display font-black text-base" style={{ color: 'var(--ssc-text-primary)' }}>
                       {userRankIdx !== -1 ? `#${userRankIdx + 1}` : '—'}
                     </span>
                   </div>
@@ -1279,8 +1282,8 @@ export default function Result() {
 
         {/* ── FEEDBACK CARD ── */}
         {feedbackSent ? (
-          <div style={{ borderRadius: 20, padding: 20, background: 'rgba(20,184,166,0.06)', border: '1px solid rgba(20,184,166,0.15)', borderLeft: '4px solid rgba(20,184,166,0.7)', boxSizing: 'border-box' }}>
-            <p style={{ fontSize: 13, color: '#14B8A6', margin: 0, fontWeight: 600 }}>Thanks for your feedback! We'll look into it.</p>
+          <div style={{ borderRadius: 20, padding: 20, background: 'var(--ssc-success-soft)', border: '1px solid rgba(18,184,134,0.18)', borderLeft: '4px solid var(--ssc-success)', boxSizing: 'border-box', boxShadow: 'var(--ssc-shadow-card)' }}>
+            <p style={{ fontSize: 13, color: 'var(--ssc-success)', margin: 0, fontWeight: 600 }}>Thanks for your feedback! We'll look into it.</p>
           </div>
         ) : (
           <AppCard
@@ -1288,7 +1291,7 @@ export default function Result() {
             interactive
             onClick={() => setShowFeedbackSheet(true)}
             className="w-full"
-            style={{ display: 'flex', alignItems: 'center', gap: 12, boxSizing: 'border-box', background: '#172D47', border: '1px solid rgba(255,255,255,0.08)', borderLeft: '4px solid rgba(255,107,22,0.7)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, boxSizing: 'border-box', background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', borderLeft: '4px solid var(--ssc-orange)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', boxShadow: 'var(--ssc-shadow-card)' }}
           >
             <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(255,122,26,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF7A1A" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
@@ -1296,8 +1299,8 @@ export default function Result() {
               </svg>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#E2E8F0', margin: '0 0 2px' }}>Help us improve the app</p>
-              <p style={{ fontSize: 11, color: '#64748B', margin: 0, lineHeight: 1.4 }}>Tell us what to improve, add, or fix.</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ssc-text-primary)', margin: '0 0 2px' }}>Help us improve the app</p>
+              <p style={{ fontSize: 11, color: 'var(--ssc-text-secondary)', margin: 0, lineHeight: 1.4 }}>Tell us what to improve, add, or fix.</p>
             </div>
             <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#ffb26b' }}>Share Feedback</span>
@@ -1309,12 +1312,12 @@ export default function Result() {
         )}
 
         {/* ── 7. SHARE RESULT ── */}
-        <AppCard style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.10)', borderLeft: '4px solid #14B8A6' }}>
+        <AppCard style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', borderLeft: '4px solid var(--ssc-teal)', boxShadow: 'var(--ssc-shadow-card)' }}>
           <SectionHeader
             title="Share your result"
             subtitle="Challenge friends to beat your score."
-            titleClassName="text-slate-50 text-[13px]"
-            subtitleClassName="text-slate-500 text-[12px] mb-3"
+            titleClassName="text-[13px]"
+            subtitleClassName="text-[12px] mb-3"
           />
           <div style={{ display: 'flex', gap: 10 }}>
             <AppButton
@@ -1323,15 +1326,15 @@ export default function Result() {
               className="justify-center"
               style={{
                 flex: 1.5, height: 48, borderRadius: 12, cursor: 'pointer',
-                background: '#14B8A6', color: '#0F172A', border: 'none',
+                background: 'var(--ssc-teal)', color: '#FFFFFF', border: 'none',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                 transform: 'scale(1)', transition: 'background 140ms ease, transform 140ms ease',
               }}
               onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.background = '#0F9488'; }}
-              onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#14B8A6'; }}
-              onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#14B8A6'; }}
+              onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'var(--ssc-teal)'; }}
+              onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'var(--ssc-teal)'; }}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="#0F172A">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="#FFFFFF">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
               </svg>
               Share on WhatsApp
@@ -1342,9 +1345,9 @@ export default function Result() {
               onClick={handleCopy}
               style={{
                 flex: 0.8, height: 48, borderRadius: 12, cursor: 'pointer',
-                background: copied ? 'rgba(20,184,166,0.12)' : '#1E3554',
-                color: copied ? '#14B8A6' : '#F8FAFC',
-                border: `1px solid ${copied ? 'rgba(20,184,166,0.30)' : 'rgba(255,255,255,0.10)'}`,
+                background: copied ? 'var(--ssc-teal-soft)' : 'var(--ssc-surface-soft)',
+                color: copied ? 'var(--ssc-teal)' : 'var(--ssc-text-primary)',
+                border: `1px solid ${copied ? 'rgba(14,165,164,0.28)' : 'var(--ssc-border-soft)'}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                 transform: 'scale(1)', transition: 'background 200ms ease, transform 140ms ease',
               }}
@@ -1373,28 +1376,28 @@ export default function Result() {
         <div style={{
           position: 'fixed', inset: 0, zIndex: 100,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'rgba(0,0,0,0.55)',
+          background: 'var(--ssc-overlay)',
           animation: 'backdropIn 0.2s ease both',
         }}>
           <div style={{
-            background: '#172D47', border: '1px solid rgba(20,184,166,0.30)',
+            background: 'var(--ssc-surface)', border: '1px solid rgba(14,165,164,0.28)',
             borderRadius: 24, padding: '28px 32px',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-            boxShadow: '0 24px 48px rgba(0,0,0,0.40)',
+            boxShadow: 'var(--ssc-shadow-float)',
             animation: 'toastPop 0.28s cubic-bezier(0.34,1.56,0.64,1) both',
             maxWidth: 300, width: '80%',
           }}>
             <div style={{
               width: 52, height: 52, borderRadius: '50%',
-              background: 'rgba(20,184,166,0.12)', border: '1px solid rgba(20,184,166,0.30)',
+              background: 'var(--ssc-teal-soft)', border: '1px solid rgba(14,165,164,0.28)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
             </div>
-            <p style={{ fontSize: 16, fontWeight: 700, color: '#F8FAFC', textAlign: 'center' }}>Thanks for your feedback!</p>
-            <p style={{ fontSize: 13, color: '#93A4BC', textAlign: 'center', lineHeight: 1.5 }}>We'll use it to improve your quiz experience.</p>
+            <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--ssc-text-primary)', textAlign: 'center' }}>Thanks for your feedback!</p>
+            <p style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', textAlign: 'center', lineHeight: 1.5 }}>We'll use it to improve your quiz experience.</p>
           </div>
           <style suppressHydrationWarning>{`@keyframes toastPop { from { opacity:0; transform:scale(0.88); } to { opacity:1; transform:scale(1); } }`}</style>
         </div>
@@ -1413,7 +1416,7 @@ export default function Result() {
             onClick={() => setShowFeedbackSheet(false)}
             style={{
               position: 'fixed', inset: 0, zIndex: 40,
-              background: 'rgba(0,0,0,0.60)',
+              background: 'var(--ssc-overlay)',
               animation: 'backdropIn 0.2s ease',
               WebkitTapHighlightColor: 'transparent',
             }}
@@ -1427,9 +1430,9 @@ export default function Result() {
               transform: 'translate(-50%, -50%)',
               width: 'calc(100% - 48px)', maxWidth: 360,
               zIndex: 50,
-              background: 'var(--bg-card)',
+              background: 'var(--ssc-surface)',
               borderRadius: 24,
-              boxShadow: '0 24px 64px rgba(0,0,0,0.55)',
+              boxShadow: 'var(--ssc-shadow-float)',
               animation: 'modalIn 0.25s cubic-bezier(0.22,1,0.36,1)',
               padding: '24px 20px',
             }}
@@ -1450,15 +1453,15 @@ export default function Result() {
                       <line x1="4" y1="22" x2="4" y2="15"/>
                     </svg>
                   </div>
-                  <p className="font-display font-black" style={{ fontSize: 18, color: '#F8FAFC' }}>Report a quiz issue</p>
+                  <p className="font-display font-black" style={{ fontSize: 18, color: 'var(--ssc-text-primary)' }}>Report a quiz issue</p>
                 </div>
                 <button
                   onClick={() => setShowFeedbackSheet(false)}
                   style={{
                     width: 32, height: 32, borderRadius: '50%',
-                    background: 'rgba(148,163,184,0.12)',
+                    background: 'var(--ssc-surface-soft)',
                     border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#94A3B8', cursor: 'pointer', flexShrink: 0,
+                    color: 'var(--ssc-text-secondary)', cursor: 'pointer', flexShrink: 0,
                   }}
                   aria-label="Close"
                 >
@@ -1468,7 +1471,7 @@ export default function Result() {
                 </button>
               </div>
 
-              <p className="font-sans" style={{ fontSize: 13, color: '#64748B', marginBottom: 12, lineHeight: 1.5 }}>
+              <p className="font-sans" style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', marginBottom: 12, lineHeight: 1.5 }}>
                 Found a wrong answer, typo, or confusing explanation?
               </p>
 
@@ -1487,9 +1490,9 @@ export default function Result() {
                       style={{
                         padding: '7px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
                         cursor: 'pointer', fontFamily: 'inherit',
-                        background: active ? 'rgba(255,122,26,0.14)' : 'rgba(255,255,255,0.04)',
-                        border: active ? '1px solid rgba(255,122,26,0.45)' : '1px solid rgba(148,163,184,0.18)',
-                        color: active ? '#FFB26B' : '#94A3B8',
+                        background: active ? 'rgba(255,106,0,0.12)' : 'var(--ssc-surface-soft)',
+                        border: active ? '1px solid rgba(255,106,0,0.36)' : '1px solid var(--ssc-border-soft)',
+                        color: active ? 'var(--ssc-orange-deep)' : 'var(--ssc-text-secondary)',
                         transition: 'background 120ms ease, border-color 120ms ease, color 120ms ease, transform 80ms ease',
                         transform: 'scale(1)',
                       }}
@@ -1501,7 +1504,7 @@ export default function Result() {
               </div>
 
               {/* Textarea label + input — 16px font prevents iOS auto-zoom */}
-              <p style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 6 }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--ssc-text-secondary)', marginBottom: 6 }}>
                 Describe the issue
               </p>
               <textarea
@@ -1518,12 +1521,12 @@ export default function Result() {
                 autoFocus
                 style={{
                   width: '100%', boxSizing: 'border-box',
-                  background: 'rgba(15,23,42,0.70)',
-                  border: '1px solid rgba(148,163,184,0.18)',
+                  background: 'var(--ssc-surface-soft)',
+                  border: '1px solid var(--ssc-border-soft)',
                   borderRadius: 16,
                   padding: '12px 14px',
                   fontSize: 16,
-                  color: '#F8FAFC',
+                  color: 'var(--ssc-text-primary)',
                   lineHeight: 1.55,
                   resize: 'none',
                   outline: 'none',
@@ -1531,10 +1534,10 @@ export default function Result() {
                   height: 120,
                   marginBottom: 14,
                 }}
-                onFocus={e => { e.target.style.borderColor = 'rgba(148,163,184,0.40)'; }}
-                onBlur={e => { e.target.style.borderColor = 'rgba(148,163,184,0.18)'; }}
+                onFocus={e => { e.target.style.borderColor = 'rgba(14,165,164,0.45)'; }}
+                onBlur={e => { e.target.style.borderColor = 'var(--ssc-border-soft)'; }}
               />
-              <p style={{ fontSize: 11, color: '#64748B', marginTop: -8, marginBottom: 14 }}>
+              <p style={{ fontSize: 11, color: 'var(--ssc-text-muted)', marginTop: -8, marginBottom: 14 }}>
                 Minimum 7 characters
               </p>
 
@@ -1547,9 +1550,9 @@ export default function Result() {
                     disabled={!ready}
                     style={{
                       width: '100%', minHeight: 52, borderRadius: 16,
-                      background: ready ? 'linear-gradient(135deg, #FF7A1A, #FF5A00)' : 'rgba(255,255,255,0.06)',
-                      border: ready ? 'none' : '1px solid rgba(255,255,255,0.06)',
-                      color: ready ? '#FFFFFF' : 'rgba(203,213,225,0.45)',
+                      background: ready ? 'linear-gradient(135deg, var(--ssc-orange), var(--ssc-orange-deep))' : 'var(--ssc-disabled-bg)',
+                      border: ready ? 'none' : '1px solid var(--ssc-border-soft)',
+                      color: ready ? '#FFFFFF' : 'var(--ssc-disabled-text)',
                       fontFamily: 'inherit', fontWeight: 700, fontSize: 15,
                       boxShadow: ready ? '0 8px 22px rgba(255,106,0,0.18)' : 'none',
                       cursor: ready ? 'pointer' : 'not-allowed',

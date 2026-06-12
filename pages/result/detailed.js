@@ -61,22 +61,22 @@ export default function DetailedAnalysis() {
   return (
     <>
       <Head><title>Detailed Analysis — SSC GK Score Booster</title></Head>
-      <div className="min-h-screen [background:var(--bg-app)] pb-28">
+      <div className="min-h-screen pb-28" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
 
         {/* Sticky top bar: title + stats + filter tabs */}
-        <div className="sticky top-0 z-10 [background:var(--bg-app)] backdrop-blur-md border-b border-white/[0.08]">
+        <div className="sticky top-0 z-10 backdrop-blur-md" style={{ background: 'rgba(248,250,252,0.94)', borderBottom: '1px solid var(--ssc-border-soft)' }}>
           <div className="px-4 pt-3 pb-2 flex items-center gap-2.5">
             <button
               onClick={() => router.push('/result')}
               className="w-8 h-8 rounded-full flex items-center justify-center active:opacity-80 transition-opacity flex-shrink-0"
-              style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.12)' }}
+              style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: '0 4px 14px rgba(16,32,51,0.06)' }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-primary)" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M18 6L6 18M6 6l12 12"/>
               </svg>
             </button>
             <div className="min-w-0">
-              <h1 className="t-page-title font-display text-white">Detailed Analysis</h1>
+              <h1 className="t-page-title font-display" style={{ color: 'var(--ssc-text-primary)' }}>Detailed Analysis</h1>
             </div>
           </div>
           <div className="flex gap-2 px-4 pt-1 pb-3.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
@@ -95,10 +95,11 @@ export default function DetailedAnalysis() {
                   key={key}
                   onClick={() => setFilter(key)}
                   style={{
-                    padding: '5px 14px', borderRadius: '30px', border: 'none', cursor: 'pointer',
+                    padding: '5px 14px', borderRadius: '30px', cursor: 'pointer',
                     fontSize: '12px', fontWeight: filter === key ? '700' : '500',
-                    background: filter === key ? '#ffffff' : 'rgba(255,255,255,0.08)',
-                    color: filter === key ? '#1a1a2a' : 'rgba(255,255,255,0.5)',
+                    background: filter === key ? 'var(--ssc-teal-soft)' : 'var(--ssc-surface)',
+                    color: filter === key ? 'var(--ssc-teal)' : 'var(--ssc-text-secondary)',
+                    border: filter === key ? '1px solid rgba(14,165,164,0.24)' : '1px solid var(--ssc-border-soft)',
                     transition: 'all 0.15s', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0,
                   }}
                 >
@@ -112,20 +113,20 @@ export default function DetailedAnalysis() {
         {/* Question cards */}
         <div className="px-4 pt-4 flex flex-col gap-4">
           {filter === 'All' && (
-            <div style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '14px 16px' }}>
-              <p className="t-section-label" style={{ color: 'rgba(148,163,184,0.7)', marginBottom: 8 }}>Review Summary</p>
+            <div style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', borderRadius: 20, padding: '14px 16px', boxShadow: 'var(--ssc-shadow-card)' }}>
+              <p className="t-section-label" style={{ color: 'var(--ssc-text-secondary)', marginBottom: 8 }}>Review Summary</p>
               <div style={{ display: 'flex', gap: 16, marginBottom: 10 }}>
-                <span className="t-card-subtitle" style={{ color: '#fca5a5' }}><strong className="t-stat-sm font-display">{wrongCount}</strong> wrong</span>
-                <span className="t-card-subtitle" style={{ color: '#94a3b8' }}><strong className="t-stat-sm font-display">{totalSkipped}</strong> skipped</span>
-                <span className="t-card-subtitle" style={{ color: '#22C55E' }}><strong className="t-stat-sm font-display">{correctCount}</strong> correct</span>
+                <span className="t-card-subtitle" style={{ color: 'var(--ssc-danger)' }}><strong className="t-stat-sm font-display">{wrongCount}</strong> wrong</span>
+                <span className="t-card-subtitle" style={{ color: 'var(--ssc-text-muted)' }}><strong className="t-stat-sm font-display">{totalSkipped}</strong> skipped</span>
+                <span className="t-card-subtitle" style={{ color: 'var(--ssc-success)' }}><strong className="t-stat-sm font-display">{correctCount}</strong> correct</span>
               </div>
-              <p style={{ fontSize: 12, color: 'rgba(148,163,184,0.6)', marginBottom: 10 }}>
+              <p style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', marginBottom: 10 }}>
                 {wrongCount > 0 ? 'Best next step: review your wrong answers first.' : totalSkipped > 0 ? 'Best next step: go through the skipped questions.' : 'Great job — all correct!'}
               </p>
               {(wrongCount > 0 || totalSkipped > 0) && (
                 <button
                   onClick={() => setFilter(wrongCount > 0 ? 'Wrong' : 'Skipped')}
-                  style={{ fontSize: 12, fontWeight: 700, color: '#fb923c', background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.20)', borderRadius: 10, padding: '7px 14px', cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ fontSize: 12, fontWeight: 700, color: 'var(--ssc-orange-deep)', background: 'rgba(255,106,0,0.10)', border: '1px solid rgba(255,106,0,0.22)', borderRadius: 10, padding: '7px 14px', cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   {wrongCount > 0 ? `Start with Wrong Questions →` : `Review Skipped Questions →`}
                 </button>
@@ -168,7 +169,7 @@ export default function DetailedAnalysis() {
                   <div style={{
                     textAlign: 'center',
                     padding: '48px 20px',
-                    color: 'rgba(255,255,255,0.35)',
+                    color: 'var(--ssc-text-muted)',
                     fontSize: '14px',
                   }}>
                     No {filter.toLowerCase()} questions in this quiz.
@@ -181,7 +182,7 @@ export default function DetailedAnalysis() {
 
         {/* Slim back link at bottom of list */}
         <div className="px-4 mt-6 pb-2 text-center">
-          <button onClick={() => router.push('/result')} style={{ fontSize: 12, color: '#475569', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={() => router.push('/result')} style={{ fontSize: 12, color: 'var(--ssc-text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
             ← Back to Results
           </button>
         </div>
@@ -191,15 +192,15 @@ export default function DetailedAnalysis() {
       {(wrongCount > 0 || totalSkipped > 0) && (
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 30,
-          background: 'rgba(13,27,46,0.97)', backdropFilter: 'blur(14px)',
-          borderTop: '1px solid rgba(255,255,255,0.07)',
+          background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(14px)',
+          borderTop: '1px solid var(--ssc-border-soft)',
           padding: '10px 16px 14px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
         }}>
-          <p style={{ fontSize: 12, color: '#64748b', margin: 0, lineHeight: 1.4 }}>
+          <p style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', margin: 0, lineHeight: 1.4 }}>
             {wrongCount > 0 && <span style={{ color: '#f87171', fontWeight: 700 }}>{wrongCount} wrong</span>}
             {wrongCount > 0 && totalSkipped > 0 && <span> · </span>}
-            {totalSkipped > 0 && <span style={{ color: '#94a3b8' }}>{totalSkipped} skipped</span>}
+            {totalSkipped > 0 && <span style={{ color: 'var(--ssc-text-muted)' }}>{totalSkipped} skipped</span>}
           </p>
           <button
             onClick={() => {
@@ -208,7 +209,7 @@ export default function DetailedAnalysis() {
             }}
             style={{
               fontSize: 13, fontWeight: 700, padding: '10px 18px', borderRadius: 14, flexShrink: 0,
-              background: 'linear-gradient(135deg, #FF7A1A, #FF5A00)', color: 'white',
+              background: 'linear-gradient(135deg, var(--ssc-orange), var(--ssc-orange-deep))', color: 'white',
               border: 'none', cursor: 'pointer', fontFamily: 'inherit',
               boxShadow: '0 4px 14px rgba(255,90,0,0.22)',
             }}
@@ -236,7 +237,7 @@ function getQuestionReviewTip({ status, selectedOption, correctOption, hasExplan
 
 function BookmarkIcon({ filled }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? '#14B8A6' : 'none'} stroke={filled ? '#14B8A6' : '#475569'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? 'var(--ssc-teal)' : 'none'} stroke={filled ? 'var(--ssc-teal)' : 'var(--ssc-text-primary)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/>
     </svg>
   );
@@ -319,41 +320,41 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
   const correctAnswerText = `${question.correctOption}. ${question[OPTION_KEYS[question.correctOption]]}`;
   const statusLabel = isCorrect ? 'Correct' : isSkipped ? 'Skipped' : 'Incorrect';
   const badgeStyle = isCorrect
-    ? { background: 'rgba(34,197,94,0.12)', color: '#22C55E' }
+    ? { background: 'var(--ssc-success-soft)', color: 'var(--ssc-success)', border: '1px solid rgba(18,184,134,0.18)' }
     : isSkipped
-    ? { background: 'rgba(100,116,139,0.14)', color: '#94a3b8' }
-    : { background: 'rgba(239,68,68,0.13)', color: '#f87171' };
-  const cardBg = { background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' };
-  const collapseBtn = { fontSize: 11, color: '#475569', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' };
+    ? { background: 'var(--ssc-warning-soft)', color: 'var(--ssc-warning)', border: '1px solid rgba(245,158,11,0.18)' }
+    : { background: 'var(--ssc-danger-soft)', color: 'var(--ssc-danger)', border: '1px solid rgba(239,68,68,0.18)' };
+  const cardBg = { background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' };
+  const collapseBtn = { fontSize: 11, color: 'var(--ssc-text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' };
   const leftBorder = isCorrect
-    ? '3px solid rgba(34,197,94,0.30)'
+    ? '3px solid rgba(18,184,134,0.44)'
     : isSkipped
-    ? '3px solid rgba(100,116,139,0.28)'
-    : '3px solid rgba(239,68,68,0.32)';
+    ? '3px solid rgba(245,158,11,0.44)'
+    : '3px solid rgba(239,68,68,0.44)';
 
   // ── COLLAPSED (all types) ────────────────────────────────────────
   if (!expanded) {
     return (
       <div style={{ ...cardBg, borderRadius: 14, padding: '11px 14px', borderLeft: leftBorder }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: '#64748b', letterSpacing: '0.04em' }}>Q{index + 1}</span>
+          <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--ssc-text-secondary)', letterSpacing: '0.04em' }}>Q{index + 1}</span>
           <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 10px', borderRadius: 999, ...badgeStyle }}>{statusLabel}</span>
         </div>
         {(subject || topic) && (
-          <p className="t-badge" style={{ color: '#475569', margin: '0 0 6px' }}>{[subject, topic].filter(Boolean).join(' · ')}</p>
+          <p className="t-badge" style={{ color: 'var(--ssc-text-muted)', margin: '0 0 6px' }}>{[subject, topic].filter(Boolean).join(' · ')}</p>
         )}
-        <p style={{ fontSize: 13, color: isCorrect ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.75)', fontWeight: isCorrect ? 400 : 500, lineHeight: 1.5, marginBottom: !isCorrect ? 7 : 9 }}>
+        <p style={{ fontSize: 13, color: isCorrect ? 'var(--ssc-text-secondary)' : 'var(--ssc-text-primary)', fontWeight: isCorrect ? 400 : 500, lineHeight: 1.5, marginBottom: !isCorrect ? 7 : 9 }}>
           {question.question}
         </p>
         {!isCorrect && (
-          <p style={{ fontSize: 12, color: '#22C55E', marginBottom: 9 }}>
-            <span style={{ fontSize: 9, fontWeight: 800, color: '#22C55E', textTransform: 'uppercase', letterSpacing: '0.08em', marginRight: 5 }}>Correct</span>
+          <p style={{ fontSize: 12, color: 'var(--ssc-success)', marginBottom: 9 }}>
+            <span style={{ fontSize: 9, fontWeight: 800, color: 'var(--ssc-success)', textTransform: 'uppercase', letterSpacing: '0.08em', marginRight: 5 }}>Correct</span>
             {correctAnswerText}
           </p>
         )}
         <button
           onClick={() => setExpanded(true)}
-          style={{ fontSize: 11, fontWeight: 600, padding: '5px 12px', borderRadius: 9, border: '1px solid rgba(148,163,184,0.15)', background: 'rgba(255,255,255,0.04)', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}
+          style={{ fontSize: 11, fontWeight: 600, padding: '5px 12px', borderRadius: 9, border: '1px solid var(--ssc-border-soft)', background: 'var(--ssc-surface-soft)', color: 'var(--ssc-text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           Review →
         </button>
@@ -367,27 +368,27 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
       <div style={{ ...cardBg, borderRadius: 18, padding: '14px 16px', borderLeft: leftBorder }}>
         <div style={{ marginBottom: 8 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: '#64748b', letterSpacing: '0.04em' }}>Q{index + 1}</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--ssc-text-secondary)', letterSpacing: '0.04em' }}>Q{index + 1}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 10px', borderRadius: 999, ...badgeStyle }}>Correct</span>
               <button onClick={() => setExpanded(false)} style={collapseBtn}>▲</button>
             </div>
           </div>
-          {(subject || topic) && <p style={{ fontSize: 11, color: '#475569', margin: 0 }}>{[subject, topic].filter(Boolean).join(' · ')}</p>}
+          {(subject || topic) && <p style={{ fontSize: 11, color: 'var(--ssc-text-muted)', margin: 0 }}>{[subject, topic].filter(Boolean).join(' · ')}</p>}
         </div>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: 600, lineHeight: 1.5, marginBottom: 12 }}>{question.question}</p>
+        <p style={{ fontSize: 13, color: 'var(--ssc-text-primary)', fontWeight: 600, lineHeight: 1.5, marginBottom: 12 }}>{question.question}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {['A', 'B', 'C', 'D'].map(opt => {
             const isThisCorrect = question.correctOption === opt;
             return (
               <div key={opt} style={{
                 fontSize: 12, padding: '10px 14px', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8,
-                border: isThisCorrect ? '1px solid rgba(34,197,94,0.40)' : '1px solid rgba(148,163,184,0.08)',
-                background: isThisCorrect ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.02)',
-                color: isThisCorrect ? '#22C55E' : '#475569', fontWeight: isThisCorrect ? 600 : 400,
+                border: isThisCorrect ? '1px solid rgba(18,184,134,0.34)' : '1px solid var(--ssc-border-soft)',
+                background: isThisCorrect ? 'var(--ssc-success-soft)' : 'var(--ssc-surface-soft)',
+                color: isThisCorrect ? 'var(--ssc-success)' : 'var(--ssc-text-secondary)', fontWeight: isThisCorrect ? 600 : 400,
               }}>
                 <span style={{ flex: 1 }}>{opt}. {question[OPTION_KEYS[opt]]}</span>
-                {isThisCorrect && <span style={{ fontSize: 10, fontWeight: 800, color: '#22C55E', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>Correct</span>}
+                {isThisCorrect && <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--ssc-success)', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>Correct</span>}
               </div>
             );
           })}
@@ -402,53 +403,53 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
       <div style={{ ...cardBg, borderRadius: 18, padding: '14px 16px', borderLeft: leftBorder }}>
         <div style={{ marginBottom: 8 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: '#64748b', letterSpacing: '0.04em' }}>Q{index + 1}</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--ssc-text-secondary)', letterSpacing: '0.04em' }}>Q{index + 1}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 10px', borderRadius: 999, ...badgeStyle }}>Skipped</span>
               <button onClick={() => setExpanded(false)} style={collapseBtn}>▲</button>
             </div>
           </div>
-          {(subject || topic) && <p style={{ fontSize: 11, color: '#475569', margin: 0 }}>{[subject, topic].filter(Boolean).join(' · ')}</p>}
+          {(subject || topic) && <p style={{ fontSize: 11, color: 'var(--ssc-text-muted)', margin: 0 }}>{[subject, topic].filter(Boolean).join(' · ')}</p>}
         </div>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: 600, lineHeight: 1.5, marginBottom: 12 }}>{question.question}</p>
+        <p style={{ fontSize: 13, color: 'var(--ssc-text-primary)', fontWeight: 600, lineHeight: 1.5, marginBottom: 12 }}>{question.question}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
           {['A', 'B', 'C', 'D'].map(opt => {
             const isThisCorrect = question.correctOption === opt;
             return (
               <div key={opt} style={{
                 fontSize: 12, padding: '10px 14px', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                border: isThisCorrect ? '1px solid rgba(34,197,94,0.35)' : '1px solid rgba(148,163,184,0.08)',
-                background: isThisCorrect ? 'rgba(34,197,94,0.08)' : 'transparent',
-                color: isThisCorrect ? '#22C55E' : '#475569', fontWeight: isThisCorrect ? 600 : 400,
+                border: isThisCorrect ? '1px solid rgba(18,184,134,0.30)' : '1px solid var(--ssc-border-soft)',
+                background: isThisCorrect ? 'var(--ssc-success-soft)' : 'var(--ssc-surface-soft)',
+                color: isThisCorrect ? 'var(--ssc-success)' : 'var(--ssc-text-secondary)', fontWeight: isThisCorrect ? 600 : 400,
               }}>
                 <span>{opt}. {question[OPTION_KEYS[opt]]}</span>
-                {isThisCorrect && <span style={{ color: '#22C55E' }}>✓</span>}
+                {isThisCorrect && <span style={{ color: 'var(--ssc-success)' }}>✓</span>}
               </div>
             );
           })}
         </div>
         {question.explanation ? (
-          <div style={{ marginBottom: 10, padding: '10px 12px', background: 'rgba(13,27,46,0.6)', border: '1px solid rgba(148,163,184,0.10)', borderRadius: 12 }}>
-            <span style={{ display: 'block', fontSize: 9, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Explanation</span>
-            <p style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.6, margin: '0 0 8px' }}>{question.explanation}</p>
-            <p style={{ fontSize: 11, color: 'rgba(148,163,184,0.5)', margin: 0 }}>
+          <div style={{ marginBottom: 10, padding: '10px 12px', background: 'var(--ssc-info-soft)', border: '1px solid rgba(37,99,235,0.14)', borderRadius: 12 }}>
+            <span style={{ display: 'block', fontSize: 9, fontWeight: 800, color: 'var(--ssc-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Explanation</span>
+            <p style={{ fontSize: 12, color: 'var(--ssc-text-muted)', lineHeight: 1.6, margin: '0 0 8px' }}>{question.explanation}</p>
+            <p style={{ fontSize: 11, color: 'var(--ssc-text-secondary)', margin: 0 }}>
               <span style={{ fontWeight: 700 }}>Tip:</span>{' '}
               {aiInsight || 'Try recalling this fact tomorrow without looking at the options.'}
             </p>
           </div>
         ) : (
-          <div style={{ marginBottom: 10, padding: '10px 12px', background: 'rgba(148,163,184,0.04)', border: '1px solid rgba(148,163,184,0.10)', borderRadius: 12 }}>
+          <div style={{ marginBottom: 10, padding: '10px 12px', background: 'var(--ssc-warning-soft)', border: '1px solid rgba(245,158,11,0.16)', borderRadius: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 18h6M10 22h4M12 2a7 7 0 017 7c0 2.6-1.4 4.9-3.5 6.2-.5.3-.5.8-.5 1.3V17H9v-.5c0-.5 0-1-.5-1.3A7 7 0 0112 2z"/>
               </svg>
-              <span style={{ fontSize: 9, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Review Tip</span>
+              <span style={{ fontSize: 9, fontWeight: 800, color: 'var(--ssc-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Review Tip</span>
             </div>
-            <p style={{ fontSize: 12, color: 'rgba(148,163,184,0.8)', lineHeight: 1.6, margin: 0 }}>
+            <p style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', lineHeight: 1.6, margin: 0 }}>
               {aiInsight || getQuestionReviewTip({ status: 'skipped', selectedOption: null, correctOption: question.correctOption, hasExplanation: false, topicMistakeCount, totalSkipped })}
             </p>
             {!aiInsight && (
-              <button onClick={handleExplainMore} disabled={aiLoading} style={{ marginTop: 6, fontSize: 11, fontWeight: 600, color: aiLoading ? 'rgba(148,163,184,0.4)' : '#94a3b8', background: 'none', border: 'none', cursor: aiLoading ? 'default' : 'pointer', padding: 0, fontFamily: 'inherit' }}>
+              <button onClick={handleExplainMore} disabled={aiLoading} style={{ marginTop: 6, fontSize: 11, fontWeight: 600, color: aiLoading ? 'var(--ssc-disabled-text)' : 'var(--ssc-teal)', background: 'none', border: 'none', cursor: aiLoading ? 'default' : 'pointer', padding: 0, fontFamily: 'inherit' }}>
                 {aiLoading ? 'Loading…' : 'Need more help? Explain this →'}
               </button>
             )}
@@ -457,12 +458,12 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={toggleSave} style={isSaved
             ? { fontSize: 11, fontWeight: 700, padding: '5px 13px', borderRadius: 999, border: '1px solid rgba(20,184,166,0.35)', background: 'rgba(20,184,166,0.10)', color: '#14B8A6', cursor: 'pointer', fontFamily: 'inherit' }
-            : { fontSize: 11, fontWeight: 600, padding: '5px 13px', borderRadius: 999, border: '1px solid rgba(148,163,184,0.15)', background: 'rgba(255,255,255,0.04)', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}>
+            : { fontSize: 11, fontWeight: 600, padding: '5px 13px', borderRadius: 999, border: '1px solid var(--ssc-border-soft)', background: 'var(--ssc-surface-soft)', color: 'var(--ssc-text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
             {isSaved ? '✓ Saved' : 'Save for Revision'}
           </button>
           <button onClick={toggleUnderstood} style={isUnderstood
             ? { fontSize: 11, fontWeight: 700, padding: '5px 13px', borderRadius: 999, border: '1px solid rgba(99,102,241,0.35)', background: 'rgba(99,102,241,0.10)', color: '#A5B4FC', cursor: 'pointer', fontFamily: 'inherit' }
-            : { fontSize: 11, fontWeight: 600, padding: '5px 13px', borderRadius: 999, border: '1px solid rgba(148,163,184,0.15)', background: 'rgba(255,255,255,0.04)', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}>
+            : { fontSize: 11, fontWeight: 600, padding: '5px 13px', borderRadius: 999, border: '1px solid var(--ssc-border-soft)', background: 'var(--ssc-surface-soft)', color: 'var(--ssc-text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
             {isUnderstood ? '✓ Understood' : 'Mark as Understood'}
           </button>
         </div>
@@ -475,7 +476,7 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
     <div style={{ ...cardBg, borderRadius: 22, padding: '16px 18px', borderLeft: leftBorder }}>
       <div style={{ marginBottom: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: '#64748b', letterSpacing: '0.04em' }}>Q{index + 1}</span>
+          <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--ssc-text-secondary)', letterSpacing: '0.04em' }}>Q{index + 1}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 10px', borderRadius: 999, ...badgeStyle }}>Incorrect</span>
             <button onClick={() => setExpanded(false)} style={collapseBtn}>▲</button>
@@ -484,44 +485,65 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
             </button>
           </div>
         </div>
-        {(subject || topic) && <p style={{ fontSize: 11, color: '#475569', margin: 0 }}>{[subject, topic].filter(Boolean).join(' · ')}</p>}
+        {(subject || topic) && <p style={{ fontSize: 11, color: 'var(--ssc-text-muted)', margin: 0 }}>{[subject, topic].filter(Boolean).join(' · ')}</p>}
       </div>
-      <p className="text-white font-semibold text-sm leading-snug mb-3 whitespace-pre-line">{question.question}</p>
+      <p className="font-semibold text-sm leading-snug mb-3 whitespace-pre-line" style={{ color: 'var(--ssc-text-primary)' }}>{question.question}</p>
       <div className="flex flex-col gap-2 mb-3">
         {['A', 'B', 'C', 'D'].map(opt => {
           const isThisUser    = userAnswer === opt;
           const isThisCorrect = question.correctOption === opt;
-          let cls = 'text-[12px] px-4 py-3 rounded-xl border flex justify-between items-center gap-2';
-          if (isThisCorrect)                     cls += ' bg-[rgba(34,197,94,0.10)] border-[rgba(34,197,94,0.40)] text-[#22C55E] font-bold';
-          else if (isThisUser && !isThisCorrect) cls += ' bg-red-500/15 border-red-500/40 text-red-300 font-bold';
-          else                                   cls += ' bg-slate-900/40 border-slate-700/40 text-slate-500';
+          const optionStyle = {
+            fontSize: 12,
+            padding: '12px 16px',
+            borderRadius: 12,
+            border: isThisCorrect
+              ? '1px solid rgba(18,184,134,0.34)'
+              : isThisUser
+              ? '1px solid rgba(239,68,68,0.34)'
+              : '1px solid var(--ssc-border-soft)',
+            background: isThisCorrect
+              ? 'var(--ssc-success-soft)'
+              : isThisUser
+              ? 'var(--ssc-danger-soft)'
+              : 'var(--ssc-surface-soft)',
+            color: isThisCorrect
+              ? 'var(--ssc-success)'
+              : isThisUser
+              ? 'var(--ssc-danger)'
+              : 'var(--ssc-text-secondary)',
+            fontWeight: isThisCorrect || isThisUser ? 700 : 400,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 8,
+          };
           return (
-            <div key={opt} className={cls}>
+            <div key={opt} style={optionStyle}>
               <span className="flex-1">{opt}. {question[OPTION_KEYS[opt]]}</span>
-              {isThisCorrect && <span className="text-[10px] font-black text-[#22C55E] uppercase tracking-wide flex-shrink-0">Correct</span>}
-              {isThisUser && !isThisCorrect && <span className="text-[10px] font-black text-red-400 uppercase tracking-wide flex-shrink-0">Your answer</span>}
+              {isThisCorrect && <span className="text-[10px] font-black uppercase tracking-wide flex-shrink-0" style={{ color: 'var(--ssc-success)' }}>Correct</span>}
+              {isThisUser && !isThisCorrect && <span className="text-[10px] font-black uppercase tracking-wide flex-shrink-0" style={{ color: 'var(--ssc-danger)' }}>Your answer</span>}
             </div>
           );
         })}
       </div>
       {question.explanation ? (
-        <div className="mb-3 px-4 py-3 rounded-2xl" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <span className="block text-[9px] font-black text-orange-400 uppercase tracking-widest mb-1.5">Explanation</span>
-          <p className="text-[12px] text-slate-400 leading-relaxed" style={{ marginBottom: 8 }}>{question.explanation}</p>
-          <p style={{ fontSize: 11, color: 'rgba(251,146,60,0.5)', margin: 0 }}>
+        <div className="mb-3 px-4 py-3 rounded-2xl" style={{ background: 'var(--ssc-info-soft)', border: '1px solid rgba(37,99,235,0.14)' }}>
+          <span className="block text-[9px] font-black uppercase tracking-widest mb-1.5" style={{ color: 'var(--ssc-info)' }}>Explanation</span>
+          <p className="text-[12px] leading-relaxed" style={{ marginBottom: 8, color: 'var(--ssc-text-secondary)' }}>{question.explanation}</p>
+          <p style={{ fontSize: 11, color: 'var(--ssc-text-secondary)', margin: 0 }}>
             <span style={{ fontWeight: 700 }}>Tip:</span>{' '}
             {aiInsight || 'Read this once, then try recalling the answer without looking at the options.'}
           </p>
         </div>
       ) : (
-        <div className="mb-3 px-4 py-3 bg-orange-500/8 border border-orange-500/20 rounded-2xl">
+        <div className="mb-3 px-4 py-3 rounded-2xl" style={{ background: 'var(--ssc-warning-soft)', border: '1px solid rgba(245,158,11,0.18)' }}>
           <div className="flex items-center gap-1.5 mb-1.5">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fb923c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 4px rgba(251,146,60,0.7))' }}>
               <path d="M9 18h6M10 22h4M12 2a7 7 0 017 7c0 2.6-1.4 4.9-3.5 6.2-.5.3-.5.8-.5 1.3V17H9v-.5c0-.5 0-1-.5-1.3A7 7 0 0112 2z"/>
             </svg>
-            <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Review Tip</p>
+            <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--ssc-warning)' }}>Review Tip</p>
           </div>
-          <p className="text-[12px] text-orange-200/80 leading-relaxed">
+          <p className="text-[12px] leading-relaxed" style={{ color: 'var(--ssc-text-secondary)' }}>
             {aiInsight || getQuestionReviewTip({
               status: 'incorrect',
               selectedOption: userAnswer,
@@ -546,12 +568,12 @@ function QuestionReviewCard({ question, index, userAnswer, subject, topic, topic
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button onClick={toggleSave} style={isSaved
           ? { fontSize: 11, fontWeight: 700, padding: '5px 13px', borderRadius: 999, border: '1px solid rgba(20,184,166,0.35)', background: 'rgba(20,184,166,0.10)', color: '#14B8A6', cursor: 'pointer', fontFamily: 'inherit' }
-          : { fontSize: 11, fontWeight: 600, padding: '5px 13px', borderRadius: 999, border: '1px solid rgba(148,163,184,0.15)', background: 'rgba(255,255,255,0.04)', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}>
+          : { fontSize: 11, fontWeight: 600, padding: '5px 13px', borderRadius: 999, border: '1px solid var(--ssc-border-soft)', background: 'var(--ssc-surface-soft)', color: 'var(--ssc-text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
           {isSaved ? '✓ Saved' : 'Save for Revision'}
         </button>
         <button onClick={toggleUnderstood} style={isUnderstood
           ? { fontSize: 11, fontWeight: 700, padding: '5px 13px', borderRadius: 999, border: '1px solid rgba(99,102,241,0.35)', background: 'rgba(99,102,241,0.10)', color: '#A5B4FC', cursor: 'pointer', fontFamily: 'inherit' }
-          : { fontSize: 11, fontWeight: 600, padding: '5px 13px', borderRadius: 999, border: '1px solid rgba(148,163,184,0.15)', background: 'rgba(255,255,255,0.04)', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}>
+          : { fontSize: 11, fontWeight: 600, padding: '5px 13px', borderRadius: 999, border: '1px solid var(--ssc-border-soft)', background: 'var(--ssc-surface-soft)', color: 'var(--ssc-text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
           {isUnderstood ? '✓ Understood' : 'Mark as Understood'}
         </button>
       </div>
