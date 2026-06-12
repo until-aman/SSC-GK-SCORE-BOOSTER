@@ -102,7 +102,7 @@ CRITICAL** (so it can gate a cron/CI alert).
 | `unexpectedMutationsOutsideAllowlist` | `> 0` **and** allow-all is `false` | **CRITICAL** — a non-allowlisted scope mutated (suppressed when allow-all is on, since that's expected) |
 | `duplicateIdempotencyKeys` | `> 0` | **CRITICAL** — possible double-write |
 | `failedMutationRequests` | `1–2` / `≥3` | **WARNING / CRITICAL** |
-| `affectedRealPlanStatus` (`MP_1780920810055`) | `≠ {completed:5, snoozed:10}` | **CRITICAL** — a real-user plan changed |
+| `affectedRealPlanStatus` (`MP_1780920810055`) | growth = informational · `completed < 5` = **CRITICAL** (data loss) · `snoozed < 10` = **WARNING** | After global rollout this is **informational** — real users legitimately grow their plans (new generations / active tasks). Only a **drop below the historical floor** `{completed:5, snoozed:10}` alerts. (The old exact-count drift CRITICAL was a rollout canary, retired once real-user Mentor activity began.) |
 | `MENTOR_DAILY_ROLLOVER_V2` / `MENTOR_PENDING_LIFECYCLE_V2` | `true` | **CRITICAL** — write flag enabled before its phase |
 
 Healthy baseline (allowlist mode) = `ALERT STATUS: OK`, all guardrails 0, real plan unchanged.
@@ -121,13 +121,13 @@ The monitor prints `Mutation scope: allowAll=<bool> allowlistSize=<n>` and repor
 - **Auth (`CRON_SECRET`):** the route is fail-closed — it requires `Authorization: Bearer ${CRON_SECRET}`. Vercel Cron sends this header automatically **when `CRON_SECRET` is set on the project**. There is no pre-existing cron/internal secret in this repo, so **one new Vercel env var `CRON_SECRET` must be added** (Production; any strong random string). It is **not** a Google/Sheets secret. Without it the route returns `401` and the cron is effectively disabled (safe).
 - **HTTP semantics:** `CRITICAL → 500` (Vercel marks the cron run failed → surfaces in the Vercel dashboard / logs), `WARNING/OK → 200`.
 - **Expected healthy result (allow-all on):** `200` with `alertStatus: "WARNING"`, alert `ALLOW_ALL_ENABLED`, `mutationAllowAll: true`, `duplicateIdempotencyKeys: 0`, `failedMutationRequests: 0`, `unexpectedMutationsOutsideAllowlist: 0`, `affectedRealPlanStatus: {completed:5, snoozed:10}`, `flags.MENTOR_DAILY_ROLLOVER_V2/PENDING_LIFECYCLE_V2: false`.
-- **What returns 500 (CRITICAL):** `unexpectedMutationsOutsideAllowlist > 0` while allow-all off · `duplicateIdempotencyKeys > 0` · `failedMutationRequests ≥ 3` · affected real plan drift from `{completed:5, snoozed:10}` · `MENTOR_DAILY_ROLLOVER_V2` or `MENTOR_PENDING_LIFECYCLE_V2` = `true`.
+- **What returns 500 (CRITICAL):** `unexpectedMutationsOutsideAllowlist > 0` while allow-all off · `duplicateIdempotencyKeys > 0` · `failedMutationRequests ≥ 3` · `MENTOR_DAILY_ROLLOVER_V2` or `MENTOR_PENDING_LIFECYCLE_V2` = `true` · affected real plan `completed` **drops below 5** (data loss). Affected-real-plan **growth** is informational (not a CRITICAL); a `snoozed` drop below 10 is a WARNING (likely a legitimate resume/complete).
 
 **Required Vercel env for the cron** (all but `CRON_SECRET` already exist): `GOOGLE_SERVICE_ACCOUNT_KEY`, `GOOGLE_SHEET_ID`, the `MENTOR_*` mutation/scope flags, **plus `CRON_SECRET` (new, one-time)**.
 
 **Manual check (local, anytime):** `DOTENV_CONFIG_PATH=.env.local node -r dotenv/config scripts/mentor-v2-mutation-monitor.js` (exits 2 on CRITICAL). The GitHub workflow can also be run manually from the Actions tab **if** the three repo secrets are added.
 
-**If a cron run returns 500 (CRITICAL):** check the Vercel function logs for the alert code, then apply the matching rollback from §4 (e.g. real-plan drift or a rollover/pending flag true → disable mutations via `MENTOR_TASK_MUTATIONS_V2=false`, investigate, restore the `.xlsx` backup if data changed).
+**If a cron run returns 500 (CRITICAL):** check the Vercel function logs for the alert code, then apply the matching rollback from §4 (e.g. `duplicateIdempotencyKeys`/`failedMutationRequests` → investigate the mutation flow; a rollover/pending flag unexpectedly `true` → set it `false` and `MENTOR_TASK_MUTATIONS_V2=false`, investigate, restore the `.xlsx` backup if data changed).
 
 ## 6. Cohort expansion procedure
 
