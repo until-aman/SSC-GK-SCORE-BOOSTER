@@ -72,11 +72,13 @@ test('8. route calls ONLY the read-only monitor (auditV2Mutations) — no write 
 });
 
 // ---- vercel.json cron config ----
-test('9. vercel.json has the cron path + 6h schedule', () => {
+test('9. vercel.json has the cron path + once-per-day schedule (Hobby-compatible)', () => {
   assert.ok(Array.isArray(vercelJson.crons));
   const c = vercelJson.crons.find(x => x.path === '/api/internal/mentor-v2-monitor');
   assert.ok(c, 'cron entry for the monitor path missing');
-  assert.strictEqual(c.schedule, '0 */6 * * *');
+  // Hobby plan rejects > once/day at deploy time, so the schedule must be daily.
+  assert.strictEqual(c.schedule, '0 6 * * *');
+  assert.ok(!/\*\/\d/.test(c.schedule), 'schedule must not contain a step (*/N) — that would exceed once/day on Hobby');
 });
 
 // ---- GitHub workflow manual-only ----

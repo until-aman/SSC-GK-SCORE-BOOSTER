@@ -115,8 +115,8 @@ The monitor prints `Mutation scope: allowAll=<bool> allowlistSize=<n>` and repor
 
 > **Why not GitHub Actions?** GitHub Actions has its own secret store and **cannot read Vercel env vars**. This repo has **no** Actions secrets configured, so a scheduled GitHub run would always fail. The GitHub workflow `.github/workflows/mentor-v2-monitor.yml` is therefore **manual-only** (`workflow_dispatch`) — usable later only if the three repo secrets are ever added.
 
-- **Cron config:** `vercel.json` → `crons: [{ path: "/api/internal/mentor-v2-monitor", schedule: "0 */6 * * *" }]` (every 6h).
-  - *Plan note:* on the **Hobby** plan Vercel may throttle cron to ~once/day regardless of the schedule string; the route/result are unchanged either way. Upgrade if a strict 6h cadence is required.
+- **Cron config:** `vercel.json` → `crons: [{ path: "/api/internal/mentor-v2-monitor", schedule: "0 6 * * *" }]` (daily ~06:00 UTC).
+  - *Plan limit (important):* the **Hobby** plan allows cron jobs **once per day only** — a more-frequent expression (e.g. `0 */6 * * *`) **fails the deployment** with "Hobby accounts are limited to daily cron jobs." Hobby timing precision is hourly (±59 min), so the run fires sometime in the 06:00–06:59 UTC window. For sub-daily cadence or precise timing, upgrade to Pro and change the schedule.
 - **Route:** `pages/api/internal/mentor-v2-monitor.js` — **read-only** (`auditV2Mutations` → `cronMonitorResult`); never mutates the Sheet.
 - **Auth (`CRON_SECRET`):** the route is fail-closed — it requires `Authorization: Bearer ${CRON_SECRET}`. Vercel Cron sends this header automatically **when `CRON_SECRET` is set on the project**. There is no pre-existing cron/internal secret in this repo, so **one new Vercel env var `CRON_SECRET` must be added** (Production; any strong random string). It is **not** a Google/Sheets secret. Without it the route returns `401` and the cron is effectively disabled (safe).
 - **HTTP semantics:** `CRITICAL → 500` (Vercel marks the cron run failed → surfaces in the Vercel dashboard / logs), `WARNING/OK → 200`.
