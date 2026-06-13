@@ -12,7 +12,11 @@ const JSON_ONLY = process.argv.includes('--json');
   const { getSheetsClient } = require('../lib/sheets');
   const sheets = await getSheetsClient();
   const allowedUserHashes = flags.getV2MutationAllowedUserHashes();
-  const audit = await auditV2Mutations(sheets, { allowedUserHashes });
+  const audit = await auditV2Mutations(sheets, {
+    allowedUserHashes,
+    rolloverAllowedUserHashes: flags.getDailyRolloverAllowedUserHashes(),
+    rolloverFlagOn: flags.isMentorDailyRolloverV2Enabled(),
+  });
   const mutationAllowAll = flags.isMentorV2MutationAllowAllEnabled();
   const rolloverAllowlist = flags.getDailyRolloverAllowedUserHashes();
   const flagState = {
