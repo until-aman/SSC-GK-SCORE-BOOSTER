@@ -10,7 +10,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { executeDailyRolloverWrite } = require('../lib/mentor/services/rolloverWriteExecutor');
-const { createSheetsPlanWriter } = require('../lib/mentor/repository/sheetsMutationRepository');
+const { createSheetsPlanWriter, createSheetsMutationRepository, createSheetsIdempotencyStore } = require('../lib/mentor/repository/sheetsMutationRepository');
 const flags = require('../lib/mentor/repository/featureFlags');
 const { userScopeFromIdentity } = require('../lib/mentor/services/taskMutationService');
 
@@ -288,6 +288,63 @@ test('B4. plan.js surfaces rollover write failure (no silent swallow on the roll
   assert.ok(/\[mentor-rollover-write\] FAILED/.test(src), 'must log a FAILED line when result.ok === false');
   // the rollover .then(...) chain must end in a logging .catch, not an empty swallow
   assert.ok(/\[mentor-rollover\] unhandled/.test(src), 'rollover chain must log unhandled errors');
+});
+
+// ---- Phase 10D-FIX-2: real repository over a fake Sheet that injects ONE transient append failure ----
+// Proves the R2 root cause is fixed: a transient append AFTER a successful status update is
+// retried (via createSheetsIo backoff) so the moved task is NOT orphaned without its event,
+// and the batch still finalizes the day-marker + ROLLOVER row.
+const WB_H = {
+  MentorTasks: ['TaskId', 'PlanId', 'Email', 'Status', 'PendingReason', 'MovedToPendingAt', 'SnoozeCount', 'RowVersion', 'PlanVersion', 'Type', 'CreatedAt', 'UpdatedAt'],
+  MentorPlans: ['PlanId', 'Email', 'Status', 'CreatedAt', 'PlanVersion', 'LastProcessedCalendarDay', 'RowVersion'],
+  MentorTaskLogs: ['LogId', 'EventId', 'TaskId', 'PlanId', 'ActionType', 'FromStatus', 'ToStatus', 'CanonicalAction', 'IdempotencyKey', 'RequestId', 'EventPayloadJSON', 'CreatedAt', 'SourcePage', 'QuizSessionId', 'Notes'],
+  MentorMutationRequests: ['IdempotencyKey', 'UserScopeHash', 'PlanId', 'TaskId', 'Action', 'PayloadHash', 'Status', 'ResultJSON', 'CreatedAt', 'CompletedAt', 'ExpiresAt'],
+};
+function fakeWorkbook({ failAppendOnce = false } = {}) {
+  const data = {}; Object.keys(WB_H).forEach(t => (data[t] = [WB_H[t].slice()]));
+  data.MentorTasks.push(['T1', 'P_W', 'aa@test', 'active', '', '', '', '1', '1', 'practice_task', '2026-06-12T10:00:00Z', '']);
+  data.MentorPlans.push(['P_W', 'aa@test', 'active', '2026-06-12T09:00:00Z', '1', '', '1']);
+  let appendCalls = 0;
+  return { _data: data, get appendCalls() { return appendCalls; }, spreadsheets: { values: {
+    async get({ range }) { const t = range.split('!')[0]; return { data: { values: (data[t] || []).map(r => r.slice()) } }; },
+    async update({ range, requestBody }) { const t = range.split('!')[0]; const n = Number(range.split('!A')[1]); data[t][n - 1] = requestBody.values[0].slice(); },
+    async append({ range, requestBody }) { appendCalls += 1; if (failAppendOnce && appendCalls === 1) { const e = new Error('rate limited'); e.code = 503; throw e; } const t = range.split('!')[0]; data[t].push(requestBody.values[0].slice()); },
+  } } };
+}
+function wbExec(sheets) {
+  return executeDailyRolloverWrite({
+    snapshot: snap({ calendarDay: 2, lastProcessed: 1, tasks: [fakeTask({ taskId: 'T1', planId: 'P_W', type: 'practice_task', status: 'active', rowVersion: 1 })], totalPlanDays: 46 }),
+    userScope: SCOPE, activePlan: { planId: 'P_W' }, now: NOW, totalPlanDays: 46,
+    mutationRepository: createSheetsMutationRepository({ sheets, email: 'aa@test' }),
+    idempotencyStore: createSheetsIdempotencyStore({ sheets, email: 'aa@test' }),
+    planWriter: createSheetsPlanWriter({ sheets, email: 'aa@test' }),
+  });
+}
+const logsOf = sheets => sheets._data.MentorTaskLogs.slice(1);
+const taskRow = sheets => sheets._data.MentorTasks.find(r => r[0] === 'T1');
+const planActive = sheets => sheets._data.MentorPlans.find(r => r[0] === 'P_W' && r[2] === 'active');
+const mreqOf = sheets => sheets._data.MentorMutationRequests.slice(1);
+
+test('R-FIX2a. transient append failure AFTER the task update is retried; moved task is NOT orphaned (event present, batch finalizes)', async () => {
+  const sheets = fakeWorkbook({ failAppendOnce: true });
+  const r = await wbExec(sheets);
+  assert.strictEqual(r.ok, true, 'batch finalized despite the transient append blip');
+  assert.strictEqual(taskRow(sheets)[3], 'pending', 'task moved to pending');
+  assert.strictEqual(taskRow(sheets)[7], '2', 'RowVersion incremented once (no double-apply)');
+  const ev = logsOf(sheets).filter(row => row[2] === 'T1' && String(row[12]).toLowerCase() === 'daily_rollover');
+  assert.strictEqual(ev.length, 1, 'exactly one task event present — not orphaned, not duplicated');
+  assert.strictEqual(planActive(sheets)[5], '2', 'LastProcessedCalendarDay written to active row');
+  assert.ok(mreqOf(sheets).some(row => String(row[4]).toUpperCase() === 'ROLLOVER'), 'ROLLOVER idempotency row finalized');
+  assert.ok(sheets.appendCalls >= 3, 'append was retried (event retry + idempotency)');
+});
+test('R-FIX2b. control: no transient failure -> clean single-pass full move (event + marker + ROLLOVER row)', async () => {
+  const sheets = fakeWorkbook({ failAppendOnce: false });
+  const r = await wbExec(sheets);
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(taskRow(sheets)[3], 'pending');
+  assert.strictEqual(logsOf(sheets).filter(row => row[2] === 'T1').length, 1, 'one event, no duplicate');
+  assert.strictEqual(planActive(sheets)[5], '2');
+  assert.ok(mreqOf(sheets).some(row => String(row[4]).toUpperCase() === 'ROLLOVER'));
 });
 
 (async () => { for (const t of T) { try { await t.fn(); passed++; console.log(`ok  ${t.n}`); } catch (e) { failed++; console.error(`FAIL ${t.n}\n     ${e.message}`); } } console.log(`\n${passed}/${T.length} Mentor rollover WRITE tests passed.`); process.exit(failed ? 1 : 0); })();
