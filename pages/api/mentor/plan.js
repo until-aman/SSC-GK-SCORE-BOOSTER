@@ -261,7 +261,12 @@ async function handler(req, res) {
               planWriter: createSheetsPlanWriter({ sheets, email: session.user.email }),
               totalPlanDays: canonical.totalPlanDays,
             });
-            console.log('[mentor-rollover-write]', { ok: result.ok, code: result.code, idempotent: result.idempotent, rolloverRequired: result.rolloverRequired, applied: result.appliedCount, finalDay: result.finalDay, diagnostics: result.diagnostics });
+            // Bug B (Phase 10D-FIX): rollover write failures MUST be visible, never swallowed.
+            if (!result || result.ok === false) {
+              console.error('[mentor-rollover-write] FAILED', { code: result && result.code, reason: result && result.reason, error: result && result.error, applied: result && result.appliedCount, lastProcessedWritten: result && result.lastProcessedWritten, diagnostics: result && result.diagnostics });
+            } else {
+              console.log('[mentor-rollover-write]', { ok: result.ok, idempotent: result.idempotent, rolloverRequired: result.rolloverRequired, applied: result.appliedCount, finalDay: result.finalDay, lastProcessedWritten: result.lastProcessedWritten, diagnostics: result.diagnostics });
+            }
             return;
           }
           // SHADOW path — compute only, log-only, no-op store (no writes).
@@ -284,7 +289,7 @@ async function handler(req, res) {
             diagnosticCodes: result.diagnostics || [],
           });
         })
-        .catch(() => {});
+        .catch(err => console.error('[mentor-rollover] unhandled', err && err.message, err && err.stack));
     }
     return res.status(200).json(snapshot);
   } catch (err) {

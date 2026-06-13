@@ -10,6 +10,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { executeDailyRolloverWrite } = require('../lib/mentor/services/rolloverWriteExecutor');
+const { createSheetsPlanWriter } = require('../lib/mentor/repository/sheetsMutationRepository');
 const flags = require('../lib/mentor/repository/featureFlags');
 const { userScopeFromIdentity } = require('../lib/mentor/services/taskMutationService');
 
@@ -35,7 +36,23 @@ function fakeRepo(tasks, { throwOn } = {}) {
   };
 }
 const fakeStore = () => { const m = new Map(); return { _m: m, async get(k) { return m.get(k) || null; }, async save(k, v) { m.set(k, v); return v; } }; };
-const fakePlanWriter = (opts = {}) => { const calls = []; return { _calls: calls, async setLastProcessedCalendarDay(planId, day) { calls.push({ planId, day }); return opts.missing ? { written: false, reason: 'LAST_PROCESSED_COLUMN_MISSING' } : { written: true }; } }; };
+const throwingStore = () => ({ async get() { return null; }, async save() { throw new Error('APPEND_BOOM'); } });
+const fakePlanWriter = (opts = {}) => { const calls = []; return { _calls: calls, async setLastProcessedCalendarDay(planId, day) { calls.push({ planId, day }); if (opts.reason) return { written: false, reason: opts.reason }; return opts.missing ? { written: false, reason: 'LAST_PROCESSED_COLUMN_MISSING' } : { written: true }; } }; };
+
+// ---- Phase 10D-FIX: real createSheetsPlanWriter against a fake MentorPlans sheet ----
+const PLAN_HEADERS = ['PlanId', 'Email', 'Status', 'CreatedAt', 'PlanVersion', 'GenerationId', 'LastProcessedCalendarDay', 'RowVersion', 'UpdatedAt'];
+const LP_COL = PLAN_HEADERS.indexOf('LastProcessedCalendarDay');
+function planRow({ planId = 'MP_T9B2', email = 'an@test', status = 'invalid', createdAt = '2026-06-11T00:00:00Z', planVersion = '', genId = '', lastProcessed = '' } = {}) {
+  return [planId, email, status, createdAt, planVersion, genId, lastProcessed, '1', ''];
+}
+function fakePlansSheets(rows) {
+  const data = [PLAN_HEADERS.slice(), ...rows.map(r => r.slice())]; const updates = [];
+  return { _data: data, _updates: updates, spreadsheets: { values: {
+    async get({ range }) { return range.split('!')[0] === 'MentorPlans' ? { data: { values: data.map(r => r.slice()) } } : { data: { values: [] } }; },
+    async update({ range, requestBody }) { const n = Number(range.split('!A')[1]); data[n - 1] = requestBody.values[0].slice(); updates.push({ rowNum: n }); },
+    async append() { throw new Error('append not expected on MentorPlans'); },
+  } } };
+}
 const exec = (s, repo, store, pw, totalPlanDays) => executeDailyRolloverWrite({ snapshot: s, userScope: SCOPE, activePlan: { planId: PLAN }, now: NOW, mutationRepository: repo, idempotencyStore: store || fakeStore(), planWriter: pw || fakePlanWriter(), totalPlanDays: totalPlanDays || s.totalPlanDays });
 
 const RF = ['MENTOR_DAILY_ROLLOVER_V2', 'MENTOR_DAILY_ROLLOVER_ALLOW_ALL', 'MENTOR_DAILY_ROLLOVER_ALLOWED_USER_HASHES'];
@@ -183,6 +200,94 @@ test('18. final-day policy: no pending-move when calendarDay >= totalPlanDays', 
   // totalPlanDays unknown -> flagged as a pre-live blocker
   const r2 = await exec(snap({ calendarDay: 5, lastProcessed: 4, tasks: [fakeTask({ taskId: 'F2', type: 'practice_task', status: 'active' })] }), fakeRepo([fakeTask({ taskId: 'F2', type: 'practice_task', status: 'active' })]));
   assert.ok(r2.diagnostics.includes('FINAL_DAY_POLICY_UNKNOWN'));
+});
+
+// ---- Phase 10D-FIX Bug A: plan-writer targets the ACTIVE / current-generation row ----
+test('A1. setLastProcessedCalendarDay writes ONLY the active row among 12 same-PlanId rows; invalid rows unchanged', async () => {
+  // 11 invalid (older) + 1 active (newest) — the exact Phase 10D pilot shape.
+  const rows = [];
+  for (let i = 0; i < 11; i++) rows.push(planRow({ status: 'invalid', createdAt: `2026-06-11T0${i % 10}:00:00Z` }));
+  rows.push(planRow({ status: 'active', createdAt: '2026-06-12T03:09:44Z' }));
+  const sheets = fakePlansSheets(rows);
+  const pw = createSheetsPlanWriter({ sheets, email: 'an@test' });
+  const w = await pw.setLastProcessedCalendarDay('MP_T9B2', 3);
+  assert.strictEqual(w.written, true);
+  assert.strictEqual(w.sheetRow, 13, 'active row is sheetRow 13 (header + 11 invalid + active)');
+  // only the active row got the value; all 11 invalid rows stay blank
+  assert.strictEqual(sheets._data[12][LP_COL], '3');
+  for (let i = 1; i <= 11; i++) assert.strictEqual(sheets._data[i][LP_COL], '', `invalid row ${i} unchanged`);
+  assert.strictEqual(sheets._updates.length, 1);
+});
+test('A2. no active row -> PLAN_ROW_NO_ACTIVE, nothing written', async () => {
+  const sheets = fakePlansSheets([planRow({ status: 'invalid' }), planRow({ status: 'invalid' })]);
+  const pw = createSheetsPlanWriter({ sheets, email: 'an@test' });
+  const w = await pw.setLastProcessedCalendarDay('MP_T9B2', 3);
+  assert.strictEqual(w.written, false);
+  assert.strictEqual(w.reason, 'PLAN_ROW_NO_ACTIVE');
+  assert.strictEqual(sheets._updates.length, 0);
+});
+test('A3. two active rows, same CreatedAt, no other discriminator -> PLAN_ROW_AMBIGUOUS (fail closed)', async () => {
+  const sheets = fakePlansSheets([
+    planRow({ status: 'active', createdAt: '2026-06-12T03:00:00Z' }),
+    planRow({ status: 'active', createdAt: '2026-06-12T03:00:00Z' }),
+  ]);
+  const pw = createSheetsPlanWriter({ sheets, email: 'an@test' });
+  const w = await pw.setLastProcessedCalendarDay('MP_T9B2', 3);
+  assert.strictEqual(w.written, false);
+  assert.strictEqual(w.reason, 'PLAN_ROW_AMBIGUOUS');
+  assert.strictEqual(sheets._updates.length, 0);
+});
+test('A4. two active rows, different CreatedAt -> newest active wins (not ambiguous)', async () => {
+  const sheets = fakePlansSheets([
+    planRow({ status: 'active', createdAt: '2026-06-10T00:00:00Z' }),
+    planRow({ status: 'active', createdAt: '2026-06-12T00:00:00Z' }),
+  ]);
+  const pw = createSheetsPlanWriter({ sheets, email: 'an@test' });
+  const w = await pw.setLastProcessedCalendarDay('MP_T9B2', 7);
+  assert.strictEqual(w.written, true);
+  assert.strictEqual(sheets._data[2][LP_COL], '7'); // the newer active row (sheetRow 3)
+  assert.strictEqual(sheets._data[1][LP_COL], '');
+});
+test('A5. getLastProcessedCalendarDay reads the active row (ignores stale rows that carry a value)', async () => {
+  const sheets = fakePlansSheets([
+    planRow({ status: 'invalid', createdAt: '2026-06-11T00:00:00Z', lastProcessed: '99' }), // stale, must be ignored
+    planRow({ status: 'active', createdAt: '2026-06-12T00:00:00Z', lastProcessed: '4' }),
+  ]);
+  const pw = createSheetsPlanWriter({ sheets, email: 'an@test' });
+  assert.strictEqual(await pw.getLastProcessedCalendarDay('MP_T9B2'), 4);
+});
+
+// ---- Phase 10D-FIX Bug B: finalization failures are surfaced, never silent partial success ----
+test('B1. day-marker UNRESOLVED (ambiguous active row) -> ok:false ROLLOVER_DAY_MARKER_UNRESOLVED, NOT finalized', async () => {
+  const tasks = [fakeTask({ taskId: 'U1', type: 'practice_task', status: 'active' })];
+  const repo = fakeRepo(tasks); const store = fakeStore();
+  const r = await exec(snap({ calendarDay: 2, lastProcessed: 1, tasks }), repo, store, fakePlanWriter({ reason: 'PLAN_ROW_AMBIGUOUS' }));
+  assert.strictEqual(r.ok, false);
+  assert.strictEqual(r.code, 'ROLLOVER_DAY_MARKER_UNRESOLVED');
+  assert.strictEqual(r.reason, 'PLAN_ROW_AMBIGUOUS');
+  assert.ok(!store._m.size, 'idempotency NOT finalized -> re-run can resume after data fix');
+});
+test('B2. idempotency finalization throws -> ok:false ROLLOVER_FINALIZE_FAILED (no silent partial success)', async () => {
+  const tasks = [fakeTask({ taskId: 'U2', type: 'practice_task', status: 'active' })];
+  const repo = fakeRepo(tasks);
+  const r = await exec(snap({ calendarDay: 2, lastProcessed: 1, tasks }), repo, throwingStore(), fakePlanWriter());
+  assert.strictEqual(r.ok, false);
+  assert.strictEqual(r.code, 'ROLLOVER_FINALIZE_FAILED');
+  assert.strictEqual(r.error, 'APPEND_BOOM');
+  assert.strictEqual(r.appliedCount, 1, 'tasks were applied; failure is at finalization');
+});
+test('B3. success path still finalizes Action=ROLLOVER (regression guard)', async () => {
+  const tasks = [fakeTask({ taskId: 'U3', type: 'practice_task', status: 'active' })];
+  const store = fakeStore();
+  const r = await exec(snap({ calendarDay: 2, lastProcessed: 1, tasks }), fakeRepo(tasks), store, fakePlanWriter());
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(store._m.get(`mentor-rollover:${SCOPE}:${PLAN}:2`).result.event.action, 'ROLLOVER');
+});
+test('B4. plan.js surfaces rollover write failure (no silent swallow on the rollover chain)', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'pages', 'api', 'mentor', 'plan.js'), 'utf8');
+  assert.ok(/\[mentor-rollover-write\] FAILED/.test(src), 'must log a FAILED line when result.ok === false');
+  // the rollover .then(...) chain must end in a logging .catch, not an empty swallow
+  assert.ok(/\[mentor-rollover\] unhandled/.test(src), 'rollover chain must log unhandled errors');
 });
 
 (async () => { for (const t of T) { try { await t.fn(); passed++; console.log(`ok  ${t.n}`); } catch (e) { failed++; console.error(`FAIL ${t.n}\n     ${e.message}`); } } console.log(`\n${passed}/${T.length} Mentor rollover WRITE tests passed.`); process.exit(failed ? 1 : 0); })();
