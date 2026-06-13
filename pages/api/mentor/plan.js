@@ -13,12 +13,17 @@ import { getUserAttemptAnswers } from '@/lib/historyData';
 import { generateTodaysPlan } from '@/lib/mentorPlanEngine';
 import { getMentorDayMessage } from '@/lib/mentorCopy';
 import { createSheetsMentorRepository, runMentorShadowComparison } from '@/lib/mentor/repository';
-import { isMentorRepoV2Enabled, isMentorCanonicalDayReadEnabled, isMentorDailyRolloverV2Enabled, isMentorPendingLifecycleV2Enabled, isMentorDailyRolloverUserAllowed } from '@/lib/mentor/repository/featureFlags';
+import { isMentorRepoV2Enabled, isMentorCanonicalDayReadEnabled, isMentorDailyRolloverV2Enabled, isMentorPendingLifecycleV2Enabled, isMentorDailyRolloverUserAllowed, isMentorDailyRolloverBackgroundEnabled } from '@/lib/mentor/repository/featureFlags';
 import { processDailyRollover } from '@/lib/mentor/services/dailyRolloverService';
 import { executeDailyRolloverWrite } from '@/lib/mentor/services/rolloverWriteExecutor';
 import { userScopeFromIdentity } from '@/lib/mentor/services/taskMutationService';
 import { createSheetsMutationRepository, createSheetsIdempotencyStore, createSheetsPlanWriter } from '@/lib/mentor/repository/sheetsMutationRepository';
+import { runBackgroundTask } from '@/lib/mentor/util/backgroundTask';
 import { applyRepoV2Compatibility } from '@/lib/mentor/read/serveCompatibleSnapshot';
+
+// Phase 10F2: give the eligible rollover write headroom over the default ~10s when it runs
+// (awaited fallback) or as a waitUntil background task. Hobby supports up to 60s.
+export const config = { maxDuration: 60 };
 
 function normalizeSubjectId(subjectId) {
   return String(subjectId || '').replace(/^Q_PYQ_/, '');
@@ -243,38 +248,46 @@ async function handler(req, res) {
       // Phase 10C: real user scope hash (no full email in keys/logs/monitor).
       const userScope = userScopeFromIdentity({ email: session.user.email });
       if (isMentorDailyRolloverUserAllowed(userScope)) {
-        // WRITE path (Phase 10D-FIX-3): AWAITED before the response is sent. On Vercel the
-        // serverless function is frozen/reclaimed once the HTTP response returns, which
-        // truncated the previous fire-and-forget rollover mid-write (partial moves, missing
-        // events/marker/ROLLOVER row). Awaiting guarantees the multi-write sequence finishes
-        // within the function's active lifetime. Only the narrow allowlisted cohort reaches
-        // this (isMentorDailyRolloverUserAllowed is false unless MENTOR_DAILY_ROLLOVER_V2 is
-        // true AND the user is allow-all/allowlisted), and it does heavy work once/day (then
-        // idempotent replay = one read), so the bounded added latency is acceptable.
-        // A write failure is logged but never fails the user's plan response.
-        try {
-          const repo = createSheetsMentorRepository();
-          const canonical = await repo.getMentorSnapshotData({ email: session.user.email });
-          const sheets = await getSheetsClient();
-          const result = await executeDailyRolloverWrite({
-            snapshot: canonical,
-            userScope,
-            activePlan: canonical.activePlan,
-            now: canonical.serverGeneratedAt,
-            mutationRepository: createSheetsMutationRepository({ sheets, email: session.user.email }),
-            idempotencyStore: createSheetsIdempotencyStore({ sheets, email: session.user.email }),
-            planWriter: createSheetsPlanWriter({ sheets, email: session.user.email }),
-            totalPlanDays: canonical.totalPlanDays,
-          });
-          // Bug B (Phase 10D-FIX): rollover write failures MUST be visible, never swallowed.
-          if (!result || result.ok === false) {
-            console.error('[mentor-rollover-write] FAILED', { code: result && result.code, reason: result && result.reason, error: result && result.error, applied: result && result.appliedCount, lastProcessedWritten: result && result.lastProcessedWritten, diagnostics: result && result.diagnostics });
-          } else {
-            console.log('[mentor-rollover-write]', { ok: result.ok, idempotent: result.idempotent, rolloverRequired: result.rolloverRequired, applied: result.appliedCount, finalDay: result.finalDay, lastProcessedWritten: result.lastProcessedWritten, diagnostics: result.diagnostics });
+        // WRITE path — the SAME proven executor (Phase 10C/10D), ordering unchanged
+        // (tasks+events → LastProcessedCalendarDay → ROLLOVER row LAST; idempotent;
+        // RowVersion-guarded). Phase 10F2 only changes WHEN it runs relative to the
+        // response, not WHAT it does. A write failure is always logged and NEVER fails
+        // the user's plan response.
+        const backgroundMode = isMentorDailyRolloverBackgroundEnabled() ? 'waitUntil' : 'awaited';
+        const runRollover = async () => {
+          try {
+            const repo = createSheetsMentorRepository();
+            const canonical = await repo.getMentorSnapshotData({ email: session.user.email });
+            const sheets = await getSheetsClient();
+            const result = await executeDailyRolloverWrite({
+              snapshot: canonical,
+              userScope,
+              activePlan: canonical.activePlan,
+              now: canonical.serverGeneratedAt,
+              mutationRepository: createSheetsMutationRepository({ sheets, email: session.user.email }),
+              idempotencyStore: createSheetsIdempotencyStore({ sheets, email: session.user.email }),
+              planWriter: createSheetsPlanWriter({ sheets, email: session.user.email }),
+              totalPlanDays: canonical.totalPlanDays,
+            });
+            // Bug B (Phase 10D-FIX): rollover write failures MUST be visible, never swallowed.
+            if (!result || result.ok === false) {
+              console.error('[mentor-rollover-write] FAILED', { backgroundMode, code: result && result.code, reason: result && result.reason, error: result && result.error, applied: result && result.appliedCount, lastProcessedWritten: result && result.lastProcessedWritten, diagnostics: result && result.diagnostics });
+            } else {
+              console.log('[mentor-rollover-write]', { backgroundMode, ok: result.ok, idempotent: result.idempotent, rolloverRequired: result.rolloverRequired, applied: result.appliedCount, finalDay: result.finalDay, lastProcessedWritten: result.lastProcessedWritten, diagnostics: result.diagnostics });
+            }
+          } catch (err) {
+            console.error('[mentor-rollover-write] threw', { backgroundMode }, err && err.message, err && err.stack);
           }
-        } catch (err) {
-          // Never fail the plan response on a rollover write error — log and move on.
-          console.error('[mentor-rollover-write] threw', err && err.message, err && err.stack);
+        };
+        if (isMentorDailyRolloverBackgroundEnabled()) {
+          // BACKGROUND (Phase 10F2): register the proven write with Vercel waitUntil so the
+          // function stays alive until it completes, and return the response WITHOUT awaiting
+          // it — no page-load blocking. runBackgroundTask never rejects/throws to the caller.
+          runBackgroundTask(runRollover(), 'mentor-rollover-write');
+        } else {
+          // AWAITED fallback (Phase 10D-FIX-3): block the response until the write finishes,
+          // for narrow/manual pilot when background mode is off.
+          await runRollover();
         }
       } else {
         // SHADOW path — compute only, log-only, NO writes. Safe to leave fire-and-forget:

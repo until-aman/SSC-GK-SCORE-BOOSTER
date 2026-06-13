@@ -14,9 +14,15 @@ const LOG_H = ['CanonicalAction', 'TaskId', 'SourcePage', 'ToStatus', 'Idempoten
 // `Type` then `CreatedAt` appended LAST so existing shorter task fixtures stay valid (missing => '').
 const TASK_H = ['TaskId', 'PlanId', 'Status', 'PendingReason', 'MovedToPendingAt', 'RowVersion', 'CompletionSource', 'Type', 'CreatedAt'];
 // Status + CreatedAt appended so existing 2-col plan fixtures (PlanId, LastProcessedCalendarDay) stay valid.
-const PLAN_H = ['PlanId', 'LastProcessedCalendarDay', 'Status', 'CreatedAt'];
+// Phase 10F2: Email/PlanStartLocalDate/Timezone/TotalPlanDays appended for the rollover-lag counter.
+const PLAN_H = ['PlanId', 'LastProcessedCalendarDay', 'Status', 'CreatedAt', 'Email', 'PlanStartLocalDate', 'Timezone', 'TotalPlanDays'];
 // PLAN_H-ordered plan-row fixture: [PlanId, LastProcessedCalendarDay, Status, CreatedAt].
 const planGen = (planId, { status = 'active', createdAt = '2026-01-01T00:00:00Z', lastProcessed = '' } = {}) => [planId, lastProcessed, status, createdAt];
+// Full plan row incl. the lag-relevant columns.
+const crypto = require('crypto');
+const scopeOf = e => `u_${crypto.createHash('sha256').update(String(e || 'unknown')).digest('hex').slice(0, 16)}`;
+const planFull = (planId, { email, status = 'active', createdAt = '2026-06-11T00:00:00Z', lastProcessed = '', planStart = '2026-06-11', tz = 'Asia/Kolkata', total = '30' } = {}) =>
+  [planId, lastProcessed, status, createdAt, email, planStart, tz, total];
 // TASK_H-ordered active-task fixture with an explicit CreatedAt (for generation scoping).
 const activeTask = (taskId, planId, createdAt) => [taskId, planId, 'active', '', '', '1', '', 'practice_task', createdAt];
 const REAL = 'MP_1780920810055';
@@ -225,6 +231,26 @@ test('C3. Phase 10D-FIX: marker on a STALE invalid row but blank on the ACTIVE r
   const audit = await auditV2Mutations(fakeSheets(tabs({ plans, logs: [rolloverLog('MP_T9B2')] })), { allowedUserHashes: [] });
   assert.strictEqual(audit.rolloverPlansMissingLastProcessedCalendarDay, 1, 'only the ACTIVE row counts for the marker');
   assert.ok(evaluateMonitorAlerts(audit).alerts.some(a => a.code === 'ROLLOVER_LAST_PROCESSED_MISSING'));
+});
+test('C4. Phase 10F2 rollover-lag: eligible owed plan with no ROLLOVER row => WARNING; completed/off/non-allowlisted => none', async () => {
+  const EM = 'lagtest@x'; const SC = scopeOf(EM); const NOW = '2026-06-13T08:00:00Z';
+  // planStart 2026-06-11 -> calendarDay 3 (>lastProcessed 1); allowlisted; no ROLLOVER row.
+  const plans = [planFull('PL', { email: EM, lastProcessed: '1', planStart: '2026-06-11', createdAt: '2026-06-11T00:00:00Z' })];
+  const owed = await auditV2Mutations(fakeSheets(tabs({ plans })), { rolloverAllowedUserHashes: [SC], rolloverFlagOn: true, nowIso: NOW });
+  assert.strictEqual(owed.rolloverEligiblePlansLagging, 1, 'eligible owed plan is lagging');
+  const r = evaluateMonitorAlerts(owed);
+  const lagAlert = r.alerts.find(a => a.code === 'ROLLOVER_ELIGIBLE_PLANS_LAGGING');
+  assert.ok(lagAlert, 'ROLLOVER_ELIGIBLE_PLANS_LAGGING WARNING raised');
+  assert.strictEqual(lagAlert.level, 'WARNING', 'lag is WARNING, never CRITICAL');
+  // completed ROLLOVER row for that plan/day => not lagging
+  const done = await auditV2Mutations(fakeSheets(tabs({ plans, mr: [[rKey(SC, 'PL', '3'), SC, 'PL', '', 'ROLLOVER', 'completed']] })), { rolloverAllowedUserHashes: [SC], rolloverFlagOn: true, nowIso: NOW });
+  assert.strictEqual(done.rolloverEligiblePlansLagging, 0, 'completed rollover clears lag');
+  // flag off => never counted
+  const off = await auditV2Mutations(fakeSheets(tabs({ plans })), { rolloverAllowedUserHashes: [SC], rolloverFlagOn: false, nowIso: NOW });
+  assert.strictEqual(off.rolloverEligiblePlansLagging, 0, 'no lag when MENTOR_DAILY_ROLLOVER_V2 off');
+  // non-allowlisted owner => never counted
+  const nal = await auditV2Mutations(fakeSheets(tabs({ plans })), { rolloverAllowedUserHashes: ['u_someoneelse'], rolloverFlagOn: true, nowIso: NOW });
+  assert.strictEqual(nal.rolloverEligiblePlansLagging, 0, 'no lag for non-allowlisted user');
 });
 test('R9. successful rollover events but blank LastProcessedCalendarDay => WARNING', async () => {
   const audit = await auditV2Mutations(fakeSheets(tabs({
