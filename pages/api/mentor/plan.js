@@ -242,54 +242,67 @@ async function handler(req, res) {
     if (isMentorDailyRolloverV2Enabled() || isMentorPendingLifecycleV2Enabled()) {
       // Phase 10C: real user scope hash (no full email in keys/logs/monitor).
       const userScope = userScopeFromIdentity({ email: session.user.email });
-      const repo = createSheetsMentorRepository();
-      repo.getMentorSnapshotData({ email: session.user.email })
-        .then(async canonical => {
-          // WRITE path — gated by the rollover master flag + rollover cohort. Default OFF
-          // (isMentorDailyRolloverUserAllowed returns false unless MENTOR_DAILY_ROLLOVER_V2
-          // is true AND the user is allow-all/allowlisted), so this branch is dead until
-          // a controlled enablement phase.
-          if (isMentorDailyRolloverUserAllowed(userScope)) {
-            const sheets = await getSheetsClient();
-            const result = await executeDailyRolloverWrite({
-              snapshot: canonical,
-              userScope,
-              activePlan: canonical.activePlan,
-              now: canonical.serverGeneratedAt,
-              mutationRepository: createSheetsMutationRepository({ sheets, email: session.user.email }),
-              idempotencyStore: createSheetsIdempotencyStore({ sheets, email: session.user.email }),
-              planWriter: createSheetsPlanWriter({ sheets, email: session.user.email }),
-              totalPlanDays: canonical.totalPlanDays,
-            });
-            // Bug B (Phase 10D-FIX): rollover write failures MUST be visible, never swallowed.
-            if (!result || result.ok === false) {
-              console.error('[mentor-rollover-write] FAILED', { code: result && result.code, reason: result && result.reason, error: result && result.error, applied: result && result.appliedCount, lastProcessedWritten: result && result.lastProcessedWritten, diagnostics: result && result.diagnostics });
-            } else {
-              console.log('[mentor-rollover-write]', { ok: result.ok, idempotent: result.idempotent, rolloverRequired: result.rolloverRequired, applied: result.appliedCount, finalDay: result.finalDay, lastProcessedWritten: result.lastProcessedWritten, diagnostics: result.diagnostics });
-            }
-            return;
-          }
-          // SHADOW path — compute only, log-only, no-op store (no writes).
-          const result = await processDailyRollover({
+      if (isMentorDailyRolloverUserAllowed(userScope)) {
+        // WRITE path (Phase 10D-FIX-3): AWAITED before the response is sent. On Vercel the
+        // serverless function is frozen/reclaimed once the HTTP response returns, which
+        // truncated the previous fire-and-forget rollover mid-write (partial moves, missing
+        // events/marker/ROLLOVER row). Awaiting guarantees the multi-write sequence finishes
+        // within the function's active lifetime. Only the narrow allowlisted cohort reaches
+        // this (isMentorDailyRolloverUserAllowed is false unless MENTOR_DAILY_ROLLOVER_V2 is
+        // true AND the user is allow-all/allowlisted), and it does heavy work once/day (then
+        // idempotent replay = one read), so the bounded added latency is acceptable.
+        // A write failure is logged but never fails the user's plan response.
+        try {
+          const repo = createSheetsMentorRepository();
+          const canonical = await repo.getMentorSnapshotData({ email: session.user.email });
+          const sheets = await getSheetsClient();
+          const result = await executeDailyRolloverWrite({
+            snapshot: canonical,
             userScope,
             activePlan: canonical.activePlan,
-            repositorySnapshot: canonical,
-            currentServerTime: canonical.serverGeneratedAt,
-            idempotencyStore: { get: async () => null, save: async () => {} },
+            now: canonical.serverGeneratedAt,
+            mutationRepository: createSheetsMutationRepository({ sheets, email: session.user.email }),
+            idempotencyStore: createSheetsIdempotencyStore({ sheets, email: session.user.email }),
+            planWriter: createSheetsPlanWriter({ sheets, email: session.user.email }),
+            totalPlanDays: canonical.totalPlanDays,
           });
-          if (!result?.ok) return;
-          console.log('[mentor-rollover-shadow]', {
-            calendarDay: result.calendarDay,
-            lastProcessedCalendarDay: result.lastProcessedCalendarDay,
-            rolloverRequired: result.rolloverRequired,
-            wouldMoveToPendingCount: result.movedToPendingCount || 0,
-            wouldRescheduleCount: result.rescheduledCount || 0,
-            wouldFeatureTask: Boolean(result.featuredPendingTaskId),
-            currentGenerationTaskCount: snapshot.activeTasks?.length || 0,
-            diagnosticCodes: result.diagnostics || [],
-          });
-        })
-        .catch(err => console.error('[mentor-rollover] unhandled', err && err.message, err && err.stack));
+          // Bug B (Phase 10D-FIX): rollover write failures MUST be visible, never swallowed.
+          if (!result || result.ok === false) {
+            console.error('[mentor-rollover-write] FAILED', { code: result && result.code, reason: result && result.reason, error: result && result.error, applied: result && result.appliedCount, lastProcessedWritten: result && result.lastProcessedWritten, diagnostics: result && result.diagnostics });
+          } else {
+            console.log('[mentor-rollover-write]', { ok: result.ok, idempotent: result.idempotent, rolloverRequired: result.rolloverRequired, applied: result.appliedCount, finalDay: result.finalDay, lastProcessedWritten: result.lastProcessedWritten, diagnostics: result.diagnostics });
+          }
+        } catch (err) {
+          // Never fail the plan response on a rollover write error — log and move on.
+          console.error('[mentor-rollover-write] threw', err && err.message, err && err.stack);
+        }
+      } else {
+        // SHADOW path — compute only, log-only, NO writes. Safe to leave fire-and-forget:
+        // a truncated shadow writes nothing, so serverless freeze is harmless here.
+        const repo = createSheetsMentorRepository();
+        repo.getMentorSnapshotData({ email: session.user.email })
+          .then(async canonical => {
+            const result = await processDailyRollover({
+              userScope,
+              activePlan: canonical.activePlan,
+              repositorySnapshot: canonical,
+              currentServerTime: canonical.serverGeneratedAt,
+              idempotencyStore: { get: async () => null, save: async () => {} },
+            });
+            if (!result?.ok) return;
+            console.log('[mentor-rollover-shadow]', {
+              calendarDay: result.calendarDay,
+              lastProcessedCalendarDay: result.lastProcessedCalendarDay,
+              rolloverRequired: result.rolloverRequired,
+              wouldMoveToPendingCount: result.movedToPendingCount || 0,
+              wouldRescheduleCount: result.rescheduledCount || 0,
+              wouldFeatureTask: Boolean(result.featuredPendingTaskId),
+              currentGenerationTaskCount: snapshot.activeTasks?.length || 0,
+              diagnosticCodes: result.diagnostics || [],
+            });
+          })
+          .catch(err => console.error('[mentor-rollover] unhandled', err && err.message, err && err.stack));
+      }
     }
     return res.status(200).json(snapshot);
   } catch (err) {
