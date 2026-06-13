@@ -71,12 +71,15 @@ test('9. monitor emits WARNING (not CRITICAL) when allowAll=true; suppresses out
   assert.ok(off.alerts.some(a => a.code === 'UNEXPECTED_OUTSIDE_ALLOWLIST'));
 });
 test('10. rollover/pending flags stay CRITICAL even when allowAll=true', () => {
+  // Phase 10E: ROLLOVER_WRITE_ENABLED was replaced by stage-aware codes. A rollover
+  // flag ON with no rollover cohort is still CRITICAL (DAILY_ROLLOVER_FLAG_NO_COHORT).
   const base = { affectedRealPlanStatus: { completed: 5, snoozed: 10 } };
   const r = evaluateMonitorAlerts(base, { flags: { MENTOR_V2_MUTATION_ALLOW_ALL: true, MENTOR_DAILY_ROLLOVER_V2: true } });
   assert.strictEqual(r.status, 'CRITICAL');
-  assert.ok(r.alerts.some(a => a.code === 'ROLLOVER_WRITE_ENABLED'));
+  assert.ok(r.alerts.some(a => a.code === 'DAILY_ROLLOVER_FLAG_NO_COHORT'));
   const p = evaluateMonitorAlerts(base, { flags: { MENTOR_V2_MUTATION_ALLOW_ALL: true, MENTOR_PENDING_LIFECYCLE_V2: true } });
   assert.strictEqual(p.status, 'CRITICAL');
+  assert.ok(p.alerts.some(a => a.code === 'PENDING_LIFECYCLE_WRITE_ENABLED'));
 });
 
 (async () => { for (const t of T) { try { await t.fn(); passed++; console.log(`ok  ${t.n}`); } catch (e) { failed++; console.error(`FAIL ${t.n}\n     ${e.message}`); } } console.log(`\n${passed}/${T.length} Mentor allow-all gate tests passed.`); process.exit(failed ? 1 : 0); })();

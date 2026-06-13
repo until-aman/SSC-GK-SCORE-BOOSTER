@@ -102,12 +102,68 @@ CRITICAL** (so it can gate a cron/CI alert).
 | `unexpectedMutationsOutsideAllowlist` | `> 0` **and** allow-all is `false` | **CRITICAL** — a non-allowlisted scope mutated (suppressed when allow-all is on, since that's expected) |
 | `duplicateIdempotencyKeys` | `> 0` | **CRITICAL** — possible double-write |
 | `failedMutationRequests` | `1–2` / `≥3` | **WARNING / CRITICAL** |
-| `affectedRealPlanStatus` (`MP_1780920810055`) | `≠ {completed:5, snoozed:10}` | **CRITICAL** — a real-user plan changed |
-| `MENTOR_DAILY_ROLLOVER_V2` / `MENTOR_PENDING_LIFECYCLE_V2` | `true` | **CRITICAL** — write flag enabled before its phase |
+| `affectedRealPlanStatus` (`MP_1780920810055`) | growth = informational · `completed < 5` = **CRITICAL** (data loss) · `snoozed < 10` = **WARNING** | After global rollout this is **informational** — real users legitimately grow their plans (new generations / active tasks). Only a **drop below the historical floor** `{completed:5, snoozed:10}` alerts. (The old exact-count drift CRITICAL was a rollout canary, retired once real-user Mentor activity began.) |
+| `MENTOR_PENDING_LIFECYCLE_V2` | `true` | **CRITICAL** — write flag enabled before its phase |
 
 Healthy baseline (allowlist mode) = `ALERT STATUS: OK`, all guardrails 0, real plan unchanged.
 In allow-all mode the healthy baseline is `ALERT STATUS: WARNING` with only `ALLOW_ALL_ENABLED`.
 The monitor prints `Mutation scope: allowAll=<bool> allowlistSize=<n>` and reports `mutationAllowAll`.
+
+### 5b. Daily-rollover guardrails (Phase 10E)
+
+The monitor is now **rollover-aware**. `MENTOR_DAILY_ROLLOVER_V2=true` is **no longer auto-CRITICAL** just for being on — it is judged by rollout stage, and real rollover anomalies are detected from existing sheets (read-only). The monitor prints a `Rollover:` block (flags + counters).
+
+**Rollover flag behavior**
+
+| Config | Severity / code |
+|---|---|
+| `MENTOR_DAILY_ROLLOVER_V2` off/unset | OK (no rollover alert) |
+| `MENTOR_DAILY_ROLLOVER_V2=true` **+** `MENTOR_DAILY_ROLLOVER_ALLOWED_USER_HASHES` non-empty **+** allow-all off | **WARNING** `DAILY_ROLLOVER_PILOT_ENABLED` — the expected **Phase 10D narrow pilot** state |
+| `MENTOR_DAILY_ROLLOVER_V2=true` with **no** allowlist and **no** allow-all | **CRITICAL** `DAILY_ROLLOVER_FLAG_NO_COHORT` — flag on, nobody eligible (misconfig) |
+| `MENTOR_DAILY_ROLLOVER_ALLOW_ALL=true` | **CRITICAL** `DAILY_ROLLOVER_ALLOW_ALL_ENABLED` — rollover is **forbidden for all users** until after the controlled pilot |
+| `MENTOR_PENDING_LIFECYCLE_V2=true` | **CRITICAL** `PENDING_LIFECYCLE_WRITE_ENABLED` — must stay off |
+
+> The rollover allowlist (`MENTOR_DAILY_ROLLOVER_ALLOWED_USER_HASHES`) is **separate** from the action-mutation allowlist, and `MENTOR_DAILY_ROLLOVER_ALLOW_ALL` is **not** reused from the action `MENTOR_V2_MUTATION_ALLOW_ALL`. Rollover allow-all stays CRITICAL even while action allow-all is the deliberate WARNING.
+
+**Rollover anomaly alerts (data-driven, no flag required)**
+
+| Counter | Threshold | Severity |
+|---|---|---|
+| `duplicateRolloverIdempotencyKeys` | `> 0` | **CRITICAL** — possible double rollover |
+| `failedRolloverMutationRequests` | `≥ 1` | **CRITICAL** |
+| `quickChecksIncorrectlyPendingByRollover` | `> 0` | **CRITICAL** — quick checks must never become pending |
+| `activeTaskCountOverLimit` | `> 0` | **CRITICAL** — a rollover-processed plan exceeds 3 active tasks |
+| `maxPendingBacklogByPlan` | `> 25` | **WARNING** — backlog unusually high |
+| `tasksMovedToPendingByRollover` | `> 50` | **WARNING** — rollover pending volume unusually high |
+| `rolloverPlansMissingLastProcessedCalendarDay` | `> 0` (with rollover events present) | **WARNING** — day-marker not written after rollover |
+
+> **False-positive guard (Phase 9M3 lesson, reapplied):** `activeTaskCountOverLimit` and `quickChecksIncorrectlyPendingByRollover` are scoped to **plans rollover actually processed** (plans with `daily_rollover` events or a `mentor-rollover:*` idempotency row). A plan the **normal generator** created with >3 active tasks is *not* a rollover anomaly and does **not** alert. Pre-pilot (no rollover has run) these counters are **0**.
+
+**Expected monitor state — BEFORE Phase 10D** (rollover flags off):
+`dailyRolloverFlagEnabled=false`, `rolloverAllowAllEnabled=false`, `rolloverAllowlistedUsersCount=0`, `rolloverMutationRequestCount=0`, `duplicateRolloverIdempotencyKeys=0`, `failedRolloverMutationRequests=0`, `tasksMovedToPendingByRollover=0`, `quickChecksIncorrectlyPendingByRollover=0`, `activeTaskCountOverLimit=0`. No rollover alert (overall status driven only by the existing mutation guardrails — `WARNING ALLOW_ALL_ENABLED` in allow-all mode).
+
+**Expected monitor state — DURING Phase 10D pilot** (`MENTOR_DAILY_ROLLOVER_V2=true` + one allowlisted test user, allow-all off):
+`WARNING DAILY_ROLLOVER_PILOT_ENABLED`, `rolloverAllowlistedUsersCount=1`, anomaly counters all `0`, `rolloverPlansMissingLastProcessedCalendarDay=0` after the day-marker writes. Any CRITICAL rollover code ⇒ stop and apply §4 rollback (set `MENTOR_DAILY_ROLLOVER_V2=false`).
+
+## 5a. Scheduled monitor / alerting (Vercel Cron — Phase 9M2)
+
+**Scheduled monitoring runs via Vercel Cron**, which executes inside the Vercel runtime and reuses the **existing** production env vars (`GOOGLE_SERVICE_ACCOUNT_KEY`, `GOOGLE_SHEET_ID`, all `MENTOR_*` flags). No GitHub secrets, no Sheets-credential duplication.
+
+> **Why not GitHub Actions?** GitHub Actions has its own secret store and **cannot read Vercel env vars**. This repo has **no** Actions secrets configured, so a scheduled GitHub run would always fail. The GitHub workflow `.github/workflows/mentor-v2-monitor.yml` is therefore **manual-only** (`workflow_dispatch`) — usable later only if the three repo secrets are ever added.
+
+- **Cron config:** `vercel.json` → `crons: [{ path: "/api/internal/mentor-v2-monitor", schedule: "0 6 * * *" }]` (daily ~06:00 UTC).
+  - *Plan limit (important):* the **Hobby** plan allows cron jobs **once per day only** — a more-frequent expression (e.g. `0 */6 * * *`) **fails the deployment** with "Hobby accounts are limited to daily cron jobs." Hobby timing precision is hourly (±59 min), so the run fires sometime in the 06:00–06:59 UTC window. For sub-daily cadence or precise timing, upgrade to Pro and change the schedule.
+- **Route:** `pages/api/internal/mentor-v2-monitor.js` — **read-only** (`auditV2Mutations` → `cronMonitorResult`); never mutates the Sheet.
+- **Auth (`CRON_SECRET`):** the route is fail-closed — it requires `Authorization: Bearer ${CRON_SECRET}`. Vercel Cron sends this header automatically **when `CRON_SECRET` is set on the project**. There is no pre-existing cron/internal secret in this repo, so **one new Vercel env var `CRON_SECRET` must be added** (Production; any strong random string). It is **not** a Google/Sheets secret. Without it the route returns `401` and the cron is effectively disabled (safe).
+- **HTTP semantics:** `CRITICAL → 500` (Vercel marks the cron run failed → surfaces in the Vercel dashboard / logs), `WARNING/OK → 200`.
+- **Expected healthy result (allow-all on):** `200` with `alertStatus: "WARNING"`, alert `ALLOW_ALL_ENABLED`, `mutationAllowAll: true`, `duplicateIdempotencyKeys: 0`, `failedMutationRequests: 0`, `unexpectedMutationsOutsideAllowlist: 0`, `affectedRealPlanStatus: {completed:5, snoozed:10}`, `flags.MENTOR_DAILY_ROLLOVER_V2/PENDING_LIFECYCLE_V2: false`.
+- **What returns 500 (CRITICAL):** `unexpectedMutationsOutsideAllowlist > 0` while allow-all off · `duplicateIdempotencyKeys > 0` · `failedMutationRequests ≥ 3` · `MENTOR_DAILY_ROLLOVER_V2` or `MENTOR_PENDING_LIFECYCLE_V2` = `true` · affected real plan `completed` **drops below 5** (data loss). Affected-real-plan **growth** is informational (not a CRITICAL); a `snoozed` drop below 10 is a WARNING (likely a legitimate resume/complete).
+
+**Required Vercel env for the cron** (all but `CRON_SECRET` already exist): `GOOGLE_SERVICE_ACCOUNT_KEY`, `GOOGLE_SHEET_ID`, the `MENTOR_*` mutation/scope flags, **plus `CRON_SECRET` (new, one-time)**.
+
+**Manual check (local, anytime):** `DOTENV_CONFIG_PATH=.env.local node -r dotenv/config scripts/mentor-v2-mutation-monitor.js` (exits 2 on CRITICAL). The GitHub workflow can also be run manually from the Actions tab **if** the three repo secrets are added.
+
+**If a cron run returns 500 (CRITICAL):** check the Vercel function logs for the alert code, then apply the matching rollback from §4 (e.g. `duplicateIdempotencyKeys`/`failedMutationRequests` → investigate the mutation flow; a rollover/pending flag unexpectedly `true` → set it `false` and `MENTOR_TASK_MUTATIONS_V2=false`, investigate, restore the `.xlsx` backup if data changed).
 
 ## 6. Cohort expansion procedure
 

@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/internal/mentor-v2-monitor",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}
