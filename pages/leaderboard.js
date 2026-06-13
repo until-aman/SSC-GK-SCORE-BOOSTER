@@ -22,7 +22,7 @@ import { formatLastUpdated } from '@/lib/clientCache';
 
 function truncateName(name, maxLength = 14) {
   const cleanName = String(name || 'Unknown').trim() || 'Unknown';
-  return cleanName.length > maxLength ? `${cleanName.slice(0, maxLength - 1)}…` : cleanName;
+  return cleanName.length > maxLength ? `${cleanName.slice(0, maxLength - 1)}...` : cleanName;
 }
 
 function RankAvatar({ leader, size = 32, borderColor }) {
@@ -31,7 +31,7 @@ function RankAvatar({ leader, size = 32, borderColor }) {
   const fontSize   = Math.round(size * 0.42);
   const sharedStyle = {
     width: size, height: size, borderRadius: '50%', flexShrink: 0,
-    border: `2px solid ${borderColor || 'rgba(255,255,255,0.12)'}`,
+    border: `2px solid ${borderColor || 'var(--ssc-border-soft)'}`,
     overflow: 'hidden',
   };
   if (leader.image && !imgError) {
@@ -42,8 +42,8 @@ function RankAvatar({ leader, size = 32, borderColor }) {
     );
   }
   return (
-    <div style={{ ...sharedStyle, background: '#1E3554', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <span style={{ fontSize, fontWeight: 900, color: 'white', fontFamily: 'inherit' }}>{initial}</span>
+    <div style={{ ...sharedStyle, background: 'var(--ssc-teal-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ fontSize, fontWeight: 900, color: 'var(--ssc-teal)', fontFamily: 'inherit' }}>{initial}</span>
     </div>
   );
 }
@@ -53,34 +53,36 @@ function RankRow({ leader, isSelf }) {
     <AppCard
       className="flex items-center gap-3 mb-2"
       style={isSelf ? {
-        background: 'linear-gradient(135deg, rgba(20,184,166,0.12), rgba(23,45,71,0.90))',
-        border: '1px solid rgba(20,184,166,0.40)',
+        background: 'linear-gradient(135deg, var(--ssc-teal-soft), #FFFFFF)',
+        border: '1px solid rgba(14,165,164,0.28)',
+        boxShadow: 'var(--ssc-shadow-card)',
       } : {
-        background: '#172D47',
-        border: '1px solid rgba(255,255,255,0.08)',
+        background: 'var(--ssc-surface)',
+        border: '1px solid var(--ssc-border-soft)',
+        boxShadow: 'var(--ssc-shadow-card)',
       }}
     >
-      <span className="t-stat-label font-display w-6 text-center flex-shrink-0" style={{ color: isSelf ? '#14B8A6' : '#475569' }}>
+      <span className="t-stat-label font-display w-6 text-center flex-shrink-0" style={{ color: isSelf ? 'var(--ssc-teal)' : 'var(--ssc-text-secondary)' }}>
         {leader.rank}
       </span>
-      <RankAvatar leader={leader} borderColor={isSelf ? 'rgba(20,184,166,0.55)' : undefined} />
+      <RankAvatar leader={leader} borderColor={isSelf ? 'rgba(14,165,164,0.55)' : undefined} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
-          <p className="t-card-subtitle font-sans font-semibold truncate" style={{ color: isSelf ? '#F0FDF4' : '#F8FAFC', margin: 0 }}>
+          <p className="t-card-subtitle font-sans font-semibold truncate" style={{ color: 'var(--ssc-text-primary)', margin: 0 }}>
             {truncateName(leader.name)}
           </p>
           {isSelf && (
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#14B8A6', background: 'rgba(20,184,166,0.16)', border: '1px solid rgba(20,184,166,0.35)', borderRadius: 6, padding: '1px 6px', flexShrink: 0, lineHeight: '16px' }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)', border: '1px solid rgba(14,165,164,0.28)', borderRadius: 999, padding: '1px 6px', flexShrink: 0, lineHeight: '16px' }}>
               YOU
             </span>
           )}
         </div>
       </div>
       <div className="text-right">
-        <p className="t-stat-sm font-display" style={{ color: isSelf ? '#14B8A6' : '#CBD5E1' }}>
+        <p className="t-stat-sm font-display" style={{ color: isSelf ? 'var(--ssc-teal)' : 'var(--ssc-text-primary)' }}>
           {(leader.totalScore || 0).toFixed(1)}
         </p>
-        <p className="font-sans text-xs text-slate-500">Coins</p>
+        <p className="font-sans text-xs text-[var(--ssc-text-muted)]">Coins</p>
       </div>
     </AppCard>
   );
@@ -120,7 +122,7 @@ export default function Leaderboard() {
     let cacheFresh  = false;
     const refreshStartedAt = forceRefresh ? Date.now() : 0;
 
-    // Outer try/finally guarantees setLoading(false) runs no matter what —
+    // Outer try/finally guarantees setLoading(false) runs no matter what â€”
     // even if cache reads throw, early returns fire, or the fetch hangs.
     try {
       if (scope === 'weekly') {
@@ -140,7 +142,7 @@ export default function Leaderboard() {
         } catch { /* ignore corrupt leaderboard cache */ }
       }
 
-      // Cache is fresh — nothing more to do unless the user explicitly refreshes.
+      // Cache is fresh â€” nothing more to do unless the user explicitly refreshes.
       if (cacheFresh && !forceRefresh) return;
 
       // Throttle background re-fetch only when stale cache is already visible
@@ -173,7 +175,7 @@ export default function Leaderboard() {
       }
 
     } finally {
-      // Always runs — clears loading/refreshing even if something threw above
+      // Always runs â€” clears loading/refreshing even if something threw above
       if (forceRefresh) {
         const remainingMs = 650 - (Date.now() - refreshStartedAt);
         if (remainingMs > 0) await new Promise(resolve => setTimeout(resolve, remainingMs));
@@ -214,34 +216,34 @@ export default function Leaderboard() {
 
   return (
     <>
-      <Head><title>Leaderboard — SSC GK Score Booster</title></Head>
-      <div className="h-screen flex flex-col pb-16">
+      <Head><title>Leaderboard - SSC GK Score Booster</title></Head>
+      <div className="h-screen flex flex-col pb-16 bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)]">
 
         {/* Fixed header */}
         <div
           className="flex-shrink-0 px-4 pt-4 pb-4"
-          style={{ background: '#172D47', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+          style={{ background: 'rgba(255,255,255,0.94)', borderBottom: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}
         >
-          {/* Close + Title on same row — title truly centred */}
+          {/* Close + Title on same row â€” title truly centred */}
           <div className="relative flex items-center mb-3">
             <button
               onClick={() => router.back()}
-              className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-white/10 active:bg-white/20 transition-colors"
+              className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-[var(--ssc-surface-soft)] border border-[var(--ssc-border-soft)] active:bg-[var(--ssc-teal-soft)] transition-colors"
               aria-label="Go back"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-primary)" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M18 6L6 18M6 6l12 12"/>
               </svg>
             </button>
             <SectionHeader
               title="Leaderboard"
               className="absolute left-1/2 -translate-x-1/2"
-              titleClassName="text-white whitespace-nowrap"
+              titleClassName="text-[var(--ssc-text-primary)] whitespace-nowrap"
             />
           </div>
 
           {/* Tab switcher */}
-          <div className="flex rounded-full p-1 w-fit mx-auto gap-1" style={{ background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.12)' }}>
+          <div className="flex rounded-full p-1 w-fit mx-auto gap-1" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}>
             {[
               { key: 'weekly', label: 'This Week' },
               { key: 'all',    label: 'All Time' },
@@ -266,17 +268,17 @@ export default function Leaderboard() {
         </div>
 
         {/* Scrollable area */}
-        <div className="flex-1 overflow-y-auto min-h-0 [background:var(--bg-app)]">
+        <div className="flex-1 overflow-y-auto min-h-0 bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)]">
           <div className="px-4 pt-4 pb-6">
 
             {loading ? (
               <div className="py-8">
-                <Loader card size="md" label="Fetching rankings from the scoreboard…" />
+                <Loader card size="md" label="Fetching rankings from the scoreboard..." />
               </div>
 
             ) : error ? (
               <div className="text-center py-10">
-                <p className="text-white/60 text-sm mb-3">Could not load leaderboard.</p>
+                <p className="text-[var(--ssc-text-secondary)] text-sm mb-3">Could not load leaderboard.</p>
                 <AppButton
                   as="button"
                   onClick={() => {
@@ -284,7 +286,7 @@ export default function Leaderboard() {
                     fetchLeaderboard(activeTab, { forceRefresh: true });
                   }}
                   variant="secondary"
-                  className="px-6 py-2 bg-white text-violet-700 rounded-full text-xs uppercase"
+                  className="px-6 py-2 rounded-full text-xs uppercase"
                 >
                   Retry
                 </AppButton>
@@ -292,14 +294,14 @@ export default function Leaderboard() {
 
             ) : leaders.length === 0 ? (
               <div className="text-center py-12">
-                <span className="text-4xl">🏆</span>
-                <p className="text-slate-500 text-[13px] mt-3">No scores yet. Be the first to play!</p>
+                <span className="text-4xl" aria-hidden="true">&#127942;</span>
+                <p className="text-[var(--ssc-text-muted)] text-[13px] mt-3">No scores yet. Be the first to play!</p>
               </div>
 
             ) : (
               <>
 
-                {/* ── Your Rank ──────────────────────────────────────────── */}
+                {/* â”€â”€ Your Rank â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 {!session ? (
                   <GoogleSignInCard
                     className="mb-4"
@@ -309,41 +311,41 @@ export default function Leaderboard() {
                     callbackUrl="/leaderboard"
                   />
                 ) : !effectiveCurrentUser ? (
-                  <div className="mb-4 rounded-2xl px-4 py-4 text-center" style={{ background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.10)' }}>
-                    <p className="font-sans text-slate-400 text-[13px]">Play a quiz to appear on the leaderboard!</p>
+                  <div className="mb-4 rounded-2xl px-4 py-4 text-center" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}>
+                    <p className="font-sans text-[var(--ssc-text-secondary)] text-[13px]">Play a quiz to appear on the leaderboard!</p>
                   </div>
                 ) : (
-                  <div className="mb-4 px-4 py-4" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.20), rgba(20,184,166,0.10))', border: '1px solid rgba(139,92,246,0.45)', borderRadius: 22, boxShadow: '0 14px 35px rgba(124,58,237,0.14)' }}>
-                    <p className="t-section-label" style={{ color: '#a78bfa', marginBottom: 10 }}>Your Rank</p>
+                  <div className="mb-4 px-4 py-4" style={{ background: 'linear-gradient(135deg, var(--ssc-teal-soft), #FFFFFF)', border: '1px solid rgba(14,165,164,0.24)', borderRadius: 22, boxShadow: 'var(--ssc-shadow-card)' }}>
+                    <p className="t-section-label" style={{ color: 'var(--ssc-teal)', marginBottom: 10 }}>Your Rank</p>
 
-                    {/* Rank · Name · Level ——————————— Score */}
+                    {/* Rank Â· Name Â· Level â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€” Score */}
                     <div className="flex items-center gap-2">
-                      <span className="t-stat-lg font-display text-violet-300 flex-shrink-0">
+                      <span className="t-stat-lg font-display text-[var(--ssc-rank)] flex-shrink-0">
                         #{effectiveCurrentUser.rank}
                       </span>
                       <div className="flex-1 min-w-0 flex items-baseline gap-1.5 overflow-hidden">
-                        <span className="font-sans font-bold text-violet-100 text-sm truncate">
+                        <span className="font-sans font-bold text-[var(--ssc-text-primary)] text-sm truncate">
                           {truncateName(effectiveCurrentUser.name, 20)}
                         </span>
-                        <span className="font-sans text-xs text-slate-500 flex-shrink-0">
+                        <span className="font-sans text-xs text-[var(--ssc-text-muted)] flex-shrink-0">
                           · {effectiveCurrentUser.level || 'Aspirant'}
                         </span>
                       </div>
                       <div className="flex-shrink-0 flex items-baseline gap-1">
-                        <span className="t-stat-sm font-display text-violet-300">
+                        <span className="t-stat-sm font-display text-[var(--ssc-rank)]">
                           {(effectiveCurrentUser.totalScore || 0).toFixed(0)}
                         </span>
-                        <span className="font-sans text-xs text-slate-500">Coins</span>
+                        <span className="font-sans text-xs text-[var(--ssc-text-muted)]">Coins</span>
                       </div>
                     </div>
 
-                    {/* Message ————————————————————— Practice → */}
+                    {/* Message â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€” Practice â†’ */}
                     <div className="flex items-center justify-between mt-2.5">
                       {effectiveCurrentUser.rank <= 3 ? (
-                        <p className="font-sans text-[13px] text-[#14B8A6]" style={{ margin: 0 }}>🎉 You're in the Top 3!</p>
+                        <p className="font-sans text-[13px] text-[var(--ssc-teal)]" style={{ margin: 0 }}>You are in the Top 3!</p>
                       ) : third && (third.totalScore || 0) > (effectiveCurrentUser.totalScore || 0) ? (
-                        <p className="font-sans text-[13px] text-amber-400" style={{ margin: 0 }}>
-                          🔥 {Math.ceil((third.totalScore || 0) - (effectiveCurrentUser.totalScore || 0))} Coins away from Top 3
+                        <p className="font-sans text-[13px] text-[var(--ssc-warning)]" style={{ margin: 0 }}>
+                          {Math.ceil((third.totalScore || 0) - (effectiveCurrentUser.totalScore || 0))} Coins away from Top 3
                         </p>
                       ) : (
                         <span />
@@ -351,27 +353,27 @@ export default function Leaderboard() {
                       <button
                         onClick={() => router.push('/dashboard')}
                         className="font-display font-bold text-xs text-white active:scale-[0.97] transition-transform flex-shrink-0"
-                        style={{ background: 'linear-gradient(135deg, #7C3AED, #6D28D9)', border: 'none', borderRadius: 10, padding: '7px 14px', cursor: 'pointer', marginLeft: 8 }}
+                        style={{ background: 'linear-gradient(135deg, #FF7A1A, #FF4D00)', border: 'none', borderRadius: 10, padding: '7px 14px', cursor: 'pointer', marginLeft: 8 }}
                       >
-                        Practice →
+                        Practice &rarr;
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* ── Top 3 Champions ────────────────────────────────────── */}
+                {/* â”€â”€ Top 3 Champions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 {(() => {
                   const top3 = [
-                    { leader: first,  medal: '🥇', color: '#FCD34D', rowBg: 'rgba(251,191,36,0.06)',  avatarBorder: 'rgba(251,191,36,0.55)' },
-                    { leader: second, medal: '🥈', color: '#93C5FD', rowBg: 'transparent',            avatarBorder: 'rgba(99,179,237,0.45)'  },
-                    { leader: third,  medal: '🥉', color: '#F9A8D4', rowBg: 'transparent',            avatarBorder: 'rgba(236,72,153,0.40)'  },
+                    { leader: first,  medal: '1', color: 'var(--ssc-coin)', rowBg: 'var(--ssc-warning-soft)', avatarBorder: 'rgba(246,179,49,0.58)' },
+                    { leader: second, medal: '2', color: 'var(--ssc-text-secondary)', rowBg: 'transparent', avatarBorder: 'rgba(91,107,130,0.34)' },
+                    { leader: third,  medal: '3', color: '#C7772A', rowBg: 'transparent', avatarBorder: 'rgba(199,119,42,0.36)' },
                   ].filter(({ leader }) => !!leader);
                   if (!top3.length) return null;
                   return (
-                    <div className="mb-3" style={{ background: 'rgba(15,23,42,0.75)', border: '1px solid rgba(148,163,184,0.11)', borderRadius: 20, overflow: 'hidden' }}>
+                    <div className="mb-3" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)', borderRadius: 20, overflow: 'hidden' }}>
                       {/* Card header */}
-                      <div style={{ padding: '10px 16px 9px', borderBottom: '1px solid rgba(148,163,184,0.08)' }}>
-                        <p className="t-section-label" style={{ color: '#475569', margin: 0 }}>
+                      <div style={{ padding: '10px 16px 9px', borderBottom: '1px solid var(--ssc-border-soft)' }}>
+                        <p className="t-section-label" style={{ color: 'var(--ssc-text-secondary)', margin: 0 }}>
                           Top 3 Champions
                         </p>
                       </div>
@@ -383,7 +385,7 @@ export default function Leaderboard() {
                             display: 'flex', alignItems: 'center', gap: 12,
                             padding: '9px 14px',
                             background: rowBg,
-                            borderBottom: i < top3.length - 1 ? '1px solid rgba(148,163,184,0.07)' : 'none',
+                            borderBottom: i < top3.length - 1 ? '1px solid var(--ssc-border-soft)' : 'none',
                           }}
                         >
                           <span style={{ fontSize: 20, flexShrink: 0, lineHeight: 1, width: 24, textAlign: 'center' }}>{medal}</span>
@@ -392,16 +394,16 @@ export default function Leaderboard() {
                             <p style={{ fontSize: 14, fontWeight: 700, color, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {truncateName(leader.name)}
                               {leader.email === session?.user?.email && (
-                                <span style={{ fontSize: 11, color: '#7C3AED', marginLeft: 6 }}>(you)</span>
+                                <span style={{ fontSize: 11, color: 'var(--ssc-rank)', marginLeft: 6 }}>(you)</span>
                               )}
                             </p>
-                            <p style={{ fontSize: 11, color: '#475569', margin: 0 }}>{leader.level || 'Aspirant'}</p>
+                            <p style={{ fontSize: 11, color: 'var(--ssc-text-secondary)', margin: 0 }}>{leader.level || 'Aspirant'}</p>
                           </div>
                           <div style={{ textAlign: 'right', flexShrink: 0 }}>
                             <p style={{ fontSize: 14, fontWeight: 800, color, margin: 0 }}>
                               {(leader.totalScore || 0).toFixed(1)}
                             </p>
-                            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.30)', margin: 0 }}>Coins</p>
+                            <p style={{ fontSize: 10, color: 'var(--ssc-text-muted)', margin: 0 }}>Coins</p>
                           </div>
                         </div>
                       ))}
@@ -409,7 +411,7 @@ export default function Leaderboard() {
                   );
                 })()}
 
-                {/* ── Refresh / cache info bar ───────────────────────────── */}
+                {/* â”€â”€ Refresh / cache info bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 <div className="flex justify-end mt-2 mb-3">
                   <RefreshStatus
                     updatedAt={updatedAt}
@@ -419,7 +421,7 @@ export default function Leaderboard() {
                       fetchLeaderboard(activeTab, { forceRefresh: true });
                     }}
                     refreshText={
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="23 4 23 10 17 10"/>
                         <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
                       </svg>
@@ -427,7 +429,7 @@ export default function Leaderboard() {
                   />
                 </div>
 
-                {/* ── Rank 4 and beyond ──────────────────────────────────── */}
+                {/* â”€â”€ Rank 4 and beyond â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 {rest.length > 0 && (
                   <>
                     {rest.map(leader => (
@@ -447,7 +449,7 @@ export default function Leaderboard() {
           </div>
         </div>
 
-        {/* Practice CTA — fixed above bottom nav, slides in after user interaction */}
+        {/* Practice CTA â€” fixed above bottom nav, slides in after user interaction */}
         <div
           className="fixed bottom-[74px] left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 z-40"
           style={{
@@ -469,7 +471,7 @@ export default function Leaderboard() {
               boxShadow: '0 12px 28px rgba(255,90,0,0.22)',
             }}
           >
-            Practice to climb rank →
+            Practice to climb rank &rarr;
           </button>
         </div>
       </div>

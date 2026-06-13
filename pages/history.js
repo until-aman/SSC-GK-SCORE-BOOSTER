@@ -7,12 +7,12 @@ import Loader from '@/components/ui/Loader';
 
 const ORANGE = '#FF6B16';
 const ORANGE_DIM = 'rgba(255,107,22,0.15)';
-const BG_CARD = '#172D47';
-const BG_DEEP = '#112236';
-const BORDER = 'rgba(255,255,255,0.08)';
-const TEXT_PRI = '#F0F4F8';
-const TEXT_SEC = '#94A3B8';
-const TEXT_MUT = '#64748B';
+const BG_CARD = 'var(--ssc-surface)';
+const BG_DEEP = 'var(--ssc-surface-soft)';
+const BORDER = 'var(--ssc-border-soft)';
+const TEXT_PRI = 'var(--ssc-text-primary)';
+const TEXT_SEC = 'var(--ssc-text-secondary)';
+const TEXT_MUT = 'var(--ssc-text-muted)';
 
 const GoogleSVG = () => (
   <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -144,13 +144,14 @@ function HistoryGuestState() {
   return (
     <>
       <Head><title>History - SSC GK Score Booster</title></Head>
-      <div className="min-h-screen [background:var(--bg-app)]">
+      <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
         <style>{`
           .history-guest-card {
             background: ${BG_CARD};
             border: 1px solid ${BORDER};
             border-radius: 18px;
             padding: 4px 16px;
+            box-shadow: var(--ssc-shadow-card);
           }
           .history-benefit-strip {
             display: flex;
@@ -162,6 +163,7 @@ function HistoryGuestState() {
             border-radius: 999px;
             padding: 9px 14px;
             flex-wrap: wrap;
+            box-shadow: 0 8px 20px rgba(16,32,51,0.05);
           }
           .history-benefit-strip span {
             color: ${TEXT_SEC};
@@ -238,6 +240,7 @@ function HistoryGuestState() {
             border-radius: 12px;
             padding: 14px;
             margin-bottom: 10px;
+            box-shadow: var(--ssc-shadow-card);
           }
           .history-google-btn {
             width: 100%;
@@ -245,7 +248,7 @@ function HistoryGuestState() {
             border-radius: 14px;
             padding: 14px 0;
             background: #fff;
-            color: #0F172A;
+            color: var(--ssc-text-primary);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -266,7 +269,7 @@ function HistoryGuestState() {
             align-items: center;
             justify-content: center;
             padding: 24px;
-            background: rgba(4, 12, 24, .72);
+            background: var(--ssc-overlay);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
           }
@@ -278,7 +281,7 @@ function HistoryGuestState() {
             border-radius: 20px;
             padding: 24px 20px 20px;
             text-align: center;
-            box-shadow: 0 24px 70px rgba(0,0,0,.46);
+            box-shadow: var(--ssc-shadow-float);
           }
           .history-modal-close {
             position: absolute;
@@ -287,8 +290,8 @@ function HistoryGuestState() {
             width: 34px;
             height: 34px;
             border-radius: 12px;
-            border: 1px solid rgba(255,255,255,.08);
-            background: rgba(255,255,255,.04);
+            border: 1px solid ${BORDER};
+            background: ${BG_DEEP};
             color: ${TEXT_MUT};
             display: flex;
             align-items: center;
@@ -312,7 +315,7 @@ function HistoryGuestState() {
             justify-content: center;
           }
           .history-guest-content {
-            background: var(--bg-app);
+            background: linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%);
             min-height: calc(100dvh - 58px);
             display: flex;
             flex-direction: column;
@@ -330,22 +333,22 @@ function HistoryGuestState() {
           className="sticky top-0 z-50 px-4 flex items-center justify-between"
           style={{
             height: '58px',
-            background: 'rgba(15,32,52,0.88)',
+            background: 'rgba(255,255,255,0.94)',
             backdropFilter: 'blur(14px)',
             WebkitBackdropFilter: 'blur(14px)',
-            borderBottom: '1px solid rgba(20,184,166,0.18)',
+            borderBottom: '1px solid var(--ssc-border-soft)',
             borderRadius: '0 0 22px 22px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.22)',
+            boxShadow: '0 10px 30px rgba(16,32,51,0.08)',
           }}
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-[11px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-[11px] flex items-center justify-center flex-shrink-0" style={{ background: ORANGE_DIM }}>
               <HistoryHeaderIcon />
             </div>
-            <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center text-white">
+            <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center" style={{ color: TEXT_PRI }}>
               My History
             </span>
-            <span style={{ fontSize: 9, fontWeight: 800, color: '#F59E0B', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 99, padding: '3px 8px', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 9, fontWeight: 800, color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)', border: '1px solid rgba(14,165,164,0.20)', borderRadius: 99, padding: '3px 8px', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
               PRACTICE ARCHIVE
             </span>
           </div>
@@ -410,12 +413,12 @@ function HistoryGuestState() {
                   <div className="h-8 w-8 rounded-xl" style={{ background: `${accent}33` }} />
                 </div>
                 <p className="font-sans text-[12px] mt-3" style={{ color: TEXT_SEC }}>{body}</p>
-                <div className="h-2 w-2/3 rounded bg-white/10 mt-3" />
+                <div className="h-2 w-2/3 rounded mt-3" style={{ background: 'var(--ssc-border-soft)' }} />
               </div>
             ))}
           </div>
           <div className="history-lock-card">
-            <div className="text-center rounded-2xl px-6 py-[18px]" style={{ background: 'rgba(13,27,46,.92)', border: `1px solid ${BORDER}`, boxShadow: '0 10px 30px rgba(0,0,0,0.4)' }}>
+            <div className="text-center rounded-2xl px-6 py-[18px]" style={{ background: 'rgba(255,255,255,.94)', border: `1px solid ${BORDER}`, boxShadow: 'var(--ssc-shadow-float)' }}>
               <div className="w-[42px] h-[42px] rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ background: ORANGE_DIM }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2" />
@@ -442,7 +445,7 @@ function HistoryGuestState() {
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
             </div>
-            <h2 id="history-unlock-title" className="font-display text-[19px] font-black leading-tight text-white">
+            <h2 id="history-unlock-title" className="font-display text-[19px] font-black leading-tight" style={{ color: TEXT_PRI }}>
               {lockedFeature.unlockTitle}
             </h2>
             <p className="font-sans text-[13px] leading-relaxed mt-3" style={{ color: TEXT_SEC }}>
@@ -476,7 +479,7 @@ export default function HistoryPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen [background:var(--bg-app)] pb-24">
+      <div className="min-h-screen pb-24" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
         <Head><title>History - SSC GK Score Booster</title></Head>
         <HistoryTopBar title="My History" badge="PRACTICE ARCHIVE" icon={<HistoryHeaderIcon />} />
         <main className="px-4 pt-5">
@@ -493,13 +496,14 @@ export default function HistoryPage() {
   return (
     <>
       <Head><title>History - SSC GK Score Booster</title></Head>
-      <div className="min-h-screen [background:var(--bg-app)] pb-28">
+      <div className="min-h-screen pb-28" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
         <style>{`
           .history-guest-card {
             background: ${BG_CARD};
             border: 1px solid ${BORDER};
             border-radius: 18px;
             padding: 4px 16px;
+            box-shadow: var(--ssc-shadow-card);
           }
           .history-benefit-strip {
             display: flex;
@@ -511,6 +515,7 @@ export default function HistoryPage() {
             border-radius: 999px;
             padding: 9px 14px;
             flex-wrap: wrap;
+            box-shadow: 0 8px 20px rgba(16,32,51,0.05);
           }
           .history-benefit-strip span {
             color: ${TEXT_SEC};
