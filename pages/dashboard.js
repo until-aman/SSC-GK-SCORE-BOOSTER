@@ -1059,7 +1059,7 @@ export default function Dashboard() {
             buttonText="Sign in"
             callbackUrl="/dashboard"
             style={{
-              background: 'var(--bg-card)',
+              background: 'var(--ssc-surface)',
               border: '1px solid var(--border-soft)',
               boxShadow: 'var(--shadow-soft)',
             }}
@@ -1491,7 +1491,7 @@ export default function Dashboard() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: 'var(--bg-card)',
+              background: 'var(--ssc-surface)',
               border: '1px solid var(--ssc-border-soft)',
               borderRadius: 24,
               padding: '24px 22px 22px',
@@ -1612,7 +1612,7 @@ export default function Dashboard() {
                   onClick={handleNotifyInterest}
                   disabled={notifyModalView === 'loading'}
                   className="font-display"
-                  style={{ width: '100%', background: notifyModalView === 'loading' ? 'rgba(255,90,0,0.5)' : 'linear-gradient(135deg, #FF7A1A, #FF5A00)', color: '#fff', borderRadius: 12, padding: '14px 0', fontSize: 15, fontWeight: 700, border: 'none', cursor: notifyModalView === 'loading' ? 'default' : 'pointer', boxShadow: notifyModalView === 'loading' ? 'none' : '0 4px 18px rgba(255,90,0,0.28)', transition: 'opacity 0.2s ease' }}
+                  style={{ width: '100%', background: notifyModalView === 'loading' ? 'var(--ssc-disabled-bg)' : 'linear-gradient(135deg, var(--ssc-orange), var(--ssc-orange-deep))', color: notifyModalView === 'loading' ? 'var(--ssc-disabled-text)' : '#fff', borderRadius: 16, padding: '14px 0', fontSize: 15, fontWeight: 700, border: 'none', cursor: notifyModalView === 'loading' ? 'default' : 'pointer', boxShadow: notifyModalView === 'loading' ? 'none' : 'var(--ssc-shadow-cta)', transition: 'opacity 0.2s ease' }}
                 >
                   {notifyModalView === 'loading' ? 'Saving…' : '🔔 Notify Me When Ready'}
                 </button>
@@ -1629,15 +1629,29 @@ export default function Dashboard() {
       {/* ── NOTIFY TOAST ── */}
       {notifyToast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-[390px] z-50">
-          <div className={`rounded-2xl px-4 py-3.5 flex items-center gap-3 shadow-xl ${
-            notifyToast.type === 'success' ? 'bg-[#14B8A6]'
-            : notifyToast.type === 'info'  ? 'bg-blue-600'
-            : 'bg-red-600'
-          }`}>
-            <span className="text-xl flex-shrink-0">
+          <div
+            className="rounded-[18px] px-4 py-3.5 flex items-center gap-3"
+            style={{
+              background: 'var(--ssc-surface)',
+              border: `1px solid ${
+                notifyToast.type === 'success' ? 'rgba(18,184,134,0.22)'
+                : notifyToast.type === 'info' ? 'rgba(37,99,235,0.18)'
+                : 'rgba(239,68,68,0.22)'
+              }`,
+              boxShadow: 'var(--ssc-shadow-float)',
+            }}
+          >
+            <span
+              className="text-xl flex-shrink-0 h-9 w-9 rounded-full flex items-center justify-center"
+              style={{
+                background: notifyToast.type === 'success' ? 'var(--ssc-success-soft)'
+                  : notifyToast.type === 'info' ? 'var(--ssc-info-soft)'
+                  : 'var(--ssc-danger-soft)',
+              }}
+            >
               {notifyToast.type === 'success' ? '🎉' : notifyToast.type === 'info' ? '🔔' : '⚠️'}
             </span>
-            <p className="font-sans font-medium text-sm text-white leading-snug">{notifyToast.msg}</p>
+            <p className="font-sans font-medium text-sm leading-snug" style={{ color: 'var(--ssc-text-primary)' }}>{notifyToast.msg}</p>
           </div>
         </div>
       )}

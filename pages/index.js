@@ -86,10 +86,10 @@ export default function LandingPage() {
         }
         .stats-card:hover {
           transform: translateY(-3px);
-          box-shadow: 0 8px 24px rgba(20,184,166,0.12);
+          box-shadow: 0 14px 32px rgba(16,32,51,0.10);
         }
         .stats-card:hover .stat-num {
-          color: #14B8A6;
+          color: var(--ssc-orange);
         }
         .exam-chip {
           animation: slideUpFade 0.4s cubic-bezier(0.22,1,0.36,1) both;
@@ -102,7 +102,7 @@ export default function LandingPage() {
           transform: translateY(-2px);
           background: rgba(20,184,166,0.14) !important;
           border-color: rgba(20,184,166,0.42) !important;
-          color: #5eead4 !important;
+          color: var(--ssc-teal) !important;
           box-shadow: 0 0 8px rgba(20,184,166,0.18);
         }
         @keyframes logoGlowPulse {
@@ -120,20 +120,18 @@ export default function LandingPage() {
         }
         @keyframes guestCtaPulse {
           0%, 100% {
-            box-shadow: 0 0 0 rgba(20,184,166,0), 0 16px 36px rgba(0,0,0,0.24);
+            box-shadow: var(--ssc-shadow-cta);
           }
           50% {
-            box-shadow: 0 0 26px rgba(20,184,166,0.32), 0 18px 42px rgba(0,0,0,0.34);
+            box-shadow: 0 12px 28px rgba(255,106,0,0.28);
           }
         }
         .guest-cta {
           position: relative;
           overflow: hidden;
-          background:
-            linear-gradient(135deg, rgba(15,23,42,0.98), rgba(13,27,46,0.98)),
-            radial-gradient(circle at 50% 0%, rgba(20,184,166,0.32), transparent 52%);
-          border-color: rgba(20,184,166,0.58);
-          box-shadow: 0 0 18px rgba(20,184,166,0.2), 0 16px 36px rgba(0,0,0,0.24);
+          background: linear-gradient(135deg, var(--ssc-orange), var(--ssc-orange-deep));
+          border-color: rgba(255,106,0,0.26);
+          box-shadow: var(--ssc-shadow-cta);
           animation: guestCtaPulse 2.8s ease-in-out infinite;
           transition:
             transform 0.18s cubic-bezier(0.34,1.56,0.64,1),
@@ -147,17 +145,15 @@ export default function LandingPage() {
           position: absolute;
           inset: 1px;
           border-radius: 14px;
-          background: linear-gradient(90deg, transparent, rgba(20,184,166,0.14), transparent);
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
           transform: translateX(-120%);
           transition: transform 0.45s ease;
         }
         .guest-cta:hover {
           transform: translateY(-3px) scale(1.03);
-          background:
-            linear-gradient(135deg, rgba(17,31,49,0.98), rgba(13,27,46,0.98)),
-            radial-gradient(circle at 50% 0%, rgba(20,184,166,0.42), transparent 56%);
-          border-color: rgba(20,184,166,0.95);
-          box-shadow: 0 0 34px rgba(20,184,166,0.46), 0 18px 44px rgba(0,0,0,0.36);
+          background: linear-gradient(135deg, #ff7a1a, var(--ssc-orange-deep));
+          border-color: rgba(255,106,0,0.44);
+          box-shadow: 0 14px 30px rgba(255,106,0,0.30);
         }
         .guest-cta:hover::before {
           transform: translateX(120%);
@@ -189,7 +185,8 @@ export default function LandingPage() {
         }
         .google-cta {
           min-height: 54px;
-          box-shadow: 0 4px 18px rgba(255,255,255,0.08);
+          border: 1px solid var(--ssc-border-soft);
+          box-shadow: var(--ssc-shadow-card);
           transition:
             transform 0.16s ease,
             box-shadow 0.16s ease,
@@ -199,7 +196,7 @@ export default function LandingPage() {
         .google-cta:hover {
           transform: translateY(-2px) scale(1.02);
           background-color: #ffffff;
-          box-shadow: 0 0 22px rgba(255,255,255,0.2), 0 10px 24px rgba(0,0,0,0.18);
+          box-shadow: 0 12px 26px rgba(16,32,51,0.12);
         }
         .google-cta:active {
           transform: translateY(0) scale(0.98);
@@ -252,8 +249,8 @@ export default function LandingPage() {
           position: absolute;
           border-radius: 999px;
           pointer-events: none;
-          filter: blur(52px);
-          mix-blend-mode: screen;
+          filter: blur(58px);
+          mix-blend-mode: multiply;
           will-change: transform, opacity;
         }
         .ambient-glow-blue {
@@ -261,7 +258,7 @@ export default function LandingPage() {
           height: 220px;
           top: -72px;
           left: -82px;
-          background: radial-gradient(circle, rgba(59,130,246,0.42), rgba(59,130,246,0) 68%);
+          background: radial-gradient(circle, rgba(14,165,164,0.22), rgba(14,165,164,0) 68%);
           animation: ambientFloatA 10s ease-in-out infinite;
         }
         .ambient-glow-green {
@@ -269,7 +266,7 @@ export default function LandingPage() {
           height: 260px;
           right: -108px;
           bottom: -88px;
-          background: radial-gradient(circle, rgba(20,184,166,0.36), rgba(20,184,166,0) 70%);
+          background: radial-gradient(circle, rgba(232,248,246,0.90), rgba(232,248,246,0) 70%);
           animation: ambientFloatB 12s ease-in-out infinite;
         }
         .ambient-glow-orange {
@@ -278,11 +275,11 @@ export default function LandingPage() {
           top: 104px;
           left: 50%;
           margin-left: -70px;
-          background: radial-gradient(circle, rgba(249,115,22,0.28), rgba(249,115,22,0) 68%);
+          background: radial-gradient(circle, rgba(246,179,49,0.20), rgba(246,179,49,0) 68%);
           animation: ambientFloatC 8.5s ease-in-out infinite;
         }
       `}</style>
-      <div className="relative min-h-screen overflow-hidden [background:var(--bg-app)] flex flex-col items-center justify-center px-6 py-10">
+      <div className="relative min-h-screen overflow-hidden bg-[var(--ssc-bg)] flex flex-col items-center justify-center px-6 py-10">
         <div className="ambient-glow ambient-glow-blue" aria-hidden="true" />
         <div className="ambient-glow ambient-glow-green" aria-hidden="true" />
         <div className="ambient-glow ambient-glow-orange" aria-hidden="true" />
@@ -293,10 +290,10 @@ export default function LandingPage() {
             <LightningSVG />
           </div>
 
-          <h1 className="title-enter font-display font-black text-2xl text-white">
+          <h1 className="title-enter font-display font-black text-2xl text-ssc-text-primary">
             SSC GK Score Booster
           </h1>
-          <p className="font-sans text-sm text-slate-400 mt-1" style={{ animation: 'slideUpFade 0.45s cubic-bezier(0.22,1,0.36,1) 0.85s both' }}>
+          <p className="font-sans text-sm text-ssc-text-secondary mt-1" style={{ animation: 'slideUpFade 0.45s cubic-bezier(0.22,1,0.36,1) 0.85s both' }}>
             Daily GK practice for SSC aspirants
           </p>
 
@@ -305,7 +302,7 @@ export default function LandingPage() {
             {['CGL', 'CHSL', 'MTS', 'GD'].map((tag, i) => (
               <span
                 key={tag}
-                className="exam-chip font-sans text-xs font-semibold text-[#14B8A6] bg-[rgba(20,184,166,0.10)] border border-[rgba(20,184,166,0.20)] px-3 py-1 rounded-full"
+                className="exam-chip font-sans text-xs font-semibold text-ssc-teal bg-ssc-teal-soft border border-ssc-teal/20 px-3 py-1 rounded-full"
                 style={{ animationDelay: `${1.05 + i * 0.1}s` }}
               >
                 {tag}
@@ -314,7 +311,7 @@ export default function LandingPage() {
           </div>
 
           {/* Stat strip */}
-          <div className="stats-card rounded-[18px] px-4 py-3 mt-6 w-full max-w-[320px]" style={{ background: 'rgba(23,45,71,0.70)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="stats-card rounded-[18px] px-4 py-3 mt-6 w-full max-w-[320px]" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}>
             <div className="flex justify-around">
               {[
                 { target: 12,   suffix: '',  label: 'Subjects',  duration: 800,  delay: 400  },
@@ -325,7 +322,7 @@ export default function LandingPage() {
                   <span className="stat-num font-display font-black text-lg text-[#14B8A6] transition-colors duration-200">
                     <CountUp target={target} suffix={suffix} duration={duration} delay={delay} />
                   </span>
-                  <span className="font-sans text-xs text-slate-500 mt-0.5">{label}</span>
+                  <span className="font-sans text-xs text-ssc-text-muted mt-0.5">{label}</span>
                 </div>
               ))}
             </div>
@@ -334,14 +331,14 @@ export default function LandingPage() {
 
         {/* CTAs */}
         <div className="relative z-10 flex flex-col gap-3 w-full max-w-[340px]">
-          <div className="self-center text-xs font-semibold text-orange-200/90">
+          <div className="self-center rounded-full border border-ssc-orange/20 bg-ssc-warning-soft px-3 py-1 text-xs font-semibold text-ssc-orange">
             ⚡ Today’s GK Challenge is live
           </div>
 
           <button
             onClick={handleGuest}
             aria-label="Start Quiz as Guest"
-            className="guest-cta group w-full border-2 text-white rounded-[18px] py-4 font-bold text-base"
+            className="guest-cta group w-full border text-white rounded-[18px] py-4 font-bold text-base"
           >
             <span className="guest-cta-label relative z-10" aria-hidden="true">
               <span className="guest-cta-default">Start Quiz as Guest →</span>
@@ -352,7 +349,7 @@ export default function LandingPage() {
           <div className="flex flex-col gap-1">
             <button
               onClick={handleGoogle}
-              className="google-cta w-full bg-white text-slate-900 rounded-[18px] py-3.5 flex items-center justify-center gap-3 font-semibold text-[15px]"
+              className="google-cta w-full bg-white text-ssc-text-primary rounded-[18px] py-3.5 flex items-center justify-center gap-3 font-semibold text-[15px]"
             >
               <GoogleSVG />
               Continue with Google
@@ -360,7 +357,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <p className="relative z-10 font-sans text-xs text-slate-600 text-center mt-14">
+        <p className="relative z-10 font-sans text-xs text-ssc-text-secondary text-center mt-14">
           Made with <span className="footer-heart" aria-label="love">❤️</span> for SSC aspirants
         </p>
 

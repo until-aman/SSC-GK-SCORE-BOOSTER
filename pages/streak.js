@@ -22,7 +22,7 @@ const MILESTONES = [
   { days: 7,  coins: 30,  label: '1-week',  color: '#f97316', floor: '#92400E' },
   { days: 14, coins: 60,  label: '2-week',  color: '#f59e0b', floor: '#78350F' },
   { days: 30, coins: 150, label: '1-month', color: '#eab308', floor: '#713F12' },
-  { days: 90, coins: 500, label: '3-month', color: '#14B8A6', floor: '#0D4F47' },
+  { days: 90, coins: 500, label: '3-month', color: '#0EA5A4', floor: '#0D4F47' },
 ];
 
 const LightningSVG = ({ size = 16, color = 'white' }) => (
@@ -117,7 +117,7 @@ export default function StreakPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen [background:var(--bg-app)] pb-24">
+      <div className="min-h-screen bg-[var(--ssc-bg)] pb-24">
         <HistoryTopBar title="Streak History" icon={StreakHistoryIcon} showBack />
         <div className="px-4 pt-5">
           <div className="skeleton h-36 rounded-3xl mb-4" />
@@ -172,18 +172,18 @@ export default function StreakPage() {
         }
       `}</style>
 
-      <div className="min-h-screen [background:var(--bg-app)]" style={{ paddingBottom: 178 }}>
+      <div className="min-h-screen bg-[var(--ssc-bg)]" style={{ paddingBottom: 'var(--ssc-bottom-nav-safe-padding, 178px)' }}>
 
         {/* ── HEADER ── */}
         <HistoryTopBar title="Streak History" icon={StreakHistoryIcon} showBack />
 
-        {/* ── HERO CARD — navy base, orange accent ── */}
+        {/* ── HERO CARD ── */}
         <div className="mx-4 mt-5" style={{
-          background: '#111C2E',
-          border: '1px solid rgba(249,115,22,0.22)',
+          background: 'linear-gradient(135deg, #FFFFFF 0%, #FFF7E6 100%)',
+          border: '1px solid rgba(246,179,49,0.34)',
           borderRadius: 24,
           padding: '20px 20px 20px',
-          boxShadow: '0 0 32px rgba(249,115,22,0.07)',
+          boxShadow: 'var(--ssc-shadow-card)',
         }}>
           {/* Icon + label + count */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -199,12 +199,12 @@ export default function StreakPage() {
               }}
             >🔥</div>
             <div>
-              <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--ssc-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>
                 Current Streak
               </p>
-              <p className="font-display font-black text-white leading-none" style={{ fontSize: 40 }}>
+              <p className="font-display font-black leading-none" style={{ fontSize: 40, color: 'var(--ssc-orange-deep)' }}>
                 {streakCount}{' '}
-                <span style={{ fontSize: 20, fontWeight: 700, color: '#fdba74' }}>days</span>
+                <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--ssc-text-secondary)' }}>days</span>
               </p>
             </div>
           </div>
@@ -217,17 +217,17 @@ export default function StreakPage() {
               background: playedToday ? 'rgba(20,184,166,0.12)' : 'rgba(249,115,22,0.10)',
               border: playedToday ? '1px solid rgba(20,184,166,0.26)' : '1px solid rgba(249,115,22,0.24)',
             }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: playedToday ? '#14B8A6' : '#fb923c' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: playedToday ? 'var(--ssc-teal)' : 'var(--ssc-orange-deep)' }}>
                 {playedToday ? '✓ Protected today' : '⚡ At risk — play now!'}
               </span>
             </div>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
               borderRadius: 20, padding: '5px 12px',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(246,179,49,0.14)',
+              border: '1px solid rgba(246,179,49,0.26)',
             }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.42)' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--ssc-text-secondary)' }}>
                 🏆 Best: {profile?.bestStreak || streakCount} days
               </span>
             </div>
@@ -235,7 +235,7 @@ export default function StreakPage() {
 
           {/* Motivational line */}
           {nextMs && (
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.48)', marginTop: 10, lineHeight: 1.55 }}>
+            <p style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', marginTop: 10, lineHeight: 1.55 }}>
               {playedToday
                 ? `Practice tomorrow to make it ${streakCount + 1} days and unlock +${nextMs.coins} coins.`
                 : `Play today to protect your ${streakCount}-day streak and stay on track for +${nextMs.coins} coins.`
@@ -247,14 +247,14 @@ export default function StreakPage() {
           {nextMs && (
             <div style={{ marginTop: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)' }}>
+                <span style={{ fontSize: 11, color: 'var(--ssc-text-secondary)' }}>
                   Next: <span style={{ color: nextMs.color, fontWeight: 700 }}>{nextMs.label} streak</span>
                 </span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: nextMs.color }}>
                   {daysToNext} day{daysToNext !== 1 ? 's' : ''} away · +{nextMs.coins} coins
                 </span>
               </div>
-              <div style={{ height: 6, borderRadius: 6, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+              <div style={{ height: 6, borderRadius: 6, background: 'var(--ssc-disabled-bg)', overflow: 'hidden' }}>
                 <div
                   className="prog-bar"
                   style={{
@@ -267,7 +267,7 @@ export default function StreakPage() {
             </div>
           )}
           {!nextMs && (
-            <p className="font-display font-bold text-sm text-center mt-4" style={{ color: '#14B8A6' }}>
+            <p className="font-display font-bold text-sm text-center mt-4" style={{ color: 'var(--ssc-teal)' }}>
               🏆 All milestones unlocked! Legend status.
             </p>
           )}
@@ -275,14 +275,15 @@ export default function StreakPage() {
 
         {/* ── ACTIVITY CARD ── */}
         <div className="mx-4 mt-4" style={{
-          background: '#111C2E',
-          border: '1px solid rgba(148,163,184,0.09)',
+          background: 'var(--ssc-surface)',
+          border: '1px solid var(--ssc-border-soft)',
           borderRadius: 22, overflow: 'hidden',
+          boxShadow: 'var(--ssc-shadow-card)',
         }}>
           {/* Header with indigo-pill toggle */}
           <div style={{ padding: '14px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <p className="font-display font-bold text-base text-white">Activity</p>
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 20, padding: 3, gap: 2 }}>
+            <p className="font-display font-bold text-base text-[var(--ssc-text-primary)]">Activity</p>
+            <div style={{ display: 'flex', background: 'var(--ssc-surface-soft)', border: '1px solid var(--ssc-border-soft)', borderRadius: 20, padding: 3, gap: 2 }}>
               {['week', 'month'].map(v => (
                 <button
                   key={v}
@@ -290,9 +291,9 @@ export default function StreakPage() {
                   style={{
                     padding: '4px 14px', borderRadius: 16, cursor: 'pointer',
                     fontSize: 12, fontWeight: 700, fontFamily: 'inherit', textTransform: 'capitalize',
-                    border: calView === v ? '1px solid rgba(99,102,241,0.38)' : '1px solid transparent',
-                    background: calView === v ? 'rgba(79,70,229,0.28)' : 'transparent',
-                    color: calView === v ? '#ffffff' : 'rgba(255,255,255,0.32)',
+                    border: calView === v ? '1px solid rgba(14,165,164,0.24)' : '1px solid transparent',
+                    background: calView === v ? 'var(--ssc-teal)' : 'transparent',
+                    color: calView === v ? '#ffffff' : 'var(--ssc-text-secondary)',
                     transition: 'all 0.18s ease',
                   }}
                 >{v}</button>
@@ -306,13 +307,13 @@ export default function StreakPage() {
               {/* This Week subheader */}
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16 }}>
                 <div>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 3 }}>This Week</p>
+                  <p style={{ fontSize: 11, color: 'var(--ssc-text-secondary)', marginBottom: 3 }}>This Week</p>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-                    <span className="font-display font-black text-white" style={{ fontSize: 24 }}>{done.size}</span>
-                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.38)' }}>/ 7 active days</span>
+                    <span className="font-display font-black text-[var(--ssc-text-primary)]" style={{ fontSize: 24 }}>{done.size}</span>
+                    <span style={{ fontSize: 12, color: 'var(--ssc-text-muted)' }}>/ 7 active days</span>
                   </div>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: playedToday ? '#14B8A6' : '#fb923c', marginBottom: 2 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: playedToday ? 'var(--ssc-teal)' : 'var(--ssc-orange-deep)', marginBottom: 2 }}>
                   {playedToday ? '✓ Protected' : '⚡ Play today'}
                 </span>
               </div>
@@ -330,17 +331,17 @@ export default function StreakPage() {
                     <div key={day} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7 }}>
                       <span style={{
                         fontSize: 11, fontWeight: isToday ? 700 : 400,
-                        color: isToday ? '#f97316' : 'rgba(255,255,255,0.28)',
+                        color: isToday ? 'var(--ssc-orange-deep)' : 'var(--ssc-text-muted)',
                       }}>{day}</span>
                       <div style={{
                         width: 40, height: 40, borderRadius: '50%',
                         background: (isDone || isTodayDone)
-                          ? 'linear-gradient(145deg,#f97316,#ea580c)'
+                          ? 'linear-gradient(145deg,var(--ssc-orange),var(--ssc-orange-deep))'
                           : 'transparent',
                         border: (isDone || isTodayDone) ? 'none'
                           : isTodayTodo ? '2px solid #f97316'
-                          : isMissed    ? '1px solid rgba(255,255,255,0.12)'
-                          : '1px solid rgba(255,255,255,0.06)',
+                          : isMissed    ? '1px solid var(--ssc-danger-soft)'
+                          : '1px solid var(--ssc-border-soft)',
                         boxShadow: isTodayDone ? '0 0 14px rgba(249,115,22,0.55)' : 'none',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         transition: 'all 0.2s',
@@ -354,7 +355,7 @@ export default function StreakPage() {
 
               {/* Next reward footer */}
               {nextMs && (
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 14, textAlign: 'center' }}>
+                <p style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', marginTop: 14, textAlign: 'center' }}>
                   Next reward in{' '}
                   <span style={{ color: nextMs.color, fontWeight: 700 }}>
                     {daysToNext} active day{daysToNext !== 1 ? 's' : ''}
@@ -371,21 +372,21 @@ export default function StreakPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <button
                   onClick={() => setMonthOffset(o => o - 1)}
-                  style={{ width: 30, height: 30, borderRadius: 9, background: 'rgba(255,255,255,0.07)', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', fontSize: 16 }}
+                  style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--ssc-surface-soft)', border: '1px solid var(--ssc-border-soft)', cursor: 'pointer', color: 'var(--ssc-text-secondary)', fontSize: 16 }}
                 >‹</button>
-                <span className="font-display font-bold text-sm text-white">
+                <span className="font-display font-bold text-sm text-[var(--ssc-text-primary)]">
                   {MONTH_NAMES[viewDate.getMonth()]} {viewDate.getFullYear()}
                 </span>
                 <button
                   onClick={() => canGoNext && setMonthOffset(o => o + 1)}
-                  style={{ width: 30, height: 30, borderRadius: 9, background: 'rgba(255,255,255,0.07)', border: 'none', cursor: canGoNext ? 'pointer' : 'default', color: canGoNext ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)', fontSize: 16 }}
+                  style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--ssc-surface-soft)', border: '1px solid var(--ssc-border-soft)', cursor: canGoNext ? 'pointer' : 'default', color: canGoNext ? 'var(--ssc-text-secondary)' : 'var(--ssc-disabled-text)', fontSize: 16 }}
                 >›</button>
               </div>
 
               {/* Day letter headers */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2, marginBottom: 3 }}>
                 {DAY_LABELS.map(d => (
-                  <div key={d} style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.25)', fontWeight: 600 }}>{d}</div>
+                  <div key={d} style={{ textAlign: 'center', fontSize: 10, color: 'var(--ssc-text-muted)', fontWeight: 600 }}>{d}</div>
                 ))}
               </div>
 
@@ -406,8 +407,8 @@ export default function StreakPage() {
                   const numColor = isActive
                     ? (cell.isToday ? '#ffffff' : '#fdba74')
                     : cell.isToday ? '#f97316'
-                    : cell.isFuture ? 'rgba(255,255,255,0.15)'
-                    : 'rgba(255,255,255,0.26)';
+                    : cell.isFuture ? 'var(--ssc-disabled-text)'
+                    : 'var(--ssc-text-muted)';
 
                   return (
                     <div
@@ -442,26 +443,27 @@ export default function StreakPage() {
 
         {/* ── MILESTONE SECTION ── */}
         <div className="mx-4 mt-4" style={{
-          background: '#111C2E',
-          border: '1px solid rgba(148,163,184,0.09)',
+          background: 'var(--ssc-surface)',
+          border: '1px solid var(--ssc-border-soft)',
           borderRadius: 20, overflow: 'hidden',
+          boxShadow: 'var(--ssc-shadow-card)',
         }}>
           {/* Next milestone — prominent */}
           {nextMs && (
             <div style={{
               padding: '16px 18px 18px',
               background: `linear-gradient(135deg, ${nextMs.color}0D 0%, transparent 100%)`,
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
+              borderBottom: '1px solid var(--ssc-border-soft)',
             }}>
-              <p style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
+              <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--ssc-text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
                 Next Milestone
               </p>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p className="font-display font-black text-white" style={{ fontSize: 20, marginBottom: 5 }}>
+                  <p className="font-display font-black text-[var(--ssc-text-primary)]" style={{ fontSize: 20, marginBottom: 5 }}>
                     {nextMs.label} streak
                   </p>
-                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', lineHeight: 1.5 }}>
                     {daysToNext} more active day{daysToNext !== 1 ? 's' : ''} to unlock{' '}
                     <span style={{ color: nextMs.color, fontWeight: 700 }}>+{nextMs.coins} coins</span>
                   </p>
@@ -485,7 +487,7 @@ export default function StreakPage() {
           {upcomingMs.length > 0 && (
             <>
               <div style={{ padding: '10px 18px 5px' }}>
-                <p style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--ssc-text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                   Upcoming Rewards
                 </p>
               </div>
@@ -493,13 +495,13 @@ export default function StreakPage() {
                 <div key={m.days} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   padding: '10px 18px',
-                  borderTop: '1px solid rgba(255,255,255,0.04)',
+                  borderTop: '1px solid var(--ssc-border-soft)',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
-                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.32)', fontWeight: 400 }}>{m.label} streak</span>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ssc-disabled-text)', flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', fontWeight: 400 }}>{m.label} streak</span>
                   </div>
-                  <span className="font-display font-bold" style={{ fontSize: 13, color: 'rgba(255,255,255,0.20)' }}>+{m.coins} coins</span>
+                  <span className="font-display font-bold" style={{ fontSize: 13, color: 'var(--ssc-text-muted)' }}>+{m.coins} coins</span>
                 </div>
               ))}
             </>
@@ -508,8 +510,8 @@ export default function StreakPage() {
           {/* Achieved milestones */}
           {achievedMs.length > 0 && (
             <>
-              <div style={{ padding: '10px 18px 5px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                <p style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.22)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+              <div style={{ padding: '10px 18px 5px', borderTop: '1px solid var(--ssc-border-soft)' }}>
+                <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--ssc-text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                   Achieved
                 </p>
               </div>
@@ -517,11 +519,11 @@ export default function StreakPage() {
                 <div key={m.days} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   padding: '9px 18px',
-                  borderTop: '1px solid rgba(255,255,255,0.03)',
+                  borderTop: '1px solid var(--ssc-border-soft)',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ color: m.color, fontSize: 12, lineHeight: 1 }}>✓</span>
-                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>{m.label} streak</span>
+                    <span style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', fontWeight: 500 }}>{m.label} streak</span>
                   </div>
                   <span className="font-display font-bold" style={{ fontSize: 13, color: m.color }}>+{m.coins} coins</span>
                 </div>
@@ -531,7 +533,7 @@ export default function StreakPage() {
 
           {!nextMs && (
             <div style={{ padding: '18px', textAlign: 'center' }}>
-              <p className="font-display font-bold text-sm" style={{ color: '#14B8A6' }}>
+              <p className="font-display font-bold text-sm" style={{ color: 'var(--ssc-teal)' }}>
                 🏆 All milestones unlocked! Legend status.
               </p>
             </div>
@@ -550,7 +552,7 @@ export default function StreakPage() {
       <div style={{
         position: 'fixed', bottom: 82, left: 0, right: 0, zIndex: 40,
         padding: '12px 16px 10px',
-        background: 'linear-gradient(to top, var(--bg-app) 70%, transparent)',
+        background: 'linear-gradient(to top, var(--ssc-bg) 70%, transparent)',
         opacity: showCTA ? 1 : 0,
         transform: showCTA ? 'translateY(0)' : 'translateY(14px)',
         transition: 'opacity 0.4s ease, transform 0.4s ease',

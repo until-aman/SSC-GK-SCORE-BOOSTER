@@ -62,10 +62,10 @@ export default function CoinsHistoryPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen [background:var(--bg-app)] px-4 pt-10">
+      <div className="min-h-screen bg-[var(--ssc-bg)] px-4 pt-10">
         <div className="flex items-center gap-3 mb-6">
           <BackButton />
-          <h1 className="font-display font-bold text-[20px] text-white">Coins History</h1>
+          <h1 className="font-display font-bold text-[20px] text-[var(--ssc-text-primary)]">Coins History</h1>
         </div>
         <Loader card size="md" label="Fetching your Coins history..." />
       </div>
@@ -76,10 +76,10 @@ export default function CoinsHistoryPage() {
     return (
       <>
         <Head><title>Coins History - SSC GK Score Booster</title></Head>
-        <div className="min-h-screen [background:var(--bg-app)] pb-10">
+        <div className="min-h-screen bg-[var(--ssc-bg)] pb-10">
           <div className="px-4 pt-10 pb-4 flex items-center gap-3">
             <BackButton />
-            <h1 className="font-display font-black text-xl text-white">Coins History</h1>
+            <h1 className="font-display font-black text-xl text-[var(--ssc-text-primary)]">Coins History</h1>
           </div>
           <GoogleSignInCard
             className="mx-4 mt-8"
@@ -127,69 +127,70 @@ export default function CoinsHistoryPage() {
           box-shadow: 0 4px 12px rgba(255,107,22,0.22);
         }
       `}</style>
-      <div className="min-h-screen [background:var(--bg-app)]" style={{ paddingBottom: '150px' }}>
+      <div className="min-h-screen bg-[var(--ssc-bg)]" style={{ paddingBottom: 'var(--ssc-bottom-nav-safe-padding, 150px)' }}>
         <div className="px-4 pt-10 pb-4 flex items-center gap-3">
           <BackButton />
-          <h1 className="font-display font-bold text-[20px] text-white flex-1">Coins History</h1>
+          <h1 className="font-display font-bold text-[20px] text-[var(--ssc-text-primary)] flex-1">Coins History</h1>
           <button
             onClick={fetchHistory}
             className="w-9 h-9 flex items-center justify-center rounded-full active:scale-90 transition-transform"
-            style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.10)' }}
+            style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}
             title="Refresh"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="23 4 23 10 17 10" />
               <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
             </svg>
           </button>
         </div>
 
-        <div className="mx-4 rounded-3xl px-5 py-5" style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.25)' }}>
+        <div className="mx-4 rounded-3xl px-5 py-5" style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #FFF7E6 100%)', border: '1px solid rgba(246,179,49,0.34)', boxShadow: 'var(--ssc-shadow-card)' }}>
           <div className="flex items-end justify-between mb-3">
             <div>
-              <p className="font-display font-black text-4xl text-white leading-none">{totalCoins}</p>
-              <p className="font-sans text-sm text-[#14B8A6] mt-0.5">total coins earned</p>
+              <p className="font-display font-black text-4xl leading-none" style={{ color: 'var(--ssc-orange-deep)' }}>{totalCoins}</p>
+              <p className="font-sans text-sm text-[var(--ssc-text-secondary)] mt-0.5">total coins earned</p>
             </div>
             <div className="flex flex-col items-end gap-1">
-              <span className="bg-white/10 rounded-full px-3 py-1 font-display font-bold text-sm text-white">
+              <span className="rounded-full px-3 py-1 font-display font-bold text-sm" style={{ background: 'var(--ssc-success-soft)', color: 'var(--ssc-teal)', border: '1px solid rgba(14,165,164,0.22)' }}>
                 ⭐ {level}
               </span>
               {nextLevel && (
-                <span className="font-sans text-xs text-slate-400">{coinsToNext} coins to {nextLevel}</span>
+                <span className="font-sans text-xs text-[var(--ssc-text-muted)]">{coinsToNext} coins to {nextLevel}</span>
               )}
             </div>
           </div>
 
-          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+          <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--ssc-disabled-bg)' }}>
             <div
               className="h-full rounded-full transition-all duration-700"
-              style={{ background: 'linear-gradient(90deg, #14B8A6, #2DD4BF)', width: `${coinsBarWidth}%` }}
+              style={{ background: 'linear-gradient(90deg, var(--ssc-orange), var(--ssc-coin))', width: `${coinsBarWidth}%` }}
             />
           </div>
           {nextLevel && (
-            <div className="flex justify-between font-sans text-xs text-slate-500 mt-1">
+            <div className="flex justify-between font-sans text-xs text-[var(--ssc-text-muted)] mt-1">
               <span>{thresh.min} coins</span>
               <span>{thresh.max} coins</span>
             </div>
           )}
         </div>
 
-        <div className="mx-4 mt-5 rounded-2xl overflow-hidden" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="mx-4 mt-5 rounded-2xl overflow-hidden" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}>
           <button
             type="button"
             onClick={() => setEarnCoinsOpen(value => !value)}
-            className={`w-full px-4 py-3 text-left flex items-center justify-between gap-3 ${earnCoinsOpen ? 'border-b border-white/[0.06]' : ''}`}
+            className="w-full px-4 py-3 text-left flex items-center justify-between gap-3"
+            style={{ borderBottom: earnCoinsOpen ? '1px solid var(--ssc-border-soft)' : '0' }}
           >
             <div>
-              <p className="font-display font-bold text-base text-white">How to earn coins ⚡</p>
-              <p className="font-sans text-xs text-slate-400 mt-0.5">Earn more by playing consistently</p>
+              <p className="font-display font-bold text-base text-[var(--ssc-text-primary)]">How to earn coins ⚡</p>
+              <p className="font-sans text-xs text-[var(--ssc-text-secondary)] mt-0.5">Earn more by playing consistently</p>
             </div>
             <svg
               width="16"
               height="16"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#94A3B8"
+              stroke="var(--ssc-text-muted)"
               strokeWidth="2.5"
               strokeLinecap="round"
               className={`transition-transform duration-200 ${earnCoinsOpen ? 'rotate-180' : ''}`}
@@ -201,28 +202,28 @@ export default function CoinsHistoryPage() {
             <>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/[0.06]">
-                    <th className="px-4 py-2.5 text-left font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">Action</th>
-                    <th className="px-4 py-2.5 text-right font-sans font-medium text-xs text-slate-500 uppercase tracking-wide">Coins</th>
+                  <tr style={{ borderBottom: '1px solid var(--ssc-border-soft)' }}>
+                    <th className="px-4 py-2.5 text-left font-sans font-medium text-xs text-[var(--ssc-text-muted)] uppercase tracking-wide">Action</th>
+                    <th className="px-4 py-2.5 text-right font-sans font-medium text-xs text-[var(--ssc-text-muted)] uppercase tracking-wide">Coins</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    { action: 'Complete a quiz (5+ questions)', coins: '+10', color: 'text-[#14B8A6]' },
-                    { action: 'Each correct answer', coins: '+2', color: 'text-[#14B8A6]' },
-                    { action: 'First quiz of the day 🌅', coins: '+10', color: 'text-orange-400' },
-                    { action: 'Wrong answer', coins: '-0', color: 'text-slate-500' },
-                    { action: 'Skipped question', coins: '-0', color: 'text-slate-500' },
+                    { action: 'Complete a quiz (5+ questions)', coins: '+10', color: 'text-[var(--ssc-teal)]' },
+                    { action: 'Each correct answer', coins: '+2', color: 'text-[var(--ssc-teal)]' },
+                    { action: 'First quiz of the day 🌅', coins: '+10', color: 'text-[var(--ssc-orange-deep)]' },
+                    { action: 'Wrong answer', coins: '-0', color: 'text-[var(--ssc-text-muted)]' },
+                    { action: 'Skipped question', coins: '-0', color: 'text-[var(--ssc-text-muted)]' },
                   ].map((row, i, arr) => (
-                    <tr key={row.action} className={i < arr.length - 1 ? 'border-b border-white/[0.05]' : ''}>
-                      <td className="px-4 py-3 font-sans text-sm text-slate-300">{row.action}</td>
+                    <tr key={row.action} style={i < arr.length - 1 ? { borderBottom: '1px solid var(--ssc-border-soft)' } : undefined}>
+                      <td className="px-4 py-3 font-sans text-sm text-[var(--ssc-text-secondary)]">{row.action}</td>
                       <td className={`px-4 py-3 text-right font-display font-black text-sm ${row.color}`}>{row.coins}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <div className="px-4 py-3" style={{ background: 'rgba(20,184,166,0.06)', borderTop: '1px solid rgba(20,184,166,0.18)' }}>
-                <p className="font-sans text-xs text-[#14B8A6]">💡 Coins come from correct answers, accuracy, and completion bonuses.</p>
+              <div className="px-4 py-3" style={{ background: 'var(--ssc-teal-soft)', borderTop: '1px solid rgba(14,165,164,0.18)' }}>
+                <p className="font-sans text-xs" style={{ color: 'var(--ssc-teal)' }}>💡 Coins come from correct answers, accuracy, and completion bonuses.</p>
               </div>
             </>
           )}
@@ -230,10 +231,10 @@ export default function CoinsHistoryPage() {
 
         <div className="mx-4 mt-4">
           {sessions.length === 0 ? (
-            <div className="rounded-2xl p-8 flex flex-col items-center gap-4 text-center" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="rounded-2xl p-8 flex flex-col items-center gap-4 text-center" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}>
               <span className="text-4xl">🎯</span>
-              <p className="font-display font-bold text-base text-white">No quizzes yet</p>
-              <p className="font-sans font-medium text-sm text-slate-400">Complete a quiz to start earning Coins and building your history.</p>
+              <p className="font-display font-bold text-base text-[var(--ssc-text-primary)]">No quizzes yet</p>
+              <p className="font-sans font-medium text-sm text-[var(--ssc-text-secondary)]">Complete a quiz to start earning Coins and building your history.</p>
               <button
                 onClick={() => router.push('/dashboard')}
                 className="text-white rounded-2xl py-3 px-6 font-display font-bold text-sm active:scale-[0.98] transition-transform"
@@ -244,9 +245,9 @@ export default function CoinsHistoryPage() {
             </div>
           ) : (
             <>
-              <p className="font-display font-bold text-base text-white mb-3">
+              <p className="font-display font-bold text-base text-[var(--ssc-text-primary)] mb-3">
                 Recent Sessions
-                <span className="font-normal font-sans text-xs text-slate-500 ml-2">last {sessions.length}</span>
+                <span className="font-normal font-sans text-xs text-[var(--ssc-text-muted)] ml-2">last {sessions.length}</span>
               </p>
               {(showAllSessions ? sessions : sessions.slice(0, 3)).map((s, i) => (
                 <SessionRow key={`${s.timestamp}-${i}`} session={s} />
@@ -256,9 +257,9 @@ export default function CoinsHistoryPage() {
                 <button
                   onClick={() => setShowAllSessions(v => !v)}
                   className="w-full flex items-center justify-center gap-2 py-3 mt-1 rounded-2xl active:scale-[0.98] transition-transform"
-                  style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}
+                  style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}
                 >
-                  <span className="font-display font-bold text-sm text-[#14B8A6]">
+                  <span className="font-display font-bold text-sm text-[var(--ssc-teal)]">
                     {showAllSessions ? 'Collapse history' : 'View full history'}
                   </span>
                   <svg
@@ -266,7 +267,7 @@ export default function CoinsHistoryPage() {
                     height="14"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#14B8A6"
+                    stroke="var(--ssc-teal)"
                     strokeWidth="2.5"
                     strokeLinecap="round"
                     className={`transition-transform duration-300 ${showAllSessions ? 'rotate-180' : ''}`}

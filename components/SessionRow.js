@@ -19,24 +19,31 @@ function formatDate(timestamp) {
 function MilestoneRow({ session: s }) {
   const coins = s.coins ?? 0;
   return (
-    <div className="bg-gradient-to-r from-orange-900/40 to-amber-900/30 border border-orange-500/30 rounded-2xl px-4 py-3.5 mb-2 flex items-center gap-3">
+    <div
+      className="rounded-2xl px-4 py-3.5 mb-2 flex items-center gap-3"
+      style={{
+        background: 'linear-gradient(135deg, #FFFFFF 0%, #FFF7E6 100%)',
+        border: '1px solid rgba(246,179,49,0.34)',
+        boxShadow: 'var(--ssc-shadow-card)',
+      }}
+    >
       {/* Trophy icon */}
-      <div className="w-8 h-8 rounded-xl bg-orange-500/20 flex items-center justify-center flex-shrink-0 text-lg">
+      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-lg" style={{ background: 'rgba(246,179,49,0.18)' }}>
         🏆
       </div>
 
       {/* Middle */}
       <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-        <span className="font-semibold text-[13px] text-orange-300 truncate">
+        <span className="font-semibold text-[13px] truncate" style={{ color: 'var(--ssc-orange-deep)' }}>
           {s.milestoneLabel}
         </span>
-        <span className="text-[11px] text-slate-500">{formatDate(s.timestamp)}</span>
+        <span className="text-[11px] text-[var(--ssc-text-muted)]">{formatDate(s.timestamp)}</span>
       </div>
 
       {/* Right */}
       <div className="flex flex-col items-end gap-0.5">
-        <span className="font-display font-bold text-[15px] text-orange-400">+{coins} coins</span>
-        <span className="text-[11px] text-orange-500/70">streak reward</span>
+        <span className="font-display font-bold text-[15px]" style={{ color: 'var(--ssc-orange-deep)' }}>+{coins} coins</span>
+        <span className="text-[11px]" style={{ color: 'var(--ssc-text-secondary)' }}>streak reward</span>
       </div>
     </div>
   );
@@ -48,24 +55,24 @@ export default function SessionRow({ session: s }) {
   const style = getSubjectStyle(s.subject);
   const coins = s.coins ?? 0;
   return (
-    <div className="rounded-2xl px-4 py-3.5 mb-2 flex items-center gap-3" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}>
+    <div className="rounded-2xl px-4 py-3.5 mb-2 flex items-center gap-3" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}>
       {/* Subject icon */}
-      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-lg" style={{ background: '#1E3554' }}>
+      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-lg" style={{ background: style.bg || 'var(--ssc-teal-soft)' }}>
         {style.icon}
       </div>
 
       {/* Middle */}
       <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-        <span className="font-semibold text-[13px] text-white truncate max-w-[180px]">
+        <span className="font-semibold text-[13px] text-[var(--ssc-text-primary)] truncate max-w-[180px]">
           {s.subject} · {s.topic}
         </span>
-        <span className="text-[11px] text-slate-500">{formatDate(s.timestamp)}</span>
+        <span className="text-[11px] text-[var(--ssc-text-muted)]">{formatDate(s.timestamp)}</span>
       </div>
 
       {/* Right */}
       <div className="flex flex-col items-end gap-0.5">
-        <span className="font-display font-bold text-[15px] text-[#14B8A6]">+{coins} coins</span>
-        <span className="text-[11px] text-slate-500">{s.correctAnswers}/{s.totalQuestions} correct</span>
+        <span className="font-display font-bold text-[15px] text-[var(--ssc-teal)]">+{coins} coins</span>
+        <span className="text-[11px] text-[var(--ssc-text-muted)]">{s.correctAnswers}/{s.totalQuestions} correct</span>
       </div>
     </div>
   );

@@ -106,7 +106,7 @@ export default function WhatsAppBell() {
               top: 'calc(100% + 12px)',
               right: -4,
               width: 250,
-              filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.5))',
+              filter: 'drop-shadow(0 12px 24px rgba(16,32,51,0.14))',
               animation: 'tooltipIn 0.25s ease both',
               zIndex: 200,
               pointerEvents: 'auto',
@@ -121,7 +121,7 @@ export default function WhatsAppBell() {
               height: 0,
               borderLeft: '10px solid transparent',
               borderRight: '10px solid transparent',
-              borderBottom: '10px solid rgba(255,255,255,0.15)',
+              borderBottom: '10px solid var(--ssc-border-soft)',
             }} />
             <div style={{
               position: 'absolute',
@@ -131,20 +131,20 @@ export default function WhatsAppBell() {
               height: 0,
               borderLeft: '9px solid transparent',
               borderRight: '9px solid transparent',
-              borderBottom: '9px solid #1E3A5A',
+              borderBottom: '9px solid var(--ssc-surface)',
             }} />
 
             {/* Bubble body */}
             <div style={{
-              background: 'linear-gradient(135deg, #1E3A5A 0%, #172D47 100%)',
-              border: '1px solid rgba(255,255,255,0.15)',
+              background: 'var(--ssc-surface)',
+              border: '1px solid var(--ssc-border-soft)',
               borderRadius: 16,
               padding: '12px 14px 13px',
             }}>
-              <p style={{ color: '#F0F4F8', fontSize: 13, fontWeight: 700, margin: 0, lineHeight: 1.35 }}>
+              <p style={{ color: 'var(--ssc-text-primary)', fontSize: 13, fontWeight: 700, margin: 0, lineHeight: 1.35 }}>
                 Aaj ka GK plan ready hai 🔔
               </p>
-              <p style={{ color: '#64748B', fontSize: 11, margin: '4px 0 0', lineHeight: 1.4 }}>
+              <p style={{ color: 'var(--ssc-text-secondary)', fontSize: 11, margin: '4px 0 0', lineHeight: 1.4 }}>
                 Daily tasks aur revision updates WhatsApp par paaiye.
               </p>
             </div>
@@ -156,17 +156,16 @@ export default function WhatsAppBell() {
       {mounted && showSheet && createPortal(
         <div
           className="fixed inset-0 flex items-center justify-center px-5"
-          style={{ zIndex: 9999, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
+          style={{ zIndex: 9999, background: 'var(--ssc-overlay)', backdropFilter: 'blur(4px)' }}
           onClick={handleMaybeLater}
         >
           <div
             className="w-full max-w-[380px] px-6 pt-5 pb-4 relative"
             style={{
-              background: 'linear-gradient(160deg, #1E3554 0%, #172D47 55%, #112236 100%)',
+              background: 'var(--ssc-surface)',
               borderRadius: 28,
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderTop: '1px solid rgba(255,255,255,0.18)',
-              boxShadow: '0 24px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.07)',
+              border: '1px solid var(--ssc-border-soft)',
+              boxShadow: 'var(--ssc-shadow-float)',
             }}
             onClick={e => e.stopPropagation()}
           >
@@ -174,23 +173,23 @@ export default function WhatsAppBell() {
             <button
               onClick={handleMaybeLater}
               className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-full active:opacity-60 transition-opacity"
-              style={{ background: 'rgba(255,255,255,0.07)' }}
+              style={{ background: 'var(--ssc-surface-soft)', border: '1px solid var(--ssc-border-soft)' }}
               aria-label="Close"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" strokeLinecap="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-secondary)" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M18 6L6 18M6 6l12 12"/>
               </svg>
             </button>
 
             {/* Title */}
             <div className="flex items-center gap-2 mb-2">
-              <h2 className="font-display font-black text-xl text-white">
+              <h2 className="font-display font-black text-xl text-ssc-text-primary">
                 🔔 Daily GK Updates
               </h2>
             </div>
 
             {/* Description */}
-            <p className="font-sans text-sm leading-relaxed mb-4" style={{ color: '#94A3B8' }}>
+            <p className="font-sans text-sm leading-relaxed mb-4" style={{ color: 'var(--ssc-text-secondary)' }}>
               Quiz links, streak reminders & rank updates on WhatsApp.
             </p>
 
@@ -200,7 +199,7 @@ export default function WhatsAppBell() {
                 <span
                   key={chip}
                   className="font-sans font-medium rounded-full"
-                  style={{ fontSize: 11, padding: '3px 10px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: '#94A3B8' }}
+                  style={{ fontSize: 11, padding: '3px 10px', background: 'var(--ssc-teal-soft)', border: '1px solid rgba(14,165,164,0.18)', color: 'var(--ssc-teal)' }}
                 >
                   {chip}
                 </span>
@@ -223,7 +222,7 @@ export default function WhatsAppBell() {
               Join Free Updates →
             </button>
 
-            <p className="text-center font-sans mt-2.5" style={{ fontSize: 11, color: '#334155' }}>
+            <p className="text-center font-sans mt-2.5" style={{ fontSize: 11, color: 'var(--ssc-text-muted)' }}>
               No spam. Only useful updates.
             </p>
 

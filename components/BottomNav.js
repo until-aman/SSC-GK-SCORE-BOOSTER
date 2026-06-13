@@ -109,10 +109,13 @@ export default function BottomNav() {
         right: 0,
         zIndex: 50,
       }}>
+        <div className="ssc-bottom-nav-scrim" aria-hidden="true" />
         <div style={{
           maxWidth: '430px',
           margin: '0 auto',
-          padding: '8px 20px 7px',
+          padding: '8px 20px calc(7px + env(safe-area-inset-bottom))',
+          position: 'relative',
+          zIndex: 51,
         }}>
           <div style={{
             background: 'rgba(255, 255, 255, 0.96)',

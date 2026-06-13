@@ -7,24 +7,26 @@ import { getUserCacheScope } from '@/lib/userCacheScope';
 import { getAnalysisActivity, readAnalysisInterest, patchAnalysisInterestState, recordAnalysisInterest } from '@/lib/data/analysisData';
 
 // ── Design tokens (match existing app) ──────────────────────────────────
-const ORANGE     = '#FF6B16';
-const ORANGE_DIM = 'rgba(255,107,22,0.15)';
-const TEAL       = '#14B8A6';
-const GOLD       = '#F59E0B';
-const GOLD_DIM   = 'rgba(245,158,11,0.15)';
-const BG_CARD    = '#172D47';
-const BG_DEEP    = '#112236';
-const BORDER     = 'rgba(255,255,255,0.08)';
-const TEXT_PRI   = '#F0F4F8';
-const TEXT_SEC   = '#94A3B8';
-const TEXT_MUT   = '#64748B';
+const ORANGE     = 'var(--ssc-orange)';
+const ORANGE_DIM = 'rgba(255,106,0,0.12)';
+const TEAL       = 'var(--ssc-teal)';
+const GOLD       = 'var(--ssc-coin)';
+const GOLD_DIM   = 'rgba(246,179,49,0.16)';
+const BG_CARD    = 'var(--ssc-surface)';
+const BG_DEEP    = 'var(--ssc-surface-soft)';
+const BORDER     = 'var(--ssc-border-soft)';
+const TEXT_PRI   = 'var(--ssc-text-primary)';
+const TEXT_SEC   = 'var(--ssc-text-secondary)';
+const TEXT_MUT   = 'var(--ssc-text-muted)';
+const SOFT_SHADOW = 'var(--ssc-shadow-card)';
 
 const card = {
   background: BG_CARD,
   border: `1px solid ${BORDER}`,
-  borderRadius: 18,
+  borderRadius: 'var(--ssc-radius-card)',
   padding: '18px 20px',
   marginBottom: 16,
+  boxShadow: SOFT_SHADOW,
 };
 
 // ── Inline Google SVG (matches GoogleSignInCard.js) ─────────────────────
@@ -60,10 +62,10 @@ const CheckCircle = ({ color = TEAL, size = 18 }) => (
 
 // ── Status tiers (derived from accuracy — never say "Poor"/"Bad") ────────
 function statusFor(acc) {
-  if (acc >= 80) return { label: 'Strong',  color: '#14B8A6', bg: 'rgba(20,184,166,0.15)', impact: 'Helping score', up: true  };
-  if (acc >= 65) return { label: 'Good',    color: '#6366F1', bg: 'rgba(99,102,241,0.15)', impact: 'Helping score', up: true  };
-  if (acc >= 50) return { label: 'Improve', color: '#F59E0B', bg: 'rgba(245,158,11,0.15)', impact: 'Hurting score', up: false };
-  return            { label: 'Focus',   color: '#EF4444', bg: 'rgba(239,68,68,0.15)',  impact: 'Hurting score', up: false };
+  if (acc >= 80) return { label: 'Strong',  color: 'var(--ssc-success)', bg: 'var(--ssc-success-soft)', impact: 'Helping score', up: true  };
+  if (acc >= 65) return { label: 'Good',    color: 'var(--ssc-rank)', bg: 'var(--ssc-info-soft)', impact: 'Helping score', up: true  };
+  if (acc >= 50) return { label: 'Improve', color: 'var(--ssc-warning)', bg: 'var(--ssc-warning-soft)', impact: 'Hurting score', up: false };
+  return            { label: 'Focus',   color: 'var(--ssc-danger)', bg: 'var(--ssc-danger-soft)',  impact: 'Hurting score', up: false };
 }
 
 // ── Subject health + practice plan data (STATIC SAMPLE) ──────────────────
@@ -105,10 +107,10 @@ const TOPICS = [
 
 const FILTERS = ['Improve Fast', 'Weak Topics', 'Strong Topics', 'High SSC Weightage'];
 const TAG_COLOR = {
-  'Improve Fast':       { color: '#F59E0B', bg: 'rgba(245,158,11,0.15)' },
-  'Weak Topics':        { color: '#EF4444', bg: 'rgba(239,68,68,0.15)'  },
-  'Strong Topics':      { color: '#14B8A6', bg: 'rgba(20,184,166,0.15)' },
-  'High SSC Weightage': { color: '#6366F1', bg: 'rgba(99,102,241,0.15)' },
+  'Improve Fast':       { color: 'var(--ssc-warning)', bg: 'var(--ssc-warning-soft)' },
+  'Weak Topics':        { color: 'var(--ssc-danger)', bg: 'var(--ssc-danger-soft)'  },
+  'Strong Topics':      { color: 'var(--ssc-success)', bg: 'var(--ssc-success-soft)' },
+  'High SSC Weightage': { color: 'var(--ssc-rank)', bg: 'var(--ssc-info-soft)' },
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────
@@ -274,7 +276,7 @@ export default function AnalysisPage() {
       <>
         <Head><title>AI GK Analysis — SSC GK Score Booster</title></Head>
         <style>{`@keyframes analSpin { to { transform: rotate(360deg); } }`}</style>
-        <div style={{ minHeight: '100vh', background: 'var(--bg-app)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ minHeight: '100vh', background: 'var(--ssc-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ width: 32, height: 32, borderRadius: 99, border: `3px solid ${BORDER}`, borderTopColor: ORANGE, animation: 'analSpin 0.8s linear infinite' }} />
         </div>
       </>
@@ -328,19 +330,19 @@ export default function AnalysisPage() {
           className="sticky top-0 z-50 px-4 flex items-center justify-between"
           style={{
             height: '58px',
-            background: 'rgba(15,32,52,0.88)',
+            background: 'rgba(255,255,255,0.92)',
             backdropFilter: 'blur(14px)',
             WebkitBackdropFilter: 'blur(14px)',
-            borderBottom: '1px solid rgba(20,184,166,0.18)',
+            borderBottom: `1px solid ${BORDER}`,
             borderRadius: '0 0 22px 22px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.22)',
+            boxShadow: SOFT_SHADOW,
           }}
         >
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-[11px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
               <BrainSVG size={18} color="#f97316" />
             </div>
-            <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center text-white">
+            <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center" style={{ color: TEXT_PRI }}>
               AI GK Analysis
             </span>
             <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, background: GOLD_DIM, border: `1px solid ${GOLD}40`, borderRadius: 99, padding: '3px 8px', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
@@ -349,7 +351,7 @@ export default function AnalysisPage() {
           </div>
         </div>
 
-        <div style={{ minHeight: '100vh', background: 'var(--bg-app)', padding: '22px 16px 110px', boxSizing: 'border-box' }}>
+        <div style={{ minHeight: '100vh', background: 'var(--ssc-bg)', padding: '22px 16px 110px', boxSizing: 'border-box' }}>
 
           {/* Section 2 — Single stat strip */}
           <div style={{
@@ -405,7 +407,7 @@ export default function AnalysisPage() {
               <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                 {[['#14B8A6', '78%'], ['#EF4444', '42%'], ['#F59E0B', '61%']].map(([c, v], i) => (
                   <div key={i} style={{ flex: 1, background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '12px 10px' }}>
-                    <div style={{ width: '70%', height: 9, background: 'rgba(255,255,255,0.18)', borderRadius: 4, marginBottom: 10 }} />
+                    <div style={{ width: '70%', height: 9, background: 'rgba(221,232,240,0.85)', borderRadius: 4, marginBottom: 10 }} />
                     <div style={{ fontSize: 20, fontWeight: 900, color: c, lineHeight: 1, marginBottom: 8 }}>{v}</div>
                     <div style={{ width: 44, height: 14, background: c, opacity: 0.5, borderRadius: 99 }} />
                   </div>
@@ -413,7 +415,7 @@ export default function AnalysisPage() {
               </div>
               {/* Practice plan card */}
               <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '14px', marginBottom: 10 }}>
-                <div style={{ width: '55%', height: 11, background: 'rgba(255,255,255,0.2)', borderRadius: 4, marginBottom: 12 }} />
+                <div style={{ width: '55%', height: 11, background: 'rgba(221,232,240,0.9)', borderRadius: 4, marginBottom: 12 }} />
                 <div style={{ height: 9, background: BG_DEEP, borderRadius: 99, overflow: 'hidden', marginBottom: 12 }}>
                   <div style={{ width: '42%', height: '100%', background: ORANGE, borderRadius: 99 }} />
                 </div>
@@ -421,17 +423,17 @@ export default function AnalysisPage() {
               </div>
               {/* Topic card partial */}
               <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '14px' }}>
-                <div style={{ width: '45%', height: 10, background: 'rgba(255,255,255,0.18)', borderRadius: 4, marginBottom: 10 }} />
-                <div style={{ width: '70%', height: 8, background: 'rgba(255,255,255,0.1)', borderRadius: 4 }} />
+                <div style={{ width: '45%', height: 10, background: 'rgba(221,232,240,0.9)', borderRadius: 4, marginBottom: 10 }} />
+                <div style={{ width: '70%', height: 8, background: 'rgba(221,232,240,0.72)', borderRadius: 4 }} />
               </div>
             </div>
 
             {/* Centered overlay card */}
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
               <div style={{
-                background: 'rgba(13,27,46,0.92)', border: `1px solid ${BORDER}`,
+                background: 'rgba(255,255,255,0.96)', border: `1px solid ${BORDER}`,
                 borderRadius: 16, padding: '18px 24px', textAlign: 'center',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
+                boxShadow: SOFT_SHADOW,
               }}>
                 <div style={{ width: 42, height: 42, borderRadius: 12, margin: '0 auto 12px', background: ORANGE_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -463,7 +465,7 @@ export default function AnalysisPage() {
               alignItems: 'center',
               justifyContent: 'center',
               padding: 24,
-              background: 'rgba(4,12,24,0.72)',
+              background: 'var(--ssc-overlay)',
               backdropFilter: 'blur(12px)',
               WebkitBackdropFilter: 'blur(12px)',
             }}
@@ -478,7 +480,7 @@ export default function AnalysisPage() {
                 borderRadius: 20,
                 padding: '24px 20px 20px',
                 textAlign: 'center',
-                boxShadow: '0 24px 70px rgba(0,0,0,0.46)',
+                boxShadow: 'var(--ssc-shadow-float)',
               }}
             >
               <button
@@ -492,8 +494,8 @@ export default function AnalysisPage() {
                   width: 34,
                   height: 34,
                   borderRadius: 12,
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${BORDER}`,
+                  background: BG_DEEP,
                   color: TEXT_MUT,
                   display: 'flex',
                   alignItems: 'center',
@@ -566,19 +568,19 @@ export default function AnalysisPage() {
         className="sticky top-0 z-50 px-4 flex items-center justify-between"
         style={{
           height: '58px',
-          background: 'rgba(15,32,52,0.88)',
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
-          borderBottom: '1px solid rgba(20,184,166,0.18)',
-          borderRadius: '0 0 22px 22px',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.22)',
+            background: 'rgba(255,255,255,0.92)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            borderBottom: `1px solid ${BORDER}`,
+            borderRadius: '0 0 22px 22px',
+            boxShadow: SOFT_SHADOW,
         }}
       >
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-[11px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
             <BrainSVG size={18} color="#f97316" />
           </div>
-          <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center text-white">
+          <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center" style={{ color: TEXT_PRI }}>
             AI GK Analysis
           </span>
           <span style={{
@@ -593,7 +595,7 @@ export default function AnalysisPage() {
         <WhatsAppBell />
       </div>
 
-      <div style={{ minHeight: '100vh', background: 'var(--bg-app)', padding: '20px 16px 100px', boxSizing: 'border-box' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--ssc-bg)', padding: '20px 16px 100px', boxSizing: 'border-box' }}>
 
         {/* ── Section 2: Your Quiz Activity Card (REAL DATA) ──────────── */}
         {activity === null ? (
@@ -779,7 +781,7 @@ export default function AnalysisPage() {
                               {st.label}
                             </span>
                           </div>
-                          <div className="font-sans" style={{ fontSize: 10, color: st.up ? '#14B8A6' : '#EF4444', lineHeight: 1.3, display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <div className="font-sans" style={{ fontSize: 10, color: st.up ? 'var(--ssc-success)' : 'var(--ssc-danger)', lineHeight: 1.3, display: 'flex', alignItems: 'center', gap: 3 }}>
                             <span style={{ flexShrink: 0 }}>{st.up ? '↑' : '↓'}</span>
                             <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{st.impact}</span>
                           </div>
@@ -798,8 +800,8 @@ export default function AnalysisPage() {
                       <div style={{
                         ...card,
                         border: `1px solid ${st.color}40`,
-                        background: 'linear-gradient(135deg, #1E3554 0%, #172D47 100%)',
-                        boxShadow: `0 0 20px ${st.color}22`,
+                        background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FEFD 100%)',
+                        boxShadow: SOFT_SHADOW,
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                           <span className="font-display" style={{ fontSize: 16, fontWeight: 800, color: TEXT_PRI }}>
@@ -819,7 +821,7 @@ export default function AnalysisPage() {
                         </div>
 
                         {/* Two-tone progress bar with target marker */}
-                        <div style={{ position: 'relative', background: BG_DEEP, borderRadius: 99, height: 10, overflow: 'hidden', marginBottom: 4 }}>
+                        <div style={{ position: 'relative', background: 'var(--ssc-disabled-bg)', borderRadius: 99, height: 10, overflow: 'hidden', marginBottom: 4 }}>
                           <div style={{ width: `${selected.acc}%`, height: '100%', background: st.color, borderRadius: 99, transition: 'width 0.6s ease' }} />
                           <div style={{ position: 'absolute', top: -2, bottom: -2, left: `${targetMarker}%`, width: 2, background: TEAL, opacity: 0.9 }} />
                         </div>
@@ -850,7 +852,7 @@ export default function AnalysisPage() {
 
                         <button
                           onClick={() => router.push(`/quiz-setup?subject=${encodeURIComponent(selected.name)}&topic=${encodeURIComponent(selected.focusTopics[0])}&count=25&sourceScreen=analysis`)}
-                          style={{ width: '100%', padding: '13px 0', borderRadius: 12, background: st.color, border: 'none', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 150ms ease' }}
+                          style={{ width: '100%', padding: '13px 0', borderRadius: 12, background: ORANGE, border: 'none', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 150ms ease', boxShadow: 'var(--ssc-shadow-cta)' }}
                           onPointerDown={e => { e.currentTarget.style.opacity = '0.8'; }}
                           onPointerUp={e => { e.currentTarget.style.opacity = '1'; }}
                           onPointerLeave={e => { e.currentTarget.style.opacity = '1'; }}
@@ -899,7 +901,7 @@ export default function AnalysisPage() {
                     return (
                       <div style={{ marginBottom: 16 }}>
                         {visible.map(({ subject, name, acc, attempted, tags }) => {
-                          const ringColor = acc >= 70 ? '#14B8A6' : acc >= 55 ? '#F59E0B' : '#EF4444';
+                          const ringColor = acc >= 70 ? 'var(--ssc-success)' : acc >= 55 ? 'var(--ssc-warning)' : 'var(--ssc-danger)';
                           return (
                             <div key={name} style={{ ...card, marginBottom: 10, padding: '14px 16px' }}>
                               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -910,7 +912,7 @@ export default function AnalysisPage() {
                                     {' accuracy · '}{attempted} questions attempted
                                   </div>
                                 </div>
-                                <div style={{ width: 32, height: 32, borderRadius: 99, flexShrink: 0, background: `conic-gradient(${ringColor} ${acc * 3.6}deg, #1a2e44 0deg)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <div style={{ width: 32, height: 32, borderRadius: 99, flexShrink: 0, background: `conic-gradient(${ringColor} ${acc * 3.6}deg, var(--ssc-disabled-bg) 0deg)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                   <div style={{ width: 23, height: 23, borderRadius: 99, background: BG_CARD, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <span className="font-sans" style={{ fontSize: 8, fontWeight: 700, color: TEXT_SEC }}>{acc}%</span>
                                   </div>
@@ -954,15 +956,15 @@ export default function AnalysisPage() {
                 {/* Section 8: AI Detailed Analysis — Locked Premium Card */}
                 <div className="reveal" style={{ animationDelay: '240ms' }}>
                   <div style={{
-                    background: 'linear-gradient(140deg, #0e2440 0%, #0d1b2e 100%)',
-                    border: '1px solid rgba(20,184,166,0.4)',
+                    background: 'linear-gradient(140deg, #FFFFFF 0%, #F8FEFD 100%)',
+                    border: '1px solid rgba(14,165,164,0.28)',
                     borderRadius: 20, padding: '18px 18px 16px', marginBottom: 16,
-                    boxShadow: '0 0 24px rgba(20,184,166,0.1)', position: 'relative', overflow: 'hidden',
+                    boxShadow: SOFT_SHADOW, position: 'relative', overflow: 'hidden',
                   }}>
                     <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: 99, background: 'rgba(20,184,166,0.08)', filter: 'blur(24px)', pointerEvents: 'none' }} />
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                       <div style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, background: 'rgba(20,184,166,0.15)', border: '1px solid rgba(20,184,166,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(20,184,166,0.2)' }}>
-                        <BrainSVG size={17} color="#14B8A6" />
+                        <BrainSVG size={17} color={TEAL} />
                       </div>
                       <span className="font-display" style={{ fontSize: 16, fontWeight: 900, color: TEXT_PRI, flex: 1 }}>AI Detailed Analysis</span>
                       <span style={{ fontSize: 9, fontWeight: 700, color: TEAL, background: 'rgba(20,184,166,0.15)', border: '1px solid rgba(20,184,166,0.3)', borderRadius: 99, padding: '3px 10px', letterSpacing: '0.06em', flexShrink: 0 }}>PREMIUM AI</span>
@@ -1003,7 +1005,7 @@ export default function AnalysisPage() {
 
                 {/* Section 9: Interest / Notify CTA Card */}
                 <div id="interest-cta" className="reveal" style={{ animationDelay: '320ms' }}>
-                  <div style={{ ...card, background: 'linear-gradient(160deg, #1E3554 0%, #172D47 60%, #112236 100%)', border: `1px solid ${ORANGE}30`, marginBottom: 16 }}>
+                  <div style={{ ...card, background: 'linear-gradient(160deg, #FFFFFF 0%, #F8FEFD 58%, #FFF7E6 100%)', border: `1px solid rgba(255,106,0,0.22)`, marginBottom: 16 }}>
                     {interestRecorded ? (
                       /* State B — recorded */
                       <div style={{ textAlign: 'center', padding: '8px 0' }}>
@@ -1014,7 +1016,7 @@ export default function AnalysisPage() {
                         <p className="font-sans" style={{ fontSize: 13, color: TEXT_SEC, lineHeight: 1.5, marginBottom: 16 }}>
                           We&apos;ll notify you when personalized AI analysis is ready for your quiz history.
                         </p>
-                        <button disabled style={{ width: '100%', padding: '14px 0', borderRadius: 14, background: 'rgba(255,255,255,0.06)', border: `1px solid ${BORDER}`, color: TEXT_MUT, fontSize: 15, fontWeight: 700, cursor: 'default', fontFamily: 'inherit' }}>
+                        <button disabled style={{ width: '100%', padding: '14px 0', borderRadius: 14, background: 'var(--ssc-disabled-bg)', border: `1px solid ${BORDER}`, color: TEXT_MUT, fontSize: 15, fontWeight: 700, cursor: 'default', fontFamily: 'inherit' }}>
                           Interest Recorded ✓
                         </button>
                       </div>
@@ -1042,7 +1044,7 @@ export default function AnalysisPage() {
                           ))}
                         </div>
                         {ctaError && (
-                          <p className="font-sans" style={{ fontSize: 12, color: '#EF4444', marginBottom: 10 }}>{ctaError}</p>
+                          <p className="font-sans" style={{ fontSize: 12, color: 'var(--ssc-danger)', marginBottom: 10 }}>{ctaError}</p>
                         )}
                         <button
                           onClick={handleCtaClick}

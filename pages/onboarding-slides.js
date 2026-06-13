@@ -11,11 +11,11 @@ const SLIDES = [
   {
     id: 1,
     emoji: '📚',
-    iconGradient: 'linear-gradient(135deg,#3b82f6,#4f46e5)',
-    bgGlow: 'rgba(79,70,229,0.45)',
-    btnGradient: 'linear-gradient(135deg,#3b82f6,#4f46e5)',
-    btnGlow: 'rgba(99,102,241,0.45)',
-    accentColor: '#93c5fd',
+    iconGradient: 'linear-gradient(135deg,#E8F8F6,#FFFFFF)',
+    bgGlow: 'rgba(14,165,164,0.22)',
+    btnGradient: 'linear-gradient(135deg,#FF6A00,#F45100)',
+    btnGlow: 'rgba(255,106,0,0.22)',
+    accentColor: '#0EA5A4',
     tag: 'STEP 01',
     title: 'Pick Your Topic',
     desc: 'Practice Polity, History, Geography, Science and more.',
@@ -23,11 +23,11 @@ const SLIDES = [
   {
     id: 2,
     emoji: '⏱️',
-    iconGradient: 'linear-gradient(135deg,#f97316,#f43f5e)',
-    bgGlow: 'rgba(249,115,22,0.4)',
-    btnGradient: 'linear-gradient(135deg,#f97316,#f43f5e)',
-    btnGlow: 'rgba(249,115,22,0.45)',
-    accentColor: '#fdba74',
+    iconGradient: 'linear-gradient(135deg,#FFF7E6,#FFFFFF)',
+    bgGlow: 'rgba(245,158,11,0.20)',
+    btnGradient: 'linear-gradient(135deg,#FF6A00,#F45100)',
+    btnGlow: 'rgba(255,106,0,0.22)',
+    accentColor: '#F59E0B',
     tag: 'STEP 02',
     title: 'Beat the Clock',
     desc: 'Train with SSC-style timed questions.',
@@ -35,11 +35,11 @@ const SLIDES = [
   {
     id: 3,
     emoji: '⚡',
-    iconGradient: 'linear-gradient(135deg,#14B8A6,#0d9488)',
-    bgGlow: 'rgba(20,184,166,0.4)',
-    btnGradient: 'linear-gradient(135deg,#14B8A6,#0d9488)',
-    btnGlow: 'rgba(20,184,166,0.45)',
-    accentColor: '#2DD4BF',
+    iconGradient: 'linear-gradient(135deg,#E7FAF3,#FFFFFF)',
+    bgGlow: 'rgba(18,184,134,0.20)',
+    btnGradient: 'linear-gradient(135deg,#FF6A00,#F45100)',
+    btnGlow: 'rgba(255,106,0,0.22)',
+    accentColor: '#12B886',
     tag: 'STEP 03',
     title: 'Earn Coins',
     desc: 'Correct answers help you level up from Aspirant to Legend.',
@@ -47,11 +47,11 @@ const SLIDES = [
   {
     id: 4,
     emoji: '🏆',
-    iconGradient: 'linear-gradient(135deg,#fbbf24,#f97316)',
-    bgGlow: 'rgba(245,158,11,0.4)',
-    btnGradient: 'linear-gradient(135deg,#fbbf24,#f97316)',
-    btnGlow: 'rgba(245,158,11,0.45)',
-    accentColor: '#fde68a',
+    iconGradient: 'linear-gradient(135deg,#FFF7E6,#FFFFFF)',
+    bgGlow: 'rgba(246,179,49,0.22)',
+    btnGradient: 'linear-gradient(135deg,#FF6A00,#F45100)',
+    btnGlow: 'rgba(255,106,0,0.22)',
+    accentColor: '#F6B331',
     tag: 'STEP 04',
     title: 'Climb the Rank',
     desc: 'Compete weekly and see where you stand.',
@@ -59,11 +59,11 @@ const SLIDES = [
   {
     id: 5,
     emoji: '🔥',
-    iconGradient: 'linear-gradient(135deg,#8b5cf6,#9333ea)',
-    bgGlow: 'rgba(139,92,246,0.4)',
-    btnGradient: 'linear-gradient(135deg,#FF8A1F,#FF5A00)',
-    btnGlow: 'rgba(255,107,22,0.45)',
-    accentColor: '#c4b5fd',
+    iconGradient: 'linear-gradient(135deg,#F3F0FF,#FFFFFF)',
+    bgGlow: 'rgba(109,93,246,0.18)',
+    btnGradient: 'linear-gradient(135deg,#FF6A00,#F45100)',
+    btnGlow: 'rgba(255,106,0,0.22)',
+    accentColor: '#6D5DF6',
     tag: 'STEP 05',
     title: 'Build a Habit',
     desc: 'One quiz a day keeps GK fresh.',
@@ -141,8 +141,7 @@ export default function OnboardingSlides() {
           height: '100svh',
           minHeight: '100dvh',
           WebkitTapHighlightColor: 'transparent',
-          /* Full-screen dark base */
-          background: 'var(--bg-app)',
+          background: 'var(--ssc-bg)',
         }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -159,7 +158,7 @@ export default function OnboardingSlides() {
         {/* ── Progress bar + Skip ── */}
         <div className="relative z-10 flex-shrink-0 px-6 pt-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-sans font-semibold text-xs" style={{ color: 'rgba(255,255,255,0.38)' }}>
+            <span className="font-sans font-semibold text-xs" style={{ color: 'var(--ssc-text-secondary)' }}>
               {current + 1}/{SLIDES.length}
             </span>
             {!isLast && (
@@ -167,7 +166,7 @@ export default function OnboardingSlides() {
                 onClick={() => { setOnboardingDone(); router.push('/dashboard'); }}
                 className="font-sans font-medium text-xs active:opacity-40 transition-opacity"
                 style={{
-                  color: 'rgba(255,255,255,0.38)',
+                  color: 'var(--ssc-text-secondary)',
                   minHeight: 44,
                   padding: '8px 12px',
                   margin: '-8px -12px',
@@ -182,7 +181,7 @@ export default function OnboardingSlides() {
           </div>
           <div
             className="w-full rounded-full overflow-hidden"
-            style={{ height: 3, background: 'rgba(255,255,255,0.1)' }}
+            style={{ height: 3, background: 'var(--ssc-border-soft)' }}
           >
             <div
               style={{
@@ -206,7 +205,7 @@ export default function OnboardingSlides() {
               height: 116,
               background: slide.iconGradient,
               fontSize: 52,
-              boxShadow: `0 12px 48px ${slide.bgGlow}, 0 0 0 10px rgba(255,255,255,0.05)`,
+              boxShadow: `0 12px 48px ${slide.bgGlow}, var(--ssc-shadow-card)`,
             }}
           >
             {slide.emoji}
@@ -218,12 +217,13 @@ export default function OnboardingSlides() {
           key={`card-${animKey}`}
           className="ob-card relative z-10 flex-shrink-0 mx-4"
           style={{
-            background: 'rgba(13,22,38,0.88)',
+            background: 'var(--ssc-surface)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: '1px solid var(--ssc-border-soft)',
             borderRadius: 28,
             padding: 24,
+            boxShadow: 'var(--ssc-shadow-float)',
             /* leave room for the fixed button below */
             marginBottom: 'calc(100px + env(safe-area-inset-bottom))',
           }}
@@ -238,7 +238,7 @@ export default function OnboardingSlides() {
 
           <h1
             key={`title-${animKey}`}
-            className="ob-title font-display font-black text-[26px] leading-tight text-white mb-2"
+            className="ob-title font-display font-black text-[26px] leading-tight text-ssc-text-primary mb-2"
           >
             {slide.title}
           </h1>
@@ -246,7 +246,7 @@ export default function OnboardingSlides() {
           <p
             key={`desc-${animKey}`}
             className="ob-desc font-sans text-sm leading-relaxed"
-            style={{ color: 'rgba(148,163,184,0.85)' }}
+            style={{ color: 'var(--ssc-text-secondary)' }}
           >
             {slide.desc}
           </p>
