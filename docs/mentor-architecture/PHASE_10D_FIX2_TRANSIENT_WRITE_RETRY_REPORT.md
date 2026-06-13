@@ -21,12 +21,14 @@ This makes each per-task write (status update **and** its event) survive a trans
 |---|---|
 | `lib/mentor/repository/sheetsMutationRepository.js` | `isRetriableSheetsError` + `withRetry`; `createSheetsIo` wraps read/update/append with retry; both helpers exported. |
 | `scripts/test-mentor-sheets-retry.js` (new) | 9 unit tests for classification + retry behavior (injected no-op sleep; no real delays). |
+| `scripts/test-mentor-rollover-write.js` | `R-FIX2a/b` — **executor-level** orphan-prevention tests over a real repository + fake Sheet that injects one transient `append` failure. |
 | `package.json` | `test:mentor-sheets-retry` script. |
 | `docs/.../PHASE_10D_R2_...md`, `PHASE_10D_FIX2_...md` | R2 outcome + this report. |
 
 ## 4. Tests / build
 - `test:mentor-sheets-retry` **9/9** (transient HTTP retriable; network retriable; 4xx not retriable; domain errors never retriable; succeeds after 2 transient failures; no retry on deterministic; exhausts bounded attempts; immediate success).
-- Regression: `rollover-write` 30/30, `monitor-alerts` 26/26, `rollover-dry-run` 11/11, `route-readiness` 12/12, `sheets-writer` 23/23, `state-machine` 45/45, `plan-day` 25/25, `allow-all` 10/10, `api-optimization` 42/42. **Build ✓.**
+- **Orphan-prevention (the R2 scenario), `test:mentor-rollover-write` R-FIX2a:** the real `createSheetsMutationRepository`/`PlanWriter`/`IdempotencyStore` run over a fake Sheet whose **first `append` throws a 503** — exactly a transient failure on the task's event write right after its status update. Asserts the moved task ends up `pending` **with exactly one `daily_rollover` event** (not orphaned, not duplicated), RowVersion incremented once, the active-row `LastProcessedCalendarDay` written, and the `ROLLOVER` row finalized. `R-FIX2b` is the no-failure control (clean single pass).
+- Regression: `rollover-write` **32/32**, `monitor-alerts` 26/26, `rollover-dry-run` 11/11, `route-readiness` 12/12, `sheets-writer` 23/23, `state-machine` 45/45, `plan-day` 25/25, `allow-all` 10/10, `api-optimization` 42/42. **Build ✓.**
 
 ## 5. Scope / safety
 No behavior change for the success path or for deterministic failures; only transient errors are now retried (bounded). No env, no flags, no deploy, no Sheet writes in this phase.
