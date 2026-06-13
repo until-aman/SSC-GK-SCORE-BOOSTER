@@ -12,7 +12,7 @@ import { getUserCacheScope } from '@/lib/userCacheScope';
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 const OPTION_KEYS   = ['optionA', 'optionB', 'optionC', 'optionD'];
 
-/* ── Helpers ──────────────────────────────────────────────────────────── */
+/* â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const COLLECTION_DISPLAY_NAMES = { PYQ: 'SSC PYQ', Parmar: 'Parmar SSC' };
 function getDisplaySubject(subject, collection) {
   if (!subject) return subject;
@@ -38,28 +38,29 @@ function formatSavedDate(ts) {
 
 function BookmarkIcon({ filled = true, size = 18 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? '#14B8A6' : 'none'} stroke={filled ? '#14B8A6' : '#64748B'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? 'var(--ssc-teal)' : 'none'} stroke={filled ? 'var(--ssc-teal)' : 'var(--ssc-text-secondary)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" />
     </svg>
   );
 }
 
-/* ── Compact list card ────────────────────────────────────────────────── */
+/* â”€â”€ Compact list card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function QuestionRow({ q, index, onView, onUnsave }) {
   const savedLabel = formatSavedDate(q.savedAt || q.createdAt);
   return (
     <div style={{
-      background: '#172D47', border: '1px solid rgba(255,255,255,0.08)',
+      background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)',
       borderRadius: 18, padding: '14px 16px', paddingRight: 54, marginBottom: 10,
       position: 'relative',
+      boxShadow: 'var(--ssc-shadow-card)',
     }}>
       <button
         onClick={() => onUnsave(q.questionId)}
         style={{
           position: 'absolute', top: 12, right: 12,
           width: 32, height: 32, borderRadius: 12,
-          background: 'rgba(15,23,42,0.36)',
-          border: '1px solid rgba(148,163,184,0.14)',
+          background: 'var(--ssc-teal-soft)',
+          border: '1px solid rgba(14,165,164,0.18)',
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}
         title="Remove bookmark"
@@ -68,49 +69,49 @@ function QuestionRow({ q, index, onView, onUnsave }) {
         <BookmarkIcon filled size={15} />
       </button>
 
-      {/* Subject • Topic */}
+      {/* Subject â€¢ Topic */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
         {q.subject && (
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#14B8A6', background: 'rgba(20,184,166,0.10)', borderRadius: 99, padding: '2px 9px' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)', borderRadius: 99, padding: '2px 9px' }}>
             {getDisplaySubject(q.subject, q.collection)}
           </span>
         )}
         {q.topic && (
           <>
-            <span style={{ fontSize: 10, color: '#4A5568' }}>•</span>
-            <span style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>{q.topic}</span>
+            <span style={{ fontSize: 10, color: 'var(--ssc-text-muted)' }}>•</span>
+            <span style={{ fontSize: 11, color: 'var(--ssc-text-secondary)', fontWeight: 500 }}>{q.topic}</span>
           </>
         )}
       </div>
 
-      {/* Question preview — 2 lines */}
+      {/* Question preview â€” 2 lines */}
       <p style={{
-        fontSize: 14, fontWeight: 600, color: '#E2E8F0', lineHeight: 1.45,
+        fontSize: 14, fontWeight: 700, color: 'var(--ssc-text-primary)', lineHeight: 1.45,
         overflow: 'hidden', display: '-webkit-box',
         WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', margin: '0 0 12px',
       }}>
         {q.question}
       </p>
 
-      {/* Footer: saved date + View → */}
+      {/* Footer: saved date + View â†’ */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 11, color: '#475569' }}>{savedLabel || 'Saved'}</span>
+        <span style={{ fontSize: 11, color: 'var(--ssc-text-muted)' }}>{savedLabel || 'Saved'}</span>
         <button
           onClick={() => onView(index)}
           style={{
-            background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.15)',
+            background: 'var(--ssc-surface-soft)', border: '1px solid var(--ssc-border-soft)',
             borderRadius: 10, padding: '5px 12px', cursor: 'pointer',
-            fontSize: 12, fontWeight: 700, color: '#94A3B8',
+            fontSize: 12, fontWeight: 700, color: 'var(--ssc-teal)',
           }}
         >
-          View →
+          View &rarr;
         </button>
       </div>
     </div>
   );
 }
 
-/* ── Full-screen revision overlay ─────────────────────────────────────── */
+/* â”€â”€ Full-screen revision overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
   const [idx, setIdx]                     = useState(startIndex);
   const [revealed, setRevealed]           = useState(false);
@@ -154,9 +155,9 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, background: 'var(--bg-app)', zIndex: 60,
+        position: 'fixed', inset: 0, background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)', zIndex: 60,
         display: 'flex', flexDirection: 'column', maxWidth: 430, margin: '0 auto',
-        boxShadow: '0 0 0 1px rgba(20,184,166,0.10)',
+        boxShadow: '0 0 0 1px rgba(14,165,164,0.10)',
       }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
@@ -165,33 +166,33 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
       <div style={{
         minHeight: 64, padding: '12px 16px', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'rgba(12,31,52,0.96)',
-        borderBottom: '1px solid rgba(20,184,166,0.18)',
+        background: 'rgba(255,255,255,0.96)',
+        borderBottom: '1px solid var(--ssc-border-soft)',
         borderRadius: '0 0 22px 22px',
-        boxShadow: '0 14px 34px rgba(0,0,0,0.18)',
+        boxShadow: 'var(--ssc-shadow-card)',
       }}>
         <button
           onClick={onClose}
           style={{
             width: 36, height: 36, borderRadius: '50%',
-            background: 'rgba(255,122,26,0.12)', border: '1px solid rgba(255,122,26,0.22)',
+            background: 'var(--ssc-orange-soft, #FFF3E8)', border: '1px solid rgba(255,106,0,0.20)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
           }}
           aria-label="Close"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF7A1A" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-orange)" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
         <div style={{ textAlign: 'center', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <p style={{ fontSize: 15, fontWeight: 800, color: '#F8FAFC', margin: 0, fontFamily: 'var(--font-display)' }}>Saved Revision</p>
+            <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--ssc-text-primary)', margin: 0, fontFamily: 'var(--font-display)' }}>Saved Revision</p>
             <span style={{
-              fontSize: 9, fontWeight: 800, color: '#F59E0B',
+              fontSize: 9, fontWeight: 800, color: 'var(--ssc-warning)',
               border: '1px solid rgba(245,158,11,0.30)', borderRadius: 999,
               padding: '3px 7px', letterSpacing: '0.02em',
-              background: 'rgba(245,158,11,0.08)',
+              background: 'var(--ssc-warning-soft)',
             }}>SAVED</span>
           </div>
-          <p style={{ fontSize: 12, color: '#64748B', margin: '3px 0 0', fontWeight: 700 }}>{idx + 1} / {total}</p>
+          <p style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', margin: '3px 0 0', fontWeight: 700 }}>{idx + 1} / {total}</p>
         </div>
         {/* Spacer keeps title centred */}
         <div style={{ width: 36 }} />
@@ -200,33 +201,33 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
       {/* Scrollable body */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '18px 16px 18px' }}>
         <section style={{
-          background: '#172D47',
-          border: '1px solid rgba(148,163,184,0.12)',
+          background: 'var(--ssc-surface)',
+          border: '1px solid var(--ssc-border-soft)',
           borderRadius: 22,
           padding: '16px 16px 14px',
-          boxShadow: '0 14px 30px rgba(0,0,0,0.14)',
+          boxShadow: 'var(--ssc-shadow-card)',
         }}>
 
-        {/* Subject • Topic */}
+        {/* Subject â€¢ Topic */}
         {(q.subject || q.topic) && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12, flexWrap: 'wrap' }}>
             {q.subject && (
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#14B8A6', background: 'rgba(20,184,166,0.10)', borderRadius: 99, padding: '2px 10px' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)', borderRadius: 99, padding: '2px 10px' }}>
                 {getDisplaySubject(q.subject, q.collection)}
               </span>
             )}
             {q.topic && (
-              <span style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>{q.topic}</span>
+              <span style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', fontWeight: 600 }}>{q.topic}</span>
             )}
           </div>
         )}
 
         {/* Question */}
-        <p className="t-body" style={{ color: '#F8FAFC', fontWeight: 800, marginBottom: 18, lineHeight: 1.55 }}>
+        <p className="t-body" style={{ color: 'var(--ssc-text-primary)', fontWeight: 800, marginBottom: 18, lineHeight: 1.55 }}>
           {q.question}
         </p>
 
-        {/* Options — tappable before reveal */}
+        {/* Options â€” tappable before reveal */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
           {OPTION_LABELS.map((label, i) => {
             const text       = q[OPTION_KEYS[i]];
@@ -238,17 +239,17 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
             // Compute per-state colours
             let rowBg, rowBorder, textColor, dotBg, dotColor;
             if (isCorrect) {
-              rowBg = 'rgba(20,184,166,0.10)'; rowBorder = 'rgba(20,184,166,0.35)';
-              textColor = '#14B8A6'; dotBg = '#14B8A6'; dotColor = '#0F172A';
+              rowBg = 'var(--ssc-success-soft)'; rowBorder = 'rgba(18,184,134,0.36)';
+              textColor = 'var(--ssc-success)'; dotBg = 'var(--ssc-success)'; dotColor = '#FFFFFF';
             } else if (isWrong) {
-              rowBg = 'rgba(239,68,68,0.10)'; rowBorder = 'rgba(239,68,68,0.35)';
-              textColor = '#FCA5A5'; dotBg = 'rgba(239,68,68,0.65)'; dotColor = '#FFF';
+              rowBg = 'var(--ssc-danger-soft)'; rowBorder = 'rgba(239,68,68,0.34)';
+              textColor = 'var(--ssc-danger)'; dotBg = 'var(--ssc-danger)'; dotColor = '#FFF';
             } else if (isSelected) {
-              rowBg = 'rgba(99,102,241,0.12)'; rowBorder = 'rgba(99,102,241,0.50)';
-              textColor = '#C7D2FE'; dotBg = 'rgba(99,102,241,0.70)'; dotColor = '#FFF';
+              rowBg = 'var(--ssc-teal-soft)'; rowBorder = 'rgba(14,165,164,0.45)';
+              textColor = 'var(--ssc-teal)'; dotBg = 'var(--ssc-teal)'; dotColor = '#FFF';
             } else {
-              rowBg = 'rgba(255,255,255,0.04)'; rowBorder = 'rgba(148,163,184,0.10)';
-              textColor = '#94A3B8'; dotBg = 'rgba(148,163,184,0.15)'; dotColor = '#64748B';
+              rowBg = 'var(--ssc-surface-soft)'; rowBorder = 'var(--ssc-border-soft)';
+              textColor = 'var(--ssc-text-primary)'; dotBg = 'var(--ssc-teal-soft)'; dotColor = 'var(--ssc-teal)';
             }
 
             return (
@@ -280,30 +281,30 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
                   {text}
                 </span>
                 {isCorrect && (
-                  <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-success)" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                 )}
                 {isWrong && (
-                  <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FCA5A5" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-danger)" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 )}
               </button>
             );
           })}
         </div>
 
-        {/* Correct / Wrong result badge — shown after reveal when user picked an option */}
+        {/* Correct / Wrong result badge â€” shown after reveal when user picked an option */}
         {revealed && selectedOption && (
           <div style={{
             textAlign: 'center', marginBottom: 14,
             fontSize: 14, fontWeight: 700,
-            color: selectedOption === q.correctOption ? '#14B8A6' : '#FCA5A5',
+            color: selectedOption === q.correctOption ? 'var(--ssc-success)' : 'var(--ssc-danger)',
           }}>
             {selectedOption === q.correctOption
-              ? '✓ Correct!'
-              : `✗ Incorrect — answer is ${q.correctOption}`}
+              ? 'Correct!'
+              : `Incorrect - answer is ${q.correctOption}`}
           </div>
         )}
 
-        {/* Show / Check Answer button — hidden once revealed */}
+        {/* Show / Check Answer button â€” hidden once revealed */}
         {!revealed && (
           <button
             onClick={handleReveal}
@@ -312,35 +313,35 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
               border: 'none', cursor: 'pointer',
               background: selectedOption
                 ? 'linear-gradient(135deg, #FF7A1A, #FF5A00)'
-                : 'linear-gradient(135deg, #1E40AF, #2563EB)',
+                : 'linear-gradient(135deg, var(--ssc-teal), #0C8F8D)',
               color: '#FFFFFF', fontSize: 16, fontWeight: 700,
               marginBottom: 8,
               transition: 'background 200ms ease',
             }}
           >
-            {selectedOption ? 'Check Answer →' : 'Show Answer'}
+            {selectedOption ? 'Check Answer ->' : 'Show Answer'}
           </button>
         )}
 
-        {/* Answer + explanation — shown after reveal */}
+        {/* Answer + explanation â€” shown after reveal */}
         {revealed && (
           <>
-            <div style={{ background: 'rgba(20,184,166,0.07)', border: '1px solid rgba(20,184,166,0.24)', borderRadius: 16, padding: '14px 16px', marginBottom: 16 }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#14B8A6', marginBottom: q.explanation ? 10 : 0 }}>
+            <div style={{ background: 'var(--ssc-teal-soft)', border: '1px solid rgba(14,165,164,0.24)', borderRadius: 16, padding: '14px 16px', marginBottom: 16 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ssc-teal)', marginBottom: q.explanation ? 10 : 0 }}>
                 Correct Answer: {q.correctOption}
               </p>
               {q.explanation && (
-                <p style={{ fontSize: 13, color: '#94A3B8', lineHeight: 1.65, margin: 0 }}>
+                <p style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', lineHeight: 1.65, margin: 0 }}>
                   {q.explanation}
                 </p>
               )}
             </div>
 
-            {/* Secondary actions — muted, not loud */}
+            {/* Secondary actions â€” muted, not loud */}
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 24, paddingBottom: 8 }}>
               <button
                 onClick={() => onUnsave(q.questionId)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#64748B', fontWeight: 700 }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ssc-text-secondary)', fontWeight: 700 }}
               >
                 <BookmarkIcon filled size={13} />
                 Remove from Saved
@@ -348,9 +349,9 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
               <button
                 onClick={handleMarkRevised}
                 disabled={markedDone}
-                style={{ background: 'none', border: 'none', cursor: markedDone ? 'default' : 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: markedDone ? '#14B8A6' : '#64748B', fontWeight: 700 }}
+                style={{ background: 'none', border: 'none', cursor: markedDone ? 'default' : 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: markedDone ? 'var(--ssc-success)' : 'var(--ssc-text-secondary)', fontWeight: 700 }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={markedDone ? '#14B8A6' : '#64748B'} strokeWidth="2.5" strokeLinecap="round">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={markedDone ? 'var(--ssc-success)' : 'var(--ssc-text-secondary)'} strokeWidth="2.5" strokeLinecap="round">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
                 {markedDone ? 'Marked as Revised' : 'Mark as Revised'}
@@ -361,11 +362,11 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
         </section>
       </div>
 
-      {/* Footer nav — Previous | Next */}
+      {/* Footer nav â€” Previous | Next */}
       <div style={{
         padding: '12px 16px 24px', flexShrink: 0,
-        borderTop: '1px solid rgba(148,163,184,0.10)',
-        background: 'linear-gradient(180deg, rgba(7,24,42,0.76), rgba(7,24,42,0.98))',
+        borderTop: '1px solid var(--ssc-border-soft)',
+        background: 'rgba(255,255,255,0.96)',
         display: 'flex', alignItems: 'center', gap: 10,
       }}>
         <button
@@ -374,13 +375,13 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           style={{
             flex: 1, height: 48, borderRadius: 14,
             cursor: idx === 0 ? 'default' : 'pointer',
-            background: 'rgba(23,45,71,0.82)',
-            border: '1px solid rgba(148,163,184,0.14)',
-            color: idx === 0 ? 'rgba(255,255,255,0.20)' : '#F8FAFC',
+            background: idx === 0 ? 'var(--ssc-disabled-bg)' : 'var(--ssc-surface-soft)',
+            border: '1px solid var(--ssc-border-soft)',
+            color: idx === 0 ? 'var(--ssc-disabled-text)' : 'var(--ssc-text-primary)',
             fontSize: 14, fontWeight: 700,
           }}
         >
-          ← Previous
+          Previous
         </button>
         <button
           onClick={goNext}
@@ -389,15 +390,15 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
             flex: 1, height: 48, borderRadius: 14,
             cursor: idx === total - 1 ? 'default' : 'pointer',
             background: idx === total - 1
-              ? 'rgba(23,45,71,0.82)'
+              ? 'var(--ssc-disabled-bg)'
               : 'linear-gradient(135deg, #FF7A1A, #FF5A00)',
-            border: idx === total - 1 ? '1px solid rgba(148,163,184,0.12)' : 'none',
-            color: idx === total - 1 ? 'rgba(255,255,255,0.20)' : '#FFFFFF',
+            border: idx === total - 1 ? '1px solid var(--ssc-border-soft)' : 'none',
+            color: idx === total - 1 ? 'var(--ssc-disabled-text)' : '#FFFFFF',
             fontSize: 14, fontWeight: 700,
             boxShadow: idx === total - 1 ? 'none' : '0 10px 28px rgba(255,90,0,0.26)',
           }}
         >
-          Next →
+          Next
         </button>
       </div>
     </div>
@@ -437,7 +438,7 @@ export default function HistorySavedPage() {
   const isLoggedIn = status === 'authenticated';
   const isGuest    = status === 'unauthenticated';
 
-  // ── Load questions ────────────────────────────────────────────────────
+  // â”€â”€ Load questions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (status === 'loading') return;
 
@@ -451,7 +452,7 @@ export default function HistorySavedPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, isLoggedIn]);
 
-  // ── Load revised IDs ──────────────────────────────────────────────────
+  // â”€â”€ Load revised IDs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     try {
       const raw = localStorage.getItem('ssc_revised_questions');
@@ -459,14 +460,14 @@ export default function HistorySavedPage() {
     } catch {}
   }, []);
 
-  // ── Unsave ────────────────────────────────────────────────────────────
+  // â”€â”€ Unsave â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleUnsave = useCallback(async (questionId) => {
     const updated = questions.filter(q => q.questionId !== questionId);
     setQuestions(updated);
     if (updated.length === 0) setRevisionIdx(null);
 
     if (isLoggedIn) {
-      // Shared helper (existing DELETE route) → also patches scoped IDs/list
+      // Shared helper (existing DELETE route) â†’ also patches scoped IDs/list
       // caches + marks History caches stale. No list refetch.
       try { await unsaveQuestion({ scope: getUserCacheScope(session), questionId }); } catch { /* optimistic list already updated */ }
     } else {
@@ -474,7 +475,7 @@ export default function HistorySavedPage() {
     }
   }, [isLoggedIn, questions, session]);
 
-  // ── Mark as revised ───────────────────────────────────────────────────
+  // â”€â”€ Mark as revised â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function markRevised(questionId) {
     setRevisedIds(prev => {
       const next = new Set(prev);
@@ -484,10 +485,10 @@ export default function HistorySavedPage() {
     });
   }
 
-  // ── Reset visible count when filters/search/sort change ──────────────
+  // â”€â”€ Reset visible count when filters/search/sort change â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => { setVisibleCount(20); }, [searchQuery, activeFilter, sortOrder, questions]);
 
-  // ── Infinite scroll sentinel ──────────────────────────────────────────
+  // â”€â”€ Infinite scroll sentinel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
@@ -497,9 +498,9 @@ export default function HistorySavedPage() {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }); // intentionally no deps — re-attaches after each render so sentinel stays tracked
+  }); // intentionally no deps â€” re-attaches after each render so sentinel stays tracked
 
-  // ── Practice all ─────────────────────────────────────────────────────
+  // â”€â”€ Practice all â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function startPractice(pool) {
     // Map to quiz-compatible shape
     const quizQuestions = pool.map(q => ({
@@ -518,11 +519,11 @@ export default function HistorySavedPage() {
     router.push(`/quiz?mode=saved&count=${quizQuestions.length}&sourceScreen=saved`);
   }
 
-  // ── Stats ─────────────────────────────────────────────────────────────
+  // â”€â”€ Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const unrevisedCount = questions.filter(q => !revisedIds.has(q.questionId)).length;
   const wrongCount     = questions.filter(q => q.userAnswer && q.userAnswer !== q.correctOption).length;
 
-  // ── Filter + search + sort ────────────────────────────────────────────
+  // â”€â”€ Filter + search + sort â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   let filtered = [...questions];
 
   if (searchQuery.trim()) {
@@ -564,16 +565,16 @@ export default function HistorySavedPage() {
     ...uniqueSubjects.map(s => ({ key: s, label: s })),
   ];
 
-  // ── Loading ───────────────────────────────────────────────────────────
+  // â”€â”€ Loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen [background:var(--bg-app)] pb-24">
+      <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-24">
         <HistoryTopBar title="Saved Questions" showBack />
         <div className="px-4 pt-5 pb-5">
-          <p className="t-page-subtitle text-slate-400">Build your personal revision bank</p>
+          <p className="t-page-subtitle text-[var(--ssc-text-secondary)]">Build your personal revision bank</p>
         </div>
         <div className="px-4">
-          <Loader card size="md" label="Fetching your saved questions…" />
+          <Loader card size="md" label="Fetching your saved questions..." />
         </div>
       </div>
     );
@@ -581,13 +582,13 @@ export default function HistorySavedPage() {
 
   return (
     <>
-      <Head><title>Saved Questions — SSC GK Score Booster</title></Head>
-      <div className="min-h-screen [background:var(--bg-app)] pb-24">
+      <Head><title>Saved Questions - SSC GK Score Booster</title></Head>
+      <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-24">
         <HistoryTopBar title="Saved Questions" showBack />
 
         {/* Header */}
         <div className="px-4 pt-5 pb-5">
-          <p className="t-page-subtitle text-slate-400">Build your personal revision bank</p>
+          <p className="t-page-subtitle text-[var(--ssc-text-secondary)]">Build your personal revision bank</p>
         </div>
 
         {/* Guest sign-in banner */}
@@ -602,7 +603,7 @@ export default function HistorySavedPage() {
         )}
 
         {questions.length === 0 ? (
-          /* ── Empty state ── */
+          /* â”€â”€ Empty state â”€â”€ */
           <>
           <style suppressHydrationWarning>{`
             @keyframes ctaBeat {
@@ -622,34 +623,34 @@ export default function HistorySavedPage() {
           <div className="flex flex-col items-center px-6 gap-3" style={{ paddingTop: 20, paddingBottom: 32 }}>
             <div style={{
               width: 72, height: 72, borderRadius: '50%',
-              background: 'rgba(139, 92, 246, 0.14)',
-              border: '1px solid rgba(139, 92, 246, 0.35)',
-              boxShadow: '0 0 30px rgba(139, 92, 246, 0.12)',
+              background: 'var(--ssc-teal-soft)',
+              border: '1px solid rgba(14,165,164,0.24)',
+              boxShadow: 'var(--ssc-shadow-card)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(167,139,250,1)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"/>
               </svg>
             </div>
-            <p className="font-display font-bold text-lg text-white text-center">No saved questions yet</p>
-            <p className="font-sans font-medium text-sm text-slate-400 text-center max-w-[260px] leading-relaxed">
+            <p className="font-display font-bold text-lg text-[var(--ssc-text-primary)] text-center">No saved questions yet</p>
+            <p className="font-sans font-medium text-sm text-[var(--ssc-text-secondary)] text-center max-w-[260px] leading-relaxed">
               Save tough questions while practicing and revise them later.
             </p>
             <div className="flex flex-col gap-2.5 w-full max-w-[300px]">
               {[
-                { emoji: '🔖', title: 'During Quiz',   desc: 'Tap bookmark on any question' },
-                { emoji: '📊', title: 'After Quiz',    desc: 'Save questions from Detailed Analysis' },
+                { emoji: 'Bookmark', title: 'During Quiz',   desc: 'Tap bookmark on any question' },
+                { emoji: 'Chart', title: 'After Quiz',    desc: 'Save questions from Detailed Analysis' },
               ].map(({ emoji, title, desc }) => (
                 <div key={title} style={{
-                  background: 'rgba(31, 41, 55, 0.65)',
-                  border: '1px solid rgba(148, 163, 184, 0.12)',
+                  background: 'var(--ssc-surface)',
+                  border: '1px solid var(--ssc-border-soft)',
                   borderRadius: 16, padding: '12px 14px',
                   display: 'flex', alignItems: 'center', gap: 12,
                 }}>
                   <span style={{ fontSize: 20, flexShrink: 0, lineHeight: 1 }}>{emoji}</span>
                   <div>
-                    <p className="font-display font-bold text-xs text-white leading-none mb-1">{title}</p>
-                    <p className="font-sans text-xs text-slate-400 leading-snug">{desc}</p>
+                    <p className="font-display font-bold text-xs text-[var(--ssc-text-primary)] leading-none mb-1">{title}</p>
+                    <p className="font-sans text-xs text-[var(--ssc-text-secondary)] leading-snug">{desc}</p>
                   </div>
                 </div>
               ))}
@@ -669,20 +670,20 @@ export default function HistorySavedPage() {
               onPointerUp={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.animation = ''; }}
               onPointerLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.animation = ''; }}
             >
-              Start Practice →
+              Start Practice &rarr;
             </button>
 
             {/* Why save questions? */}
             <div style={{
               alignSelf: 'stretch',
-              background: 'rgba(15, 23, 42, 0.7)',
-              border: '1px solid rgba(148, 163, 184, 0.12)',
+              background: 'var(--ssc-teal-soft)',
+              border: '1px solid var(--ssc-border-soft)',
               borderRadius: 18,
               padding: '14px 16px',
               marginTop: 4,
             }}>
-              <p className="font-display font-bold text-xs text-slate-300 mb-1">💡 Why save questions?</p>
-              <p className="font-sans text-xs text-slate-500 leading-relaxed">
+              <p className="font-display font-bold text-xs text-[var(--ssc-text-primary)] mb-1">Tip: Why save questions?</p>
+              <p className="font-sans text-xs text-[var(--ssc-text-secondary)] leading-relaxed">
                 Revise only the questions you found tricky instead of repeating everything.
               </p>
             </div>
@@ -703,8 +704,8 @@ export default function HistorySavedPage() {
                   onChange={e => setSearchQuery(e.target.value)}
                   style={{
                     width: '100%', padding: '10px 12px 10px 36px',
-                    background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.14)',
-                    borderRadius: 14, fontSize: 13, color: '#E2E8F0',
+                    background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)',
+                    borderRadius: 14, fontSize: 13, color: 'var(--ssc-text-primary)',
                     outline: 'none', fontFamily: 'inherit',
                   }}
                 />
@@ -731,9 +732,9 @@ export default function HistorySavedPage() {
                   className="flex-shrink-0"
                   style={{
                     borderRadius: 99, padding: '8px 15px', fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',
-                    background: activeFilter === key ? '#14B8A6' : 'rgba(23,45,71,0.8)',
-                    color: activeFilter === key ? '#fff' : '#64748B',
-                    border: activeFilter === key ? 'none' : '1px solid rgba(148,163,184,0.14)',
+                    background: activeFilter === key ? 'var(--ssc-teal)' : 'var(--ssc-surface)',
+                    color: activeFilter === key ? '#fff' : 'var(--ssc-text-secondary)',
+                    border: activeFilter === key ? 'none' : '1px solid var(--ssc-border-soft)',
                   }}
                 >
                   {label}
@@ -743,15 +744,15 @@ export default function HistorySavedPage() {
 
             {/* Count + sort row */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingLeft: 16, paddingRight: 16, marginBottom: 18 }}>
-              <span style={{ fontSize: 12, color: '#475569', fontWeight: 500 }}>
+              <span style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', fontWeight: 500 }}>
                 {filtered.length} question{filtered.length !== 1 ? 's' : ''}
               </span>
               <select
                 value={sortOrder}
                 onChange={e => setSortOrder(e.target.value)}
                 style={{
-                  background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(148,163,184,0.14)',
-                  borderRadius: 12, padding: '8px 12px', minHeight: 36, fontSize: 12, color: '#94A3B8',
+                  background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)',
+                  borderRadius: 12, padding: '8px 12px', minHeight: 36, fontSize: 12, color: 'var(--ssc-text-secondary)',
                   cursor: 'pointer', fontWeight: 600, outline: 'none', fontFamily: 'inherit',
                 }}
               >
@@ -765,8 +766,8 @@ export default function HistorySavedPage() {
             {/* Question list */}
             <div className="px-4" style={{ paddingBottom: filtered.length > 0 ? 96 : 16 }}>
               {filtered.length === 0 ? (
-                <div style={{ background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.10)', borderRadius: 16, padding: '32px 16px', textAlign: 'center' }}>
-                  <p style={{ fontSize: 13, color: '#475569', margin: 0 }}>
+                <div style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', borderRadius: 16, padding: '32px 16px', textAlign: 'center' }}>
+                  <p style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', margin: 0 }}>
                     {searchQuery.trim() ? `No questions match "${searchQuery}"` : `No ${activeFilter.toLowerCase()} questions`}
                   </p>
                 </div>
@@ -781,10 +782,10 @@ export default function HistorySavedPage() {
                       onUnsave={handleUnsave}
                     />
                   ))}
-                  {/* Sentinel — triggers next page when scrolled into view */}
+                  {/* Sentinel â€” triggers next page when scrolled into view */}
                   {visibleCount < filtered.length && (
                     <div ref={sentinelRef} style={{ padding: '12px 0', textAlign: 'center' }}>
-                      <span style={{ fontSize: 12, color: '#4A5568' }}>
+                      <span style={{ fontSize: 12, color: 'var(--ssc-text-muted)' }}>
                         Showing {Math.min(visibleCount, filtered.length)} of {filtered.length}
                       </span>
                     </div>
@@ -793,7 +794,7 @@ export default function HistorySavedPage() {
               )}
             </div>
 
-            {/* Start Revision CTA — sticky above bottom nav */}
+            {/* Start Revision CTA â€” sticky above bottom nav */}
             {filtered.length > 0 && (
               <div
                 className="fixed bottom-[74px] left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-2 z-40"
@@ -809,7 +810,7 @@ export default function HistorySavedPage() {
                   className="w-full font-display font-bold text-base text-white active:scale-[0.98] transition-transform"
                   style={{ borderRadius: 18, padding: '16px 0', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #FF7A1A, #FF4D00)', boxShadow: '0 10px 28px rgba(255,90,0,0.30)' }}
                 >
-                  Start Revision: {filtered.length} Question{filtered.length !== 1 ? 's' : ''} →
+                  Start Revision: {filtered.length} Question{filtered.length !== 1 ? 's' : ''} &rarr;
                 </button>
               </div>
             )}

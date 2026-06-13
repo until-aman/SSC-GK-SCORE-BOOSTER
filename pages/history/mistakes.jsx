@@ -17,15 +17,15 @@ const RepeatedMistakesIcon = (
 );
 
 const TONES = {
-  green: ['#86efac', 'rgba(34,197,94,.12)'],
-  amber: ['#fcd34d', 'rgba(245,158,11,.12)'],
-  red: ['#fca5a5', 'rgba(239,68,68,.12)'],
-  blue: ['#93c5fd', 'rgba(59,130,246,.12)'],
+  green: ['#12B886', 'var(--ssc-success-soft)'],
+  amber: ['#F59E0B', 'var(--ssc-warning-soft)'],
+  red: ['#EF4444', 'var(--ssc-danger-soft)'],
+  blue: ['#2563EB', 'var(--ssc-info-soft)'],
 };
 
 function BookmarkIcon({ filled }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? '#14B8A6' : 'none'} stroke={filled ? '#14B8A6' : '#64748b'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? 'var(--ssc-teal)' : 'none'} stroke={filled ? 'var(--ssc-teal)' : 'var(--ssc-text-secondary)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" />
     </svg>
   );
@@ -66,8 +66,8 @@ function buildCountOptions(items, keyName) {
 function EmptyPanel({ title, body, action, onClick }) {
   return (
     <section className="history-card text-center">
-      <p className="font-display font-black text-white">{title}</p>
-      <p className="mt-1 mb-4 text-sm text-slate-400">{body}</p>
+      <p className="font-display font-black text-[var(--ssc-text-primary)]">{title}</p>
+      <p className="mt-1 mb-4 text-sm text-[var(--ssc-text-secondary)]">{body}</p>
       {action ? <button type="button" className="primary-btn" onClick={onClick}>{action}</button> : null}
     </section>
   );
@@ -111,8 +111,8 @@ function QuestionCard({ item, isOpen, onToggleOpen, onPracticeOne, onToggleSave 
       <p className="question-preview font-display">{item.questionPreview || item.question}</p>
 
       <div className="question-stat-row">
-        <span className="text-red-300">Wrong {wrongCount}x</span>
-        <span className="text-slate-400">Skipped {skippedCount}x</span>
+        <span className="text-[var(--ssc-danger)]">Wrong {wrongCount}x</span>
+        <span className="text-[var(--ssc-text-secondary)]">Skipped {skippedCount}x</span>
       </div>
 
       {isOpen ? (
@@ -134,7 +134,7 @@ function QuestionCard({ item, isOpen, onToggleOpen, onPracticeOne, onToggleSave 
           <p className="expanded-attempt">Last attempt: {statusText} &middot; {formatDate(item.lastAttemptedAt)}</p>
           <div className="divider" />
           <p className="expanded-label">Explanation</p>
-          {item.explanation ? <p className="text-sm leading-relaxed text-slate-300">{item.explanation}</p> : <p className="text-sm text-slate-500">No official explanation available.</p>}
+          {item.explanation ? <p className="text-sm leading-relaxed text-[var(--ssc-text-secondary)]">{item.explanation}</p> : <p className="text-sm text-[var(--ssc-text-muted)]">No official explanation available.</p>}
         </div>
       ) : null}
 
@@ -291,17 +291,17 @@ export default function RepeatedMistakesPage() {
 
   const styles = `
     .history-shell{padding:16px 16px calc(158px + env(safe-area-inset-bottom))}
-    .intro-block{margin-bottom:12px}.intro-subtitle{color:#94a3b8;font-size:13px;line-height:1.45;margin:0}
-    .history-card{background:#172d47;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;margin-bottom:12px}
-    .question-card{padding:11px 14px}.question-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.question-kicker{color:#5eead4;font-size:11px;font-weight:900;margin:0;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.question-badge{font-size:10px;padding:4px 8px;max-width:132px;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.question-preview{color:#f8fafc;font-size:13px;font-weight:900;line-height:1.38;margin:9px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.question-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;padding:8px 0 0;border-top:1px solid rgba(148,163,184,.10);font-size:12px;font-weight:900;white-space:nowrap}.question-stat-row span+span:before{content:'';margin:0}.question-actions{display:grid;grid-template-columns:1fr .72fr 40px;gap:8px;margin-top:11px;align-items:center}.save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid rgba(148,163,184,.14);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;transition:transform .12s ease,background .12s ease,border-color .12s ease}.save-icon-btn:active{transform:scale(.92)}.save-icon-btn.saved{border-color:rgba(20,184,166,.40);background:rgba(20,184,166,.18)}
-    .chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin-left:-16px;margin-right:-16px;padding:0 16px 14px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.chip{border:1px solid rgba(148,163,184,.14);border-radius:999px;background:rgba(23,45,71,.92);color:#8da0b8;font-size:12px;font-weight:800;padding:7px 13px;white-space:nowrap;text-transform:capitalize;flex:0 0 auto}.chip.active{background:rgba(255,122,26,.17);border-color:rgba(255,122,26,.52);color:#fdba74;box-shadow:0 5px 16px rgba(255,90,0,.08)}
-    .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;min-height:40px}.primary-btn{border:0;background:linear-gradient(135deg,#ff7a1a,#ff4d00);color:white;box-shadow:0 8px 22px rgba(255,90,0,.16)}.secondary-btn{border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.04);color:#cbd5e1}.primary-btn:disabled,.secondary-btn:disabled{opacity:.45;cursor:default;box-shadow:none}
-    .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}.divider{height:1px;background:rgba(255,255,255,.07);margin:12px 0}.question-expanded{overflow:hidden;margin-top:12px;padding:11px;border:1px solid rgba(148,163,184,.10);border-radius:14px;background:rgba(15,23,42,.30)}.expanded-block{margin-bottom:10px}.expanded-label{color:#94a3b8;font-size:10px;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px}.expanded-question{color:#f8fafc;font-size:13px;font-weight:900;line-height:1.48;margin:0}.expanded-attempt{color:#64748b;font-size:11px;font-weight:800;margin:9px 0 0}.answer-detail-grid{display:grid;gap:8px}.answer-detail{border:1px solid rgba(148,163,184,.10);background:rgba(255,255,255,.035);border-radius:12px;padding:9px 10px}.answer-detail span{display:block;color:#94a3b8;font-size:10px;font-weight:900;margin-bottom:4px}.answer-detail b{display:block;font-size:12px;line-height:1.4}.answer-detail.correct b{color:#5eead4}.answer-detail.wrong b{color:#fca5a5}.answer-detail.skipped b{color:#93a4ba}
-    .mistake-filter-group{margin-bottom:16px}.mistake-filter-group .chip-row{padding-bottom:0}.mistake-filter-label{display:block;margin:0 0 10px 2px;color:#cbd5e1;font-size:12px;font-weight:900;line-height:1}.active-filter-summary{margin:-2px 2px 14px;color:#94a3b8;font-size:12px;font-weight:800;line-height:1.4}
+    .intro-block{margin-bottom:12px}.intro-subtitle{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:0}
+    .history-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
+    .question-card{padding:12px 14px}.question-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.question-kicker{color:var(--ssc-teal);font-size:11px;font-weight:900;margin:0;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.question-badge{font-size:10px;padding:4px 8px;max-width:132px;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.question-preview{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.38;margin:9px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.question-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;padding:8px 0 0;border-top:1px solid var(--ssc-border-soft);font-size:12px;font-weight:900;white-space:nowrap}.question-stat-row span+span:before{content:'';margin:0}.question-actions{display:grid;grid-template-columns:1fr .72fr 40px;gap:8px;margin-top:11px;align-items:center}.save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);display:flex;align-items:center;justify-content:center;transition:transform .12s ease,background .12s ease,border-color .12s ease}.save-icon-btn:active{transform:scale(.92)}.save-icon-btn.saved{border-color:rgba(14,165,164,.34);background:var(--ssc-teal-soft)}
+    .chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin-left:-16px;margin-right:-16px;padding:0 16px 14px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:800;padding:7px 13px;white-space:nowrap;text-transform:capitalize;flex:0 0 auto}.chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 8px 18px rgba(14,165,164,.16)}
+    .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;min-height:40px}.primary-btn{border:0;background:linear-gradient(135deg,#ff7a1a,#ff4d00);color:white;box-shadow:var(--ssc-shadow-cta)}.secondary-btn{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-teal)}.primary-btn:disabled,.secondary-btn:disabled{opacity:.55;cursor:default;box-shadow:none}
+    .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}.divider{height:1px;background:var(--ssc-border-soft);margin:12px 0}.question-expanded{overflow:hidden;margin-top:12px;padding:11px;border:1px solid var(--ssc-border-soft);border-radius:14px;background:var(--ssc-surface-soft)}.expanded-block{margin-bottom:10px}.expanded-label{color:var(--ssc-text-muted);font-size:10px;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px}.expanded-question{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.48;margin:0}.expanded-attempt{color:var(--ssc-text-muted);font-size:11px;font-weight:800;margin:9px 0 0}.answer-detail-grid{display:grid;gap:8px}.answer-detail{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface);border-radius:12px;padding:9px 10px}.answer-detail span{display:block;color:var(--ssc-text-muted);font-size:10px;font-weight:900;margin-bottom:4px}.answer-detail b{display:block;font-size:12px;line-height:1.4}.answer-detail.correct{background:var(--ssc-success-soft);border-color:rgba(18,184,134,.28)}.answer-detail.wrong{background:var(--ssc-danger-soft);border-color:rgba(239,68,68,.28)}.answer-detail.correct b{color:var(--ssc-success)}.answer-detail.wrong b{color:var(--ssc-danger)}.answer-detail.skipped b{color:var(--ssc-text-secondary)}
+    .mistake-filter-group{margin-bottom:16px}.mistake-filter-group .chip-row{padding-bottom:0}.mistake-filter-label{display:block;margin:0 0 10px 2px;color:var(--ssc-text-primary);font-size:12px;font-weight:900;line-height:1}.active-filter-summary{margin:-2px 2px 14px;color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.4}
   `;
 
   return (
-    <div className="min-h-screen [background:var(--bg-app)] pb-28">
+    <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-28">
       <Head><title>Repeated Mistakes - SSC GK Score Booster</title></Head>
       <style>{styles}</style>
       <HistoryTopBar title="Repeated Mistakes" icon={RepeatedMistakesIcon} showBack />
@@ -336,7 +336,7 @@ export default function RepeatedMistakesPage() {
               <p className="active-filter-summary">Showing: {activeMistakeSummary}</p>
 
               <div className="history-card">
-                <p className="font-display font-black text-white">{practiceCount} repeated questions found</p>
+                <p className="font-display font-black text-[var(--ssc-text-primary)]">{practiceCount} repeated questions found</p>
                 {practiceCount > 0 ? (
                   <button type="button" className="primary-btn mt-3 w-full" disabled={starting} onClick={() => startPractice({})}>
                     {starting ? 'Starting...' : `Practice All ${practiceCount}`}

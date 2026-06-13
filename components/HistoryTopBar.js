@@ -33,12 +33,12 @@ export default function HistoryTopBar({ title, badge = 'HISTORY', icon = DEFAULT
       className="sticky top-0 z-50 px-4 flex items-center justify-between"
       style={{
         height: '58px',
-        background: 'rgba(15,32,52,0.88)',
+        background: 'rgba(255,255,255,0.94)',
         backdropFilter: 'blur(14px)',
         WebkitBackdropFilter: 'blur(14px)',
-        borderBottom: '1px solid rgba(20,184,166,0.18)',
+        borderBottom: '1px solid var(--ssc-border-soft)',
         borderRadius: '0 0 22px 22px',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.22)',
+        boxShadow: '0 10px 30px rgba(16,32,51,0.08)',
       }}
     >
       <button
@@ -47,10 +47,10 @@ export default function HistoryTopBar({ title, badge = 'HISTORY', icon = DEFAULT
         className="flex items-center gap-2.5 min-w-0 text-left"
         style={{ border: 0, background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}
       >
-        <span className="w-8 h-8 rounded-[11px] bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+        <span className="w-8 h-8 rounded-[11px] flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,106,0,0.10)' }}>
           {showBack ? BackIcon : icon}
         </span>
-        <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center text-white truncate">
+        <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center truncate" style={{ color: 'var(--ssc-text-primary)' }}>
           {title}
         </span>
         <span
@@ -58,9 +58,9 @@ export default function HistoryTopBar({ title, badge = 'HISTORY', icon = DEFAULT
           style={{
             fontSize: 9,
             fontWeight: 800,
-            color: '#F59E0B',
-            background: 'rgba(245,158,11,0.15)',
-            border: '1px solid rgba(245,158,11,0.25)',
+            color: 'var(--ssc-teal)',
+            background: 'var(--ssc-teal-soft)',
+            border: '1px solid rgba(14,165,164,0.20)',
             borderRadius: 99,
             padding: '3px 8px',
             letterSpacing: '0.05em',
