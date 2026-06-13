@@ -23,7 +23,7 @@ const LEVEL_THRESHOLDS = {
 };
 
 const ChevronSVG = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-slate-500">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--ssc-text-muted)]">
     <path d="M9 18l6-6-6-6" strokeLinecap="round"/>
   </svg>
 );
@@ -82,11 +82,11 @@ export default function Profile() {
   return (
     <>
       <Head><title>Profile — SSC GK Score Booster</title></Head>
-      <div className="h-screen flex flex-col overflow-hidden pb-16">
+      <div className="h-screen flex flex-col overflow-hidden pb-16 bg-[var(--ssc-bg)]">
 
         {/* Header bar h-14 */}
         <div className="h-14 px-4 flex items-center flex-shrink-0">
-          <h1 className="t-page-title font-display text-white">Profile</h1>
+          <h1 className="t-page-title font-display text-[var(--ssc-text-primary)]">Profile</h1>
         </div>
 
         {/* Scrollable content */}
@@ -96,13 +96,14 @@ export default function Profile() {
           <div
             className="flex items-center gap-4 px-5 py-5"
             style={{
-              background: '#172D47',
-              border: '1px solid rgba(255,255,255,0.10)',
+              background: 'var(--ssc-surface)',
+              border: '1px solid var(--ssc-border-soft)',
               borderRadius: 22,
+              boxShadow: 'var(--ssc-shadow-card)',
             }}
           >
             {/* Avatar */}
-            <div className="w-[72px] h-[72px] rounded-full overflow-hidden border-2 border-white/20 flex-shrink-0 bg-white/10">
+            <div className="w-[72px] h-[72px] rounded-full overflow-hidden border-2 border-[rgba(14,165,164,0.24)] flex-shrink-0 bg-[var(--ssc-teal-soft)]">
               {isLoggedIn && session?.user?.image ? (
                 <Image
                   src={session.user.image}
@@ -114,7 +115,7 @@ export default function Profile() {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <span className="font-display font-black text-3xl text-white">
+                  <span className="font-display font-black text-3xl text-[var(--ssc-teal)]">
                     {displayName.charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -123,29 +124,29 @@ export default function Profile() {
 
             {/* Info */}
             <div className="flex flex-col gap-1 min-w-0 flex-1">
-              <span className="t-page-title font-display text-white truncate">
+              <span className="t-page-title font-display text-[var(--ssc-text-primary)] truncate">
                 {displayName}
               </span>
               {isLoggedIn && session?.user?.email && (
-                <span className="font-sans text-xs text-white/45 truncate">
+                <span className="font-sans text-xs text-[var(--ssc-text-secondary)] truncate">
                   @{session.user.email.split('@')[0]}
                 </span>
               )}
               {memberSince && (
-                <span className="font-sans text-xs text-white/35">Member since {memberSince}</span>
+                <span className="font-sans text-xs text-[var(--ssc-text-muted)]">Member since {memberSince}</span>
               )}
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 {isLoggedIn ? (
-                  <span className="t-badge" style={{ background: 'rgba(253,186,59,0.15)', border: '1px solid rgba(253,186,59,0.3)', color: '#FDBA3B', borderRadius: 999, padding: '2px 10px' }}>
+                  <span className="t-badge" style={{ background: 'rgba(246,179,49,0.16)', border: '1px solid rgba(246,179,49,0.28)', color: 'var(--ssc-coin)', borderRadius: 999, padding: '2px 10px' }}>
                     ⭐ {level}
                   </span>
                 ) : (
-                  <span className="t-badge" style={{ background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.2)', color: '#94a3b8', borderRadius: 999, padding: '2px 10px' }}>
+                  <span className="t-badge" style={{ background: 'var(--ssc-disabled-bg)', border: '1px solid var(--ssc-border-soft)', color: 'var(--ssc-text-secondary)', borderRadius: 999, padding: '2px 10px' }}>
                     Guest Mode
                   </span>
                 )}
                 {isLoggedIn && (
-                  <span className="t-badge" style={{ background: 'rgba(253,186,59,0.10)', border: '1px solid rgba(253,186,59,0.2)', color: '#FDBA3B', borderRadius: 999, padding: '2px 10px' }}>
+                  <span className="t-badge" style={{ background: 'rgba(246,179,49,0.12)', border: '1px solid rgba(246,179,49,0.24)', color: 'var(--ssc-coin)', borderRadius: 999, padding: '2px 10px' }}>
                     🪙 {totalCoins.toLocaleString()} coins
                   </span>
                 )}
@@ -159,33 +160,33 @@ export default function Profile() {
             <button
               onClick={() => !isGuest && router.push('/history')}
               className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
-              style={{ background: '#172D47', border: '1px solid rgba(20,184,166,0.20)' }}
+              style={{ background: 'var(--ssc-surface)', border: '1px solid rgba(246,179,49,0.26)', boxShadow: 'var(--ssc-shadow-card)' }}
             >
               <span className="text-lg leading-none mb-0.5">🪙</span>
-              <span className="t-stat-sm font-display" style={{ color: '#14B8A6' }}>{isGuest ? '—' : totalCoins.toLocaleString()}</span>
-              <span className="t-stat-label font-sans text-slate-500">Total Coins</span>
+              <span className="t-stat-sm font-display" style={{ color: 'var(--ssc-coin)' }}>{isGuest ? '—' : totalCoins.toLocaleString()}</span>
+              <span className="t-stat-label font-sans text-[var(--ssc-text-muted)]">Total Coins</span>
             </button>
 
             {/* Streak → Streak History */}
             <button
               onClick={() => !isGuest && router.push('/streak')}
               className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
-              style={{ background: '#172D47', border: '1px solid rgba(255,107,22,0.20)' }}
+              style={{ background: 'var(--ssc-surface)', border: '1px solid rgba(245,158,11,0.26)', boxShadow: 'var(--ssc-shadow-card)' }}
             >
               <span className="text-lg leading-none mb-0.5">🔥</span>
-              <span className="t-stat-sm font-display text-orange-400">{isGuest ? '—' : streak}</span>
-              <span className="t-stat-label font-sans text-slate-500">Day Streak</span>
+              <span className="t-stat-sm font-display text-[var(--ssc-streak)]">{isGuest ? '—' : streak}</span>
+              <span className="t-stat-label font-sans text-[var(--ssc-text-muted)]">Day Streak</span>
             </button>
 
             {/* Level → level modal */}
             <button
               onClick={() => !isGuest && setLevelModal(true)}
               className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
-              style={{ background: '#172D47', border: '1px solid rgba(124,92,255,0.20)' }}
+              style={{ background: 'var(--ssc-surface)', border: '1px solid rgba(109,93,246,0.24)', boxShadow: 'var(--ssc-shadow-card)' }}
             >
               <span className="text-lg leading-none mb-0.5">⭐</span>
-              <span className="t-stat-sm font-display text-violet-400 text-center">{isGuest ? '—' : level}</span>
-              <span className="t-stat-label font-sans text-slate-500">Level</span>
+              <span className="t-stat-sm font-display text-[var(--ssc-rank)] text-center">{isGuest ? '—' : level}</span>
+              <span className="t-stat-label font-sans text-[var(--ssc-text-muted)]">Level</span>
             </button>
           </div>
 
@@ -198,14 +199,14 @@ export default function Profile() {
           {(() => {
             const achievementsList = [
               // Unlocked based on real profile data
-              { icon: '🔥', label: '1-Day\nStreak',      color: '#f97316', glow: 'rgba(249,115,22,0.22)',  unlocked: !isGuest && streak >= 1  },
+              { icon: '🔥', label: '1-Day\nStreak',      color: 'var(--ssc-orange)', glow: 'rgba(249,115,22,0.22)',  unlocked: !isGuest && streak >= 1  },
               { icon: '🧠', label: 'GK\nStarter',         color: '#22d3ee', glow: 'rgba(34,211,238,0.22)',  unlocked: !isGuest && totalCoins > 0  },
-              { icon: '⚡', label: 'Daily\nChallenger',   color: '#a78bfa', glow: 'rgba(167,139,250,0.22)', unlocked: !isGuest && totalCoins >= 50 },
+              { icon: '⚡', label: 'Daily\nChallenger',   color: 'var(--ssc-rank)', glow: 'rgba(167,139,250,0.22)', unlocked: !isGuest && totalCoins >= 50 },
               { icon: '🌟', label: '3-Day\nStreak',       color: '#fbbf24', glow: 'rgba(251,191,36,0.22)',  unlocked: !isGuest && streak >= 3  },
-              { icon: '🔥', label: '7-Day\nStreak',       color: '#f97316', glow: 'rgba(249,115,22,0.22)',  unlocked: !isGuest && streak >= 7  },
+              { icon: '🔥', label: '7-Day\nStreak',       color: 'var(--ssc-orange)', glow: 'rgba(249,115,22,0.22)',  unlocked: !isGuest && streak >= 7  },
               { icon: '🏆', label: 'Champion',            color: '#fbbf24', glow: 'rgba(251,191,36,0.22)',  unlocked: !isGuest && ['Champion','Legend'].includes(level) },
               { icon: '👑', label: 'Legend',              color: '#fbbf24', glow: 'rgba(251,191,36,0.22)',  unlocked: !isGuest && level === 'Legend' },
-              { icon: '📚', label: '100\nQuizzes',        color: '#14B8A6', glow: 'rgba(20,184,166,0.22)',  unlocked: false },
+              { icon: '📚', label: '100\nQuizzes',        color: 'var(--ssc-teal)', glow: 'rgba(20,184,166,0.22)',  unlocked: false },
               { icon: '🏅', label: 'Top 100\nRank',       color: '#60a5fa', glow: 'rgba(96,165,250,0.22)',  unlocked: false },
             ];
 
@@ -215,9 +216,9 @@ export default function Profile() {
 
             return (
               <div className="mt-4">
-                <h2 className="t-card-title font-display text-white mb-2 px-1">
+                <h2 className="t-card-title font-display text-[var(--ssc-text-primary)] mb-2 px-1">
                   Achievements
-                  <span className="font-sans font-semibold text-xs text-slate-500 ml-2">
+                  <span className="font-sans font-semibold text-xs text-[var(--ssc-text-muted)] ml-2">
                     {unlocked.length}/{achievementsList.length}
                   </span>
                 </h2>
@@ -230,9 +231,9 @@ export default function Profile() {
                       key={badge.label}
                       style={{
                         background: badge.unlocked
-                          ? `radial-gradient(ellipse at top, ${badge.glow}, transparent 72%), rgba(255,255,255,0.04)`
-                          : 'rgba(255,255,255,0.025)',
-                        border: `1px solid ${badge.unlocked ? badge.glow : 'rgba(255,255,255,0.06)'}`,
+                          ? `radial-gradient(ellipse at top, ${badge.glow}, transparent 72%), #FFFFFF`
+                          : 'var(--ssc-disabled-bg)',
+                        border: `1px solid ${badge.unlocked ? badge.glow : 'var(--ssc-border-soft)'}`,
                         borderRadius: 16,
                         padding: '14px 10px 10px',
                         minWidth: 78,
@@ -245,7 +246,7 @@ export default function Profile() {
                         opacity: badge.unlocked ? 1 : 0.38,
                         filter: badge.unlocked ? 'none' : 'grayscale(1)',
                         transition: 'opacity 0.2s ease',
-                        boxShadow: badge.unlocked ? `0 4px 18px ${badge.glow}` : 'none',
+                        boxShadow: badge.unlocked ? `0 8px 20px ${badge.glow}` : 'none',
                       }}
                     >
                       <span style={{ fontSize: 26, lineHeight: 1, filter: badge.unlocked ? 'none' : 'grayscale(1)' }}>
@@ -254,7 +255,7 @@ export default function Profile() {
                       <span style={{
                         fontSize: 10,
                         fontWeight: 700,
-                        color: badge.unlocked ? badge.color : '#475569',
+                        color: badge.unlocked ? badge.color : 'var(--ssc-disabled-text)',
                         textAlign: 'center',
                         lineHeight: 1.35,
                         whiteSpace: 'pre-line',
@@ -273,39 +274,39 @@ export default function Profile() {
             {/* Streak History */}
             <button
               onClick={() => router.push('/streak')}
-              className="w-full rounded-2xl px-4 py-4 flex items-center gap-3 active:scale-[0.98] transition-transform" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}
+              className="w-full rounded-2xl px-4 py-4 flex items-center gap-3 active:scale-[0.98] transition-transform" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="#f97316">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--ssc-orange)">
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
               </svg>
-              <span className="t-card-subtitle font-sans text-white flex-1 text-left">Streak History</span>
+              <span className="t-card-subtitle font-sans text-[var(--ssc-text-primary)] flex-1 text-left">Streak History</span>
               <ChevronSVG />
             </button>
 
             {/* Coins History */}
             <button
               onClick={() => router.push('/history')}
-              className="w-full rounded-2xl px-4 py-4 flex items-center gap-3 active:scale-[0.98] transition-transform" style={{ background: '#172D47', border: '1px solid rgba(255,255,255,0.08)' }}
+              className="w-full rounded-2xl px-4 py-4 flex items-center gap-3 active:scale-[0.98] transition-transform" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="1.5">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="1.5">
                 <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <span className="t-card-subtitle font-sans text-white flex-1 text-left">Coins History</span>
+              <span className="t-card-subtitle font-sans text-[var(--ssc-text-primary)] flex-1 text-left">Coins History</span>
               <ChevronSVG />
             </button>
 
             {/* Sign Out / Sign In */}
             {isLoggedIn ? (
               <div className="mt-1">
-                <p className="t-section-label font-sans text-slate-500 px-1">Account</p>
+                <p className="t-section-label font-sans text-[var(--ssc-text-muted)] px-1">Account</p>
                 <button
                   onClick={() => signOut({ callbackUrl: '/' })}
                   className="w-full flex items-center gap-2 px-1 py-2 active:opacity-60 transition-opacity"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                   </svg>
-                  <span className="font-sans text-sm text-red-400">Sign out</span>
+                  <span className="font-sans text-sm text-[var(--ssc-danger)]">Sign out</span>
                 </button>
               </div>
             ) : (
@@ -325,18 +326,18 @@ export default function Profile() {
       {levelModal && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.65)' }}
+          style={{ background: 'var(--ssc-overlay)' }}
           onClick={() => setLevelModal(false)}
         >
           <div
             className="w-full max-w-[430px] px-5 pt-5 pb-10"
-            style={{ background: '#172D47', borderRadius: '22px 22px 0 0', border: '1px solid rgba(255,255,255,0.10)' }}
+            style={{ background: 'var(--ssc-surface)', borderRadius: '22px 22px 0 0', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-float)' }}
             onClick={e => e.stopPropagation()}
           >
             {/* Handle */}
-            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'rgba(255,255,255,0.15)' }} />
-            <h3 className="font-display font-black text-lg text-white mb-1">Level Progress</h3>
-            <p className="font-sans text-xs text-slate-400 mb-4">Earn Coins by completing quizzes to level up.</p>
+            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'var(--ssc-border-soft)' }} />
+            <h3 className="font-display font-black text-lg text-[var(--ssc-text-primary)] mb-1">Level Progress</h3>
+            <p className="font-sans text-xs text-[var(--ssc-text-secondary)] mb-4">Earn Coins by completing quizzes to level up.</p>
 
             {/* Level table */}
             <div className="flex flex-col gap-2">
@@ -347,8 +348,8 @@ export default function Profile() {
                   <div
                     key={lvl}
                     style={{
-                      background: isCurrent ? 'rgba(167,139,250,0.12)' : 'rgba(255,255,255,0.03)',
-                      border: isCurrent ? '1px solid rgba(167,139,250,0.35)' : '1px solid rgba(255,255,255,0.06)',
+                      background: isCurrent ? 'rgba(109,93,246,0.10)' : 'var(--ssc-surface-soft)',
+                      border: isCurrent ? '1px solid rgba(109,93,246,0.28)' : '1px solid var(--ssc-border-soft)',
                       borderRadius: 14,
                       padding: '10px 14px',
                       display: 'flex',
@@ -358,12 +359,12 @@ export default function Profile() {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: 16 }}>{isUnlocked ? '⭐' : '🔒'}</span>
-                      <span style={{ fontWeight: 700, fontSize: 14, color: isCurrent ? '#c4b5fd' : isUnlocked ? '#ffffff' : '#64748b' }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: isCurrent ? 'var(--ssc-rank)' : isUnlocked ? 'var(--ssc-text-primary)' : 'var(--ssc-text-muted)' }}>
                         {lvl}
-                        {isCurrent && <span style={{ fontSize: 10, marginLeft: 6, color: '#a78bfa', fontWeight: 600 }}>← You</span>}
+                        {isCurrent && <span style={{ fontSize: 10, marginLeft: 6, color: 'var(--ssc-rank)', fontWeight: 600 }}>← You</span>}
                       </span>
                     </div>
-                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>
+                    <span style={{ fontSize: 12, color: 'var(--ssc-text-muted)', fontWeight: 600 }}>
                       {next ? `${min}–${max} Coins` : `${min}+ Coins`}
                     </span>
                   </div>
@@ -373,8 +374,8 @@ export default function Profile() {
 
             <button
               onClick={() => setLevelModal(false)}
-              className="w-full mt-4 py-3 font-display font-bold text-sm text-white active:scale-[0.98] transition-transform"
-              style={{ background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.3)', borderRadius: 14 }}
+              className="w-full mt-4 py-3 font-display font-bold text-sm text-[var(--ssc-rank)] active:scale-[0.98] transition-transform"
+              style={{ background: 'rgba(109,93,246,0.10)', border: '1px solid rgba(109,93,246,0.24)', borderRadius: 14 }}
             >
               Got it
             </button>
