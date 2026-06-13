@@ -13,6 +13,7 @@
     "test:mentor-rollover": "node scripts/test-mentor-daily-rollover.js",
     "test:mentor-sheets": "node scripts/test-mentor-sheets-migration.js",
     "test:mentor-sheets-writer": "node scripts/test-mentor-sheets-writer.js",
+    "test:mentor-sheets-retry": "node scripts/test-mentor-sheets-retry.js",
     "test:mentor-mutation-service": "node scripts/test-mentor-mutation-service.js",
     "test:mentor-read-overlay": "node scripts/test-mentor-read-overlay.js",
     "test:mentor-v2-postpone": "node scripts/test-mentor-v2-postpone.js",
