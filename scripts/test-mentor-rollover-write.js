@@ -169,7 +169,7 @@ test('14. already-processed day -> no-op, no writes', async () => {
 });
 test('15. plan.js calls the executor ONLY inside the rollover-eligibility gate', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'pages', 'api', 'mentor', 'plan.js'), 'utf8');
-  assert.ok(/if \(isMentorDailyRolloverUserAllowed\(userScope\)\)[\s\S]{0,400}executeDailyRolloverWrite\(/.test(src), 'executor must be gated by isMentorDailyRolloverUserAllowed');
+  assert.ok(/if \(isMentorDailyRolloverUserAllowed\(userScope\)\)[\s\S]{0,1200}executeDailyRolloverWrite\(/.test(src), 'executor must be gated by isMentorDailyRolloverUserAllowed');
   assert.ok(/userScopeFromIdentity\(\{ email: session\.user\.email \}\)/.test(src), 'real userScope, not placeholder');
   assert.ok(!/userScope:\s*['"]authenticated['"]/.test(src), 'placeholder "authenticated" removed');
 });
@@ -345,6 +345,24 @@ test('R-FIX2b. control: no transient failure -> clean single-pass full move (eve
   assert.strictEqual(logsOf(sheets).filter(row => row[2] === 'T1').length, 1, 'one event, no duplicate');
   assert.strictEqual(planActive(sheets)[5], '2');
   assert.ok(mreqOf(sheets).some(row => String(row[4]).toUpperCase() === 'ROLLOVER'));
+});
+
+// ---- Phase 10D-FIX-3: the eligible rollover WRITE must be AWAITED before the HTTP response ----
+// (Vercel freezes the serverless function once res.json returns, truncating any un-awaited
+// fire-and-forget write mid-sequence — the root cause of the R2 partial failures.)
+test('R-FIX3. eligible rollover write is awaited before res.json (not fire-and-forget)', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'pages', 'api', 'mentor', 'plan.js'), 'utf8');
+  // the eligible-cohort branch awaits the write
+  const m = src.match(/if \(isMentorDailyRolloverUserAllowed\(userScope\)\) \{([\s\S]*?)await executeDailyRolloverWrite\(/);
+  assert.ok(m, 'eligible branch must await executeDailyRolloverWrite');
+  // ...and reach it directly (NOT inside a fire-and-forget .then chain)
+  assert.ok(!m[1].includes('.then('), 'eligible write path must be awaited directly, not wrapped in .then(');
+  // ...and that await must occur textually BEFORE the response is sent
+  const awaitIdx = src.indexOf('await executeDailyRolloverWrite(');
+  const resIdx = src.indexOf('return res.status(200).json(snapshot)');
+  assert.ok(awaitIdx > -1 && resIdx > -1 && awaitIdx < resIdx, 'write must be awaited before res.json is returned');
+  // a write failure must not bubble to a 500 — it is caught/logged, response still 200
+  assert.ok(/\[mentor-rollover-write\] threw/.test(src), 'write errors must be caught and logged, not fail the plan response');
 });
 
 (async () => { for (const t of T) { try { await t.fn(); passed++; console.log(`ok  ${t.n}`); } catch (e) { failed++; console.error(`FAIL ${t.n}\n     ${e.message}`); } } console.log(`\n${passed}/${T.length} Mentor rollover WRITE tests passed.`); process.exit(failed ? 1 : 0); })();
