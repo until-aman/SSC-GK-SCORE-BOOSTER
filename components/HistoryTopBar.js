@@ -13,7 +13,7 @@ const BackIcon = (
   </svg>
 );
 
-export default function HistoryTopBar({ title, badge = 'HISTORY', icon = DEFAULT_ICON, backHref = '/history', showBack = false }) {
+export default function HistoryTopBar({ title, badge = 'HISTORY', icon = DEFAULT_ICON, backHref = '/history', showBack = false, rightAction = null }) {
   const router = useRouter();
 
   function handleBack() {
@@ -70,6 +70,7 @@ export default function HistoryTopBar({ title, badge = 'HISTORY', icon = DEFAULT
           {badge}
         </span>
       </button>
+      {rightAction && <div className="flex-shrink-0">{rightAction}</div>}
     </div>
   );
 }

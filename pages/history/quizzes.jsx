@@ -88,6 +88,20 @@ function formatDate(value) {
   return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
 }
 
+function formatFullDateTime(value) {
+  if (!value) return 'Recently';
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return 'Recently';
+  const day = date.getDate();
+  const month = date.toLocaleDateString('en-IN', { month: 'short' });
+  const year = date.getFullYear();
+  const hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const h12 = hours % 12 || 12;
+  return `${day} ${month} ${year}, ${h12}:${minutes} ${ampm}`;
+}
+
 function formatRangeDate(value) {
   if (!value) return '';
   const date = new Date(`${value}T00:00:00`);
@@ -191,41 +205,62 @@ function QuizCard({ session, onReview, onPractice }) {
   const tone = TONES[session.badgeTone] || TONES.amber;
   return (
     <article className="history-card quiz-card">
+      {/* Header row: title + status pill */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h3 className="quiz-title font-display">{session.subject} &middot; {session.topic}</h3>
-          <p className="quiz-date">{formatDate(session.completedAt)}</p>
+          <h3 className="quiz-title font-display">{session.subject} – {session.topic}</h3>
+          <p className="quiz-date">{session.questionCount} Questions &middot; {formatFullDateTime(session.completedAt)}</p>
         </div>
-        <span className="tone-pill quiz-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{session.badge}</span>
+        <span className="tone-pill quiz-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}33` }}>{session.badge}</span>
       </div>
 
-      <div className="quiz-metric-row">
-        <div className="quiz-metric">
-          <strong className="font-display">{session.score} / {maxScore}</strong>
-          <span>Score</span>
+      {/* 5-column stats row */}
+      <div className="quiz-stats-row">
+        <div className="quiz-stat">
+          <strong className="font-display quiz-stat-value">{session.score}/{maxScore}</strong>
+          <span className="quiz-stat-label">Score</span>
         </div>
-        <div className="quiz-metric quiz-metric-coins">
-          <strong className="font-display">+{session.coinsEarned}</strong>
-          <span>Coins</span>
+        <div className="quiz-stat-divider" />
+        <div className="quiz-stat">
+          <strong className="font-display quiz-stat-value" style={{ color: 'var(--ssc-coin)' }}>🪙 {session.coinsEarned}</strong>
+          <span className="quiz-stat-label">Coins</span>
+        </div>
+        <div className="quiz-stat-divider" />
+        <div className="quiz-stat">
+          <strong className="font-display quiz-stat-value" style={{ color: 'var(--ssc-success)' }}>&#10003; {session.correct}</strong>
+          <span className="quiz-stat-label">Correct</span>
+        </div>
+        <div className="quiz-stat-divider" />
+        <div className="quiz-stat">
+          <strong className="font-display quiz-stat-value" style={{ color: 'var(--ssc-danger)' }}>&times; {session.incorrect}</strong>
+          <span className="quiz-stat-label">Wrong</span>
+        </div>
+        <div className="quiz-stat-divider" />
+        <div className="quiz-stat">
+          <strong className="font-display quiz-stat-value" style={{ color: 'var(--ssc-text-muted)' }}>&#9675; {session.skipped}</strong>
+          <span className="quiz-stat-label">Skipped</span>
         </div>
       </div>
 
-      <div className="quiz-result-row">
-        <span className="text-slate-400">{session.questionCount} Qs</span>
-        <span className="text-emerald-300">&#10003; {session.correct}</span>
-        <span className="text-red-300">&times; {session.incorrect}</span>
-        <span className="text-slate-400">&#9675; {session.skipped}</span>
-      </div>
-
+      {/* Action buttons */}
       <div className="quiz-action-row">
         {mistakes > 0 ? (
           <>
-            <button type="button" className="primary-btn" onClick={() => onPractice(session)}>Practice Mistakes</button>
-            <button type="button" className="secondary-btn" onClick={() => onReview(session)}>Review Quiz</button>
+            <button type="button" className="primary-btn quiz-practice-btn" onClick={() => onPractice(session)}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: 5, verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+              Practice Mistakes
+            </button>
+            <button type="button" className="secondary-btn quiz-review-btn" onClick={() => onReview(session)}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: 5, verticalAlign: 'middle' }}><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+              Review Quiz
+            </button>
           </>
         ) : (
           <>
-            <button type="button" className="primary-btn" onClick={() => onReview(session)}>Review Quiz</button>
+            <button type="button" className="secondary-btn" onClick={() => onReview(session)}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: 5, verticalAlign: 'middle' }}><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+              Review Quiz
+            </button>
             <button type="button" className="secondary-btn" disabled>Practice Mistakes</button>
           </>
         )}
@@ -457,23 +492,59 @@ function MoreFiltersSheet({ open, filters, subjects, onClose, onApply, onReset }
     <div className="sheet-backdrop">
       <section className="filter-sheet">
         <div className="sheet-handle" />
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display font-black text-white">Filter Attempted Questions</h2>
-          <button type="button" className="secondary-btn px-3" onClick={onClose}>× Close</button>
+        {/* Sheet header */}
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-display font-black" style={{ color: 'var(--ssc-text-primary)', fontSize: 18 }}>Filters</h2>
+          <button
+            type="button"
+            onClick={onReset}
+            style={{ border: 0, background: 'transparent', color: 'var(--ssc-teal)', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', padding: '4px 0' }}
+          >
+            Clear All
+          </button>
         </div>
-        {[
-          ['Answer Status', 'answerStatus', ['all', 'correct', 'wrong', 'skipped', 'wrong_skipped']],
-          ['Question History', 'questionHistory', ['all', 'repeated', 'never_correct', 'mastered']],
-          ['Date Range', 'dateRange', ['all', 'today', '7d', '30d']],
-          ['Quiz Type', 'quizType', ['all', 'normal', 'daily_challenge', 'reattempt']],
-        ].map(([label, key, values]) => (
-          <div key={key} className="mb-4">
-            <p className="filter-label">{label}</p>
-            <div className="chip-row sheet-chip-row">
-              {values.map(value => <button key={value} type="button" className={`chip ${draft[key] === value ? 'active' : ''}`} onClick={() => setDraft(prev => ({ ...prev, [key]: value }))}>{value.replaceAll('_', ' ')}</button>)}
-            </div>
+
+        {/* Attempt Status */}
+        <div className="mb-4">
+          <p className="filter-label">Attempt Status</p>
+          <div className="chip-row sheet-chip-row">
+            {[['all', 'All'], ['correct', 'Good Attempts'], ['wrong_skipped', 'Weak Attempts']].map(([value, label]) => (
+              <button key={value} type="button" className={`chip ${draft.answerStatus === value ? 'active' : ''}`} onClick={() => setDraft(prev => ({ ...prev, answerStatus: value }))}>{label}</button>
+            ))}
           </div>
-        ))}
+        </div>
+
+        {/* Question History */}
+        <div className="mb-4">
+          <p className="filter-label">Question History</p>
+          <div className="chip-row sheet-chip-row">
+            {[['all', 'All'], ['repeated', 'Repeated'], ['never_correct', 'Never Correct'], ['mastered', 'Mastered']].map(([value, label]) => (
+              <button key={value} type="button" className={`chip ${draft.questionHistory === value ? 'active' : ''}`} onClick={() => setDraft(prev => ({ ...prev, questionHistory: value }))}>{label}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Date Range */}
+        <div className="mb-4">
+          <p className="filter-label">Time Period</p>
+          <div className="chip-row sheet-chip-row">
+            {[['all', 'All'], ['today', 'Today'], ['7d', '7 Days'], ['30d', '30 Days']].map(([value, label]) => (
+              <button key={value} type="button" className={`chip ${draft.dateRange === value ? 'active' : ''}`} onClick={() => setDraft(prev => ({ ...prev, dateRange: value }))}>{label}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Quiz Type */}
+        <div className="mb-4">
+          <p className="filter-label">Quiz Type</p>
+          <div className="chip-row sheet-chip-row">
+            {[['all', 'All Types'], ['normal', 'Normal'], ['daily_challenge', 'Daily Challenge'], ['reattempt', 'Re-attempt']].map(([value, label]) => (
+              <button key={value} type="button" className={`chip ${draft.quizType === value ? 'active' : ''}`} onClick={() => setDraft(prev => ({ ...prev, quizType: value }))}>{label}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Subject */}
         <div className="mb-5">
           <p className="filter-label">Subject</p>
           <select className="filter-select" value={draft.subject || ''} onChange={event => setDraft(prev => ({ ...prev, subject: event.target.value, topic: '' }))}>
@@ -481,16 +552,27 @@ function MoreFiltersSheet({ open, filters, subjects, onClose, onApply, onReset }
             {subjects.map(item => <option key={item.subject} value={item.subject}>{item.subject}</option>)}
           </select>
         </div>
-        <div className="mb-5">
-          <p className="filter-label">Topic</p>
-          <select className="filter-select" disabled value="">
-            <option>{draft.subject ? 'Select from Topic-wise mode' : 'Select subject first'}</option>
-          </select>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <button type="button" className="secondary-btn" onClick={onReset}>Reset All</button>
-          <button type="button" className="primary-btn" onClick={() => onApply(draft)}>Apply Filters &rarr;</button>
-        </div>
+
+        {/* Apply CTA */}
+        <button
+          type="button"
+          onClick={() => onApply(draft)}
+          style={{
+            width: '100%',
+            border: 0,
+            borderRadius: 16,
+            padding: '15px 0',
+            background: 'linear-gradient(135deg, var(--ssc-orange), var(--ssc-orange-deep))',
+            color: 'white',
+            fontFamily: 'inherit',
+            fontSize: 15,
+            fontWeight: 900,
+            cursor: 'pointer',
+            boxShadow: 'var(--ssc-shadow-cta)',
+          }}
+        >
+          Apply Filters
+        </button>
       </section>
     </div>
   );
@@ -837,19 +919,67 @@ export default function HistoryPage() {
 
   const styles = `
     .history-shell{padding:16px 16px calc(158px + env(safe-area-inset-bottom))}
-    .intro-block{margin-bottom:12px}.intro-subtitle{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:0}
-    .summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 14px}.stat-card,.history-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:16px;box-shadow:var(--ssc-shadow-card)}.stat-card{padding:12px}.stat-card strong{display:block;color:var(--ssc-text-primary);font-size:20px;line-height:1;font-weight:900}.stat-card span{display:block;color:var(--ssc-text-secondary);font-size:11px;margin-top:5px;font-weight:700}.history-card{padding:16px;margin-bottom:12px}.history-card .text-white{color:var(--ssc-text-primary)}.history-card .text-slate-300,.history-card .text-slate-400,.history-card .text-slate-500{color:var(--ssc-text-secondary)}
-    .quiz-card{padding:14px 15px}.quiz-title{color:var(--ssc-text-primary);font-size:15px;font-weight:900;line-height:1.25;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}.quiz-date{color:var(--ssc-text-muted);font-size:11px;font-weight:700;margin-top:5px}.quiz-badge{max-width:124px;overflow:hidden;text-overflow:ellipsis}.quiz-metric-row{display:grid;grid-template-columns:1fr auto;align-items:end;gap:18px;margin-top:14px}.quiz-metric strong{display:block;color:var(--ssc-text-primary);font-size:22px;line-height:1;font-weight:900}.quiz-metric span{display:block;color:var(--ssc-text-secondary);font-size:11px;font-weight:800;margin-top:6px}.quiz-metric-coins{text-align:right}.quiz-metric-coins strong{color:var(--ssc-coin)}.quiz-result-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:13px;padding:10px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft);font-size:13px;font-weight:900;white-space:nowrap}.quiz-result-row .text-slate-400{color:var(--ssc-text-muted)}.quiz-result-row .text-emerald-300{color:var(--ssc-success)}.quiz-result-row .text-red-300{color:var(--ssc-danger)}.quiz-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
+    .intro-block{margin-bottom:16px}
+    .intro-title{color:var(--ssc-text-primary);font-size:20px;font-weight:900;margin:0 0 4px;line-height:1.2}
+    .intro-subtitle{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:0}
+    .summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 16px}
+    .stat-card,.history-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;box-shadow:var(--ssc-shadow-card)}
+    .stat-card{padding:14px 12px;display:flex;flex-direction:column;gap:4px}
+    .stat-card-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:6px}
+    .stat-card strong{display:block;color:var(--ssc-text-primary);font-size:22px;line-height:1;font-weight:900}
+    .stat-card span{display:block;color:var(--ssc-text-secondary);font-size:11px;margin-top:2px;font-weight:700}
+    .history-card{padding:16px;margin-bottom:12px}
+    .history-card .text-white{color:var(--ssc-text-primary)}
+    .history-card .text-slate-300,.history-card .text-slate-400,.history-card .text-slate-500{color:var(--ssc-text-secondary)}
+
+    .quiz-card{padding:16px;margin-bottom:12px;border-radius:18px}
+    .quiz-title{color:var(--ssc-text-primary);font-size:15px;font-weight:900;line-height:1.3;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+    .quiz-date{color:var(--ssc-text-muted);font-size:11px;font-weight:700;margin-top:5px;line-height:1.4}
+    .quiz-badge{max-width:130px;overflow:hidden;text-overflow:ellipsis;font-size:10px}
+    .quiz-stats-row{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:14px;padding:12px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft)}
+    .quiz-stat{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;flex:1}
+    .quiz-stat-value{font-size:15px;line-height:1;font-weight:900;color:var(--ssc-text-primary);white-space:nowrap}
+    .quiz-stat-label{font-size:10px;font-weight:700;color:var(--ssc-text-muted);white-space:nowrap}
+    .quiz-stat-divider{width:1px;height:28px;background:var(--ssc-border-soft);flex-shrink:0}
+    .quiz-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
+    .quiz-practice-btn{background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep))}
+    .quiz-review-btn{background:var(--ssc-surface-soft);color:var(--ssc-teal);border:1px solid rgba(14,165,164,0.28)}
+
     .entity-card{padding:14px 15px}.entity-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.entity-title{color:var(--ssc-text-primary);font-size:15px;font-weight:900;line-height:1.3;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.entity-subtitle{color:var(--ssc-text-muted);font-size:11px;font-weight:800;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.entity-accuracy{text-align:right;flex:0 0 auto}.entity-accuracy p{font-size:24px;line-height:1;font-weight:900;margin:0 0 5px}.entity-badge{font-size:10px;padding:4px 8px;flex:0 0 auto}.entity-meta{display:flex;flex-direction:column;gap:4px;margin-top:11px;color:var(--ssc-text-secondary);font-size:12px;font-weight:700}.entity-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;font-size:13px;font-weight:900}.entity-stat-row .text-emerald-300{color:var(--ssc-success)}.entity-stat-row .text-red-300{color:var(--ssc-danger)}.entity-stat-row .text-amber-300{color:var(--ssc-warning)}.subject-entity-card,.topic-entity-card{padding:13px 15px}.subject-entity-card .entity-top,.topic-entity-card .entity-top{align-items:flex-start}.subject-entity-card .entity-title{-webkit-line-clamp:1}.topic-entity-card .entity-title{-webkit-line-clamp:2}.topic-subject-line{color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.35;margin:8px 0 0}.subject-meta-line{color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.45;margin:8px 0 0}.subject-stat-row{justify-content:space-between;gap:8px;margin-top:13px;padding:10px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft);white-space:nowrap}.subject-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
+
     .question-card{padding:11px 14px}.question-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.question-kicker{color:var(--ssc-teal);font-size:11px;font-weight:900;margin:0;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.question-badge{font-size:10px;padding:4px 8px;max-width:132px;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.question-preview{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.38;margin:9px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.question-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;padding:8px 0 0;border-top:1px solid var(--ssc-border-soft);font-size:12px;font-weight:900;white-space:nowrap}.question-stat-row .text-red-300{color:var(--ssc-danger)}.question-stat-row .text-slate-400{color:var(--ssc-text-muted)}.question-stat-row span+span:before{content:'';margin:0}.question-actions{display:grid;grid-template-columns:1fr .72fr 40px;gap:8px;margin-top:11px;align-items:center}.save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);display:flex;align-items:center;justify-content:center;transition:transform .12s ease,background .12s ease,border-color .12s ease}.save-icon-btn:active{transform:scale(.92)}.save-icon-btn.saved{border-color:rgba(14,165,164,.36);background:var(--ssc-teal-soft)}
-    .mode-selector{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;border-radius:999px;padding:3px;margin-bottom:16px;background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);box-shadow:0 8px 20px rgba(16,32,51,.05)}.mode-selector button{border:0;border-radius:999px;background:transparent;color:var(--ssc-text-secondary);font-family:inherit;font-size:11px;font-weight:900;padding:9px 4px;white-space:nowrap}.mode-selector button.active{background:var(--ssc-teal);color:white;box-shadow:0 5px 16px rgba(14,165,164,.16)}
-    .chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin-left:-16px;margin-right:-16px;padding:0 16px 14px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.sheet-chip-row{margin-left:0;margin-right:0;padding:0 0 4px}.chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:800;padding:7px 13px;white-space:nowrap;text-transform:capitalize;flex:0 0 auto}.chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 5px 16px rgba(14,165,164,.14)}
-    .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;min-height:40px}.primary-btn{border:0;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;box-shadow:var(--ssc-shadow-cta)}.secondary-btn{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-teal)}.primary-btn:disabled,.secondary-btn:disabled{opacity:1;cursor:default;box-shadow:none;background:var(--ssc-disabled-bg);color:var(--ssc-disabled-text);border-color:var(--ssc-border-soft)}
+
+    .mode-selector{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:0 0 2px;margin-bottom:14px;scrollbar-width:none;-ms-overflow-style:none}.mode-selector::-webkit-scrollbar{display:none}.mode-selector button{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-family:inherit;font-size:13px;font-weight:800;padding:9px 16px;white-space:nowrap;flex-shrink:0;cursor:pointer}.mode-selector button.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 5px 16px rgba(14,165,164,.18)}
+
+    .chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin-left:-16px;margin-right:-16px;padding:0 16px 14px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.sheet-chip-row{margin-left:0;margin-right:0;padding:0 0 4px;flex-wrap:wrap}.chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:800;padding:7px 13px;white-space:nowrap;text-transform:capitalize;flex:0 0 auto;cursor:pointer}.chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 5px 16px rgba(14,165,164,.14)}
+
+    .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;min-height:40px}
+    .primary-btn{border:0;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;box-shadow:var(--ssc-shadow-cta)}
+    .secondary-btn{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-teal)}
+    .primary-btn:disabled,.secondary-btn:disabled{opacity:1;cursor:default;box-shadow:none;background:var(--ssc-disabled-bg);color:var(--ssc-disabled-text);border-color:var(--ssc-border-soft)}
+
     .section-title{color:var(--ssc-text-primary);font-size:17px;font-weight:900;line-height:1.25;margin:0}.section-subtitle{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:5px 0 12px}
-    .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}.divider{height:1px;background:var(--ssc-border-soft);margin:12px 0}.question-expanded{overflow:hidden;margin-top:12px;padding:11px;border:1px solid var(--ssc-border-soft);border-radius:14px;background:var(--ssc-surface-soft)}.expanded-block{margin-bottom:10px}.expanded-label{color:var(--ssc-text-muted);font-size:10px;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px}.expanded-question{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.48;margin:0}.expanded-attempt{color:var(--ssc-text-muted);font-size:11px;font-weight:800;margin:9px 0 0}.answer-detail-grid{display:grid;gap:8px}.answer-detail{border:1px solid var(--ssc-border-soft);background:white;border-radius:12px;padding:9px 10px}.answer-detail span{display:block;color:var(--ssc-text-muted);font-size:10px;font-weight:900;margin-bottom:4px}.answer-detail b{display:block;font-size:12px;line-height:1.4}.answer-detail.correct b{color:var(--ssc-success)}.answer-detail.wrong b{color:var(--ssc-danger)}.answer-detail.skipped b{color:var(--ssc-warning)}.option-row{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--ssc-border-soft);background:white;border-radius:12px;padding:10px;margin-top:8px;color:var(--ssc-text-secondary);font-size:13px}.option-row.correct{border-color:rgba(18,184,134,.28);background:var(--ssc-success-soft);color:var(--ssc-success)}.option-row.wrong{border-color:rgba(239,68,68,.28);background:var(--ssc-danger-soft);color:var(--ssc-danger)}
-    .modal-backdrop,.sheet-backdrop{position:fixed;inset:0;z-index:80;background:var(--ssc-overlay);backdrop-filter:blur(10px);display:flex}.modal-backdrop{align-items:center;justify-content:center;padding:22px}.modal-card{width:min(100%,360px);background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:22px;padding:20px;box-shadow:var(--ssc-shadow-float)}.modal-card h2{color:var(--ssc-text-primary)}.modal-card p{color:var(--ssc-text-secondary)}.sheet-backdrop{align-items:flex-end}.filter-sheet{width:100%;max-width:430px;margin:0 auto;background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:24px 24px 0 0;padding:12px 16px 20px;box-shadow:var(--ssc-shadow-float)}.filter-sheet h2{color:var(--ssc-text-primary)}.sheet-handle{width:42px;height:4px;border-radius:99px;background:var(--ssc-border-soft);margin:0 auto 14px}.filter-label{font-size:12px;color:var(--ssc-text-secondary);font-weight:900;margin-bottom:8px}.filter-select{width:100%;background:var(--ssc-surface-soft);border:1px solid var(--ssc-border-soft);border-radius:14px;color:var(--ssc-text-primary);padding:11px;font-family:inherit}
+
+    .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}
+    .divider{height:1px;background:var(--ssc-border-soft);margin:12px 0}
+    .question-expanded{overflow:hidden;margin-top:12px;padding:11px;border:1px solid var(--ssc-border-soft);border-radius:14px;background:var(--ssc-surface-soft)}.expanded-block{margin-bottom:10px}.expanded-label{color:var(--ssc-text-muted);font-size:10px;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px}.expanded-question{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.48;margin:0}.expanded-attempt{color:var(--ssc-text-muted);font-size:11px;font-weight:800;margin:9px 0 0}.answer-detail-grid{display:grid;gap:8px}.answer-detail{border:1px solid var(--ssc-border-soft);background:white;border-radius:12px;padding:9px 10px}.answer-detail span{display:block;color:var(--ssc-text-muted);font-size:10px;font-weight:900;margin-bottom:4px}.answer-detail b{display:block;font-size:12px;line-height:1.4}.answer-detail.correct b{color:var(--ssc-success)}.answer-detail.wrong b{color:var(--ssc-danger)}.answer-detail.skipped b{color:var(--ssc-warning)}.option-row{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--ssc-border-soft);background:white;border-radius:12px;padding:10px;margin-top:8px;color:var(--ssc-text-secondary);font-size:13px}.option-row.correct{border-color:rgba(18,184,134,.28);background:var(--ssc-success-soft);color:var(--ssc-success)}.option-row.wrong{border-color:rgba(239,68,68,.28);background:var(--ssc-danger-soft);color:var(--ssc-danger)}
+
+    .modal-backdrop,.sheet-backdrop{position:fixed;inset:0;z-index:80;background:var(--ssc-overlay);backdrop-filter:blur(10px);display:flex}.modal-backdrop{align-items:center;justify-content:center;padding:22px}.modal-card{width:min(100%,360px);background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:22px;padding:20px;box-shadow:var(--ssc-shadow-float)}.modal-card h2{color:var(--ssc-text-primary)}.modal-card p{color:var(--ssc-text-secondary)}.sheet-backdrop{align-items:flex-end}.filter-sheet{width:100%;max-width:430px;margin:0 auto;background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:24px 24px 0 0;padding:14px 16px calc(20px + env(safe-area-inset-bottom));box-shadow:var(--ssc-shadow-float);max-height:88vh;overflow-y:auto}.sheet-handle{width:42px;height:4px;border-radius:99px;background:var(--ssc-border-soft);margin:0 auto 16px}.filter-label{font-size:11px;color:var(--ssc-text-secondary);font-weight:900;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}.filter-select{width:100%;background:var(--ssc-surface-soft);border:1px solid var(--ssc-border-soft);border-radius:14px;color:var(--ssc-text-primary);padding:12px;font-family:inherit;font-size:14px}
+
     .date-modal-backdrop{position:fixed;inset:0;z-index:90;background:var(--ssc-overlay);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:18px}.date-modal-card{width:min(100%,420px);background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:22px;padding:20px;box-shadow:var(--ssc-shadow-float)}.date-modal-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}.date-modal-top h2{color:var(--ssc-text-primary);font-size:20px;font-weight:900;line-height:1.2;margin:0}.date-modal-top p{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:7px 0 0;font-weight:700}.date-close-btn{height:34px;width:34px;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-text-secondary);font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center}.date-field-group{display:grid;gap:8px;margin-bottom:14px}.date-field-group label{color:var(--ssc-text-secondary);font-size:12px;font-weight:900}.date-field-group input{width:100%;height:46px;border-radius:14px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-text-primary);padding:0 12px;font-family:inherit;font-size:14px;font-weight:800;color-scheme:light}.date-field-group input::-webkit-calendar-picker-indicator{opacity:.8}.date-error{color:var(--ssc-danger);font-size:12px;font-weight:800;line-height:1.35;margin:0 0 14px}.date-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}.custom-range-summary{color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.4;margin:-3px 2px 13px}
+
     .mistake-filter-group{margin-bottom:16px}.mistake-filter-group .chip-row{padding-bottom:0}.mistake-filter-label{display:block;margin:0 0 10px 2px;color:var(--ssc-text-secondary);font-size:12px;font-weight:900;line-height:1}.active-filter-summary{margin:-2px 2px 14px;color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.4}
+
+    .empty-state-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:32px 24px;text-align:center;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
+    .empty-state-icon{width:64px;height:64px;border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;background:var(--ssc-teal-soft)}
+    .empty-state-title{color:var(--ssc-text-primary);font-size:17px;font-weight:900;margin:0 0 8px}
+    .empty-state-body{color:var(--ssc-text-secondary);font-size:13px;line-height:1.5;margin:0 0 20px}
+    .empty-state-cta{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:14px;padding:13px 22px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:var(--ssc-shadow-cta)}
+
+    .filter-trigger-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+    .filter-trigger-btn{display:flex;align-items:center;gap:6px;border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:800;padding:7px 12px;cursor:pointer;font-family:inherit}
+    .filter-trigger-btn.has-filters{border-color:var(--ssc-teal);color:var(--ssc-teal);background:var(--ssc-teal-soft)}
+
     @media(max-width:380px){.mode-long{display:none}}@media(min-width:381px){.mode-short{display:none}}
   `;
 
@@ -858,10 +988,28 @@ export default function HistoryPage() {
       <Head><title>Quiz History - SSC GK Score Booster</title></Head>
       <div className="min-h-screen pb-28" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
         <style>{styles}</style>
-        <HistoryTopBar title="Quiz History" badge="REVISION ENGINE" icon={<HistoryHeaderIcon />} showBack />
+        <HistoryTopBar
+          title="Quiz History"
+          badge="REVISION ENGINE"
+          icon={<HistoryHeaderIcon />}
+          showBack
+          rightAction={
+            <button
+              type="button"
+              onClick={() => { loadSummary(); loadQuizzes(quizExpanded ? 10 : 3, quickFilter, appliedCustomRange); }}
+              style={{ width: 36, height: 36, borderRadius: 999, border: '1px solid var(--ssc-border-soft)', background: 'var(--ssc-surface-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              aria-label="Refresh quiz history"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-secondary)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+              </svg>
+            </button>
+          }
+        />
         <main className="history-shell">
           <section className="intro-block">
-            <p className="intro-subtitle">Filter attempted questions and fix weak areas.</p>
+            <h1 className="intro-title font-display">Quiz History</h1>
+            <p className="intro-subtitle">Review your attempts, identify weak areas, fix mistakes.</p>
           </section>
 
           {status === 'loading' || summaryLoading ? (
@@ -871,30 +1019,107 @@ export default function HistoryPage() {
           ) : summaryError ? (
             <EmptyPanel title="Couldn't load." body="Check connection." action="Retry" onClick={loadSummary} />
           ) : allZero ? (
-            <EmptyPanel title="No quiz history yet." body="Start a quiz and your attempted questions will appear here." action="Start Daily Challenge →" onClick={() => router.push('/quiz?mode=daily')} />
+            <div className="empty-state-card">
+              <div className="empty-state-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="5" y="4" width="14" height="16" rx="2"/>
+                  <path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h4"/>
+                </svg>
+              </div>
+              <p className="empty-state-title font-display">No Quiz Attempts Yet</p>
+              <p className="empty-state-body">You haven&apos;t attempted any quizzes yet. Start a quiz and your history will appear here.</p>
+              <button type="button" className="empty-state-cta" onClick={() => router.push('/quiz?mode=daily')}>
+                Start a Quiz
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
           ) : (
             <>
+              {/* Stats summary — 4-col 2×2 grid */}
               <section className="summary-grid">
-                {[
-                  ['Quizzes', summary?.totalQuizzes || 0, ''],
-                  ['Questions', summary?.totalQuestions || 0, ''],
-                ].map(([label, value, suffix]) => <div key={label} className="stat-card"><strong className="font-display"><CountUp value={value} suffix={suffix} /></strong><span>{label}</span></div>)}
+                <div className="stat-card">
+                  <div className="stat-card-icon" style={{ background: 'var(--ssc-teal-soft)' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                  </div>
+                  <strong className="font-display"><CountUp value={summary?.totalQuizzes || 0} /></strong>
+                  <span>Attempts</span>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-card-icon" style={{ background: 'rgba(246,179,49,0.14)' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-coin)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+                  </div>
+                  <strong className="font-display"><CountUp value={summary?.totalQuestions || 0} /></strong>
+                  <span>Questions</span>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-card-icon" style={{ background: 'var(--ssc-success-soft)' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-success)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                  <strong className="font-display"><CountUp value={summary?.savedCount || 0} /></strong>
+                  <span>Saved Qs</span>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-card-icon" style={{ background: 'var(--ssc-danger-soft)' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                  </div>
+                  <strong className="font-display">
+                    <CountUp value={(quizData.sessions || []).filter(s => s.badgeTone === 'red' || s.badgeTone === 'orange').length} />
+                  </strong>
+                  <span>Weak Recent</span>
+                </div>
               </section>
 
+              {/* Mode selector as scrollable pill tabs */}
               <section className="mode-selector">
-                {MODES.map(mode => <button key={mode.key} type="button" className={activeMode === mode.key ? 'active' : ''} onClick={() => setActiveMode(mode.key)}><span className="mode-long">{mode.label}</span><span className="mode-short">{mode.shortLabel}</span></button>)}
+                {MODES.map(mode => (
+                  <button key={mode.key} type="button" className={activeMode === mode.key ? 'active' : ''} onClick={() => setActiveMode(mode.key)}>
+                    {mode.label}
+                  </button>
+                ))}
               </section>
 
               {activeMode === 'quiz' && (
                 <>
-                  <div className="chip-row">
-                    {QUICK_FILTERS.map(filter => <button key={filter.key} type="button" className={`chip ${quickFilter === filter.key ? 'active' : ''}`} onClick={() => handleQuickFilter(filter.key)}>{filter.label}</button>)}
+                  <div className="filter-trigger-row">
+                    <div className="chip-row" style={{ margin: 0, padding: 0, flex: 1, paddingRight: 8 }}>
+                      {QUICK_FILTERS.map(filter => (
+                        <button key={filter.key} type="button" className={`chip ${quickFilter === filter.key ? 'active' : ''}`} onClick={() => handleQuickFilter(filter.key)}>{filter.label}</button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className={`filter-trigger-btn ${Object.values(advancedFilters).some(v => v && v !== 'all' && v !== '') ? 'has-filters' : ''}`}
+                      onClick={() => setSheetOpen(true)}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                      Filters
+                    </button>
                   </div>
                   {quickFilter === 'custom' && customRangeSummary && <p className="custom-range-summary">{customRangeSummary}</p>}
                   {quizLoading ? <Loader card size="sm" label="Loading quizzes..." /> : filteredQuizzes.length ? filteredQuizzes.map(item => (
                     <QuizCard key={item.sessionId} session={item} onReview={session => router.push(`/history/session/${session.sessionId}`)} onPractice={session => startSessionPractice(session)} onFull={session => startSessionPractice(session, true)} />
-                  )) : quickFilter === 'custom' ? <EmptyPanel title="No quizzes found in this date range." body="Try changing the dates or reset the filter." action="Reset Date Filter" onClick={resetDateFilter} /> : <EmptyPanel title="No quizzes found." body="Try another date filter." action="Reset Filters" onClick={resetDateFilter} />}
-                  {(quizData.sessions || []).length > 0 && <button type="button" className="secondary-btn w-full" onClick={expandQuizzes}>{quizExpanded ? 'Show Less' : 'View More Quizzes →'}</button>}
+                  )) : quickFilter === 'custom' ? (
+                    <EmptyPanel title="No quizzes in this range." body="Try different dates or reset the filter." action="Reset Date Filter" onClick={resetDateFilter} />
+                  ) : (
+                    <div className="empty-state-card">
+                      <div className="empty-state-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="5" y="4" width="14" height="16" rx="2"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h4"/>
+                        </svg>
+                      </div>
+                      <p className="empty-state-title font-display">No Quiz Attempts Yet</p>
+                      <p className="empty-state-body">You haven&apos;t attempted any quizzes yet. Start a quiz and your history will appear here.</p>
+                      <button type="button" className="empty-state-cta" onClick={() => router.push('/quiz?mode=daily')}>
+                        Start a Quiz
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+                      </button>
+                    </div>
+                  )}
+                  {(quizData.sessions || []).length > 0 && (
+                    <button type="button" className="secondary-btn w-full" onClick={expandQuizzes}>
+                      {quizExpanded ? 'Show Less ↑' : 'Show More ↓'}
+                    </button>
+                  )}
                 </>
               )}
 
