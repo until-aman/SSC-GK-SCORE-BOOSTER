@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+﻿import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -12,7 +12,7 @@ import { getUserCacheScope } from '@/lib/userCacheScope';
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 const OPTION_KEYS   = ['optionA', 'optionB', 'optionC', 'optionD'];
 
-/* â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â"€â"€ Helpers â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
 const COLLECTION_DISPLAY_NAMES = { PYQ: 'SSC PYQ', Parmar: 'Parmar SSC' };
 function getDisplaySubject(subject, collection) {
   if (!subject) return subject;
@@ -44,74 +44,71 @@ function BookmarkIcon({ filled = true, size = 18 }) {
   );
 }
 
-/* â”€â”€ Compact list card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-function QuestionRow({ q, index, onView, onUnsave }) {
-  const savedLabel = formatSavedDate(q.savedAt || q.createdAt);
+function ChevronSVG() {
   return (
-    <div style={{
-      background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)',
-      borderRadius: 18, padding: '14px 16px', paddingRight: 54, marginBottom: 10,
-      position: 'relative',
-      boxShadow: 'var(--ssc-shadow-card)',
-    }}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18l6-6-6-6" />
+    </svg>
+  );
+}
+
+function QuestionRow({ q, index, onView, onUnsave }) {
+  const totalAttempts = (Number(q.correctCount) || 0) + (Number(q.wrongCount) || 0);
+  let correctPct = null;
+  if (totalAttempts > 0) {
+    correctPct = Math.round((Number(q.correctCount) || 0) / totalAttempts * 100);
+  } else if (q.userAnswer) {
+    correctPct = q.userAnswer === q.correctOption ? 100 : 0;
+  }
+
+  const ts = q.savedAt || q.createdAt;
+  let lastPracticed = null;
+  if (ts) {
+    const d = new Date(ts);
+    if (Number.isFinite(d.getTime())) {
+      lastPracticed = `${d.getDate()} ${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear()}`;
+    }
+  }
+
+  return (
+    <div className="sq-card" onClick={() => onView(index)}>
       <button
-        onClick={() => onUnsave(q.questionId)}
-        style={{
-          position: 'absolute', top: 12, right: 12,
-          width: 32, height: 32, borderRadius: 12,
-          background: 'var(--ssc-teal-soft)',
-          border: '1px solid rgba(14,165,164,0.18)',
-          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}
+        className="sq-bookmark-btn"
+        onClick={e => { e.stopPropagation(); onUnsave(q.questionId); }}
         title="Remove bookmark"
         aria-label="Remove bookmark"
       >
         <BookmarkIcon filled size={15} />
       </button>
-
-      {/* Subject â€¢ Topic */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
-        {q.subject && (
-          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)', borderRadius: 99, padding: '2px 9px' }}>
-            {getDisplaySubject(q.subject, q.collection)}
+      {q.topic && (
+        <div className="sq-tags-row">
+          <span className="sq-topic-tag">{q.topic}</span>
+        </div>
+      )}
+      <p className="sq-question-text">{q.question}</p>
+      <div className="sq-footer">
+        <span className="sq-meta">
+          {lastPracticed ? `Last Practiced: ${lastPracticed}` : 'Not practiced yet'}
+        </span>
+        {correctPct !== null && (
+          <span style={{ fontSize: 11, fontWeight: 700, color: correctPct >= 50 ? 'var(--ssc-success)' : 'var(--ssc-danger)' }}>
+            Correct: {correctPct}%
           </span>
         )}
-        {q.topic && (
-          <>
-            <span style={{ fontSize: 10, color: 'var(--ssc-text-muted)' }}>•</span>
-            <span style={{ fontSize: 11, color: 'var(--ssc-text-secondary)', fontWeight: 500 }}>{q.topic}</span>
-          </>
-        )}
       </div>
-
-      {/* Question preview â€” 2 lines */}
-      <p style={{
-        fontSize: 14, fontWeight: 700, color: 'var(--ssc-text-primary)', lineHeight: 1.45,
-        overflow: 'hidden', display: '-webkit-box',
-        WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', margin: '0 0 12px',
-      }}>
-        {q.question}
-      </p>
-
-      {/* Footer: saved date + View â†’ */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 11, color: 'var(--ssc-text-muted)' }}>{savedLabel || 'Saved'}</span>
-        <button
-          onClick={() => onView(index)}
-          style={{
-            background: 'var(--ssc-surface-soft)', border: '1px solid var(--ssc-border-soft)',
-            borderRadius: 10, padding: '5px 12px', cursor: 'pointer',
-            fontSize: 12, fontWeight: 700, color: 'var(--ssc-teal)',
-          }}
-        >
-          View &rarr;
-        </button>
-      </div>
+      {correctPct !== null && (
+        <div className="sq-progress-track">
+          <div className="sq-progress-fill" style={{
+            width: `${correctPct}%`,
+            background: correctPct >= 50 ? 'var(--ssc-success)' : 'var(--ssc-danger)',
+          }} />
+        </div>
+      )}
     </div>
   );
 }
 
-/* â”€â”€ Full-screen revision overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â"€â"€ Full-screen revision overlay â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
 function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
   const [idx, setIdx]                     = useState(startIndex);
   const [revealed, setRevealed]           = useState(false);
@@ -227,7 +224,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           {q.question}
         </p>
 
-        {/* Options â€” tappable before reveal */}
+        {/* Options â€" tappable before reveal */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
           {OPTION_LABELS.map((label, i) => {
             const text       = q[OPTION_KEYS[i]];
@@ -291,7 +288,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           })}
         </div>
 
-        {/* Correct / Wrong result badge â€” shown after reveal when user picked an option */}
+        {/* Correct / Wrong result badge â€" shown after reveal when user picked an option */}
         {revealed && selectedOption && (
           <div style={{
             textAlign: 'center', marginBottom: 14,
@@ -304,7 +301,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           </div>
         )}
 
-        {/* Show / Check Answer button â€” hidden once revealed */}
+        {/* Show / Check Answer button â€" hidden once revealed */}
         {!revealed && (
           <button
             onClick={handleReveal}
@@ -323,7 +320,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           </button>
         )}
 
-        {/* Answer + explanation â€” shown after reveal */}
+        {/* Answer + explanation â€" shown after reveal */}
         {revealed && (
           <>
             <div style={{ background: 'var(--ssc-teal-soft)', border: '1px solid rgba(14,165,164,0.24)', borderRadius: 16, padding: '14px 16px', marginBottom: 16 }}>
@@ -337,7 +334,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
               )}
             </div>
 
-            {/* Secondary actions â€” muted, not loud */}
+            {/* Secondary actions â€" muted, not loud */}
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 24, paddingBottom: 8 }}>
               <button
                 onClick={() => onUnsave(q.questionId)}
@@ -362,7 +359,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
         </section>
       </div>
 
-      {/* Footer nav â€” Previous | Next */}
+      {/* Footer nav â€" Previous | Next */}
       <div style={{
         padding: '12px 16px 24px', flexShrink: 0,
         borderTop: '1px solid var(--ssc-border-soft)',
@@ -438,7 +435,7 @@ export default function HistorySavedPage() {
   const isLoggedIn = status === 'authenticated';
   const isGuest    = status === 'unauthenticated';
 
-  // â”€â”€ Load questions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Load questions â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   useEffect(() => {
     if (status === 'loading') return;
 
@@ -452,7 +449,7 @@ export default function HistorySavedPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, isLoggedIn]);
 
-  // â”€â”€ Load revised IDs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Load revised IDs â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   useEffect(() => {
     try {
       const raw = localStorage.getItem('ssc_revised_questions');
@@ -460,14 +457,14 @@ export default function HistorySavedPage() {
     } catch {}
   }, []);
 
-  // â”€â”€ Unsave â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Unsave â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   const handleUnsave = useCallback(async (questionId) => {
     const updated = questions.filter(q => q.questionId !== questionId);
     setQuestions(updated);
     if (updated.length === 0) setRevisionIdx(null);
 
     if (isLoggedIn) {
-      // Shared helper (existing DELETE route) â†’ also patches scoped IDs/list
+      // Shared helper (existing DELETE route) â†' also patches scoped IDs/list
       // caches + marks History caches stale. No list refetch.
       try { await unsaveQuestion({ scope: getUserCacheScope(session), questionId }); } catch { /* optimistic list already updated */ }
     } else {
@@ -475,7 +472,7 @@ export default function HistorySavedPage() {
     }
   }, [isLoggedIn, questions, session]);
 
-  // â”€â”€ Mark as revised â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Mark as revised â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   function markRevised(questionId) {
     setRevisedIds(prev => {
       const next = new Set(prev);
@@ -485,10 +482,10 @@ export default function HistorySavedPage() {
     });
   }
 
-  // â”€â”€ Reset visible count when filters/search/sort change â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Reset visible count when filters/search/sort change â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   useEffect(() => { setVisibleCount(20); }, [searchQuery, activeFilter, sortOrder, questions]);
 
-  // â”€â”€ Infinite scroll sentinel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Infinite scroll sentinel â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
@@ -498,9 +495,9 @@ export default function HistorySavedPage() {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }); // intentionally no deps â€” re-attaches after each render so sentinel stays tracked
+  }); // intentionally no deps â€" re-attaches after each render so sentinel stays tracked
 
-  // â”€â”€ Practice all â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Practice all â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   function startPractice(pool) {
     // Map to quiz-compatible shape
     const quizQuestions = pool.map(q => ({
@@ -519,11 +516,11 @@ export default function HistorySavedPage() {
     router.push(`/quiz?mode=saved&count=${quizQuestions.length}&sourceScreen=saved`);
   }
 
-  // â”€â”€ Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Stats â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   const unrevisedCount = questions.filter(q => !revisedIds.has(q.questionId)).length;
   const wrongCount     = questions.filter(q => q.userAnswer && q.userAnswer !== q.correctOption).length;
 
-  // â”€â”€ Filter + search + sort â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Filter + search + sort â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   let filtered = [...questions];
 
   if (searchQuery.trim()) {
@@ -556,16 +553,52 @@ export default function HistorySavedPage() {
     });
   }
 
-  // Filter chip definitions
-  const uniqueSubjects = Array.from(new Set(questions.map(q => q.subject).filter(Boolean)));
+  // Subject groups + filter chips
+  const subjectGroups = useMemo(() => {
+    const map = new Map();
+    questions.forEach(q => {
+      const subj = q.subject || 'Other';
+      map.set(subj, (map.get(subj) || 0) + 1);
+    });
+    return Array.from(map.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [questions]);
+
   const filterChips = [
-    { key: 'All',       label: 'All' },
-    { key: 'Unrevised', label: unrevisedCount > 0 ? `Unrevised ${unrevisedCount}` : 'Unrevised' },
-    ...(wrongCount > 0 ? [{ key: 'Wrong', label: `Wrong ${wrongCount}` }] : []),
-    ...uniqueSubjects.map(s => ({ key: s, label: s })),
+    { key: 'All', label: `All ${questions.length}` },
+    ...subjectGroups.map(s => ({ key: s.name, label: `${s.name} ${s.count}` })),
   ];
 
-  // â”€â”€ Loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const savedStyles = `
+    .sq-chips-row{display:flex;gap:8px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none;-ms-overflow-style:none}
+    .sq-chips-row::-webkit-scrollbar{display:none}
+    .sq-chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:700;padding:7px 14px;white-space:nowrap;flex-shrink:0;cursor:pointer}
+    .sq-chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white}
+    .sq-summary-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:20px 18px;margin-bottom:14px;box-shadow:var(--ssc-shadow-card)}
+    .sq-summary-icon{width:44px;height:44px;border-radius:13px;background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,0.20);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+    .sq-summary-heading{font-size:13px;font-weight:700;color:var(--ssc-text-secondary);margin:0 0 4px}
+    .sq-summary-count{font-size:40px;font-weight:900;color:var(--ssc-text-primary);line-height:1;font-family:var(--font-display);margin:0}
+    .sq-summary-label{font-size:12px;color:var(--ssc-text-muted);font-weight:600;margin:4px 0 0}
+    .sq-subject-row{display:flex;align-items:center;gap:12px;background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:16px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--ssc-shadow-card);cursor:pointer}
+    .sq-subject-icon{width:40px;height:40px;border-radius:11px;background:var(--ssc-teal-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .sq-subject-name{flex:1;font-size:15px;font-weight:800;color:var(--ssc-text-primary)}
+    .sq-subject-count{font-size:13px;font-weight:700;color:var(--ssc-text-secondary);margin-right:4px}
+    .sq-sort-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .sq-sort-select{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:12px;padding:8px 12px;font-size:12px;color:var(--ssc-text-secondary);font-weight:600;outline:none;font-family:inherit;cursor:pointer}
+    .sq-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;padding:14px 16px;margin-bottom:10px;position:relative;box-shadow:var(--ssc-shadow-card);cursor:pointer}
+    .sq-bookmark-btn{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:12px;background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,0.18);display:flex;align-items:center;justify-content:center;cursor:pointer}
+    .sq-tags-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;padding-right:40px}
+    .sq-topic-tag{font-size:11px;font-weight:700;color:#FF6A00;background:rgba(255,106,0,0.10);border-radius:99px;padding:2px 9px}
+    .sq-question-text{font-size:14px;font-weight:700;color:var(--ssc-text-primary);line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin:0 0 10px}
+    .sq-footer{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+    .sq-meta{font-size:11px;color:var(--ssc-text-muted)}
+    .sq-progress-track{height:4px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden}
+    .sq-progress-fill{height:100%;border-radius:99px}
+    .sq-empty-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:16px;padding:32px 16px;text-align:center}
+  `;
+
+  // â"€â"€ Loading â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-24">
@@ -603,7 +636,7 @@ export default function HistorySavedPage() {
         )}
 
         {questions.length === 0 ? (
-          /* â”€â”€ Empty state â”€â”€ */
+          /* â"€â"€ Empty state â"€â"€ */
           <>
           <style suppressHydrationWarning>{`
             @keyframes ctaBeat {
@@ -689,113 +722,110 @@ export default function HistorySavedPage() {
             </div>
           </div>
           </>
-        ) : (
+                ) : (
           <>
-            {/* Search bar */}
-            <div style={{ paddingLeft: 16, paddingRight: 16, marginBottom: 10 }}>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <svg style={{ position: 'absolute', left: 12, flexShrink: 0 }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2.2" strokeLinecap="round">
-                  <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search saved questions..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  style={{
-                    width: '100%', padding: '10px 12px 10px 36px',
-                    background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)',
-                    borderRadius: 14, fontSize: 13, color: 'var(--ssc-text-primary)',
-                    outline: 'none', fontFamily: 'inherit',
-                  }}
-                />
-                {searchQuery.length > 0 && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    style={{ position: 'absolute', right: 10, background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                  </button>
-                )}
-              </div>
-            </div>
+            <style suppressHydrationWarning>{savedStyles}</style>
 
-            {/* Filter chips + sort */}
-            <div
-              className="flex gap-2 overflow-x-auto"
-              style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 2, paddingBottom: 4, marginBottom: 12, scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            >
+            {/* Subject filter chips */}
+            <div className="sq-chips-row">
               {filterChips.map(({ key, label }) => (
                 <button
                   key={key}
+                  className={`sq-chip ${activeFilter === key ? 'active' : ''}`}
                   onClick={() => setActiveFilter(key)}
-                  className="flex-shrink-0"
-                  style={{
-                    borderRadius: 99, padding: '8px 15px', fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',
-                    background: activeFilter === key ? 'var(--ssc-teal)' : 'var(--ssc-surface)',
-                    color: activeFilter === key ? '#fff' : 'var(--ssc-text-secondary)',
-                    border: activeFilter === key ? 'none' : '1px solid var(--ssc-border-soft)',
-                  }}
                 >
                   {label}
                 </button>
               ))}
             </div>
 
-            {/* Count + sort row */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingLeft: 16, paddingRight: 16, marginBottom: 18 }}>
-              <span style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', fontWeight: 500 }}>
-                {filtered.length} question{filtered.length !== 1 ? 's' : ''}
-              </span>
-              <select
-                value={sortOrder}
-                onChange={e => setSortOrder(e.target.value)}
-                style={{
-                  background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)',
-                  borderRadius: 12, padding: '8px 12px', minHeight: 36, fontSize: 12, color: 'var(--ssc-text-secondary)',
-                  cursor: 'pointer', fontWeight: 600, outline: 'none', fontFamily: 'inherit',
-                }}
-              >
-                <option value="newest">Newest first</option>
-                <option value="oldest">Oldest first</option>
-                <option value="subject">Subject-wise</option>
-                <option value="wrong">Wrong first</option>
-              </select>
-            </div>
-
-            {/* Question list */}
-            <div className="px-4" style={{ paddingBottom: filtered.length > 0 ? 96 : 16 }}>
-              {filtered.length === 0 ? (
-                <div style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', borderRadius: 16, padding: '32px 16px', textAlign: 'center' }}>
-                  <p style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', margin: 0 }}>
-                    {searchQuery.trim() ? `No questions match "${searchQuery}"` : `No ${activeFilter.toLowerCase()} questions`}
-                  </p>
+            {activeFilter === 'All' ? (
+              <div className="px-4">
+                {/* Summary card */}
+                <div className="sq-summary-card">
+                  <div className="sq-summary-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" />
+                    </svg>
+                  </div>
+                  <p className="sq-summary-heading font-display">Your Saved Questions</p>
+                  <p className="sq-summary-count">{questions.length}</p>
+                  <p className="sq-summary-label">Questions saved</p>
                 </div>
-              ) : (
-                <>
-                  {filtered.slice(0, visibleCount).map((q, i) => (
-                    <QuestionRow
-                      key={q.questionId || i}
-                      q={q}
-                      index={i}
-                      onView={i => setRevisionIdx(i)}
-                      onUnsave={handleUnsave}
-                    />
-                  ))}
-                  {/* Sentinel â€” triggers next page when scrolled into view */}
-                  {visibleCount < filtered.length && (
-                    <div ref={sentinelRef} style={{ padding: '12px 0', textAlign: 'center' }}>
-                      <span style={{ fontSize: 12, color: 'var(--ssc-text-muted)' }}>
-                        Showing {Math.min(visibleCount, filtered.length)} of {filtered.length}
-                      </span>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
 
-            {/* Start Revision CTA â€” sticky above bottom nav */}
-            {filtered.length > 0 && (
+                {/* Subject category rows */}
+                {subjectGroups.map(subj => (
+                  <div
+                    key={subj.name}
+                    className="sq-subject-row"
+                    onClick={() => setActiveFilter(subj.name)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => e.key === 'Enter' && setActiveFilter(subj.name)}
+                  >
+                    <div className="sq-subject-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+                      </svg>
+                    </div>
+                    <span className="sq-subject-name">{subj.name}</span>
+                    <span className="sq-subject-count">{subj.count}</span>
+                    <ChevronSVG />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="px-4" style={{ paddingBottom: filtered.length > 0 ? 96 : 16 }}>
+                {/* Sort row */}
+                <div className="sq-sort-row">
+                  <span style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', fontWeight: 500 }}>
+                    {filtered.length} question{filtered.length !== 1 ? 's' : ''}
+                  </span>
+                  <select
+                    className="sq-sort-select"
+                    value={sortOrder}
+                    onChange={e => setSortOrder(e.target.value)}
+                  >
+                    <option value="newest">Recent First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="subject">Subject-wise</option>
+                    <option value="wrong">Wrong First</option>
+                  </select>
+                </div>
+
+                {/* Question list */}
+                {filtered.length === 0 ? (
+                  <div className="sq-empty-card">
+                    <p style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', margin: 0 }}>
+                      No {activeFilter} questions saved
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {filtered.slice(0, visibleCount).map((q, i) => (
+                      <QuestionRow
+                        key={q.questionId || i}
+                        q={q}
+                        index={i}
+                        onView={i => setRevisionIdx(i)}
+                        onUnsave={handleUnsave}
+                      />
+                    ))}
+                    {visibleCount < filtered.length && (
+                      <div ref={sentinelRef} style={{ padding: '12px 0', textAlign: 'center' }}>
+                        <span style={{ fontSize: 12, color: 'var(--ssc-text-muted)' }}>
+                          Showing {Math.min(visibleCount, filtered.length)} of {filtered.length}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Start Revision CTA */}
+            {activeFilter !== 'All' && filtered.length > 0 && (
               <div
                 className="fixed bottom-[74px] left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-2 z-40"
                 style={{
@@ -826,6 +856,7 @@ export default function HistorySavedPage() {
               />
             )}
           </>
+
         )}
       </div>
 

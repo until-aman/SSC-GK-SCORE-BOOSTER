@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -73,49 +73,66 @@ function EmptyPanel({ title, body, action, onClick }) {
   );
 }
 
+function ChevronSVG() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18l6-6-6-6" />
+    </svg>
+  );
+}
+
 function QuestionCard({ item, isOpen, onToggleOpen, onPracticeOne, onToggleSave }) {
   const correctCount = Number(item.correctCount) || 0;
   const wrongCount = Number(item.wrongCount) || 0;
   const skippedCount = Number(item.skippedCount) || 0;
+  const totalAttempts = correctCount + wrongCount + skippedCount;
+  const correctPct = totalAttempts > 0 ? Math.round(correctCount / totalAttempts * 100) : null;
+  const lastPracticed = formatDate(item.lastAttemptedAt);
   const lastAnswerText = item.lastUserAnswer ? optionText(item, item.lastUserAnswer) : '';
   const correctAnswerText = item.correctOption ? optionText(item, item.correctOption) : '';
   const lastAnswerTone = !item.lastUserAnswer ? 'skipped' : item.lastUserAnswer === item.correctOption ? 'correct' : 'wrong';
-  const statusText = item.lastAttemptStatus === 'skipped' ? 'Skipped' : item.lastAttemptStatus === 'correct' ? 'Correct' : 'Wrong';
-  let smartTag = 'Needs Revision';
-  let tagTone = TONES.amber;
-
-  if (wrongCount >= 2 && correctCount === 0) {
-    smartTag = 'Never Correct';
-    tagTone = TONES.red;
-  } else if (wrongCount >= 2) {
-    smartTag = 'Repeated Mistake';
-    tagTone = TONES.red;
-  } else if (skippedCount >= 2) {
-    smartTag = 'Often Skipped';
-    tagTone = TONES.blue;
-  } else if (correctCount > 0 && wrongCount > 0) {
-    smartTag = 'Improving';
-    tagTone = TONES.amber;
-  } else if (correctCount >= 2 && item.lastAttemptStatus === 'correct') {
-    smartTag = 'Mastered';
-    tagTone = TONES.green;
-  }
 
   return (
-    <article className={`history-card question-card ${isOpen ? 'open' : ''}`}>
-      <div className="question-top-row">
-        <p className="question-kicker">{item.subject} &middot; {item.topic}</p>
-        <span className="tone-pill question-badge" style={{ color: tagTone[0], background: tagTone[1], borderColor: `${tagTone[0]}55` }}>{smartTag}</span>
+    <article className="rm-card">
+      <div className="rm-header">
+        <div className="rm-tags">
+          {item.subject && <span className="rm-subject-tag">{item.subject}</span>}
+          {item.topic && <span className="rm-topic-tag">{item.topic}</span>}
+        </div>
+        {wrongCount > 0 && (
+          <span className="rm-repeat-pill">{wrongCount} {wrongCount === 1 ? 'time' : 'times'}</span>
+        )}
       </div>
 
-      <p className="question-preview font-display">{item.questionPreview || item.question}</p>
+      <p className="rm-question-text">{item.questionPreview || item.question}</p>
 
-      <div className="question-stat-row">
-        <span className="text-[var(--ssc-danger)]">Wrong {wrongCount}x</span>
-        <span className="text-[var(--ssc-text-secondary)]">Skipped {skippedCount}x</span>
+      <div className="rm-footer">
+        <div>
+          <span className="rm-meta">Last Practiced: {lastPracticed}</span>
+          {correctPct !== null && (
+            <span className="rm-correct-label"> &middot; Correct: {correctPct}%</span>
+          )}
+        </div>
+        <button
+          type="button"
+          className={`save-icon-btn ${item.isSaved ? 'saved' : ''}`}
+          onClick={e => { e.stopPropagation(); onToggleSave(item); }}
+          aria-label={item.isSaved ? 'Remove bookmark' : 'Save question'}
+        >
+          <BookmarkIcon filled={item.isSaved} />
+        </button>
       </div>
 
-      {isOpen ? (
+      {correctPct !== null && (
+        <div className="sq-progress-track" style={{ marginTop: 8 }}>
+          <div className="sq-progress-fill" style={{
+            width: `${correctPct}%`,
+            background: correctPct >= 50 ? 'var(--ssc-success)' : 'var(--ssc-danger)',
+          }} />
+        </div>
+      )}
+
+      {isOpen && (
         <div className="question-expanded">
           <div className="expanded-block">
             <p className="expanded-label">Full Question</p>
@@ -131,19 +148,20 @@ function QuestionCard({ item, isOpen, onToggleOpen, onPracticeOne, onToggleSave 
               <b>{correctAnswerText || item.correctOption || 'Not available'}</b>
             </div>
           </div>
-          <p className="expanded-attempt">Last attempt: {statusText} &middot; {formatDate(item.lastAttemptedAt)}</p>
+          <p className="expanded-attempt">Wrong {wrongCount}x &middot; Skipped {skippedCount}x</p>
           <div className="divider" />
           <p className="expanded-label">Explanation</p>
-          {item.explanation ? <p className="text-sm leading-relaxed text-[var(--ssc-text-secondary)]">{item.explanation}</p> : <p className="text-sm text-[var(--ssc-text-muted)]">No official explanation available.</p>}
+          {item.explanation
+            ? <p className="text-sm leading-relaxed text-[var(--ssc-text-secondary)]">{item.explanation}</p>
+            : <p className="text-sm text-[var(--ssc-text-muted)]">No official explanation available.</p>
+          }
         </div>
-      ) : null}
+      )}
 
       <div className="question-actions">
         <button type="button" className="primary-btn" onClick={() => onPracticeOne(item)}>Practice Again</button>
         <button type="button" className="secondary-btn" onClick={onToggleOpen}>{isOpen ? 'Close' : 'Open'}</button>
-        <button type="button" className={`save-icon-btn ${item.isSaved ? 'saved' : ''}`} onClick={event => { event.stopPropagation(); onToggleSave(item); }} aria-label={item.isSaved ? 'Remove bookmark' : 'Save question'} title={item.isSaved ? 'Saved' : 'Save'}>
-          <BookmarkIcon filled={item.isSaved} />
-        </button>
+        <div />
       </div>
     </article>
   );
@@ -298,65 +316,186 @@ export default function RepeatedMistakesPage() {
     .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;min-height:40px}.primary-btn{border:0;background:linear-gradient(135deg,#ff7a1a,#ff4d00);color:white;box-shadow:var(--ssc-shadow-cta)}.secondary-btn{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-teal)}.primary-btn:disabled,.secondary-btn:disabled{opacity:.55;cursor:default;box-shadow:none}
     .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}.divider{height:1px;background:var(--ssc-border-soft);margin:12px 0}.question-expanded{overflow:hidden;margin-top:12px;padding:11px;border:1px solid var(--ssc-border-soft);border-radius:14px;background:var(--ssc-surface-soft)}.expanded-block{margin-bottom:10px}.expanded-label{color:var(--ssc-text-muted);font-size:10px;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px}.expanded-question{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.48;margin:0}.expanded-attempt{color:var(--ssc-text-muted);font-size:11px;font-weight:800;margin:9px 0 0}.answer-detail-grid{display:grid;gap:8px}.answer-detail{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface);border-radius:12px;padding:9px 10px}.answer-detail span{display:block;color:var(--ssc-text-muted);font-size:10px;font-weight:900;margin-bottom:4px}.answer-detail b{display:block;font-size:12px;line-height:1.4}.answer-detail.correct{background:var(--ssc-success-soft);border-color:rgba(18,184,134,.28)}.answer-detail.wrong{background:var(--ssc-danger-soft);border-color:rgba(239,68,68,.28)}.answer-detail.correct b{color:var(--ssc-success)}.answer-detail.wrong b{color:var(--ssc-danger)}.answer-detail.skipped b{color:var(--ssc-text-secondary)}
     .mistake-filter-group{margin-bottom:16px}.mistake-filter-group .chip-row{padding-bottom:0}.mistake-filter-label{display:block;margin:0 0 10px 2px;color:var(--ssc-text-primary);font-size:12px;font-weight:900;line-height:1}.active-filter-summary{margin:-2px 2px 14px;color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.4}
+    .rm-summary-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:20px 18px;margin-bottom:14px;box-shadow:var(--ssc-shadow-card)}
+    .rm-summary-icon{width:44px;height:44px;border-radius:13px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.20);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+    .rm-summary-heading{font-size:13px;font-weight:700;color:var(--ssc-text-secondary);margin:0 0 4px}
+    .rm-summary-count{font-size:40px;font-weight:900;color:var(--ssc-text-primary);line-height:1;font-family:var(--font-display);margin:0}
+    .rm-summary-label{font-size:12px;color:var(--ssc-text-muted);font-weight:600;margin:4px 0 0}
+    .rm-subject-row{display:flex;align-items:center;gap:12px;background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:16px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--ssc-shadow-card);cursor:pointer}
+    .rm-subject-icon{width:40px;height:40px;border-radius:11px;background:rgba(239,68,68,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .rm-subject-name{flex:1;font-size:15px;font-weight:800;color:var(--ssc-text-primary)}
+    .rm-subject-count{font-size:13px;font-weight:700;color:var(--ssc-text-secondary);margin-right:4px}
+    .rm-list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .rm-list-count{font-size:12px;color:var(--ssc-text-secondary);font-weight:500}
+    .rm-card{background:var(--ssc-surface);border:1px solid rgba(239,68,68,0.18);border-radius:18px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--ssc-shadow-card)}
+    .rm-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+    .rm-tags{display:flex;gap:6px;flex-wrap:wrap;flex:1;min-width:0}
+    .rm-subject-tag{font-size:11px;font-weight:700;color:var(--ssc-teal);background:var(--ssc-teal-soft);border-radius:99px;padding:2px 9px}
+    .rm-topic-tag{font-size:11px;font-weight:700;color:#FF6A00;background:rgba(255,106,0,0.10);border-radius:99px;padding:2px 9px}
+    .rm-repeat-pill{font-size:11px;font-weight:900;color:var(--ssc-danger);background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.20);border-radius:99px;padding:3px 10px;white-space:nowrap;flex-shrink:0}
+    .rm-question-text{font-size:14px;font-weight:700;color:var(--ssc-text-primary);line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin:0 0 10px}
+    .rm-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+    .rm-meta{font-size:11px;color:var(--ssc-text-muted)}
+    .rm-correct-label{font-size:11px;color:var(--ssc-text-secondary);font-weight:600}
+    .sq-progress-track{height:4px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden}
+    .sq-progress-fill{height:100%;border-radius:99px}
   `;
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-28">
       <Head><title>Repeated Mistakes - SSC GK Score Booster</title></Head>
-      <style>{styles}</style>
+      <style suppressHydrationWarning>{styles}</style>
       <HistoryTopBar title="Repeated Mistakes" icon={RepeatedMistakesIcon} showBack />
       <main className="history-shell">
-        <section className="intro-block">
-          <p className="intro-subtitle">Practice questions you got wrong multiple times.</p>
-        </section>
-
         {loading ? <Loader card size="md" label="Loading mistakes..." /> : error ? (
           <EmptyPanel title="Couldn't load repeated mistakes." body={error} action="Retry" onClick={() => router.reload()} />
         ) : (
           <>
-            <section>
-              <div className="mistake-filter-group">
-                <p className="mistake-filter-label">Subject / Source</p>
-                <div className="chip-row">
-                  <button type="button" className={`chip ${!questionSubject ? 'active' : ''}`} onClick={() => setQuestionSubject('')}>All</button>
-                  {subjects.map(item => <button key={item.name} type="button" className={`chip ${questionSubject === item.name ? 'active' : ''}`} onClick={() => setQuestionSubject(item.name)}>{item.name}</button>)}
+            {/* Subject chips */}
+            <div className="chip-row" style={{ marginBottom: 14 }}>
+              <button
+                type="button"
+                className={`chip ${!questionSubject ? 'active' : ''}`}
+                onClick={() => setQuestionSubject('')}
+              >
+                All {mistakes.length}
+              </button>
+              {subjects.map(item => (
+                <button
+                  key={item.name}
+                  type="button"
+                  className={`chip ${questionSubject === item.name ? 'active' : ''}`}
+                  onClick={() => setQuestionSubject(item.name)}
+                >
+                  {item.name} {item.count}
+                </button>
+              ))}
+            </div>
+
+            {!questionSubject ? (
+              <>
+                {/* Summary card */}
+                <div className="rm-summary-card">
+                  <div className="rm-summary-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-danger)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  </div>
+                  <p className="rm-summary-heading font-display">Questions You Repeat</p>
+                  <p className="rm-summary-count">{mistakes.length}</p>
+                  <p className="rm-summary-label">Repeated Mistakes</p>
                 </div>
-              </div>
 
-              {questionSubject ? (
-              <div className="mistake-filter-group">
-                <p className="mistake-filter-label">Topic</p>
-                <div className="chip-row">
-                  <button type="button" className={`chip ${!questionTopic ? 'active' : ''}`} onClick={() => setQuestionTopic('')}>All Topics</button>
-                  {topics.map(item => <button key={item.name} type="button" className={`chip ${questionTopic === item.name ? 'active' : ''}`} onClick={() => setQuestionTopic(item.name)}>{item.name}</button>)}
-                </div>
-              </div>
-              ) : null}
-
-              <p className="active-filter-summary">Showing: {activeMistakeSummary}</p>
-
-              <div className="history-card">
-                <p className="font-display font-black text-[var(--ssc-text-primary)]">{practiceCount} repeated questions found</p>
-                {practiceCount > 0 ? (
-                  <button type="button" className="primary-btn mt-3 w-full" disabled={starting} onClick={() => startPractice({})}>
-                    {starting ? 'Starting...' : `Practice All ${practiceCount}`}
+                {/* Practice All CTA */}
+                {mistakes.length > 0 && (
+                  <button
+                    type="button"
+                    className="primary-btn w-full"
+                    style={{ marginBottom: 14 }}
+                    disabled={starting}
+                    onClick={() => startPractice({})}
+                  >
+                    {starting ? 'Starting...' : `Practice All ${mistakes.length}`}
                   </button>
-                ) : null}
-              </div>
+                )}
 
-              {filteredMistakes.length ? filteredMistakes.map(item => (
-                <QuestionCard
-                  key={item.questionId}
-                  item={item}
-                  isOpen={expandedQuestionId === item.questionId}
-                  onToggleOpen={() => setExpandedQuestionId(current => current === item.questionId ? '' : item.questionId)}
-                  onPracticeOne={question => startPractice({ singleQuestion: question })}
-                  onToggleSave={toggleSave}
-                />
-              )) : (
-                <EmptyPanel title="No repeated questions found." body="Practice more to build this list." action="Practice More →" onClick={() => router.push('/dashboard')} />
-              )}
-            </section>
+                {/* Subject category rows */}
+                {subjects.map(subj => (
+                  <div
+                    key={subj.name}
+                    className="rm-subject-row"
+                    onClick={() => setQuestionSubject(subj.name)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => e.key === 'Enter' && setQuestionSubject(subj.name)}
+                  >
+                    <div className="rm-subject-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-danger)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z" />
+                        <path d="M12 9v4" />
+                        <path d="M12 17h.01" />
+                      </svg>
+                    </div>
+                    <span className="rm-subject-name">{subj.name}</span>
+                    <span className="rm-subject-count">{subj.count}</span>
+                    <ChevronSVG />
+                  </div>
+                ))}
+
+                {mistakes.length === 0 && (
+                  <EmptyPanel
+                    title="No repeated mistakes yet."
+                    body="Practice more quizzes to build this list."
+                    action="Practice Now"
+                    onClick={() => router.push('/dashboard')}
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                {/* Topic chips when subject selected */}
+                {topics.length > 1 && (
+                  <div className="chip-row" style={{ marginBottom: 14 }}>
+                    <button
+                      type="button"
+                      className={`chip ${!questionTopic ? 'active' : ''}`}
+                      onClick={() => setQuestionTopic('')}
+                    >
+                      All Topics
+                    </button>
+                    {topics.map(item => (
+                      <button
+                        key={item.name}
+                        type="button"
+                        className={`chip ${questionTopic === item.name ? 'active' : ''}`}
+                        onClick={() => setQuestionTopic(item.name)}
+                      >
+                        {item.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* List header */}
+                <div className="rm-list-header">
+                  <span className="rm-list-count">
+                    {filteredMistakes.length} question{filteredMistakes.length !== 1 ? 's' : ''}
+                  </span>
+                  {practiceCount > 0 && (
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      style={{ padding: '8px 14px', fontSize: 12, minHeight: 'auto' }}
+                      disabled={starting}
+                      onClick={() => startPractice({})}
+                    >
+                      {starting ? 'Starting...' : 'Practice All'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Question cards */}
+                {filteredMistakes.length ? filteredMistakes.map(item => (
+                  <QuestionCard
+                    key={item.questionId}
+                    item={item}
+                    isOpen={expandedQuestionId === item.questionId}
+                    onToggleOpen={() => setExpandedQuestionId(current => current === item.questionId ? '' : item.questionId)}
+                    onPracticeOne={question => startPractice({ singleQuestion: question })}
+                    onToggleSave={toggleSave}
+                  />
+                )) : (
+                  <EmptyPanel
+                    title="No repeated questions found."
+                    body="Practice more to build this list."
+                    action="Practice More"
+                    onClick={() => router.push('/dashboard')}
+                  />
+                )}
+              </>
+            )}
           </>
         )}
       </main>
