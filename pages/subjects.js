@@ -10,14 +10,17 @@ import { getTopics } from '@/lib/data/questionData';
 const SUBJECT_SECTIONS = [
   {
     label:    'Popular Subjects',
+    pyqLabel: 'Core SSC Subjects',
     subjects: ['Polity', 'Geography', 'Economics', 'Current Affairs', 'Static GK'],
   },
   {
     label:    'Science',
+    pyqLabel: 'Science',
     subjects: ['Physics', 'Chemistry', 'Biology'],
   },
   {
     label:    'History',
+    pyqLabel: 'History',
     subjects: ['Modern History', 'Ancient History', 'Medieval History'],
   },
 ];
@@ -114,8 +117,9 @@ async function fetchSubjectCounts(collection) {
 /* ─── Shared card grid ────────────────────────────────────────────────────────
    Renders a 2-column grid of subject cards. Used both for sectioned layout
    and for flat search results. startIdx offsets the enter-animation delay.
+   isPYQ: hides subtitle, shows "PYQs" label, reduces card min-height.
 ──────────────────────────────────────────────────────────────────────────── */
-function SubjectGrid({ subjects, displayCounts, collection, router, startIdx = 0 }) {
+function SubjectGrid({ subjects, displayCounts, collection, router, startIdx = 0, isPYQ = false }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, padding: '0 20px 14px' }}>
       {subjects.map((subject, i) => {
@@ -133,7 +137,7 @@ function SubjectGrid({ subjects, displayCounts, collection, router, startIdx = 0
               navigator.vibrate?.(8);
               router.push(`/quiz-setup?subject=${encodeURIComponent(subject)}&collection=${encodeURIComponent(collection)}&sourceScreen=dashboard`);
             }}
-            className={`subject-card ${enterClass}`}
+            className={`subject-card${isPYQ ? ' subject-card-pyq' : ''} ${enterClass}`}
             style={{ '--accent': hex, '--accent-glow': glow }}
           >
             {/* Icon box */}
@@ -141,18 +145,20 @@ function SubjectGrid({ subjects, displayCounts, collection, router, startIdx = 0
               {theme.icon ?? subjectStyles[subject]?.icon}
             </div>
 
-            {/* Name + subtitle + bottom row */}
+            {/* Name + [subtitle in normal mode] + count/arrow row */}
             <div style={{ position: 'relative', zIndex: 1 }}>
-              <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', marginBottom: 2 }}>
+              <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', marginBottom: isPYQ ? 4 : 2 }}>
                 {subject}
               </p>
-              <p className="t-badge" style={{ color: 'var(--ssc-text-secondary)', marginBottom: 6, marginTop: 0, lineHeight: 1.5 }}>
-                {theme.subtitle || ''}
-              </p>
+              {!isPYQ && (
+                <p className="t-badge" style={{ color: 'var(--ssc-text-secondary)', marginBottom: 6, marginTop: 0, lineHeight: 1.5 }}>
+                  {theme.subtitle || ''}
+                </p>
+              )}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
                 {count != null ? (
                   <span className="t-badge" style={{ color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)', border: '1px solid rgba(14,165,164,0.16)', borderRadius: 20, padding: '2px 8px', lineHeight: 1.6 }}>
-                    {count.toLocaleString()} Questions
+                    {count.toLocaleString()} {isPYQ ? 'PYQs' : 'Questions'}
                   </span>
                 ) : (
                   <span style={{ fontSize: 10, color: 'var(--ssc-text-muted)' }}>—</span>
@@ -174,6 +180,7 @@ export default function SubjectsPage() {
   const [search, setSearch]     = useState('');
 
   const collection = router.query.collection || 'general';
+  const isPYQ      = collection === 'PYQ';
   const [slow, setSlow] = useState(false);
 
   const { data: subjectCounts, isFetching, isError, refetch } = useQuery({
@@ -200,6 +207,11 @@ export default function SubjectsPage() {
   }, [isFetching]);
 
   const displayCounts = subjectCounts ?? (isError ? FALLBACK_SUBJECT_COUNTS : null);
+
+  // Total PYQ count — sum of all known subject counts for the context card
+  const totalPYQCount = displayCounts
+    ? ALL_SUBJECTS.reduce((sum, s) => sum + (displayCounts[s] || 0), 0)
+    : null;
 
   // When searching: flat filtered list across all sections
   // When not searching: null (sections render themselves with their own filter)
@@ -263,6 +275,11 @@ export default function SubjectsPage() {
                       box-shadow 0.18s ease,
                       border-color 0.18s ease;
           box-shadow: var(--ssc-shadow-card);
+        }
+
+        /* PYQ mode — no subtitle → shorter card */
+        .subject-card-pyq {
+          min-height: 90px;
         }
 
         /* Per-card accent glow — top-left radial */
@@ -358,10 +375,10 @@ export default function SubjectsPage() {
           </button>
           <div style={{ textAlign: 'center', minWidth: 0 }}>
             <h1 className="t-page-title font-display" style={{ color: 'var(--ssc-text-primary)', fontSize: 18 }}>
-              Select Subject
+              Select a subject
             </h1>
             <p className="t-page-subtitle" style={{ color: 'var(--ssc-text-secondary)', fontSize: 12 }}>
-              Choose a subject to continue
+              {isPYQ ? 'Choose a subject to start previous year questions' : 'Choose a subject to continue'}
             </p>
           </div>
           <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ssc-text-primary)', fontWeight: 800 }}>
@@ -386,7 +403,7 @@ export default function SubjectsPage() {
               type="text"
               className="subj-search"
               aria-label="Search subjects"
-              placeholder="Search subjects…"
+              placeholder={isPYQ ? 'Search PYQ subjects...' : 'Search subjects…'}
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{
@@ -407,82 +424,144 @@ export default function SubjectsPage() {
           </div>
         </div>
 
-        {/* ── MIXED GK CHALLENGE — featured full-width card ── */}
-        <div style={{ padding: '0 20px 14px' }}>
-          <button
-            onClick={() => {
-              navigator.vibrate?.(10);
-              const col = router.query.collection || 'general';
-              router.push(`/quiz?subject=Mixed&topic=Mixed&count=25&collection=${col}&sourceScreen=dashboard`);
-            }}
-            className="w-full active:scale-[0.98] transition-transform"
-            style={{
-              position: 'relative',
-              width: '100%',
-              padding: '12px 16px',
-              borderRadius: 20,
-              background: 'linear-gradient(135deg, #FFF8F4 0%, #E8F8F6 100%)',
-              border: '1px solid var(--ssc-border-soft)',
-              overflow: 'hidden',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              textAlign: 'left',
-              boxShadow: 'var(--ssc-shadow-card)',
-            }}
-          >
-            {/* Subtle shimmer streak */}
+        {/* ── PYQ CONTEXT CARD — shown only in PYQ mode ── */}
+        {isPYQ && (
+          <div style={{ padding: '0 20px 14px' }}>
             <div style={{
-              position: 'absolute', inset: 0,
-              background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%)',
-              pointerEvents: 'none',
-            }} />
-
-            {/* Icon box */}
-            <div style={{
-              width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-              background: '#FFF1E8',
-              border: '1px solid rgba(255,106,0,0.18)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, lineHeight: 1,
-            }}>
-              🎯
-            </div>
-
-            {/* Text */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
-                <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', margin: 0 }}>
-                  Mixed GK Challenge
-                </p>
-                <span className="t-badge" style={{
-                  letterSpacing: '0.06em', color: 'var(--ssc-teal)',
-                  background: 'var(--ssc-teal-soft)',
-                  border: '1px solid rgba(14,165,164,0.20)',
-                  borderRadius: 20, padding: '2px 7px',
-                  textTransform: 'uppercase', flexShrink: 0,
-                }}>
-                  Recommended
-                </span>
-              </div>
-              <p className="t-card-subtitle" style={{ color: 'var(--ssc-text-secondary)', margin: '4px 0 0' }}>
-                All subjects • Exam-like practice
-              </p>
-            </div>
-
-            {/* Arrow */}
-            <div style={{
-              width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
               background: 'var(--ssc-surface)',
               border: '1px solid var(--ssc-border-soft)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: 20,
+              padding: '16px',
+              boxShadow: 'var(--ssc-shadow-card)',
+              position: 'relative',
+              overflow: 'hidden',
             }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-primary)" strokeWidth="2.8">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
+              {/* Subtle teal glow top-left */}
+              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at top left, rgba(20,184,166,0.08), transparent 60%)', pointerEvents: 'none' }} />
+
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, position: 'relative', zIndex: 1 }}>
+                {/* Icon */}
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(20,184,166,0.12)', border: '1px solid rgba(20,184,166,0.20)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22, lineHeight: 1, fontFamily: '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif' }}>
+                  📚
+                </div>
+
+                {/* Text */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', margin: '0 0 4px' }}>
+                    Previous Year Questions
+                  </p>
+                  <p className="t-card-subtitle" style={{ color: 'var(--ssc-text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                    Practice real SSC exam questions subject-wise.
+                  </p>
+                </div>
+
+                {/* Trophy decoration */}
+                <div style={{ fontSize: 30, flexShrink: 0, lineHeight: 1, fontFamily: '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif' }}>
+                  🏆
+                </div>
+              </div>
+
+              {/* Chips row */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12, position: 'relative', zIndex: 1 }}>
+                {[
+                  totalPYQCount ? `${totalPYQCount.toLocaleString()} PYQs` : '7,000+ PYQs',
+                  'Exam-level',
+                  'Subject-wise',
+                ].map(chip => (
+                  <span key={chip} className="t-badge" style={{
+                    color: 'var(--ssc-teal)',
+                    background: 'var(--ssc-teal-soft)',
+                    border: '1px solid rgba(14,165,164,0.20)',
+                    borderRadius: 20,
+                    padding: '3px 10px',
+                    lineHeight: 1.6,
+                  }}>
+                    {chip}
+                  </span>
+                ))}
+              </div>
             </div>
-          </button>
-        </div>
+          </div>
+        )}
+
+        {/* ── MIXED GK CHALLENGE — featured full-width card (hidden in PYQ mode) ── */}
+        {!isPYQ && (
+          <div style={{ padding: '0 20px 14px' }}>
+            <button
+              onClick={() => {
+                navigator.vibrate?.(10);
+                const col = router.query.collection || 'general';
+                router.push(`/quiz?subject=Mixed&topic=Mixed&count=25&collection=${col}&sourceScreen=dashboard`);
+              }}
+              className="w-full active:scale-[0.98] transition-transform"
+              style={{
+                position: 'relative',
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: 20,
+                background: 'linear-gradient(135deg, #FFF8F4 0%, #E8F8F6 100%)',
+                border: '1px solid var(--ssc-border-soft)',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                textAlign: 'left',
+                boxShadow: 'var(--ssc-shadow-card)',
+              }}
+            >
+              {/* Subtle shimmer streak */}
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%)',
+                pointerEvents: 'none',
+              }} />
+
+              {/* Icon box */}
+              <div style={{
+                width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                background: '#FFF1E8',
+                border: '1px solid rgba(255,106,0,0.18)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 20, lineHeight: 1,
+              }}>
+                🎯
+              </div>
+
+              {/* Text */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                  <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', margin: 0 }}>
+                    Mixed GK Challenge
+                  </p>
+                  <span className="t-badge" style={{
+                    letterSpacing: '0.06em', color: 'var(--ssc-teal)',
+                    background: 'var(--ssc-teal-soft)',
+                    border: '1px solid rgba(14,165,164,0.20)',
+                    borderRadius: 20, padding: '2px 7px',
+                    textTransform: 'uppercase', flexShrink: 0,
+                  }}>
+                    Recommended
+                  </span>
+                </div>
+                <p className="t-card-subtitle" style={{ color: 'var(--ssc-text-secondary)', margin: '4px 0 0' }}>
+                  All subjects • Exam-like practice
+                </p>
+              </div>
+
+              {/* Arrow */}
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                background: 'var(--ssc-surface)',
+                border: '1px solid var(--ssc-border-soft)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-primary)" strokeWidth="2.8">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </div>
+            </button>
+          </div>
+        )}
 
         {/* ── SLOW FETCH HINT — only shown on initial load (no cached data yet) ── */}
         {isFetching && slow && !isError && displayCounts === null && (
@@ -508,7 +587,7 @@ export default function SubjectsPage() {
               <span style={{ fontSize: 17, flexShrink: 0, lineHeight: 1.3 }}>⚠️</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 13, fontWeight: 700, color: '#fca5a5', margin: '0 0 2px' }}>
-                  Couldn't load subjects
+                  Couldn&apos;t load subjects
                 </p>
                 <p style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', margin: 0, lineHeight: 1.4 }}>
               Check your connection and try again.
@@ -555,7 +634,7 @@ export default function SubjectsPage() {
 
         {/* ── SEARCH RESULTS — flat grid, no section labels ── */}
         {searchResults && searchResults.length > 0 && (
-          <SubjectGrid subjects={searchResults} displayCounts={displayCounts} collection={collection} router={router} startIdx={0} />
+          <SubjectGrid subjects={searchResults} displayCounts={displayCounts} collection={collection} router={router} startIdx={0} isPYQ={isPYQ} />
         )}
 
         {/* ── SECTIONED LAYOUT — shown when not searching ── */}
@@ -569,9 +648,9 @@ export default function SubjectsPage() {
                 color: 'var(--ssc-text-secondary)',
                 margin: '0 20px 8px',
               }}>
-                {section.label}
+                {isPYQ ? section.pyqLabel : section.label}
               </p>
-              <SubjectGrid subjects={subjects} displayCounts={displayCounts} collection={collection} router={router} startIdx={0} />
+              <SubjectGrid subjects={subjects} displayCounts={displayCounts} collection={collection} router={router} startIdx={0} isPYQ={isPYQ} />
             </div>
           );
         })}
