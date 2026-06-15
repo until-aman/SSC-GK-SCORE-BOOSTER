@@ -99,23 +99,6 @@ export default function Leaderboard() {
   const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [updatedAt, setUpdatedAt] = useState(null);
-  const [showCTA, setShowCTA] = useState(false);
-
-  useEffect(() => {
-    let timer;
-    function onInteract() {
-      timer = setTimeout(() => setShowCTA(true), 4000);
-    }
-    window.addEventListener('scroll', onInteract, { capture: true, once: true });
-    window.addEventListener('touchstart', onInteract, { capture: true, once: true });
-    window.addEventListener('pointermove', onInteract, { capture: true, once: true });
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('scroll', onInteract, true);
-      window.removeEventListener('touchstart', onInteract, true);
-      window.removeEventListener('pointermove', onInteract, true);
-    };
-  }, []);
 
   async function fetchLeaderboard(scope, { forceRefresh = false } = {}) {
     let showedCache = false;
@@ -232,7 +215,7 @@ export default function Leaderboard() {
           }}
         >
           {/* Title row — 58px, same as every other tab */}
-          <div className="px-4 flex items-center justify-between" style={{ height: 58 }}>
+          <div className="px-4 flex items-center" style={{ height: 58 }}>
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-[11px] flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,107,22,0.10)' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -249,31 +232,31 @@ export default function Leaderboard() {
               </span>
             </div>
           </div>
+        </div>
 
-          {/* Tab switcher row */}
-          <div className="pb-3 flex justify-center">
-            <div className="flex rounded-full p-1 w-fit gap-1" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}>
-              {[
-                { key: 'weekly', label: 'This Week' },
-                { key: 'all',    label: 'All Time' },
-              ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setActiveTab(key)}
-                  className="t-button-sm px-5 py-2 rounded-full font-display transition-all duration-200 active:scale-95"
-                  style={activeTab === key ? {
-                    background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)',
-                    color: '#FFFFFF',
-                    boxShadow: '0 4px 12px rgba(255,107,22,0.35)',
-                  } : {
-                    background: 'rgba(148,163,184,0.10)',
-                    color: '#94A3B8',
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+        {/* Tab switcher — below topbar, stays fixed */}
+        <div className="flex-shrink-0 flex justify-center py-3">
+          <div className="flex rounded-full p-1 w-fit gap-1" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}>
+            {[
+              { key: 'weekly', label: 'This Week' },
+              { key: 'all',    label: 'All Time' },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className="t-button-sm px-5 py-2 rounded-full font-display transition-all duration-200 active:scale-95"
+                style={activeTab === key ? {
+                  background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)',
+                  color: '#FFFFFF',
+                  boxShadow: '0 4px 12px rgba(255,107,22,0.35)',
+                } : {
+                  background: 'rgba(148,163,184,0.10)',
+                  color: '#94A3B8',
+                }}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -459,31 +442,6 @@ export default function Leaderboard() {
           </div>
         </div>
 
-        {/* Practice CTA â€" fixed above bottom nav, slides in after user interaction */}
-        <div
-          className="fixed bottom-[74px] left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 z-40"
-          style={{
-            opacity: showCTA ? 1 : 0,
-            transform: showCTA ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(16px)',
-            transition: 'opacity 0.4s ease, transform 0.4s ease',
-            pointerEvents: showCTA ? 'auto' : 'none',
-          }}
-        >
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="w-full font-display font-bold text-base text-white active:scale-[0.98] transition-transform"
-            style={{
-              borderRadius: 18,
-              padding: '15px 0',
-              border: 'none',
-              cursor: 'pointer',
-              background: 'linear-gradient(135deg, #FF7A1A, #FF4D00)',
-              boxShadow: '0 12px 28px rgba(255,90,0,0.22)',
-            }}
-          >
-            Practice to climb rank &rarr;
-          </button>
-        </div>
       </div>
 
 
