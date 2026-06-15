@@ -365,4 +365,40 @@ test('R-FIX3. eligible rollover write is awaited before res.json (not fire-and-f
   assert.ok(/\[mentor-rollover-write\] threw/.test(src), 'write errors must be caught and logged, not fail the plan response');
 });
 
+// ---- Phase 10G: concurrency — no duplicate ROLLOVER idempotency row ----
+test('G1. concurrent same-key rollovers COALESCE in-process -> exactly one finalize, no duplicate', async () => {
+  const tasks = [fakeTask({ taskId: 'G1a', type: 'practice_task', status: 'active', rowVersion: 1 })];
+  const repo = fakeRepo(tasks); const store = fakeStore();
+  const args = { snapshot: snap({ calendarDay: 2, lastProcessed: 1, tasks }), userScope: SCOPE, activePlan: { planId: PLAN }, now: NOW, mutationRepository: repo, idempotencyStore: store, planWriter: fakePlanWriter(), totalPlanDays: 46 };
+  // two requests for the same key fired concurrently (same serverless instance)
+  const [r1, r2] = await Promise.all([executeDailyRolloverWrite(args), executeDailyRolloverWrite(args)]);
+  assert.ok(r1.ok && r2.ok, 'both calls ok');
+  assert.strictEqual(store._m.size, 1, 'exactly ONE idempotency row saved (no duplicate)');
+  assert.ok(r1.coalesced || r2.coalesced, 'one call coalesced onto the other');
+  assert.strictEqual(Number(repo._byId.get('G1a').rowVersion), 2, 'task moved exactly once (rv 1->2)');
+  assert.strictEqual(repo._updates.length, 1, 'one task update, not two');
+});
+test('G2. recheck-before-finalize: a cross-instance winner finalized first -> skip append (raced)', async () => {
+  const tasks = [fakeTask({ taskId: 'G2a', type: 'practice_task', status: 'active' })];
+  const repo = fakeRepo(tasks);
+  let getCount = 0, saves = 0;
+  const winner = { payloadHash: 'x', result: { ok: true, rolloverRequired: true, movedToPendingCount: 1 } };
+  // get: step-1 sees nothing; the step-5b recheck sees the concurrent winner's row.
+  const store = { async get() { getCount += 1; return getCount >= 2 ? winner : null; }, async save() { saves += 1; } };
+  const r = await executeDailyRolloverWrite({ snapshot: snap({ calendarDay: 2, lastProcessed: 1, tasks }), userScope: SCOPE, activePlan: { planId: PLAN }, now: NOW, mutationRepository: repo, idempotencyStore: store, planWriter: fakePlanWriter(), totalPlanDays: 46 });
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.raced, true, 'detected the concurrent winner at recheck');
+  assert.strictEqual(r.idempotent, true);
+  assert.strictEqual(saves, 0, 'did NOT append a duplicate ROLLOVER row');
+});
+test('G3. normal single run still finalizes exactly once (no regression)', async () => {
+  const tasks = [fakeTask({ taskId: 'G3a', type: 'practice_task', status: 'active' })];
+  const store = fakeStore();
+  const r = await executeDailyRolloverWrite({ snapshot: snap({ calendarDay: 2, lastProcessed: 1, tasks }), userScope: SCOPE, activePlan: { planId: PLAN }, now: NOW, mutationRepository: fakeRepo(tasks), idempotencyStore: store, planWriter: fakePlanWriter(), totalPlanDays: 46 });
+  assert.strictEqual(r.ok, true);
+  assert.ok(!r.coalesced && !r.raced, 'a lone run is neither coalesced nor raced');
+  assert.strictEqual(store._m.size, 1, 'exactly one ROLLOVER row');
+  assert.strictEqual(store._m.get(`mentor-rollover:${SCOPE}:${PLAN}:2`).result.event.action, 'ROLLOVER');
+});
+
 (async () => { for (const t of T) { try { await t.fn(); passed++; console.log(`ok  ${t.n}`); } catch (e) { failed++; console.error(`FAIL ${t.n}\n     ${e.message}`); } } console.log(`\n${passed}/${T.length} Mentor rollover WRITE tests passed.`); process.exit(failed ? 1 : 0); })();
