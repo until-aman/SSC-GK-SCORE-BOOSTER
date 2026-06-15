@@ -1263,7 +1263,7 @@ export default function Dashboard() {
           {/* Section header — outside the card, same pattern as DISCOVER QUIZZES */}
           <div className="flex items-center justify-between mb-3">
             <p className="t-section-label app-section-label" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-              🏆 WEEKLY CHAMPIONS
+              WEEKLY CHAMPIONS
             </p>
             <button
               type="button"
