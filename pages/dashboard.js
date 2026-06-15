@@ -1159,102 +1159,101 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => handleDiscoverClick('PYQ', '/subjects?collection=PYQ')}
-              className="card-lift w-full text-left"
-              style={{
-                minHeight: 142,
-                borderRadius: 16,
-                padding: '16px 12px',
-                background: 'var(--ssc-surface)',
-                border: '1px solid var(--ssc-border-soft)',
-                boxShadow: 'var(--ssc-shadow-card)',
-                cursor: 'pointer',
-              }}
-            >
-              <div className="flex items-start gap-3">
-                <span style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 999,
-                  background: 'var(--ssc-teal-soft)',
-                  color: 'var(--ssc-teal)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  fontSize: 20,
-                }}>
-                  ▣
-                </span>
-                <div style={{ minWidth: 0 }}>
-                  <p className="t-card-title" style={{ color: 'var(--text-primary)', margin: 0, fontSize: 14 }}>SSC PYQs</p>
-                  <p className="t-card-subtitle" style={{ color: 'var(--text-secondary)', marginTop: 5, fontSize: 12, lineHeight: 1.35 }}>
-                    Previous year questions by topic
-                  </p>
-                </div>
-              </div>
-              <p className="t-badge" style={{
-                color: 'var(--ssc-teal)',
+          {/* SSC PYQs — full-width primary card */}
+          <div style={{
+            background: 'var(--ssc-surface)',
+            border: '1px solid var(--ssc-border-soft)',
+            borderRadius: 22,
+            padding: 20,
+            marginBottom: 12,
+            boxShadow: 'var(--ssc-shadow-card)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14 }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: 999, flexShrink: 0,
                 background: 'var(--ssc-teal-soft)',
-                borderRadius: 999,
-                display: 'inline-block',
-                marginTop: 18,
-                padding: '5px 10px',
-                fontSize: 11,
-              }}>
-                7,000+ Questions
-              </p>
-            </button>
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 26, lineHeight: 1,
+                fontFamily: '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif',
+              }}>📚</div>
+              <div style={{ minWidth: 0 }}>
+                <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', margin: '0 0 3px', fontSize: 16 }}>SSC PYQs</p>
+                <p className="t-card-subtitle" style={{ color: 'var(--ssc-text-secondary)', margin: 0, fontSize: 13, lineHeight: 1.4 }}>Practice real previous year questions</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+              {['7,000+ Questions', 'Exam-level', 'Subject-wise'].map(chip => (
+                <span key={chip} className="t-badge" style={{
+                  color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)',
+                  border: '1px solid rgba(14,165,164,0.20)',
+                  borderRadius: 999, padding: '4px 10px', lineHeight: 1.5,
+                }}>{chip}</span>
+              ))}
+            </div>
 
             <button
-              onClick={() => setModal('Parmar')}
-              className="card-lift w-full text-left"
+              onClick={() => handleDiscoverClick('PYQ', '/subjects?collection=PYQ')}
+              className="w-full active:scale-[0.98] transition-transform font-display font-bold text-white"
               style={{
-                minHeight: 142,
-                borderRadius: 16,
-                padding: '16px 12px',
-                background: 'var(--ssc-surface)',
-                border: '1px solid var(--ssc-border-soft)',
-                boxShadow: 'var(--ssc-shadow-card)',
-                cursor: 'pointer',
+                padding: '13px 0', borderRadius: 14, border: 'none', cursor: 'pointer',
+                background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)',
+                boxShadow: '0 8px 20px rgba(255,90,0,0.22)', fontSize: 15,
               }}
             >
-              <div className="flex items-start gap-3">
-                <span style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 999,
-                  background: '#F2EAFE',
-                  color: 'var(--ssc-rank)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  fontSize: 22,
-                }}>
-                  ◒
-                </span>
-                <div style={{ minWidth: 0 }}>
-                  <p className="t-card-title" style={{ color: 'var(--text-primary)', margin: 0, fontSize: 14 }}>Parmar SSC</p>
-                  <p className="t-card-subtitle" style={{ color: 'var(--text-secondary)', marginTop: 5, fontSize: 12, lineHeight: 1.35 }}>
-                    Parmar SSC special quizzes
-                  </p>
-                </div>
-              </div>
-              <p className="t-badge" style={{
-                color: 'var(--ssc-rank)',
-                background: '#F7ECFF',
-                borderRadius: 999,
-                display: 'inline-block',
-                marginTop: 18,
-                padding: '5px 10px',
-                fontSize: 11,
-              }}>
-                Coming Soon
-              </p>
+              Start PYQ Practice →
             </button>
+          </div>
+
+          {/* Parmar SSC — full-width secondary card */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setModal('Parmar')}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setModal('Parmar'); } }}
+            className="active:scale-[0.98] transition-transform"
+            style={{
+              background: 'var(--ssc-surface)',
+              border: '1px solid var(--ssc-border-soft)',
+              borderRadius: 22,
+              padding: 20,
+              boxShadow: 'var(--ssc-shadow-card)',
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 16,
+            }}
+          >
+            <div style={{
+              width: 56, height: 56, borderRadius: 999, flexShrink: 0,
+              background: '#F2EAFE',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 26, lineHeight: 1,
+              fontFamily: '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif',
+            }}>🎬</div>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', margin: '0 0 3px', fontSize: 16 }}>Parmar SSC</p>
+              <p className="t-card-subtitle" style={{ color: 'var(--ssc-text-secondary)', margin: '0 0 10px', fontSize: 13, lineHeight: 1.4 }}>Video-wise GK quizzes coming soon</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span className="t-badge" style={{
+                  color: '#7C3AED', background: '#F2EAFE',
+                  border: '1px solid rgba(124,58,237,0.20)',
+                  borderRadius: 999, padding: '4px 10px', lineHeight: 1.5,
+                }}>Coming Soon</span>
+                <span className="font-display font-bold" style={{ color: 'var(--ssc-orange-deep)', fontSize: 13 }}>
+                  Notify Me →
+                </span>
+              </div>
+            </div>
+
+            <div style={{
+              width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+              background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-secondary)" strokeWidth="2.5">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
           </div>
         </div>
 
