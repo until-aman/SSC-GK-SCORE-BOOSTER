@@ -41,15 +41,12 @@ function AppTopBar() {
       className="sticky top-0 z-50 flex items-center justify-between px-4"
       style={{
         height: '58px',
-        background: 'rgba(15,32,52,0.88)',
+        background: 'rgba(255,255,255,0.94)',
         backdropFilter: 'blur(14px)',
         WebkitBackdropFilter: 'blur(14px)',
-        border: '1px solid rgba(20,184,166,0.18)',
-        borderTop: 'none',
-        borderLeft: 'none',
-        borderRight: 'none',
+        borderBottom: '1px solid var(--ssc-border-soft)',
         borderRadius: '0 0 22px 22px',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.22)',
+        boxShadow: '0 10px 30px rgba(16,32,51,0.08)',
       }}
     >
       <div className="flex items-center gap-2.5">
@@ -58,7 +55,7 @@ function AppTopBar() {
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
           </svg>
         </div>
-        <span className="font-display self-center whitespace-nowrap text-[18px] font-black leading-none tracking-wide text-white">
+        <span className="font-display self-center whitespace-nowrap text-[18px] font-black leading-none tracking-wide" style={{ color: 'var(--ssc-text-primary)' }}>
           Today&apos;s GK Plan
         </span>
         <span

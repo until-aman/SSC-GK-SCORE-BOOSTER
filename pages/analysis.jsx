@@ -352,12 +352,12 @@ export default function AnalysisPage() {
           className="sticky top-0 z-50 px-4 flex items-center justify-between"
           style={{
             height: '58px',
-            background: 'rgba(255,255,255,0.92)',
+            background: 'rgba(255,255,255,0.94)',
             backdropFilter: 'blur(14px)',
             WebkitBackdropFilter: 'blur(14px)',
             borderBottom: `1px solid ${BORDER}`,
             borderRadius: '0 0 22px 22px',
-            boxShadow: SOFT_SHADOW,
+            boxShadow: '0 10px 30px rgba(16,32,51,0.08)',
           }}
         >
           <div className="flex items-center gap-2.5">
@@ -590,12 +590,12 @@ export default function AnalysisPage() {
         className="sticky top-0 z-50 px-4 flex items-center justify-between"
         style={{
           height: '58px',
-            background: 'rgba(255,255,255,0.92)',
+            background: 'rgba(255,255,255,0.94)',
             backdropFilter: 'blur(14px)',
             WebkitBackdropFilter: 'blur(14px)',
             borderBottom: `1px solid ${BORDER}`,
             borderRadius: '0 0 22px 22px',
-            boxShadow: SOFT_SHADOW,
+            boxShadow: '0 10px 30px rgba(16,32,51,0.08)',
         }}
       >
         <div className="flex items-center gap-2.5">
