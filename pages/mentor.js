@@ -934,13 +934,19 @@ export default function MentorPage() {
           <main className="px-4 pb-24 pt-[18px] text-white">
             <div className="space-y-5">
               <section className="space-y-3">
-                <RefreshStatus
-                  label="Plan sync"
-                  updatedAt={snapshot?.lastSyncAt || snapshot?.plan?.updatedAt}
-                  isRefreshing={refreshing}
-                  onRefresh={handleRefresh}
-                  refreshText="Refresh My Plan"
-                />
+                <div className="flex justify-end">
+                  <RefreshStatus
+                    updatedAt={snapshot?.lastSyncAt || snapshot?.plan?.updatedAt}
+                    isRefreshing={refreshing}
+                    onRefresh={handleRefresh}
+                    refreshText={
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                      </svg>
+                    }
+                  />
+                </div>
                 <MentorMessage message={onboarded ? mentorDayMessage : MENTOR_COPY.NO_PLAN} />
               </section>
 
