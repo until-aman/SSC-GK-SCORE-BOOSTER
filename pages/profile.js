@@ -181,7 +181,7 @@ export default function Profile() {
           <div className="grid grid-cols-3 gap-2 mt-3">
             {/* Coins → Coins History */}
             <button
-              onClick={() => !isGuest && router.push('/history')}
+              onClick={() => !isGuest && router.push('/history/coins')}
               className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
               style={{ background: 'var(--ssc-surface)', border: '1px solid rgba(246,179,49,0.26)', boxShadow: 'var(--ssc-shadow-card)' }}
             >
