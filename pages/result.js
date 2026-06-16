@@ -21,6 +21,7 @@ import { markAnalysisActivityStale } from '@/lib/data/analysisData';
 import { patchUserProfileCache } from '@/lib/data/profileData';
 import { getAIResultInsights, readAIInsightsCache } from '@/lib/data/aiData';
 import { MENTOR_COPY, FEEDBACK_CHIPS } from '@/lib/mentorCopy';
+import { calculateMaxScore, calculateRawScore, formatScore } from '@/lib/scoring';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -425,21 +426,25 @@ export default function Result() {
     if (scoreSavedRef.current) return;
     scoreSavedRef.current = true;
 
-    const { correct, incorrect, skipped, total, score, subject, topic, sessionId } = router.query;
+    const { correct, incorrect, skipped, total, subject, topic, sessionId } = router.query;
     if (!correct && !result) return;
 
     const resolvedSubject = subject || result?.subject || '';
     const resolvedTopic = topic || result?.topic || '';
     const resolvedSessionId = sessionId || result?.sessionId || result?.clientSessionId || crypto.randomUUID();
+    const correctAnswers = Number(correct ?? result?.correct ?? 0);
+    const incorrectAnswers = Number(incorrect ?? result?.incorrect ?? 0);
+    const skippedAnswers = Number(skipped ?? result?.skipped ?? 0);
+    const totalQuestions = Number(total ?? result?.totalQuestions ?? 0);
 
     // Score fields previously sent to /api/score — now part of the single
     // canonical completion request to /api/quiz-session/complete.
     const scoreFields = {
-      correctAnswers:   Number(correct   || result?.correct          || 0),
-      incorrectAnswers: Number(incorrect || result?.incorrect        || 0),
-      skipped:          Number(skipped   || result?.skipped          || 0),
-      totalQuestions:   Number(total     || result?.totalQuestions   || 0),
-      rawScore:         Number(score     || result?.rawScore         || 0),
+      correctAnswers,
+      incorrectAnswers,
+      skipped:          skippedAnswers,
+      totalQuestions,
+      rawScore:         calculateRawScore({ correct: correctAnswers, incorrect: incorrectAnswers }),
       subject:          resolvedSubject,
       topic:            resolvedTopic,
       sessionId:        resolvedSessionId,
@@ -562,7 +567,7 @@ export default function Result() {
           correctAnswers:   result.correct,
           incorrectAnswers: result.incorrect,
           skipped:          result.skipped,
-          rawScore:         result.rawScore,
+          rawScore:         calculateRawScore({ correct: result.correct, incorrect: result.incorrect }),
           accuracy:         result.accuracy,
         },
       });
@@ -583,7 +588,7 @@ export default function Result() {
     : -1;
 
   useEffect(() => {
-    if (!result || result.rawScore <= 0) return;
+    if (!result || calculateRawScore({ correct: result.correct, incorrect: result.incorrect }) <= 0) return;
 
     const canvas = document.getElementById('confetti-canvas');
     if (!canvas) return;
@@ -688,12 +693,12 @@ export default function Result() {
   }
 
   function handleShareWhatsApp() {
-    const msg = `🏆 Just climbed the leaderboard with ${result.rawScore} marks on SSC GK Score Booster!\n\nJoin me — play free SSC GK quizzes & see if you can top the chart 👇\n\n🔗 https://ssc-gk-score-booster-v2.vercel.app`;
+    const msg = `🏆 Just climbed the leaderboard with ${formatScore(calculateRawScore({ correct: result.correct, incorrect: result.incorrect }))} marks on SSC GK Score Booster!\n\nJoin me — play free SSC GK quizzes & see if you can top the chart 👇\n\n🔗 https://ssc-gk-score-booster-v2.vercel.app`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   }
 
   function handleCopy() {
-    const text = `🏆 Just climbed the leaderboard with ${result.rawScore} marks on SSC GK Score Booster!\n\nJoin me — play free SSC GK quizzes & see if you can top the chart 👇\n\n🔗 https://ssc-gk-score-booster-v2.vercel.app`;
+    const text = `🏆 Just climbed the leaderboard with ${formatScore(calculateRawScore({ correct: result.correct, incorrect: result.incorrect }))} marks on SSC GK Score Booster!\n\nJoin me — play free SSC GK quizzes & see if you can top the chart 👇\n\n🔗 https://ssc-gk-score-booster-v2.vercel.app`;
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -825,8 +830,9 @@ export default function Result() {
         {/* ── 1. RESULT SUMMARY CARD ── */}
         {(() => {
           const acc = result.accuracy ?? 0;
-          const rawScore = result.rawScore ?? 0;
-          const score = rawScore % 1 === 0 ? rawScore : Number(rawScore).toFixed(1);
+          const rawScore = calculateRawScore({ correct: result.correct, incorrect: result.incorrect });
+          const score = formatScore(rawScore);
+          const maxScore = calculateMaxScore(result.totalQuestions || 0);
           const answeredCount = (result.correct || 0) + (result.incorrect || 0);
           const scoreNum = Number(rawScore);
           const scoreColor = scoreNum < 0 ? 'var(--ssc-warning)' : scoreNum === 0 ? 'var(--ssc-text-secondary)' : 'var(--ssc-orange)';
@@ -860,7 +866,7 @@ export default function Result() {
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--ssc-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>Your Score</p>
                   <p className="font-display" style={{ fontSize: 30, fontWeight: 900, color: 'var(--ssc-text-primary)', lineHeight: 1, margin: '0 0 10px' }}>
-                    {result.correct} <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--ssc-text-muted)' }}>/ {result.totalQuestions || 0}</span>
+                    <span style={{ color: scoreColor }}>{score}</span> <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--ssc-text-muted)' }}>/ {formatScore(maxScore)}</span>
                   </p>
                   <span style={{ background: statusBg, border: `1px solid ${statusBorder}`, color: statusColor, borderRadius: 999, padding: '4px 14px', fontSize: 12, fontWeight: 700 }}>
                     {statusLabel}

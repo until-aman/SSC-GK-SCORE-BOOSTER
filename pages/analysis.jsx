@@ -546,19 +546,21 @@ export default function AnalysisPage() {
                 style={{
                   width: '100%',
                   padding: '14px 0',
-                  borderRadius: 14,
+                  minHeight: 54,
+                  borderRadius: 18,
                   background: '#FFFFFF',
-                  color: '#0F172A',
-                  border: 'none',
+                  color: 'var(--ssc-text-primary)',
+                  border: '1px solid var(--ssc-border-soft)',
                   fontSize: 15,
-                  fontWeight: 800,
+                  fontWeight: 600,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: 8,
+                  gap: 12,
                   marginTop: 20,
+                  boxShadow: 'var(--ssc-shadow-card)',
                 }}
               >
                 <GoogleSVG />
@@ -1423,7 +1425,7 @@ export default function AnalysisPage() {
                       /* State C — guest sign-in */
                       <div>
                         <div className="font-display" style={{ fontSize: 15, fontWeight: 800, color: TEXT_PRI, marginBottom: 10 }}>Sign in to join the interest list</div>
-                        <button onClick={handleSignInClick} style={{ width: '100%', padding: '14px 0', borderRadius: 14, background: '#FFFFFF', color: '#0F172A', border: 'none', fontSize: 15, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit' }}>
+                        <button onClick={handleSignInClick} style={{ width: '100%', minHeight: 54, padding: '14px 0', borderRadius: 18, background: '#FFFFFF', color: 'var(--ssc-text-primary)', border: '1px solid var(--ssc-border-soft)', fontSize: 15, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, fontFamily: 'inherit', boxShadow: 'var(--ssc-shadow-card)' }}>
                           <GoogleSVG />Sign in with Google
                         </button>
                         <button onClick={() => setShowSignIn(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: TEXT_MUT, fontSize: 12, width: '100%', marginTop: 10, padding: '4px 0', fontFamily: 'inherit' }}>Maybe later</button>

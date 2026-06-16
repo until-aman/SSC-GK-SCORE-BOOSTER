@@ -222,21 +222,33 @@ function HistoryGuestState() {
           ${SHARED_STYLES}
           .history-google-btn {
             width: 100%;
-            border: none;
-            border-radius: 14px;
+            min-height: 54px;
+            border: 1px solid var(--ssc-border-soft);
+            border-radius: 18px;
             padding: 14px 0;
             background: #fff;
             color: var(--ssc-text-primary);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 12px;
             font-size: 15px;
-            font-weight: 800;
+            font-weight: 600;
             font-family: inherit;
             cursor: pointer;
+            box-shadow: var(--ssc-shadow-card);
+            transition: transform .16s ease, box-shadow .16s ease, background-color .16s ease;
+            will-change: transform, box-shadow;
           }
-          .history-google-btn:active { transform: scale(.98); }
+          .history-google-btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            background-color: #fff;
+            box-shadow: 0 12px 26px rgba(16,32,51,0.12);
+          }
+          .history-google-btn:active {
+            transform: translateY(0) scale(.98);
+            transition-duration: 80ms;
+          }
           .history-modal-backdrop {
             position: fixed;
             inset: 0;

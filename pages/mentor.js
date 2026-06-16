@@ -217,6 +217,13 @@ function formatDailyTimeLabel(dailyGKTime) {
   return `${dailyGKTime.replace(/\s*daily$/i, '')}/day`;
 }
 
+function getTaskTitle(task) {
+  if (!task) return 'Mentor Task';
+  if (task.title) return task.title;
+  if (task.taskType === 'mistake_recovery_task') return 'Repeated Mistakes';
+  return task.displayName || task.topic || task.subjectName || task.subject || 'Mentor Task';
+}
+
 function getSnapshotProgress(snapshot) {
   const progress = snapshot?.progress || {};
   const active = snapshot?.activeTasks || [];
@@ -574,6 +581,7 @@ function TaskFlowScreen({
   onPrimary,
   onDone,
   onLater,
+  onResume,
 }) {
   const router = useRouter();
   const [filter, setFilter] = useState('all');
@@ -590,6 +598,10 @@ function TaskFlowScreen({
   function handleTaskPrimary(task) {
     if (task.status === 'completed') {
       router.push('/history');
+      return;
+    }
+    if (task.status === 'snoozed' || task.status === 'pending') {
+      onResume?.(task);
       return;
     }
     onPrimary?.(task);
@@ -667,6 +679,16 @@ function TaskFlowScreen({
                   <p className="mt-1 text-xs font-semibold text-ssc-text-secondary">Try another filter or check back after your plan updates.</p>
                 </section>
               )}
+              <section className="rounded-[20px] border border-ssc-border-soft bg-white p-3 shadow-[var(--ssc-shadow-card)]">
+                <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-ssc-text-muted">Status Legend</p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full border border-[#FBCACA] bg-[#FEECEC] px-2.5 py-1 text-[10px] font-black text-[#DC2626]">Weak</span>
+                  <span className="rounded-full border border-[#F8D9A0] bg-[#FFF7E6] px-2.5 py-1 text-[10px] font-black text-[#B45309]">Medium</span>
+                  <span className="rounded-full border border-[#BDEDD8] bg-[#E7FAF3] px-2.5 py-1 text-[10px] font-black text-[#0F9F75]">Good</span>
+                  <span className="rounded-full border border-[#BDEDD8] bg-[#E7FAF3] px-2.5 py-1 text-[10px] font-black text-[#0F9F75]">Completed</span>
+                  <span className="rounded-full border border-[#F8D9A0] bg-[#FFF7E6] px-2.5 py-1 text-[10px] font-black text-[#B45309]">Later</span>
+                </div>
+              </section>
             </section>
           </main>
 
@@ -1196,6 +1218,7 @@ export default function MentorPage() {
           onPrimary={handlePrimary}
           onDone={setConfirmTask}
           onLater={handleLater}
+          onResume={handleResume}
         />
         {actionOverlays}
       </>
@@ -1299,41 +1322,6 @@ export default function MentorPage() {
                     </div>
                   </section>
 
-                  {/* Phase 9E: Previously Pending - read-only surfacing of canonical
-                      pending tasks (V2 postponed). Hidden when empty; legacy snoozed
-                      tasks are NOT here (they are deferred, not pending). */}
-                  {(snapshot?.pendingTasks || []).length > 0 && (
-                    <section className="space-y-3" aria-label="Previously Pending">
-                      <div>
-                        <h2 className="font-display text-xl font-black leading-none text-ssc-text-primary">Previously Pending</h2>
-                        <p className="mt-1 text-xs font-semibold text-ssc-text-secondary">Tasks you paused for later. Resume when you&apos;re ready.</p>
-                      </div>
-                      <div className="space-y-2">
-                        {(snapshot?.pendingTasks || []).map(task => (
-                          <div key={task.taskId} className="flex items-center justify-between gap-3 rounded-2xl border border-ssc-border-soft bg-white p-3.5 shadow-[var(--ssc-shadow-card)]">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="shrink-0 rounded-full border border-[#F8D9A0] bg-[#FFF7E6] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#B45309]">Paused for later</span>
-                                {(task.subject || task.subjectName) && (
-                                  <span className="truncate text-[11px] font-semibold text-ssc-text-secondary">{task.subject || task.subjectName}{task.topic ? ` - ${task.topic}` : ''}</span>
-                                )}
-                              </div>
-                              <h3 className="mt-1 truncate font-display text-base font-black text-ssc-text-primary">{task.title || task.topic || 'Mentor Task'}</h3>
-                              <p className="mt-0.5 text-xs font-medium text-ssc-text-muted">Continue when you want.</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleResume(task)}
-                              disabled={busyTaskId === task.taskId}
-                              className="shrink-0 rounded-xl border border-[#0EA5A4] bg-white px-4 py-2 text-sm font-black text-ssc-teal disabled:opacity-60"
-                            >
-                              {busyTaskId === task.taskId ? 'Resuming...' : 'Resume'}
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  )}
                 </>
               )}
             </div>

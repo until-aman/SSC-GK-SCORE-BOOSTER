@@ -10,6 +10,7 @@ import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 import { getDailyChallenge, getQuestionBank } from '@/lib/data/questionData';
 import { getSavedQuestionIds, saveQuestion, unsaveQuestion } from '@/lib/data/savedData';
 import { getUserCacheScope } from '@/lib/userCacheScope';
+import { calculateAccuracy, calculateRawScore } from '@/lib/scoring';
 
 const GK_FACTS = [
   // GK Facts
@@ -327,8 +328,8 @@ function calculateResults(questions, answers) {
     else incorrect++;
   });
   const total = questions.length;
-  const rawScore = correct * 2 - incorrect * 0.5;
-  const accuracy = total > 0 ? (correct / total) * 100 : 0;
+  const rawScore = calculateRawScore({ correct, incorrect });
+  const accuracy = calculateAccuracy({ correct, totalQuestions: total });
   return { correct, incorrect, skipped, totalQuestions: total, rawScore, accuracy };
 }
 
@@ -349,6 +350,13 @@ function normalizeInternalReturnUrl(value) {
   if (!url.startsWith('/') || url.startsWith('//')) return '';
   if (/^[a-z][a-z0-9+.-]*:/i.test(url)) return '';
   return url;
+}
+
+function isHistoryQuizSession(session) {
+  if (!session) return false;
+  if (normalizeSourceScreen(session.sourceScreen) === 'history') return true;
+  if (session.mode === 'history') return true;
+  return Boolean(session.historyMeta);
 }
 
 function getAttemptedCount(answers = {}) {
@@ -592,7 +600,7 @@ export default function Quiz() {
       return;
     }
 
-    setRecoveryPrompt({ type: 'resume', session });
+    setRecoveryPrompt({ type: isHistoryQuizSession(session) ? 'history_exit' : 'resume', session });
     setLoading(false);
   }, [router.isReady, recoveryChecked]);
 
@@ -1246,7 +1254,7 @@ export default function Quiz() {
     restoredSessionRef.current = false;
     clearActiveQuizSession();
     setRecoveryPrompt(null);
-    router.replace('/dashboard');
+    router.replace(normalizeInternalReturnUrl(session.returnUrl) || (isHistoryQuizSession(session) ? '/history/quizzes' : '/dashboard'));
   }
 
   const persistQuizProgress = useCallback((nextAnswers = answers, nextIndex = currentIndex, nextQuestionStartedAt = questionStartedAt, nextAnswerTimes = answerTimes) => {
@@ -1345,10 +1353,97 @@ export default function Quiz() {
     const sessionAttemptedCount = getAttemptedCount(sessionAnswers);
     const sessionAnsweredCount = getAnsweredCount(sessionAnswers);
     const isExpiredPrompt = recoveryPrompt.type === 'expired';
+    const isHistoryExitPrompt = recoveryPrompt.type === 'history_exit';
     const sessionQuestionCount = session.totalQuestions || session.questions?.length || 0;
     const attemptedProgress = sessionQuestionCount > 0
       ? Math.round((sessionAttemptedCount / sessionQuestionCount) * 100)
       : 0;
+
+    if (isHistoryExitPrompt) {
+      return (
+        <div className="min-h-screen flex items-center justify-center px-5" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
+          <Head><title>Leave quiz? - SSC GK Score Booster</title></Head>
+          <div
+            className="w-full max-w-[360px]"
+            style={{
+              background: 'var(--ssc-surface)',
+              border: '1px solid var(--ssc-border-soft)',
+              borderRadius: 28,
+              padding: 24,
+              boxShadow: 'var(--ssc-shadow-float)',
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="history-reload-exit-title"
+          >
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+              style={{ background: 'rgba(255,122,26,0.12)', color: '#ff7a1a' }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="6" y="4" width="4" height="16" rx="1.5" />
+                <rect x="14" y="4" width="4" height="16" rx="1.5" />
+              </svg>
+            </div>
+
+            <h2 id="history-reload-exit-title" className="t-page-title font-display mb-3" style={{ color: 'var(--ssc-text-primary)' }}>
+              Leave quiz?
+            </h2>
+
+            {sessionAttemptedCount > 0 && (
+              <div className="w-full mb-4">
+                <div className="t-badge inline-flex items-center mb-2" style={{
+                  color: 'var(--ssc-orange)',
+                  background: 'rgba(255,106,0,0.10)', border: '1px solid rgba(255,106,0,0.18)',
+                  borderRadius: 999, padding: '4px 12px',
+                }}>
+                  {sessionAttemptedCount} / {sessionQuestionCount} attempted
+                </div>
+                <div style={{ height: 4, borderRadius: 999, background: 'var(--ssc-border-soft)', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%',
+                    borderRadius: 999,
+                    width: `${attemptedProgress}%`,
+                    background: 'linear-gradient(90deg, var(--ssc-orange), var(--ssc-orange-deep))',
+                    transition: 'width 0.4s ease',
+                  }} />
+                </div>
+              </div>
+            )}
+
+            <p className="t-body mb-5" style={{ color: 'var(--ssc-text-secondary)' }}>
+              End now to see your current result, or continue the quiz.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleResumeStoredQuiz}
+                className="t-button-lg w-full rounded-2xl py-3.5 font-display active:scale-[0.98] transition-transform flex items-center justify-center"
+                style={{
+                  background: 'linear-gradient(90deg, var(--ssc-orange), var(--ssc-orange-deep))',
+                  color: 'var(--ssc-text-inverse)',
+                  boxShadow: 'var(--ssc-shadow-cta)',
+                }}
+              >
+                Continue Quiz
+              </button>
+              <button
+                onClick={handleDiscardStoredAttempt}
+                className="t-button-sm w-full rounded-2xl font-display active:scale-[0.98] transition-transform flex items-center justify-center"
+                style={{
+                  padding: '11px 16px',
+                  background: 'var(--ssc-danger-soft)',
+                  border: '1px solid rgba(248,113,113,0.35)',
+                  color: 'var(--ssc-danger)',
+                }}
+              >
+                End &amp; See Result
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className="min-h-screen flex items-center justify-center px-5" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>

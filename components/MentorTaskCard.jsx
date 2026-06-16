@@ -74,16 +74,43 @@ function getTaskTitle(task) {
   return task.displayName || task.subjectName || 'Mentor Task';
 }
 
+function getSubject(task) {
+  return task.subject || task.subjectName || task.subjectId || 'GK';
+}
+
+function getTopic(task) {
+  return task.topic || task.topicName || task.displayName || getTaskTitle(task);
+}
+
+function getQuestionCount(task) {
+  return Number(task.questionCount || task.questionsCount || task.totalQuestions || 0);
+}
+
+function getTime(task) {
+  return Number(task.estimatedMinutes || task.durationMinutes || task.timeMinutes || 0);
+}
+
+function getModeLabel(task) {
+  if (task.sourceLabel) return task.sourceLabel;
+  if (task.reason === 'recent_mistakes' || task.taskType === 'mistake_recovery_task') return 'Repeated Mistakes';
+  if (task.reason === 'mostly_wrong') return 'Mostly Wrong';
+  if (task.reason === 'mostly_incorrect') return 'Mostly Incorrect';
+  if (task.status === 'snoozed') return 'Saved for Later';
+  return getTaskTypeLabel(task.taskType);
+}
+
 function getMeta(task) {
+  const minutes = getTime(task);
+  const questionCount = getQuestionCount(task);
   return [
-    task.estimatedMinutes ? `${task.estimatedMinutes} min` : null,
-    task.questionCount ? `${task.questionCount} Qs` : null,
-    task.subject || task.subjectName || null,
+    minutes ? `${minutes} min` : null,
+    questionCount ? `${questionCount} Qs` : null,
+    getModeLabel(task),
   ].filter(Boolean);
 }
 
 function getPurpose(task) {
-  return task.whyThisText || task.topic || task.mentorMessage || 'Focus task for today';
+  return `${getSubject(task)} - ${getTopic(task)}`;
 }
 
 function StatusPill({ task }) {
@@ -122,14 +149,18 @@ export default function MentorTaskCard({
   const theme = getTheme(task);
   const taskNumber = Number(task.taskNumber || task.sequenceNumber || index + 1);
   const meta = getMeta(task);
+  const purpose = getPurpose(task);
+  const helperText = task.whyThisText || task.mentorMessage || '';
   const cta = task.ctaLabel || (
     isCompleted
       ? 'Review Result'
-      : task.taskType === 'revision_task'
-        ? 'Revise Now'
-        : task.taskType === 'confidence_check'
-          ? 'Start Quiz'
-          : 'Practice Now'
+      : isSnoozed
+        ? 'Resume'
+        : task.taskType === 'revision_task'
+          ? 'Revise Now'
+          : task.taskType === 'confidence_check'
+            ? 'Start Quiz'
+            : 'Practice Now'
   );
 
   if (variant === 'flow') {
@@ -146,8 +177,13 @@ export default function MentorTaskCard({
           {getTaskTitle(task)}
         </h3>
         <p className={`mt-0.5 text-[11px] font-semibold leading-snug ${isBlocked ? 'text-ssc-text-muted' : 'text-ssc-text-secondary'}`}>
-          {getPurpose(task)}
+          {purpose}
         </p>
+        {helperText ? (
+          <p className={`mt-0.5 text-[10px] font-semibold leading-snug ${isBlocked ? 'text-ssc-text-muted' : 'text-ssc-text-muted'}`}>
+            {helperText}
+          </p>
+        ) : null}
 
         <div className="mt-2.5 flex items-center justify-between gap-2">
           {meta.length ? (
@@ -202,8 +238,13 @@ export default function MentorTaskCard({
           </div>
 
           <p className={`mt-0.5 text-[11px] font-semibold leading-snug ${isBlocked ? 'text-ssc-text-muted' : 'text-ssc-text-secondary'}`}>
-            {getPurpose(task)}
+            {purpose}
           </p>
+          {helperText ? (
+            <p className={`mt-0.5 truncate text-[10px] font-semibold leading-snug ${isBlocked ? 'text-ssc-text-muted' : 'text-ssc-text-muted'}`}>
+              {helperText}
+            </p>
+          ) : null}
 
           <div className="mt-2 flex items-center justify-between gap-2">
             {meta.length ? (
