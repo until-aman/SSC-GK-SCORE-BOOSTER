@@ -153,27 +153,6 @@ html {
   padding-bottom: 0;
 }
 
-.ssc-bottom-nav-scrim {
-  background:
-    linear-gradient(
-      180deg,
-      rgba(243, 251, 250, 0),
-      rgba(243, 251, 250, 0.82) 28%,
-      rgba(243, 251, 250, 0.96) 68%,
-      rgba(243, 251, 250, 1)
-    );
-  bottom: 0;
-  height: calc(var(--ssc-bottom-nav-height) + 42px + env(safe-area-inset-bottom));
-  left: 50%;
-  max-width: 430px;
-  pointer-events: none;
-  position: fixed;
-  right: auto;
-  transform: translateX(-50%);
-  width: 100%;
-  z-index: 45;
-}
-
 /* ── Animations ── */
 .app-page {
   min-height: 100vh;

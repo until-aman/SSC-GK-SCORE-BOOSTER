@@ -8,7 +8,6 @@ function trayTaskTitle(task) {
   return task.displayName || task.subjectName || task.topic || 'Mentor Task';
 }
 
-// Group active tasks by topic so same-topic cards don't look identical.
 function duplicateKey(task) {
   const subject = String(task.subject || '').replace(/^Q_PYQ_/, '').trim().toLowerCase();
   const topic = String(task.topic || task.displayName || '').trim().toLowerCase();
@@ -24,7 +23,6 @@ function sequencePurpose(task, occurrence) {
   }
 }
 
-// Adds sequenceLabel + duplicateNote to tasks that share a topic with another.
 function decorateDuplicates(tasks) {
   const totals = {};
   tasks.forEach(task => { const key = duplicateKey(task); totals[key] = (totals[key] || 0) + 1; });
@@ -41,7 +39,6 @@ function decorateDuplicates(tasks) {
   });
 }
 
-// Short date/time for the tray row — real timestamp when available, else task meta.
 function trayTaskWhen(task) {
   const iso = task.completedAt || task.snoozedUntil || task.updatedAt || '';
   if (iso) {
@@ -64,7 +61,7 @@ function Chevron({ open }) {
     <svg
       width="16" height="16" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-      className={`shrink-0 text-slate-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+      className={`shrink-0 text-ssc-text-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
     >
       <polyline points="6 9 12 15 18 9" />
     </svg>
@@ -107,19 +104,34 @@ export default function TodaysPlanCard({
 
   return (
     <div className="space-y-3">
-      <section className="rounded-2xl border border-white/[0.08] bg-[#172d47] px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-black text-slate-100">{done}/{Math.max(total, 1)} tasks completed</p>
-          <p className="text-xs font-bold text-teal-300">{percent}%</p>
+      <section className="rounded-[20px] border border-ssc-border-soft bg-white px-4 py-3 shadow-[var(--ssc-shadow-card)]">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-display text-base font-black text-ssc-text-primary">Today&apos;s Plan</p>
+            <p className="mt-1 text-xs font-bold text-ssc-text-secondary">{done}/{Math.max(total, 1)} tasks completed</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-black text-ssc-teal">{percent}%</p>
+            <p className="mt-1 rounded-full border border-[#DDE8F0] bg-[#F8FEFD] px-2 py-0.5 text-[10px] font-bold text-ssc-text-secondary">
+              Day {dayNumber} of {daysTotal}
+            </p>
+          </div>
         </div>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#0d1b2e]">
-          <div className="h-full rounded-full bg-gradient-to-r from-[#14B8A6] to-[#2DD4BF] transition-all duration-300" style={{ width: `${percent}%` }} />
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#EEF3F7]">
+          <div className="h-full rounded-full bg-gradient-to-r from-[#0EA5A4] to-[#2DD4BF] transition-all duration-300" style={{ width: `${percent}%` }} />
         </div>
-        <div className="mt-2 flex items-center justify-between gap-3 text-[11px] font-bold text-slate-500">
-          <span>Day {dayNumber} of {daysTotal}</span>
-          {lockedLater > 0 ? <span>{activeNow} active now · {lockedLater} locked/later</span> : null}
+        <div className="mt-2 flex items-center justify-between gap-3 text-[11px] font-bold text-ssc-text-muted">
+          <span>{activeNow} active now</span>
+          {lockedLater > 0 ? <span>{lockedLater} locked/later</span> : null}
         </div>
       </section>
+
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-display text-base font-black text-ssc-text-primary">Today&apos;s Tasks</h2>
+        <span className="rounded-full border border-[#BDEDEA] bg-[#E8F8F6] px-2.5 py-1 text-xs font-black text-ssc-teal">
+          {decoratedActive.length}
+        </span>
+      </div>
 
       {decoratedActive.map((task, index) => (
         <MentorTaskCard
@@ -134,7 +146,6 @@ export default function TodaysPlanCard({
         />
       ))}
 
-      {/* Blocked tasks — surfaced only when present (next locked step) */}
       {blocked.map((task, index) => (
         <MentorTaskCard
           key={task.taskId}
@@ -148,14 +159,14 @@ export default function TodaysPlanCard({
       ) : null}
 
       {!active.length && completed.length && !deferred.length ? (
-        <section className="rounded-2xl border border-teal-400/20 bg-teal-400/10 p-4">
-          <p className="font-display text-base font-black text-teal-200">Aaj ka plan complete ho gaya.</p>
-          <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-400">Aap chahein toh next step unlock kar sakte hain.</p>
+        <section className="rounded-[20px] border border-[#BDEDD8] bg-[#E7FAF3] p-4 shadow-[var(--ssc-shadow-card)]">
+          <p className="font-display text-base font-black text-ssc-text-primary">Aaj ka plan complete ho gaya.</p>
+          <p className="mt-1 text-xs font-semibold leading-relaxed text-ssc-text-secondary">Aap chahein toh next step unlock kar sakte hain.</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <button type="button" className="rounded-xl bg-teal-500 py-3 text-sm font-black text-slate-950" onClick={onShowNextDay}>
+            <button type="button" className="rounded-xl bg-[#0EA5A4] py-3 text-sm font-black text-white" onClick={onShowNextDay}>
               Show Next Day
             </button>
-            <button type="button" className="rounded-xl border border-white/[0.08] bg-white/[0.04] py-3 text-sm font-bold text-slate-300">
+            <button type="button" className="rounded-xl border border-[#DDE8F0] bg-white py-3 text-sm font-bold text-ssc-text-secondary">
               Kal continue karenge
             </button>
           </div>
@@ -163,45 +174,45 @@ export default function TodaysPlanCard({
       ) : null}
 
       {trayTasks.length ? (
-        <section className="rounded-2xl border border-white/[0.08] bg-[#112236]">
+        <section className="rounded-[20px] border border-ssc-border-soft bg-white shadow-[var(--ssc-shadow-card)]">
           <button
             type="button"
             onClick={() => setTrayOpen(value => !value)}
             className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
             aria-expanded={trayOpen}
           >
-            <span className="font-display text-sm font-black text-slate-100">Completed / Later</span>
+            <span className="font-display text-sm font-black text-ssc-text-primary">Completed / Later</span>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-500">
+              <span className="text-xs font-bold text-ssc-text-muted">
                 Completed {completed.length} · Later {deferred.length}
               </span>
               <Chevron open={trayOpen} />
             </div>
           </button>
           {trayOpen ? (
-            <div className="space-y-1.5 px-3 pb-3">
+            <div className="space-y-1.5 border-t border-ssc-border-soft px-3 pb-3 pt-3">
               {trayTasks.map(task => {
                 const isCompleted = task.status === 'completed';
                 const when = trayTaskWhen(task);
                 return (
                   <div
                     key={task.taskId}
-                    className="flex items-center gap-2 rounded-xl border border-white/[0.05] bg-[#0d1b2e] px-3 py-2"
+                    className="flex items-center gap-2 rounded-xl border border-ssc-border-soft bg-[#F8FEFD] px-3 py-2"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold text-slate-200">
-                        <span className="text-slate-500">Task {Number(task.taskNumber || task.sequenceNumber || 0) || '–'} · </span>
+                      <p className="truncate text-sm font-bold text-ssc-text-primary">
+                        <span className="text-ssc-text-muted">Task {Number(task.taskNumber || task.sequenceNumber || 0) || '-'} · </span>
                         {trayTaskTitle(task)}
                       </p>
                       {when ? (
-                        <p className="mt-0.5 text-[11px] font-semibold text-slate-500">{when}</p>
+                        <p className="mt-0.5 text-[11px] font-semibold text-ssc-text-muted">{when}</p>
                       ) : null}
                     </div>
                     <span
                       className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-black ${
                         isCompleted
-                          ? 'border-teal-400/20 bg-teal-400/10 text-teal-300'
-                          : 'border-amber-400/20 bg-amber-400/10 text-amber-300'
+                          ? 'border-[#BDEDD8] bg-[#E7FAF3] text-[#0F9F75]'
+                          : 'border-[#F8D9A0] bg-[#FFF7E6] text-[#B45309]'
                       }`}
                     >
                       {isCompleted ? '✓ Completed' : 'Later'}
@@ -210,7 +221,7 @@ export default function TodaysPlanCard({
                       <button
                         type="button"
                         onClick={() => onPrimary(task)}
-                        className="shrink-0 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] font-bold text-slate-300 active:opacity-70"
+                        className="shrink-0 rounded-lg border border-[#0EA5A4] bg-white px-2.5 py-1 text-[11px] font-bold text-[#0EA5A4] active:opacity-70"
                       >
                         Resume
                       </button>
@@ -218,7 +229,7 @@ export default function TodaysPlanCard({
                       <button
                         type="button"
                         onClick={() => router.push('/history')}
-                        className="shrink-0 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] font-bold text-slate-300 active:opacity-70"
+                        className="shrink-0 rounded-lg border border-[#DDE8F0] bg-white px-2.5 py-1 text-[11px] font-bold text-ssc-text-secondary active:opacity-70"
                       >
                         View
                       </button>

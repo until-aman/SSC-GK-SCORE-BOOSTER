@@ -121,10 +121,18 @@ export default function LandingPage() {
         @keyframes guestCtaPulse {
           0%, 100% {
             box-shadow: var(--ssc-shadow-cta);
+            transform: translateY(0) scale(1);
           }
           50% {
-            box-shadow: 0 12px 28px rgba(255,106,0,0.28);
+            box-shadow: 0 16px 34px rgba(255,106,0,0.34), 0 0 0 7px rgba(255,106,0,0.08);
+            transform: translateY(-1px) scale(1.018);
           }
+        }
+        @keyframes guestCtaShine {
+          0%   { transform: translateX(-130%); opacity: 0; }
+          18%  { opacity: 1; }
+          42%  { transform: translateX(130%); opacity: 0; }
+          100% { transform: translateX(130%); opacity: 0; }
         }
         .guest-cta {
           position: relative;
@@ -147,7 +155,7 @@ export default function LandingPage() {
           border-radius: 14px;
           background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
           transform: translateX(-120%);
-          transition: transform 0.45s ease;
+          animation: guestCtaShine 3.2s ease-in-out 0.8s infinite;
         }
         .guest-cta:hover {
           transform: translateY(-3px) scale(1.03);
@@ -182,6 +190,35 @@ export default function LandingPage() {
         .guest-cta:hover .guest-cta-hover {
           opacity: 1;
           transform: translateY(0);
+        }
+        @keyframes liveChallengeFloat {
+          0%, 100% {
+            transform: translateY(0) scale(1);
+            box-shadow: 0 6px 18px rgba(245,158,11,0.10);
+          }
+          50% {
+            transform: translateY(-2px) scale(1.025);
+            box-shadow: 0 12px 24px rgba(245,158,11,0.20);
+          }
+        }
+        @keyframes liveBoltDance {
+          0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+          35%      { transform: translateY(-1px) rotate(-8deg) scale(1.12); }
+          70%      { transform: translateY(1px) rotate(8deg) scale(1.05); }
+        }
+        .live-challenge-pill {
+          animation: liveChallengeFloat 2.6s ease-in-out infinite;
+          will-change: transform, box-shadow;
+        }
+        .live-challenge-pill .live-bolt {
+          display: inline-block;
+          transform-origin: center bottom;
+          animation: liveBoltDance 1.25s ease-in-out infinite;
+        }
+        .live-challenge-pill:hover {
+          animation-play-state: paused;
+          transform: translateY(-2px) scale(1.03);
+          box-shadow: 0 14px 28px rgba(245,158,11,0.22);
         }
         .google-cta {
           min-height: 54px;
@@ -331,8 +368,8 @@ export default function LandingPage() {
 
         {/* CTAs */}
         <div className="relative z-10 flex flex-col gap-3 w-full max-w-[340px]">
-          <div className="self-center rounded-full border border-ssc-orange/20 bg-ssc-warning-soft px-3 py-1 text-xs font-semibold text-ssc-orange">
-            ⚡ Today’s GK Challenge is live
+          <div className="live-challenge-pill self-center rounded-full border border-ssc-orange/20 bg-ssc-warning-soft px-3 py-1 text-xs font-semibold text-ssc-orange">
+            <span className="live-bolt" aria-hidden="true">⚡</span> Today’s GK Challenge is live
           </div>
 
           <button

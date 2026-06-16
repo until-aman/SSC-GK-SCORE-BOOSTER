@@ -109,7 +109,6 @@ export default function BottomNav() {
         right: 0,
         zIndex: 50,
       }}>
-        <div className="ssc-bottom-nav-scrim" aria-hidden="true" />
         <div style={{
           maxWidth: '430px',
           margin: '0 auto',
@@ -118,9 +117,7 @@ export default function BottomNav() {
           zIndex: 51,
         }}>
           <div style={{
-            background: 'rgba(255, 255, 255, 0.96)',
-            backdropFilter: 'blur(18px)',
-            WebkitBackdropFilter: 'blur(18px)',
+            background: '#FFFFFF',
             border: '1px solid #DDE8F0',
             borderRadius: '28px',
             padding: '8px 12px',

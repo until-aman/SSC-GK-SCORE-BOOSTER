@@ -48,14 +48,27 @@ function BookmarkIcon({ filled = true, size = 18 }) {
 function QuestionRow({ q, index, onView, onUnsave }) {
   const savedLabel = formatSavedDate(q.savedAt || q.createdAt);
   return (
-    <div style={{
+    <article
+      role="button"
+      tabIndex={0}
+      onClick={() => onView(index)}
+      onKeyDown={event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onView(index);
+        }
+      }}
+      style={{
       background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)',
       borderRadius: 18, padding: '14px 16px', paddingRight: 54, marginBottom: 10,
-      position: 'relative',
+      position: 'relative', cursor: 'pointer',
       boxShadow: 'var(--ssc-shadow-card)',
     }}>
       <button
-        onClick={() => onUnsave(q.questionId)}
+        onClick={event => {
+          event.stopPropagation();
+          onUnsave(q.questionId);
+        }}
         style={{
           position: 'absolute', top: 12, right: 12,
           width: 32, height: 32, borderRadius: 12,
@@ -96,18 +109,16 @@ function QuestionRow({ q, index, onView, onUnsave }) {
       {/* Footer: saved date + View â†’ */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 11, color: 'var(--ssc-text-muted)' }}>{savedLabel || 'Saved'}</span>
-        <button
-          onClick={() => onView(index)}
-          style={{
-            background: 'var(--ssc-surface-soft)', border: '1px solid var(--ssc-border-soft)',
-            borderRadius: 10, padding: '5px 12px', cursor: 'pointer',
-            fontSize: 12, fontWeight: 700, color: 'var(--ssc-teal)',
-          }}
-        >
-          View &rarr;
-        </button>
+        <span aria-hidden="true" style={{
+          width: 28, height: 28, borderRadius: 999,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          background: 'var(--ssc-surface-soft)', border: '1px solid var(--ssc-border-soft)',
+          color: 'var(--ssc-teal)', fontSize: 18, fontWeight: 900,
+        }}>
+          &rsaquo;
+        </span>
       </div>
-    </div>
+    </article>
   );
 }
 

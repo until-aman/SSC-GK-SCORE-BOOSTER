@@ -64,7 +64,7 @@ function BookmarkIcon({ filled }) {
   );
 }
 
-function QuestionCard({ item, onToggleSave, onPracticeOne }) {
+function QuestionCard({ item, onToggleSave }) {
   const [expanded, setExpanded] = useState(false);
   const [questionExpanded, setQuestionExpanded] = useState(false);
   const [cache, setCache] = useState(null);
@@ -145,7 +145,6 @@ function QuestionCard({ item, onToggleSave, onPracticeOne }) {
 
       <div className="review-action-row">
         <button onClick={handleShowExplanation} className="secondary-btn">{expanded ? 'Hide Explanation' : 'Show Explanation'}</button>
-        {!item.isCorrect && <button onClick={() => onPracticeOne(item)} className="primary-btn">Practice Again</button>}
       </div>
 
       {expanded && cache && (
@@ -342,7 +341,7 @@ export default function SessionReviewPage() {
           .review-question-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}.review-question-meta{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden}.review-question-number{color:#F8FAFC;font-size:13px;font-weight:900}.review-time{color:#64748B;font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.review-question-text{color:#F8FAFC;font-size:14px;font-weight:900;line-height:1.48;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical}.review-question-text.open{-webkit-line-clamp:unset;display:block}.read-more-btn{border:0;background:transparent;color:#FDBA74;font-size:12px;font-weight:900;padding:8px 0 0}
           .answer-compare{display:grid;gap:8px;margin-top:13px}.answer-row{border:1px solid rgba(148,163,184,.10);background:rgba(15,23,42,.38);border-radius:13px;padding:10px 11px}.answer-row span{display:block;color:#94A3B8;font-size:11px;font-weight:900;margin-bottom:4px}.answer-row b{display:block;font-size:12px;line-height:1.45}.answer-row.wrong b{color:#FCA5A5}.answer-row.correct b{color:#5EEAD4}.answer-row.skipped b{color:#94A3B8}
           .review-history-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:13px;padding:11px 0;border-top:1px solid rgba(148,163,184,.10);border-bottom:1px solid rgba(148,163,184,.10)}.review-history-row div{min-width:0}.review-history-row p{color:#64748B;font-size:11px;font-weight:900;margin:0 0 5px}.review-history-row strong{display:block;color:#CBD5E1;font-size:12px;line-height:1.4}.review-history-row .mastery{flex:0 0 auto;font-size:10px;padding:4px 8px;max-width:122px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-          .review-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}.review-action-row .secondary-btn:only-child{grid-column:1 / -1}
+          .review-action-row{display:grid;grid-template-columns:1fr;gap:8px;margin-top:13px}.review-action-row .secondary-btn:only-child{grid-column:1 / -1}
           .filter-chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 16px 8px;margin:0 -16px;scrollbar-width:none;-ms-overflow-style:none}.filter-chip-row::-webkit-scrollbar{display:none}
           .review-filter-summary{color:#94A3B8;font-size:12px;font-weight:800;line-height:1.4;margin:0 0 12px 2px}
           .session-summary{background:#172D47;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:15px;margin-bottom:12px}
@@ -364,6 +363,21 @@ export default function SessionReviewPage() {
           .session-action-bar{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);width:100%;max-width:430px;z-index:60;padding:0 16px 10px;background:linear-gradient(to top,var(--bg-app) 68%,transparent)}
           .session-action-inner{display:grid;grid-template-columns:1fr 1fr;gap:8px;border-radius:18px;padding:8px;background:rgba(13,27,46,.96);border:1px solid rgba(255,255,255,.08);box-shadow:0 16px 38px rgba(0,0,0,.24)}
           .session-action-inner .primary-btn{box-shadow:0 14px 34px rgba(255,90,0,.24)}
+          .review-card,.session-summary,.session-insight,.carousel-shell{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);box-shadow:var(--ssc-shadow-card)}
+          .session-title,.session-score strong,.carousel-progress strong,.review-question-number,.review-question-text{color:var(--ssc-text-primary)}
+          .session-date,.session-score span,.session-time,.carousel-progress span,.review-filter-summary,.review-time,.review-history-row p{color:var(--ssc-text-secondary)}
+          .secondary-btn{border-color:var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-teal)}
+          .chip{background:var(--ssc-surface);border-color:var(--ssc-border-soft);color:var(--ssc-text-secondary)}
+          .chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white}
+          .status.wrong{background:var(--ssc-danger-soft);color:var(--ssc-danger)}.status.skipped{background:var(--ssc-warning-soft);color:var(--ssc-warning)}.status.correct{background:var(--ssc-success-soft);color:var(--ssc-success)}
+          .save-btn{border-color:var(--ssc-border-soft);background:var(--ssc-surface-soft)}.save-btn.saved{border-color:rgba(14,165,164,.36);background:var(--ssc-teal-soft)}
+          .explain-box{background:var(--ssc-surface-soft);border-color:var(--ssc-border-soft)}.explain-title{color:var(--ssc-teal)}
+          .explain-box .text-slate-200,.explain-box .text-orange-100{color:var(--ssc-text-secondary)}.explain-box .text-slate-500{color:var(--ssc-text-muted)}
+          .answer-row{background:var(--ssc-surface);border-color:var(--ssc-border-soft)}.answer-row span{color:var(--ssc-text-muted)}.answer-row.correct{background:var(--ssc-success-soft);border-color:rgba(18,184,134,.28)}.answer-row.wrong{background:var(--ssc-danger-soft);border-color:rgba(239,68,68,.28)}.answer-row.skipped{background:var(--ssc-surface-soft)}
+          .answer-row.correct b{color:var(--ssc-success)}.answer-row.wrong b{color:var(--ssc-danger)}.answer-row.skipped b{color:var(--ssc-text-secondary)}
+          .review-history-row,.session-stat-row{border-color:var(--ssc-border-soft)}.review-history-row strong{color:var(--ssc-text-secondary)}
+          .session-insight .text-slate-200,.review-card .text-slate-400,.review-card .text-white{color:var(--ssc-text-secondary)}
+          .session-action-bar{background:linear-gradient(to top,var(--ssc-bg) 68%,transparent)}.session-action-inner{background:var(--ssc-surface);border-color:var(--ssc-border-soft);box-shadow:var(--ssc-shadow-card)}
         `}</style>
         <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack />
         <main className="px-4 pt-5">
@@ -411,7 +425,7 @@ export default function SessionReviewPage() {
                 <button type="button" className="secondary-btn" disabled={safeActiveQuestionIndex >= filtered.length - 1} onClick={() => setActiveQuestionIndex(index => Math.min(index + 1, filtered.length - 1))}>Next</button>
               </div>
             </section>
-            <QuestionCard key={activeQuestion.questionId} item={activeQuestion} onToggleSave={toggleSave} onPracticeOne={q => startReattempt('session_mistakes', q)} />
+            <QuestionCard key={activeQuestion.questionId} item={activeQuestion} onToggleSave={toggleSave} />
           </>
         ) : (
           <div className="review-card text-center text-slate-400">

@@ -1,18 +1,73 @@
 import { TeacherMentorIcon } from '@/components/MentorMessage';
 
 const TASK_TYPE_LABELS = {
-  coverage_check: 'Coverage Check',
-  confidence_check: 'Confidence Check',
-  theory_task: 'Theory Task',
-  practice_task: 'Practice Task',
-  revision_task: 'Revision Task',
-  mistake_recovery_task: 'Mistake Recovery',
+  coverage_check: 'Coverage',
+  confidence_check: 'Confidence',
+  theory_task: 'Theory',
+  practice_task: 'Practice',
+  revision_task: 'Revision',
+  mistake_recovery_task: 'Practice',
   feedback_task: 'Feedback',
-  pace_unlock_task: 'Pace Unlock',
+  pace_unlock_task: 'Unlock',
+};
+
+const TASK_THEME = {
+  revision_task: {
+    label: 'Revision',
+    icon: '↻',
+    chip: 'border-[#FDBA74] bg-[#FFF7E6] text-[#EA580C]',
+    iconChip: 'bg-[#FFF7E6] text-[#EA580C] border-[#FDBA74]',
+    card: 'border-[#F8D9A0]',
+    button: 'bg-gradient-to-r from-[#FF7A1A] to-[#F45100] text-white shadow-[0_10px_22px_rgba(255,106,0,0.22)]',
+  },
+  practice_task: {
+    label: 'Practice',
+    icon: '◎',
+    chip: 'border-[#FDBA74] bg-[#FFF7E6] text-[#EA580C]',
+    iconChip: 'bg-[#FFF7E6] text-[#EA580C] border-[#FDBA74]',
+    card: 'border-[#F8D9A0]',
+    button: 'bg-gradient-to-r from-[#FF7A1A] to-[#F45100] text-white shadow-[0_10px_22px_rgba(255,106,0,0.22)]',
+  },
+  mistake_recovery_task: {
+    label: 'Practice',
+    icon: '◎',
+    chip: 'border-[#FDBA74] bg-[#FFF7E6] text-[#EA580C]',
+    iconChip: 'bg-[#FFF7E6] text-[#EA580C] border-[#FDBA74]',
+    card: 'border-[#F8D9A0]',
+    button: 'bg-gradient-to-r from-[#FF7A1A] to-[#F45100] text-white shadow-[0_10px_22px_rgba(255,106,0,0.22)]',
+  },
+  confidence_check: {
+    label: 'Quiz',
+    icon: 'P',
+    chip: 'border-[#DDD6FE] bg-[#F5F3FF] text-[#6D5DF6]',
+    iconChip: 'bg-[#F5F3FF] text-[#6D5DF6] border-[#DDD6FE]',
+    card: 'border-[#DDD6FE]',
+    button: 'bg-white text-[#0EA5A4] border border-[#0EA5A4]',
+  },
+  coverage_check: {
+    label: 'Coverage',
+    icon: '✓',
+    chip: 'border-[#BDEDEA] bg-[#E8F8F6] text-[#0EA5A4]',
+    iconChip: 'bg-[#E8F8F6] text-[#0EA5A4] border-[#BDEDEA]',
+    card: 'border-[#BDEDEA]',
+    button: 'bg-white text-[#0EA5A4] border border-[#0EA5A4]',
+  },
+  feedback_task: {
+    label: 'Feedback',
+    icon: '!',
+    chip: 'border-[#FBCACA] bg-[#FEECEC] text-[#DC2626]',
+    iconChip: 'bg-[#FEECEC] text-[#DC2626] border-[#FBCACA]',
+    card: 'border-[#FBCACA]',
+    button: 'bg-gradient-to-r from-[#FF7A1A] to-[#F45100] text-white shadow-[0_10px_22px_rgba(255,106,0,0.22)]',
+  },
 };
 
 function getTaskTypeLabel(type) {
-  return TASK_TYPE_LABELS[type] || 'Practice Task';
+  return TASK_TYPE_LABELS[type] || 'Practice';
+}
+
+function getTheme(task) {
+  return TASK_THEME[task.taskType] || TASK_THEME.practice_task;
 }
 
 function getTaskTitle(task) {
@@ -23,10 +78,33 @@ function getTaskTitle(task) {
 
 function getMeta(task) {
   return [
-    task.topic,
-    task.questionCount ? `${task.questionCount} questions` : null,
-    task.whyThisText && task.taskType === 'mistake_recovery_task' ? task.whyThisText : null,
-  ].filter(Boolean).join(' · ');
+    task.estimatedMinutes ? `${task.estimatedMinutes} min` : null,
+    task.questionCount ? `${task.questionCount} Qs` : null,
+    task.subject || task.subjectName || null,
+  ].filter(Boolean);
+}
+
+function getPurpose(task) {
+  return task.whyThisText || task.topic || task.mentorMessage || 'Focus task for today';
+}
+
+function StatusPill({ task }) {
+  if (task.status === 'completed') {
+    return <span className="rounded-full border border-[#BDEDD8] bg-[#E7FAF3] px-2 py-0.5 text-[10px] font-black text-[#0F9F75]">Completed</span>;
+  }
+  if (task.status === 'snoozed') {
+    return <span className="rounded-full border border-[#F8D9A0] bg-[#FFF7E6] px-2 py-0.5 text-[10px] font-black text-[#B45309]">Later</span>;
+  }
+  if (task.status === 'blocked') {
+    return <span className="rounded-full border border-[#DDE8F0] bg-[#EEF3F7] px-2 py-0.5 text-[10px] font-black text-[#8A98AA]">Locked</span>;
+  }
+  if (task.reason === 'recent_mistakes' || task.taskType === 'feedback_task') {
+    return <span className="rounded-full border border-[#FBCACA] bg-[#FEECEC] px-2 py-0.5 text-[10px] font-black text-[#DC2626]">Weak</span>;
+  }
+  if (task.taskType === 'revision_task') {
+    return <span className="rounded-full border border-[#F8D9A0] bg-[#FFF7E6] px-2 py-0.5 text-[10px] font-black text-[#B45309]">Medium</span>;
+  }
+  return <span className="rounded-full border border-[#BDEDD8] bg-[#E7FAF3] px-2 py-0.5 text-[10px] font-black text-[#0F9F75]">Good</span>;
 }
 
 export default function MentorTaskCard({ task, index = 0, busy, onPrimary, onDone, onLater, showManualDone = false }) {
@@ -34,48 +112,54 @@ export default function MentorTaskCard({ task, index = 0, busy, onPrimary, onDon
   const isSnoozed = task.status === 'snoozed';
   const isBlocked = task.status === 'blocked';
   const inactive = isCompleted || isSnoozed;
-  const muted = inactive || isBlocked;
-  // Permanent plan-order number — never the visible array position.
+  const theme = getTheme(task);
   const taskNumber = Number(task.taskNumber || task.sequenceNumber || index + 1);
+  const meta = getMeta(task);
 
   return (
-    <article className={`rounded-2xl border p-3.5 ${muted ? 'border-white/[0.05] bg-[#172d47]/60' : 'border-white/[0.08] bg-[#172d47]'}`}>
+    <article className={`rounded-[18px] border bg-white p-3.5 shadow-[var(--ssc-shadow-card)] ${isBlocked ? 'border-[#DDE8F0] opacity-80' : theme.card}`}>
       <div className="mb-2.5 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
-          <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border text-[11px] font-black ${
-            isCompleted ? 'border-teal-400/40 bg-teal-400/15 text-teal-300'
-              : isSnoozed || isBlocked ? 'border-slate-500/30 bg-slate-500/10 text-slate-400'
-              : 'border-orange-500/40 bg-orange-500/15 text-orange-300'
-          }`}>
-            {isCompleted ? '✓' : isBlocked ? '🔒' : taskNumber}
+          <span className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl border text-sm font-black ${isCompleted ? 'border-[#BDEDD8] bg-[#E7FAF3] text-[#0F9F75]' : isSnoozed || isBlocked ? 'border-[#DDE8F0] bg-[#EEF3F7] text-[#8A98AA]' : theme.iconChip}`}>
+            {isCompleted ? '✓' : isBlocked ? '⌕' : theme.icon}
           </span>
-          <span className="text-[11px] font-black text-slate-400">
-            Task {taskNumber}
-          </span>
-          <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
-            isBlocked ? 'border-white/[0.08] bg-white/[0.04] text-slate-400' : 'border-orange-500/25 bg-orange-500/10 text-orange-300'
-          }`}>
-            {task.sequenceLabel || getTaskTypeLabel(task.taskType)}
-          </span>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${theme.chip}`}>
+                {task.sequenceLabel || getTaskTypeLabel(task.taskType)}
+              </span>
+              <StatusPill task={task} />
+            </div>
+            <p className="mt-1 text-[11px] font-bold text-ssc-text-muted">Task {taskNumber}</p>
+          </div>
         </div>
-        {task.estimatedMinutes ? <span className="shrink-0 text-xs font-semibold text-slate-500">~{task.estimatedMinutes} min</span> : null}
       </div>
 
-      <p className={`font-display text-[17px] font-black leading-snug ${isBlocked ? 'text-slate-500' : 'text-slate-50'}`}>{getTaskTitle(task)}</p>
-      {getMeta(task) ? <p className={`mt-1 text-sm font-semibold leading-relaxed ${isBlocked ? 'text-slate-600' : 'text-slate-400'}`}>{getMeta(task)}</p> : null}
-      {task.duplicateNote ? (
-        <p className="mt-1 flex items-center gap-1.5 text-xs font-bold text-amber-300/80">
-          <span className="inline-block h-1 w-1 rounded-full bg-amber-300/70" />
-          {task.duplicateNote}
-        </p>
+      <h3 className={`font-display text-[16px] font-black leading-snug ${isBlocked ? 'text-ssc-text-muted' : 'text-ssc-text-primary'}`}>
+        {getTaskTitle(task)}
+      </h3>
+      <p className={`mt-1 text-xs font-semibold leading-relaxed ${isBlocked ? 'text-ssc-text-muted' : 'text-ssc-text-secondary'}`}>
+        {getPurpose(task)}
+      </p>
+
+      {meta.length ? (
+        <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-bold text-ssc-text-secondary">
+          {meta.map(item => (
+            <span key={item} className="rounded-full border border-[#DDE8F0] bg-[#F8FEFD] px-2 py-0.5">{item}</span>
+          ))}
+        </div>
       ) : null}
 
-      {task.mentorMessage ? (
-        <div className="mt-3 flex items-start gap-2 rounded-xl border border-white/[0.06] bg-[#112236]/70 p-2.5">
-          <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-orange-500/15">
-            <TeacherMentorIcon className="h-4 w-4" />
+      {task.duplicateNote ? (
+        <p className="mt-2 text-xs font-bold text-[#B45309]">{task.duplicateNote}</p>
+      ) : null}
+
+      {task.mentorMessage && task.mentorMessage !== getPurpose(task) ? (
+        <div className="mt-3 flex items-start gap-2 rounded-2xl border border-[#BDEDEA] bg-[#F2FCFA] p-2.5">
+          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-white">
+            <TeacherMentorIcon className="h-5 w-5" />
           </span>
-          <p className="text-xs font-semibold leading-relaxed text-slate-300">{task.mentorMessage}</p>
+          <p className="text-xs font-semibold leading-relaxed text-ssc-text-secondary">{task.mentorMessage}</p>
         </div>
       ) : null}
 
@@ -85,12 +169,12 @@ export default function MentorTaskCard({ task, index = 0, busy, onPrimary, onDon
             type="button"
             disabled
             aria-disabled="true"
-            className="w-full cursor-not-allowed rounded-2xl border border-white/[0.06] bg-white/[0.03] py-3 text-sm font-black text-slate-500"
+            className="w-full cursor-not-allowed rounded-2xl border border-[#DDE8F0] bg-[#EEF3F7] py-3 text-sm font-black text-ssc-disabled-text"
           >
             {task.ctaLabel || 'Practice Questions'} →
           </button>
-          <p className="text-center text-[11px] font-bold text-slate-500">
-            {task.blockedReason || 'Pehle previous task complete kijiye.'}
+          <p className="text-center text-[11px] font-bold text-ssc-text-muted">
+            {task.blockedReason || 'Complete the previous step first.'}
           </p>
         </div>
       ) : !inactive ? (
@@ -99,20 +183,20 @@ export default function MentorTaskCard({ task, index = 0, busy, onPrimary, onDon
             type="button"
             disabled={busy}
             onClick={() => onPrimary?.(task)}
-            className="w-full rounded-2xl bg-gradient-to-r from-[#ff7a1a] to-[#ff4d00] py-3 text-sm font-black text-white shadow-[0_10px_26px_rgba(255,90,0,.22)] active:scale-[0.98] disabled:opacity-60"
+            className={`w-full rounded-2xl py-3 text-sm font-black active:scale-[0.98] disabled:opacity-60 ${theme.button}`}
           >
             {busy ? 'Saving...' : `${task.ctaLabel || 'Practice Questions'} →`}
           </button>
           {showManualDone ? (
             <>
-              <p className="text-center text-[11px] font-bold text-slate-500">
+              <p className="text-center text-[11px] font-bold text-ssc-text-muted">
                 Task sync nahi hua? Already completed mark kar sakte hain.
               </p>
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => onDone?.(task)}
-                className="w-full rounded-xl border border-teal-300/20 bg-[#112236] py-2 text-xs font-black text-teal-200 active:scale-[0.98] disabled:opacity-60"
+                className="w-full rounded-xl border border-[#0EA5A4] bg-white py-2 text-xs font-black text-[#0EA5A4] active:scale-[0.98] disabled:opacity-60"
               >
                 ✓ Mark as Done
               </button>
@@ -122,13 +206,13 @@ export default function MentorTaskCard({ task, index = 0, busy, onPrimary, onDon
             type="button"
             disabled={busy}
             onClick={() => onLater?.(task)}
-            className="w-full py-1.5 text-xs font-bold text-slate-500 active:opacity-70 disabled:opacity-50"
+            className="w-full py-1.5 text-xs font-bold text-ssc-text-muted active:opacity-70 disabled:opacity-50"
           >
             {task.secondaryAction || 'Maybe later'}
           </button>
         </div>
       ) : (
-        <p className="mt-3 text-xs font-bold text-slate-500">{isCompleted ? 'Completed' : 'Saved for later'}</p>
+        <p className="mt-3 text-xs font-bold text-ssc-text-muted">{isCompleted ? 'Completed' : 'Saved for later'}</p>
       )}
     </article>
   );
