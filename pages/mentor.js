@@ -6,7 +6,6 @@ import Loader from '@/components/ui/Loader';
 import MentorMessage, { TeacherMentorIcon } from '@/components/MentorMessage';
 import TodaysPlanCard from '@/components/TodaysPlanCard';
 import WhatsAppBell from '@/components/WhatsAppBell';
-import RefreshStatus from '@/components/ui/RefreshStatus';
 import {
   MENTOR_COPY,
   formatPreparationStartedDate,
@@ -319,6 +318,35 @@ function SignInPreview() {
   );
 }
 
+function MentorHeroCard({ message, onViewPlan }) {
+  return (
+    <section className="rounded-[20px] border border-ssc-border-soft bg-white p-3 shadow-[var(--ssc-shadow-card)]">
+      <div className="flex items-start gap-3">
+        <div className="flex h-20 w-20 flex-shrink-0 items-end justify-center overflow-hidden rounded-2xl bg-[#E8F8F6]">
+          <TeacherMentorIcon className="h-20 w-20" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-base font-black leading-tight text-ssc-text-primary">
+            Aapka Mentor <span className="text-xs text-[#F59E0B]">✦</span>
+          </h2>
+          <p className="mt-1 text-xs font-semibold leading-relaxed text-ssc-text-primary">
+            {message}
+          </p>
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={onViewPlan}
+              className="w-full rounded-xl bg-[#0EA5A4] px-3 py-2 text-xs font-black text-white shadow-[0_8px_18px_rgba(14,165,164,0.18)] active:scale-[0.98]"
+            >
+              View Plan
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function CountModal({ task, busy, onClose, onSelect }) {
   if (!task) return null;
   return (
@@ -327,7 +355,7 @@ function CountModal({ task, busy, onClose, onSelect }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-widest text-[#EA580C]">How many questions?</p>
-            <h2 className="mt-1 font-display text-xl font-black text-ssc-text-primary">{task.title || task.topic || 'Mentor Task'}</h2>
+            <h2 className="font-display text-lg font-black text-ssc-text-primary">{getTaskTitle(task)}</h2>
             <p className="mt-1 text-xs font-semibold text-ssc-text-secondary">Question count select kijiye. Result ke baad Mentor tab par wapas aa sakte hain.</p>
           </div>
           <button type="button" onClick={onClose} className="h-9 w-9 rounded-xl border border-ssc-border-soft bg-[#F8FEFD] text-ssc-text-secondary">
@@ -361,7 +389,7 @@ function ConfidenceModal({ task, busy, onClose, onSelect }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-widest text-ssc-teal">Confidence Check</p>
-            <h2 className="mt-1 font-display text-xl font-black text-ssc-text-primary">{task.topic || 'Topic confidence'}</h2>
+            <h2 className="font-display text-lg font-black text-ssc-text-primary">{task.subject || task.subjectName || 'Mentor Task'}</h2>
             <p className="mt-1 text-xs font-semibold text-ssc-text-secondary">Apna current confidence select kijiye. Plan uske hisaab se update hoga.</p>
           </div>
           <button type="button" onClick={onClose} className="h-9 w-9 rounded-xl border border-ssc-border-soft bg-[#F8FEFD] text-ssc-text-secondary">
@@ -395,7 +423,7 @@ function CoverageModal({ task, busy, onClose, onSelect }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-widest text-ssc-teal">Coverage Check</p>
-            <h2 className="mt-1 font-display text-xl font-black text-ssc-text-primary">{task.topic || 'Topic coverage'}</h2>
+            <h2 className="font-display text-lg font-black text-ssc-text-primary">{task.subject || task.subjectName || 'Mentor Task'}</h2>
             <p className="mt-1 text-xs font-semibold text-ssc-text-secondary">Apna theory status select kijiye. Mentor plan uske hisaab se update hoga.</p>
           </div>
           <button type="button" onClick={onClose} className="h-9 w-9 rounded-xl border border-ssc-border-soft bg-[#F8FEFD] text-ssc-text-secondary">
@@ -787,7 +815,7 @@ export default function MentorPage() {
       planId,
       returnUrl: '/mentor',
       subject: task.subject || '',
-      topic: task.topic || 'Repeated Mistakes',
+      topic: task.topic || '',
       questionCount: count,
     };
     sessionStorage.setItem('ssc_mentor_return_context', JSON.stringify(mentorContext));
@@ -837,7 +865,7 @@ export default function MentorPage() {
     try {
       await runTaskAction(task, 'launch_practice', String(count));
       const subject = task.subject || task.subjectId || task.subjectName || '';
-      const topic = task.topic || '';
+      const topic = task.topic || task.topicName || '';
       const planId = task.planId || snapshot?.plan?.planId || '';
       const mentorContext = {
         sourcePage: 'mentor',
@@ -925,19 +953,11 @@ export default function MentorPage() {
         <div className="app-shell !px-0 pb-20 !bg-transparent">
           <AppTopBar />
           <main className="px-4 pb-[calc(var(--ssc-bottom-nav-safe-padding)+20px)] pt-[18px] text-ssc-text-primary">
-            <div className="space-y-5">
-              <section className="space-y-3">
-                <MentorMessage message={onboarded ? mentorDayMessage : MENTOR_COPY.NO_PLAN} />
-                <div className="flex items-center justify-between rounded-full border border-ssc-border-soft bg-white px-3 py-2 shadow-[var(--ssc-shadow-card)]">
-                  <RefreshStatus
-                    label="Plan sync"
-                    updatedAt={snapshot?.lastSyncAt || snapshot?.plan?.updatedAt}
-                    isRefreshing={refreshing}
-                    onRefresh={handleRefresh}
-                    refreshText="Refresh"
-                  />
-                </div>
-              </section>
+            <div className="space-y-3">
+              <MentorHeroCard
+                message={onboarded ? mentorDayMessage : MENTOR_COPY.NO_PLAN}
+                onViewPlan={() => document.getElementById('mentor-today-plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              />
 
               {error && !onboarded ? (
                 <section className="rounded-[20px] border border-[#FBCACA] bg-[#FEECEC] p-4 shadow-[var(--ssc-shadow-card)]">
@@ -968,9 +988,9 @@ export default function MentorPage() {
                     <div className="absolute inset-y-0 left-0 w-1 bg-ssc-teal" />
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h2 className="text-[11px] font-black uppercase tracking-widest text-ssc-text-muted">Preparation Setup</h2>
+                        <h2 className="text-[10px] font-black uppercase tracking-widest text-ssc-text-muted">Preparation Setup</h2>
                         <p className="mt-1.5 text-base font-black leading-tight text-ssc-text-primary">
-                          {profile?.examTarget || 'Exam not set'} <span className="text-ssc-text-muted">·</span> {formatDaysLeftLabel(profile?.daysLeftRange)}
+                          {profile?.examTarget || 'Exam not set'} <span className="text-ssc-text-muted">-</span> {formatDaysLeftLabel(profile?.daysLeftRange)}
                         </p>
                         <div className="mt-2.5 flex flex-wrap gap-1.5">
                           <span className="rounded-full border border-[#BDEDEA] bg-[#E8F8F6] px-3 py-1 text-xs font-black text-ssc-teal">
@@ -981,7 +1001,7 @@ export default function MentorPage() {
                           </span>
                         </div>
                         <p className="mt-2.5 text-xs font-semibold text-ssc-text-muted">
-                          Plan can be updated anytime{preparationStartedDate ? ` · Started ${preparationStartedDate}` : ''}
+                          {preparationStartedDate ? `Started ${preparationStartedDate}` : 'Started recently'} - Update anytime
                         </p>
                       </div>
                       <button
@@ -994,7 +1014,7 @@ export default function MentorPage() {
                     </div>
                   </section>
 
-                  <section className="space-y-3">
+                  <section id="mentor-today-plan" className="space-y-3 scroll-mt-20">
                     <TodaysPlanCard
                       plan={snapshot?.plan}
                       activeTasks={snapshot?.activeTasks}
@@ -1012,7 +1032,7 @@ export default function MentorPage() {
 
                   <section className="rounded-[20px] border border-[#BDEDEA] bg-[#F2FCFA] p-4 shadow-[var(--ssc-shadow-card)]">
                     <div className="flex items-start gap-3">
-                      <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-white text-xl text-ssc-teal">☼</span>
+                      <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-white text-sm font-black text-ssc-teal">Tip</span>
                       <div>
                         <h2 className="font-display text-base font-black text-ssc-text-primary">Mentor Insight</h2>
                         <p className="mt-1 text-sm font-semibold leading-relaxed text-ssc-text-secondary">
@@ -1022,7 +1042,7 @@ export default function MentorPage() {
                     </div>
                   </section>
 
-                  {/* Phase 9E: Previously Pending — read-only surfacing of canonical
+                  {/* Phase 9E: Previously Pending - read-only surfacing of canonical
                       pending tasks (V2 postponed). Hidden when empty; legacy snoozed
                       tasks are NOT here (they are deferred, not pending). */}
                   {(snapshot?.pendingTasks || []).length > 0 && (
@@ -1038,7 +1058,7 @@ export default function MentorPage() {
                               <div className="flex items-center gap-2">
                                 <span className="shrink-0 rounded-full border border-[#F8D9A0] bg-[#FFF7E6] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#B45309]">Paused for later</span>
                                 {(task.subject || task.subjectName) && (
-                                  <span className="truncate text-[11px] font-semibold text-ssc-text-secondary">{task.subject || task.subjectName}{task.topic ? ` · ${task.topic}` : ''}</span>
+                                  <span className="truncate text-[11px] font-semibold text-ssc-text-secondary">{task.subject || task.subjectName}{task.topic ? ` - ${task.topic}` : ''}</span>
                                 )}
                               </div>
                               <h3 className="mt-1 truncate font-display text-base font-black text-ssc-text-primary">{task.title || task.topic || 'Mentor Task'}</h3>
@@ -1050,7 +1070,7 @@ export default function MentorPage() {
                               disabled={busyTaskId === task.taskId}
                               className="shrink-0 rounded-xl border border-[#0EA5A4] bg-white px-4 py-2 text-sm font-black text-ssc-teal disabled:opacity-60"
                             >
-                              {busyTaskId === task.taskId ? 'Resuming…' : 'Resume'}
+                              {busyTaskId === task.taskId ? 'Resuming...' : 'Resume'}
                             </button>
                           </div>
                         ))}

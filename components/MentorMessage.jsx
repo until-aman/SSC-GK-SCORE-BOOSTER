@@ -32,15 +32,15 @@ export default function MentorMessage({ message, variant = 'info', compact = fal
   const styles = VARIANT_STYLES[variant] || VARIANT_STYLES.info;
 
   return (
-    <div className={`flex items-start gap-3 rounded-[22px] border ${styles.card} ${compact ? 'p-3' : 'p-4'} shadow-[var(--ssc-shadow-card)]`}>
-      <div className={`flex ${compact ? 'h-10 w-10' : 'h-14 w-14'} flex-shrink-0 items-center justify-center rounded-2xl border ${styles.chip}`}>
-        <TeacherMentorIcon className={compact ? 'h-7 w-7' : 'h-10 w-10'} />
+    <div className={`flex items-start gap-3 rounded-[20px] border ${styles.card} ${compact ? 'p-3' : 'p-3.5'} shadow-[var(--ssc-shadow-card)]`}>
+      <div className={`flex ${compact ? 'h-10 w-10' : 'h-16 w-16'} flex-shrink-0 items-end justify-center overflow-hidden rounded-2xl border ${styles.chip}`}>
+        <TeacherMentorIcon className={compact ? 'h-8 w-8' : 'h-16 w-16'} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-black uppercase tracking-[0.12em] text-ssc-teal">
-          Aapka Mentor
+        <p className={`${compact ? 'text-sm' : 'text-base'} font-display font-black leading-tight text-ssc-text-primary`}>
+          Aapka Mentor <span className="text-xs text-[#F59E0B]">✦</span>
         </p>
-        <p className={`${compact ? 'mt-0.5 text-xs' : 'mt-1 text-sm'} font-semibold leading-relaxed text-ssc-text-primary`}>
+        <p className={`${compact ? 'mt-0.5 text-xs' : 'mt-1 text-xs'} font-semibold leading-relaxed text-ssc-text-primary`}>
           {message}
         </p>
       </div>
