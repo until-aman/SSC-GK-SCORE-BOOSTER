@@ -109,7 +109,6 @@ export default function BottomNav() {
         right: 0,
         zIndex: 50,
       }}>
-        <div className="ssc-bottom-nav-scrim" aria-hidden="true" />
         <div style={{
           maxWidth: '430px',
           margin: '0 auto',

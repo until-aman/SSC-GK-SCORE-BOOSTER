@@ -16,14 +16,6 @@ import {
 import { getUserCacheScope } from '@/lib/userCacheScope';
 import { isMentorSnapshotFresh, fetchMentorPlan, fetchMentorRefresh } from '@/lib/data/mentorData';
 
-const ORANGE = '#FF6B16';
-const BG_CARD = '#172D47';
-const BG_DEEP = '#112236';
-const BORDER = 'rgba(255,255,255,0.08)';
-const TEXT_PRI = '#F0F4F8';
-const TEXT_SEC = '#94A3B8';
-const TEXT_MUT = '#64748B';
-
 const QUESTION_COUNTS = [10, 25, 50];
 
 const GoogleSVG = () => (
@@ -41,21 +33,22 @@ function AppTopBar() {
       className="sticky top-0 z-50 flex items-center justify-between px-4"
       style={{
         height: '58px',
-        background: 'rgba(255,255,255,0.94)',
+        background: 'rgba(243,251,250,0.94)',
         backdropFilter: 'blur(14px)',
         WebkitBackdropFilter: 'blur(14px)',
-        borderBottom: '1px solid var(--ssc-border-soft)',
+        border: '1px solid rgba(221,232,240,0.9)',
+        borderTop: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
         borderRadius: '0 0 22px 22px',
-        boxShadow: '0 10px 30px rgba(16,32,51,0.08)',
+        boxShadow: '0 10px 26px rgba(16,32,51,0.08)',
       }}
     >
       <div className="flex items-center gap-2.5">
-        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[11px] bg-orange-500/10">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="#f97316" aria-hidden="true">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-          </svg>
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[11px] bg-[#E8F8F6]">
+          <TeacherMentorIcon className="h-7 w-7" />
         </div>
-        <span className="font-display self-center whitespace-nowrap text-[18px] font-black leading-none tracking-wide" style={{ color: 'var(--ssc-text-primary)' }}>
+        <span className="font-display self-center whitespace-nowrap text-[18px] font-black leading-none tracking-wide text-ssc-text-primary">
           Today&apos;s GK Plan
         </span>
         <span
@@ -63,9 +56,9 @@ function AppTopBar() {
           style={{
             fontSize: 9,
             fontWeight: 800,
-            color: '#14B8A6',
-            background: 'rgba(20,184,166,0.15)',
-            border: '1px solid rgba(20,184,166,0.30)',
+            color: '#0EA5A4',
+            background: '#E8F8F6',
+            border: '1px solid #BDEDEA',
             borderRadius: 99,
             padding: '3px 8px',
             letterSpacing: '0.05em',
@@ -240,11 +233,11 @@ function getSnapshotProgress(snapshot) {
 
 function MentorEmptyState({ onBuild }) {
   return (
-    <section className="rounded-2xl border border-white/[0.08] bg-[#172d47] p-4">
+    <section className="rounded-[22px] border border-ssc-border-soft bg-white p-4 shadow-[var(--ssc-shadow-card)]">
       <MentorMessage message="Aapka GK plan abhi ready nahi hai. Preparation setup complete kijiye, phir daily task plan ban jayega." />
-      <div className="mt-4 rounded-2xl border border-white/[0.06] bg-[#112236] p-4">
-        <p className="text-xs font-black uppercase tracking-widest text-slate-400">You will get</p>
-        <div className="mt-3 grid gap-2 text-sm font-semibold text-slate-300">
+      <div className="mt-4 rounded-[18px] border border-ssc-border-soft bg-[#F8FEFD] p-4">
+        <p className="text-xs font-black uppercase tracking-widest text-ssc-text-muted">You will get</p>
+        <div className="mt-3 grid gap-2 text-sm font-semibold text-ssc-text-primary">
           <p>Daily task plan</p>
           <p>Mistake revision</p>
           <p>Topic-wise practice</p>
@@ -254,7 +247,7 @@ function MentorEmptyState({ onBuild }) {
       <button
         type="button"
         onClick={onBuild}
-        className="mt-4 w-full rounded-2xl bg-[#14B8A6] py-3 text-sm font-black text-white active:scale-[0.98]"
+        className="mt-4 w-full rounded-2xl bg-gradient-to-r from-[#FF7A1A] to-[#F45100] py-3 text-sm font-black text-white shadow-[var(--ssc-shadow-cta)] active:scale-[0.98]"
       >
         Build My GK Plan
       </button>
@@ -264,18 +257,18 @@ function MentorEmptyState({ onBuild }) {
 
 function SignInPreview() {
   return (
-    <div className="app-page">
-      <div className="app-shell !px-0 pb-20">
+    <div className="min-h-screen bg-[var(--ssc-bg)]">
+      <div className="app-shell !px-0 pb-20 !bg-transparent">
         <AppTopBar />
-        <main className="px-4 pb-24 pt-[18px] text-white">
+        <main className="px-4 pb-24 pt-[18px] text-ssc-text-primary">
           <section className="space-y-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/20 via-slate-800 to-teal-500/20">
-                <TeacherMentorIcon className="h-7 w-7" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#BDEDEA] bg-[#E8F8F6]">
+                <TeacherMentorIcon className="h-10 w-10" />
               </div>
               <div>
-                <h1 className="font-display text-2xl font-black">Today&apos;s GK Plan</h1>
-                <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                <h1 className="font-display text-2xl font-black text-ssc-text-primary">Today&apos;s GK Plan</h1>
+                <p className="mt-1 text-xs font-semibold leading-relaxed text-ssc-text-secondary">
                   Aaj ka focus clear rakhiye - ek task complete kijiye, phir next step pe chalte hain.
                 </p>
               </div>
@@ -283,36 +276,36 @@ function SignInPreview() {
             <MentorMessage message="Sign in kijiye. Aapka personalized GK plan save rahega aur daily progress sync hogi." />
           </section>
 
-          <section className="relative mt-5 h-[340px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#172d47] p-4">
+          <section className="relative mt-5 h-[340px] overflow-hidden rounded-[22px] border border-ssc-border-soft bg-white p-4 shadow-[var(--ssc-shadow-card)]">
             <div className="space-y-3 opacity-45 blur-[5px]">
-              <div className="rounded-2xl border border-white/[0.08] bg-[#112236] p-4">
-                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Day Progress</p>
-                <div className="mt-3 h-2 rounded-full bg-[#0d1b2e]">
-                  <div className="h-full w-1/3 rounded-full bg-teal-400" />
+              <div className="rounded-2xl border border-ssc-border-soft bg-[#F8FEFD] p-4">
+                <p className="text-xs font-black uppercase tracking-widest text-ssc-text-muted">Day Progress</p>
+                <div className="mt-3 h-2 rounded-full bg-[#EEF3F7]">
+                  <div className="h-full w-1/3 rounded-full bg-ssc-teal" />
                 </div>
               </div>
               {['Repeated Mistakes', 'Indian Polity', 'Quick Confidence Check'].map(title => (
-                <div key={title} className="rounded-2xl border border-white/[0.08] bg-[#112236] p-4">
-                  <p className="text-xs font-bold text-orange-300">Practice Task</p>
-                  <p className="mt-2 font-display text-lg font-black text-white">{title}</p>
-                  <div className="mt-3 h-10 rounded-2xl bg-orange-500" />
+                <div key={title} className="rounded-2xl border border-ssc-border-soft bg-[#F8FEFD] p-4">
+                  <p className="text-xs font-bold text-[#EA580C]">Practice Task</p>
+                  <p className="mt-2 font-display text-lg font-black text-ssc-text-primary">{title}</p>
+                  <div className="mt-3 h-10 rounded-2xl bg-ssc-orange" />
                 </div>
               ))}
             </div>
             <div className="absolute inset-0 flex items-center justify-center p-6">
-              <div className="w-full rounded-2xl border border-white/[0.08] bg-[#0d1b2e]/95 p-5 text-center shadow-2xl">
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/15">
-                  <TeacherMentorIcon className="h-7 w-7" />
+              <div className="w-full rounded-[22px] border border-ssc-border-soft bg-white/95 p-5 text-center shadow-[var(--ssc-shadow-float)]">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E8F8F6]">
+                  <TeacherMentorIcon className="h-10 w-10" />
                 </div>
-                <p className="font-display text-lg font-black text-white">Your mentor plan is waiting</p>
-                <p className="mt-1 text-xs font-semibold text-slate-500">Sign in to unlock your GK revision lane</p>
+                <p className="font-display text-lg font-black text-ssc-text-primary">Your mentor plan is waiting</p>
+                <p className="mt-1 text-xs font-semibold text-ssc-text-secondary">Sign in to unlock your GK revision lane</p>
                 <button
                   type="button"
                   onClick={() => {
                     document.cookie = 'userMode=; path=/; max-age=0';
                     signIn('google', { callbackUrl: '/mentor' });
                   }}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3 text-sm font-black text-slate-950"
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-ssc-border-soft bg-white py-3 text-sm font-black text-ssc-text-primary shadow-[var(--ssc-shadow-card)]"
                 >
                   <GoogleSVG />
                   Continue with Google
@@ -329,15 +322,15 @@ function SignInPreview() {
 function CountModal({ task, busy, onClose, onSelect }) {
   if (!task) return null;
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 px-4 pb-5 pt-10 backdrop-blur-sm">
-      <div className="w-full max-w-[448px] rounded-3xl border border-white/[0.08] bg-[#172d47] p-5 shadow-2xl">
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-[var(--ssc-overlay)] px-4 pb-5 pt-10 backdrop-blur-sm">
+      <div className="w-full max-w-[448px] rounded-3xl border border-ssc-border-soft bg-white p-5 shadow-[var(--ssc-shadow-float)]">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-black uppercase tracking-widest text-orange-300">How many questions?</p>
-            <h2 className="mt-1 font-display text-xl font-black text-white">{task.title || task.topic || 'Mentor Task'}</h2>
-            <p className="mt-1 text-xs font-semibold text-slate-400">Question count select kijiye. Result ke baad Mentor tab par wapas aa sakte hain.</p>
+            <p className="text-xs font-black uppercase tracking-widest text-[#EA580C]">How many questions?</p>
+            <h2 className="mt-1 font-display text-xl font-black text-ssc-text-primary">{task.title || task.topic || 'Mentor Task'}</h2>
+            <p className="mt-1 text-xs font-semibold text-ssc-text-secondary">Question count select kijiye. Result ke baad Mentor tab par wapas aa sakte hain.</p>
           </div>
-          <button type="button" onClick={onClose} className="h-9 w-9 rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-400">
+          <button type="button" onClick={onClose} className="h-9 w-9 rounded-xl border border-ssc-border-soft bg-[#F8FEFD] text-ssc-text-secondary">
             x
           </button>
         </div>
@@ -348,7 +341,7 @@ function CountModal({ task, busy, onClose, onSelect }) {
               type="button"
               disabled={busy}
               onClick={() => onSelect(count)}
-              className="rounded-2xl border border-orange-500/25 bg-orange-500/10 py-4 text-center font-display text-lg font-black text-orange-200 active:scale-[0.98] disabled:opacity-60"
+              className="rounded-2xl border border-[#FDBA74] bg-[#FFF7E6] py-4 text-center font-display text-lg font-black text-[#EA580C] active:scale-[0.98] disabled:opacity-60"
             >
               {count}
             </button>
@@ -363,15 +356,15 @@ function ConfidenceModal({ task, busy, onClose, onSelect }) {
   if (!task) return null;
   const options = ['Weak', 'Okay', 'Strong', 'Need revision'];
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 px-4 pb-5 pt-10 backdrop-blur-sm">
-      <div className="w-full max-w-[448px] rounded-3xl border border-white/[0.08] bg-[#172d47] p-5 shadow-2xl">
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-[var(--ssc-overlay)] px-4 pb-5 pt-10 backdrop-blur-sm">
+      <div className="w-full max-w-[448px] rounded-3xl border border-ssc-border-soft bg-white p-5 shadow-[var(--ssc-shadow-float)]">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-black uppercase tracking-widest text-teal-300">Confidence Check</p>
-            <h2 className="mt-1 font-display text-xl font-black text-white">{task.topic || 'Topic confidence'}</h2>
-            <p className="mt-1 text-xs font-semibold text-slate-400">Apna current confidence select kijiye. Plan uske hisaab se update hoga.</p>
+            <p className="text-xs font-black uppercase tracking-widest text-ssc-teal">Confidence Check</p>
+            <h2 className="mt-1 font-display text-xl font-black text-ssc-text-primary">{task.topic || 'Topic confidence'}</h2>
+            <p className="mt-1 text-xs font-semibold text-ssc-text-secondary">Apna current confidence select kijiye. Plan uske hisaab se update hoga.</p>
           </div>
-          <button type="button" onClick={onClose} className="h-9 w-9 rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-400">
+          <button type="button" onClick={onClose} className="h-9 w-9 rounded-xl border border-ssc-border-soft bg-[#F8FEFD] text-ssc-text-secondary">
             x
           </button>
         </div>
@@ -382,7 +375,7 @@ function ConfidenceModal({ task, busy, onClose, onSelect }) {
               type="button"
               disabled={busy}
               onClick={() => onSelect(option)}
-              className="rounded-2xl border border-white/[0.08] bg-[#112236] py-3 text-sm font-black text-slate-100 active:scale-[0.98] disabled:opacity-60"
+              className="rounded-2xl border border-ssc-border-soft bg-[#F8FEFD] py-3 text-sm font-black text-ssc-text-primary active:scale-[0.98] disabled:opacity-60"
             >
               {option}
             </button>
@@ -397,15 +390,15 @@ function CoverageModal({ task, busy, onClose, onSelect }) {
   if (!task) return null;
   const options = ['Theory Complete', 'Started', 'Not Yet'];
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 px-4 pb-5 pt-10 backdrop-blur-sm">
-      <div className="w-full max-w-[448px] rounded-3xl border border-white/[0.08] bg-[#172d47] p-5 shadow-2xl">
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-[var(--ssc-overlay)] px-4 pb-5 pt-10 backdrop-blur-sm">
+      <div className="w-full max-w-[448px] rounded-3xl border border-ssc-border-soft bg-white p-5 shadow-[var(--ssc-shadow-float)]">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-black uppercase tracking-widest text-teal-300">Coverage Check</p>
-            <h2 className="mt-1 font-display text-xl font-black text-white">{task.topic || 'Topic coverage'}</h2>
-            <p className="mt-1 text-xs font-semibold text-slate-400">Apna theory status select kijiye. Mentor plan uske hisaab se update hoga.</p>
+            <p className="text-xs font-black uppercase tracking-widest text-ssc-teal">Coverage Check</p>
+            <h2 className="mt-1 font-display text-xl font-black text-ssc-text-primary">{task.topic || 'Topic coverage'}</h2>
+            <p className="mt-1 text-xs font-semibold text-ssc-text-secondary">Apna theory status select kijiye. Mentor plan uske hisaab se update hoga.</p>
           </div>
-          <button type="button" onClick={onClose} className="h-9 w-9 rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-400">
+          <button type="button" onClick={onClose} className="h-9 w-9 rounded-xl border border-ssc-border-soft bg-[#F8FEFD] text-ssc-text-secondary">
             x
           </button>
         </div>
@@ -416,7 +409,7 @@ function CoverageModal({ task, busy, onClose, onSelect }) {
               type="button"
               disabled={busy}
               onClick={() => onSelect(option)}
-              className="rounded-2xl border border-white/[0.08] bg-[#112236] py-3 text-sm font-black text-slate-100 active:scale-[0.98] disabled:opacity-60"
+              className="rounded-2xl border border-ssc-border-soft bg-[#F8FEFD] py-3 text-sm font-black text-ssc-text-primary active:scale-[0.98] disabled:opacity-60"
             >
               {option}
             </button>
@@ -431,15 +424,15 @@ function BlockerModal({ task, busy, onClose, onSelect }) {
   if (!task) return null;
   const options = ['Theory pending', 'Time kam hai', 'Topic confusing hai', 'Practice nahi hui'];
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 px-4 pb-5 pt-10 backdrop-blur-sm">
-      <div className="w-full max-w-[448px] rounded-3xl border border-white/[0.08] bg-[#172d47] p-5 shadow-2xl">
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-[var(--ssc-overlay)] px-4 pb-5 pt-10 backdrop-blur-sm">
+      <div className="w-full max-w-[448px] rounded-3xl border border-ssc-border-soft bg-white p-5 shadow-[var(--ssc-shadow-float)]">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-black uppercase tracking-widest text-orange-300">Feedback</p>
-            <h2 className="mt-1 font-display text-xl font-black text-white">Is topic mein main blocker kya hai?</h2>
-            <p className="mt-1 text-xs font-semibold text-slate-400">Ek option select kijiye. Mentor plan chhote next step mein adjust hoga.</p>
+            <p className="text-xs font-black uppercase tracking-widest text-[#EA580C]">Feedback</p>
+            <h2 className="mt-1 font-display text-xl font-black text-ssc-text-primary">Is topic mein main blocker kya hai?</h2>
+            <p className="mt-1 text-xs font-semibold text-ssc-text-secondary">Ek option select kijiye. Mentor plan chhote next step mein adjust hoga.</p>
           </div>
-          <button type="button" onClick={onClose} className="h-9 w-9 rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-400">
+          <button type="button" onClick={onClose} className="h-9 w-9 rounded-xl border border-ssc-border-soft bg-[#F8FEFD] text-ssc-text-secondary">
             x
           </button>
         </div>
@@ -450,7 +443,7 @@ function BlockerModal({ task, busy, onClose, onSelect }) {
               type="button"
               disabled={busy}
               onClick={() => onSelect(option)}
-              className="rounded-2xl border border-white/[0.08] bg-[#112236] py-3 text-sm font-black text-slate-100 active:scale-[0.98] disabled:opacity-60"
+              className="rounded-2xl border border-ssc-border-soft bg-[#F8FEFD] py-3 text-sm font-black text-ssc-text-primary active:scale-[0.98] disabled:opacity-60"
             >
               {option}
             </button>
@@ -464,16 +457,16 @@ function BlockerModal({ task, busy, onClose, onSelect }) {
 function ConfirmTaskModal({ task, busy, onClose, onConfirm }) {
   if (!task) return null;
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 px-4 pb-5 pt-10 backdrop-blur-sm">
-      <div className="w-full max-w-[448px] rounded-3xl border border-white/[0.08] bg-[#172d47] p-5 shadow-2xl">
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-[var(--ssc-overlay)] px-4 pb-5 pt-10 backdrop-blur-sm">
+      <div className="w-full max-w-[448px] rounded-3xl border border-ssc-border-soft bg-white p-5 shadow-[var(--ssc-shadow-float)]">
         <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-orange-500/15">
-            <TeacherMentorIcon className="h-7 w-7" />
+          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-[#E8F8F6]">
+            <TeacherMentorIcon className="h-9 w-9" />
           </div>
           <div>
-            <p className="text-xs font-black uppercase tracking-widest text-orange-300">Confirm Task</p>
-            <h2 className="mt-1 font-display text-xl font-black text-white">Mark this task as completed?</h2>
-            <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-400">
+            <p className="text-xs font-black uppercase tracking-widest text-[#EA580C]">Confirm Task</p>
+            <h2 className="mt-1 font-display text-xl font-black text-ssc-text-primary">Mark this task as completed?</h2>
+            <p className="mt-1 text-xs font-semibold leading-relaxed text-ssc-text-secondary">
               Agar aapne yeh task complete kar liya hai, toh isse completed mark kar sakte hain. Aapka current plan uske according update ho jayega.
             </p>
           </div>
@@ -483,7 +476,7 @@ function ConfirmTaskModal({ task, busy, onClose, onConfirm }) {
             type="button"
             disabled={busy}
             onClick={onClose}
-            className="rounded-2xl border border-white/[0.08] bg-[#112236] py-3 text-sm font-black text-slate-300 disabled:opacity-60"
+            className="rounded-2xl border border-ssc-border-soft bg-white py-3 text-sm font-black text-ssc-text-secondary disabled:opacity-60"
           >
             Cancel
           </button>
@@ -491,7 +484,7 @@ function ConfirmTaskModal({ task, busy, onClose, onConfirm }) {
             type="button"
             disabled={busy}
             onClick={onConfirm}
-            className="rounded-2xl bg-gradient-to-r from-[#ff7a1a] to-[#ff4d00] py-3 text-sm font-black text-white disabled:opacity-60"
+            className="rounded-2xl bg-gradient-to-r from-[#FF7A1A] to-[#F45100] py-3 text-sm font-black text-white disabled:opacity-60"
           >
             {busy ? 'Saving...' : 'Mark Completed'}
           </button>
@@ -928,37 +921,33 @@ export default function MentorPage() {
   return (
     <>
       <Head><title>Mentor - SSC GK Score Booster</title></Head>
-      <div className="app-page">
-        <div className="app-shell !px-0 pb-20">
+      <div className="min-h-screen bg-[var(--ssc-bg)]">
+        <div className="app-shell !px-0 pb-20 !bg-transparent">
           <AppTopBar />
-          <main className="px-4 pb-24 pt-[18px] text-white">
+          <main className="px-4 pb-[calc(var(--ssc-bottom-nav-safe-padding)+20px)] pt-[18px] text-ssc-text-primary">
             <div className="space-y-5">
               <section className="space-y-3">
-                <div className="flex justify-end">
+                <MentorMessage message={onboarded ? mentorDayMessage : MENTOR_COPY.NO_PLAN} />
+                <div className="flex items-center justify-between rounded-full border border-ssc-border-soft bg-white px-3 py-2 shadow-[var(--ssc-shadow-card)]">
                   <RefreshStatus
+                    label="Plan sync"
                     updatedAt={snapshot?.lastSyncAt || snapshot?.plan?.updatedAt}
                     isRefreshing={refreshing}
                     onRefresh={handleRefresh}
-                    refreshText={
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="23 4 23 10 17 10"/>
-                        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
-                      </svg>
-                    }
+                    refreshText="Refresh"
                   />
                 </div>
-                <MentorMessage message={onboarded ? mentorDayMessage : MENTOR_COPY.NO_PLAN} />
               </section>
 
               {error && !onboarded ? (
-                <section className="rounded-2xl border border-red-500/40 bg-red-500/10 p-4">
-                  <p className="font-display text-base font-black text-red-100">Could not load mentor plan.</p>
-                  <p className="mt-1 text-xs font-semibold text-red-200/80">Please refresh and try again.</p>
+                <section className="rounded-[20px] border border-[#FBCACA] bg-[#FEECEC] p-4 shadow-[var(--ssc-shadow-card)]">
+                  <p className="font-display text-base font-black text-ssc-text-primary">Could not load mentor plan.</p>
+                  <p className="mt-1 text-xs font-semibold text-[#DC2626]">Please refresh and try again.</p>
                   <button
                     type="button"
                     onClick={handleRefresh}
                     disabled={refreshing}
-                    className="mt-4 w-full rounded-2xl border border-red-400/30 bg-red-500/15 py-3 text-sm font-black text-red-100 disabled:opacity-60"
+                    className="mt-4 w-full rounded-2xl bg-gradient-to-r from-[#FF7A1A] to-[#F45100] py-3 text-sm font-black text-white disabled:opacity-60"
                   >
                     {refreshing ? 'Refreshing...' : 'Refresh My Plan'}
                   </button>
@@ -966,7 +955,7 @@ export default function MentorPage() {
               ) : null}
 
               {error && onboarded ? (
-                <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-3 text-sm font-semibold text-red-200">
+                <div className="rounded-2xl border border-[#FBCACA] bg-[#FEECEC] p-3 text-sm font-semibold text-[#DC2626]">
                   {error}
                 </div>
               ) : null}
@@ -975,30 +964,30 @@ export default function MentorPage() {
                 !error ? <MentorEmptyState onBuild={() => router.push('/mentor-setup')} /> : null
               ) : (
                 <>
-                  <section className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#18324f] p-3.5 shadow-[0_14px_34px_rgba(0,0,0,0.16)]">
-                    <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-teal-300 via-teal-400 to-transparent" />
+                  <section className="relative overflow-hidden rounded-[20px] border border-ssc-border-soft bg-white p-3.5 pl-4 shadow-[var(--ssc-shadow-card)]">
+                    <div className="absolute inset-y-0 left-0 w-1 bg-ssc-teal" />
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Preparation Setup</h2>
-                        <p className="mt-1.5 text-base font-black leading-tight text-slate-100">
-                          {profile?.examTarget || 'Exam not set'} <span className="text-slate-500">·</span> {formatDaysLeftLabel(profile?.daysLeftRange)}
+                        <h2 className="text-[11px] font-black uppercase tracking-widest text-ssc-text-muted">Preparation Setup</h2>
+                        <p className="mt-1.5 text-base font-black leading-tight text-ssc-text-primary">
+                          {profile?.examTarget || 'Exam not set'} <span className="text-ssc-text-muted">·</span> {formatDaysLeftLabel(profile?.daysLeftRange)}
                         </p>
                         <div className="mt-2.5 flex flex-wrap gap-1.5">
-                          <span className="rounded-full border border-teal-300/15 bg-teal-300/10 px-3 py-1 text-xs font-black text-teal-200">
+                          <span className="rounded-full border border-[#BDEDEA] bg-[#E8F8F6] px-3 py-1 text-xs font-black text-ssc-teal">
                             {formatDailyTimeLabel(profile?.dailyGKTime)}
                           </span>
-                          <span className="rounded-full border border-teal-300/15 bg-white/[0.04] px-3 py-1 text-xs font-black text-slate-200">
+                          <span className="rounded-full border border-ssc-border-soft bg-[#F8FEFD] px-3 py-1 text-xs font-black text-ssc-text-secondary">
                             {profile?.pace || 'Pace not set'} pace
                           </span>
                         </div>
-                        <p className="mt-2.5 text-xs font-semibold text-slate-500">
+                        <p className="mt-2.5 text-xs font-semibold text-ssc-text-muted">
                           Plan can be updated anytime{preparationStartedDate ? ` · Started ${preparationStartedDate}` : ''}
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => router.push('/mentor-setup-edit')}
-                        className="shrink-0 rounded-full border border-teal-300/20 bg-white/[0.03] px-3 py-2 text-xs font-black text-teal-200"
+                        className="shrink-0 rounded-full border border-[#BDEDEA] bg-white px-3 py-2 text-xs font-black text-ssc-teal"
                       >
                         Edit
                       </button>
@@ -1006,15 +995,6 @@ export default function MentorPage() {
                   </section>
 
                   <section className="space-y-3">
-                    <div className="flex items-end justify-between gap-3">
-                      <div>
-                        <h2 className="font-display text-xl font-black leading-none text-slate-100">Today&apos;s Plan</h2>
-                        <p className="mt-1 text-xs font-semibold text-slate-500">{progress.completed}/{Math.max(progress.total, 1)} tasks completed</p>
-                      </div>
-                      <p className="shrink-0 rounded-full border border-white/[0.08] bg-[#172d47] px-3 py-1.5 text-xs font-black text-slate-400">
-                        Day {snapshot?.plan?.dayNumber || 1} of {snapshot?.plan?.daysTotal || 45} - {progress.total || 0} tasks
-                      </p>
-                    </div>
                     <TodaysPlanCard
                       plan={snapshot?.plan}
                       activeTasks={snapshot?.activeTasks}
@@ -1030,33 +1010,45 @@ export default function MentorPage() {
                     />
                   </section>
 
+                  <section className="rounded-[20px] border border-[#BDEDEA] bg-[#F2FCFA] p-4 shadow-[var(--ssc-shadow-card)]">
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-white text-xl text-ssc-teal">☼</span>
+                      <div>
+                        <h2 className="font-display text-base font-black text-ssc-text-primary">Mentor Insight</h2>
+                        <p className="mt-1 text-sm font-semibold leading-relaxed text-ssc-text-secondary">
+                          Focus on {snapshot?.activeTasks?.[0]?.subject || snapshot?.activeTasks?.[0]?.subjectName || 'your weakest GK area'} today. Complete one task, then move to the next step.
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+
                   {/* Phase 9E: Previously Pending — read-only surfacing of canonical
                       pending tasks (V2 postponed). Hidden when empty; legacy snoozed
                       tasks are NOT here (they are deferred, not pending). */}
                   {(snapshot?.pendingTasks || []).length > 0 && (
                     <section className="space-y-3" aria-label="Previously Pending">
                       <div>
-                        <h2 className="font-display text-xl font-black leading-none text-slate-100">Previously Pending</h2>
-                        <p className="mt-1 text-xs font-semibold text-slate-500">Tasks you paused for later. Resume when you&apos;re ready.</p>
+                        <h2 className="font-display text-xl font-black leading-none text-ssc-text-primary">Previously Pending</h2>
+                        <p className="mt-1 text-xs font-semibold text-ssc-text-secondary">Tasks you paused for later. Resume when you&apos;re ready.</p>
                       </div>
                       <div className="space-y-2">
                         {(snapshot?.pendingTasks || []).map(task => (
-                          <div key={task.taskId} className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-[#172d47] p-3.5">
+                          <div key={task.taskId} className="flex items-center justify-between gap-3 rounded-2xl border border-ssc-border-soft bg-white p-3.5 shadow-[var(--ssc-shadow-card)]">
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
-                                <span className="shrink-0 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-300">Paused for later</span>
+                                <span className="shrink-0 rounded-full border border-[#F8D9A0] bg-[#FFF7E6] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#B45309]">Paused for later</span>
                                 {(task.subject || task.subjectName) && (
-                                  <span className="truncate text-[11px] font-semibold text-slate-400">{task.subject || task.subjectName}{task.topic ? ` · ${task.topic}` : ''}</span>
+                                  <span className="truncate text-[11px] font-semibold text-ssc-text-secondary">{task.subject || task.subjectName}{task.topic ? ` · ${task.topic}` : ''}</span>
                                 )}
                               </div>
-                              <h3 className="mt-1 truncate font-display text-base font-black text-white">{task.title || task.topic || 'Mentor Task'}</h3>
-                              <p className="mt-0.5 text-xs font-medium text-slate-500">Continue when you want.</p>
+                              <h3 className="mt-1 truncate font-display text-base font-black text-ssc-text-primary">{task.title || task.topic || 'Mentor Task'}</h3>
+                              <p className="mt-0.5 text-xs font-medium text-ssc-text-muted">Continue when you want.</p>
                             </div>
                             <button
                               type="button"
                               onClick={() => handleResume(task)}
                               disabled={busyTaskId === task.taskId}
-                              className="shrink-0 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-black text-[#0b1a2e] disabled:opacity-60"
+                              className="shrink-0 rounded-xl border border-[#0EA5A4] bg-white px-4 py-2 text-sm font-black text-ssc-teal disabled:opacity-60"
                             >
                               {busyTaskId === task.taskId ? 'Resuming…' : 'Resume'}
                             </button>
@@ -1129,7 +1121,7 @@ export default function MentorPage() {
         }}
       />
       {toast ? (
-        <div className={`fixed bottom-24 left-4 right-4 z-[90] mx-auto max-w-[430px] rounded-2xl px-4 py-3 text-sm font-black text-white shadow-2xl ${toast.type === 'success' ? 'bg-[#14B8A6]' : 'bg-red-500'}`}>
+        <div className={`fixed bottom-24 left-4 right-4 z-[90] mx-auto max-w-[430px] rounded-2xl border px-4 py-3 text-sm font-black shadow-[var(--ssc-shadow-float)] ${toast.type === 'success' ? 'border-[#BDEDD8] bg-white text-[#0F9F75]' : 'border-[#FBCACA] bg-white text-[#DC2626]'}`}>
           {toast.message}
         </div>
       ) : null}

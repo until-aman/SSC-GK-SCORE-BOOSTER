@@ -71,7 +71,18 @@ function QuestionRow({ q, index, onView, onUnsave }) {
   }
 
   return (
-    <div className="sq-card" onClick={() => onView(index)}>
+    <article
+      className="sq-card"
+      role="button"
+      tabIndex={0}
+      onClick={() => onView(index)}
+      onKeyDown={event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onView(index);
+        }
+      }}
+    >
       <button
         className="sq-bookmark-btn"
         onClick={e => { e.stopPropagation(); onUnsave(q.questionId); }}
@@ -90,11 +101,14 @@ function QuestionRow({ q, index, onView, onUnsave }) {
         <span className="sq-meta">
           {lastPracticed ? `Last Practiced: ${lastPracticed}` : 'Not practiced yet'}
         </span>
-        {correctPct !== null && (
-          <span style={{ fontSize: 11, fontWeight: 700, color: correctPct >= 50 ? 'var(--ssc-success)' : 'var(--ssc-danger)' }}>
-            Correct: {correctPct}%
-          </span>
-        )}
+        <span className="sq-footer-right">
+          {correctPct !== null && (
+            <span style={{ fontSize: 11, fontWeight: 700, color: correctPct >= 50 ? 'var(--ssc-success)' : 'var(--ssc-danger)' }}>
+              Correct: {correctPct}%
+            </span>
+          )}
+          <ChevronSVG />
+        </span>
       </div>
       {correctPct !== null && (
         <div className="sq-progress-track">
@@ -104,7 +118,7 @@ function QuestionRow({ q, index, onView, onUnsave }) {
           }} />
         </div>
       )}
-    </div>
+    </article>
   );
 }
 
@@ -586,12 +600,12 @@ export default function HistorySavedPage() {
     .sq-subject-count{font-size:13px;font-weight:700;color:var(--ssc-text-secondary);margin-right:4px}
     .sq-sort-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
     .sq-sort-select{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:12px;padding:8px 12px;font-size:12px;color:var(--ssc-text-secondary);font-weight:600;outline:none;font-family:inherit;cursor:pointer}
-    .sq-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;padding:14px 16px;margin-bottom:10px;position:relative;box-shadow:var(--ssc-shadow-card);cursor:pointer}
+    .sq-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;padding:14px 16px;margin-bottom:10px;position:relative;box-shadow:var(--ssc-shadow-card);cursor:pointer}.sq-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}
     .sq-bookmark-btn{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:12px;background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,0.18);display:flex;align-items:center;justify-content:center;cursor:pointer}
     .sq-tags-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;padding-right:40px}
     .sq-topic-tag{font-size:11px;font-weight:700;color:#FF6A00;background:rgba(255,106,0,0.10);border-radius:99px;padding:2px 9px}
     .sq-question-text{font-size:14px;font-weight:700;color:var(--ssc-text-primary);line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin:0 0 10px}
-    .sq-footer{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+    .sq-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.sq-footer-right{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto}
     .sq-meta{font-size:11px;color:var(--ssc-text-muted)}
     .sq-progress-track{height:4px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden}
     .sq-progress-fill{height:100%;border-radius:99px}

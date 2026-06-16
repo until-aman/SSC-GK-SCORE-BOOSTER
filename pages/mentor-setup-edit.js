@@ -37,10 +37,10 @@ function OptionButton({ selected, children, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-2xl border px-3 py-2 text-sm font-semibold transition-all ${
+      className={`rounded-2xl border px-3 py-2 text-sm font-black transition-all ${
         selected
-          ? 'border-orange-500 bg-orange-500/10 text-white'
-          : 'border-white/[0.06] bg-slate-800 text-slate-300'
+          ? 'border-ssc-teal bg-[#E8F8F6] text-ssc-text-primary ring-1 ring-ssc-teal'
+          : 'border-ssc-border-soft bg-white text-ssc-text-secondary'
       }`}
     >
       {children}
@@ -271,7 +271,7 @@ export default function MentorSetupEditPage() {
 
   if (status !== 'authenticated' && !guestMode) {
     return (
-      <div className="min-h-screen bg-slate-950 px-4 py-10 text-white">
+      <div className="min-h-screen bg-[var(--ssc-bg)] px-4 py-10 text-ssc-text-primary">
         <GoogleSignInCard
           title="Sign in to edit your plan"
           subtitle="Your preparation details are saved to your account."
@@ -283,25 +283,25 @@ export default function MentorSetupEditPage() {
   }
 
   if (!formData) {
-    return <div className="min-h-screen bg-slate-950 px-4 py-10 text-red-200">{error}</div>;
+    return <div className="min-h-screen bg-[var(--ssc-bg)] px-4 py-10 text-[#DC2626]">{error}</div>;
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 pb-10 pt-5 text-white">
+    <main className="min-h-screen bg-[var(--ssc-bg)] px-4 pb-[calc(104px+env(safe-area-inset-bottom))] pt-5 text-ssc-text-primary">
       <div className="mx-auto max-w-md space-y-5">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => router.back()}
-            className="rounded-full border border-slate-700 px-3 py-1.5 text-sm text-slate-200"
+            className="rounded-full border border-ssc-border-soft bg-white px-3 py-1.5 text-sm font-bold text-ssc-text-secondary"
           >
             Back
           </button>
-          <h1 className="text-xl font-bold">Edit Preparation Details</h1>
+          <h1 className="font-display text-xl font-black text-ssc-text-primary">Edit Preparation Details</h1>
         </div>
 
-        <section className="space-y-3 rounded-2xl border border-white/[0.06] bg-slate-800 p-4">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400">Exam and Timeline</h2>
+        <section className="space-y-3 rounded-[20px] border border-ssc-border-soft bg-white p-4 shadow-[var(--ssc-shadow-card)]">
+          <h2 className="text-xs font-black uppercase tracking-widest text-ssc-text-muted">Exam and Timeline</h2>
           <div className="flex flex-wrap gap-2">
             {EXAM_OPTIONS.map(option => (
               <OptionButton key={option} selected={formData.examTarget === option} onClick={() => updateForm({ examTarget: option })}>
@@ -318,8 +318,8 @@ export default function MentorSetupEditPage() {
           </div>
         </section>
 
-        <section className="space-y-3 rounded-2xl border border-white/[0.06] bg-slate-800 p-4">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400">Study Preferences</h2>
+        <section className="space-y-3 rounded-[20px] border border-ssc-border-soft bg-white p-4 shadow-[var(--ssc-shadow-card)]">
+          <h2 className="text-xs font-black uppercase tracking-widest text-ssc-text-muted">Study Preferences</h2>
           <div className="flex flex-wrap gap-2">
             {TIME_OPTIONS.map(option => (
               <OptionButton key={option} selected={formData.dailyGKTime === option} onClick={() => updateForm({ dailyGKTime: option })}>
@@ -337,7 +337,7 @@ export default function MentorSetupEditPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-white">Subject Status</h2>
+          <h2 className="text-sm font-black text-ssc-text-primary">Subject Status</h2>
           <SubjectStatusPicker
             value={formData.subjectStatus}
             onChange={subjectStatus => updateForm({ subjectStatus })}
@@ -345,23 +345,23 @@ export default function MentorSetupEditPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-white">Topic Coverage</h2>
+          <h2 className="text-sm font-black text-ssc-text-primary">Topic Coverage</h2>
           {activeSubjects.length ? activeSubjects.map(subjectId => {
             const subject = topicsData.subjects?.[subjectId];
             return (
-              <div key={subjectId} className="rounded-2xl border border-white/[0.06] bg-slate-800">
+              <div key={subjectId} className="rounded-[20px] border border-ssc-border-soft bg-white shadow-[var(--ssc-shadow-card)]">
                 <button
                   type="button"
                   onClick={() => setOpenSubjects(prev => ({ ...prev, [subjectId]: !prev[subjectId] }))}
                   className="flex w-full items-center justify-between p-4 text-left"
                 >
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-sm font-black text-ssc-text-primary">
                     {subject?.subjectName || SUBJECT_DISPLAY_NAMES[subjectId] || subjectId}
                   </span>
-                  <span className="text-xs text-slate-500">{openSubjects[subjectId] ? 'Hide' : 'Show'}</span>
+                  <span className="text-xs font-bold text-ssc-teal">{openSubjects[subjectId] ? 'Hide' : 'Show'}</span>
                 </button>
                 {openSubjects[subjectId] ? (
-                  <div className="border-t border-white/[0.06] p-3">
+                  <div className="border-t border-ssc-border-soft bg-[#F8FEFD] p-3">
                     <TopicStatusPicker
                       subjectId={subjectId}
                       topics={subject?.topics || []}
@@ -378,7 +378,7 @@ export default function MentorSetupEditPage() {
         </section>
 
         {error ? (
-          <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
+          <div className="rounded-2xl border border-[#FBCACA] bg-[#FEECEC] p-3 text-sm font-semibold text-[#DC2626]">
             {error}
           </div>
         ) : null}
@@ -387,21 +387,21 @@ export default function MentorSetupEditPage() {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="w-full rounded-2xl bg-orange-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-orange-600 active:bg-orange-700 disabled:bg-slate-800 disabled:text-slate-500"
+          className="w-full rounded-2xl bg-gradient-to-r from-[#FF7A1A] to-[#F45100] py-3 text-sm font-black text-white shadow-[var(--ssc-shadow-cta)] transition-colors active:scale-[0.98] disabled:bg-ssc-disabled-bg disabled:text-ssc-disabled-text"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
 
       {showConfirm ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 px-4 pb-4">
-          <div className="w-full max-w-md rounded-2xl border border-white/[0.06] bg-slate-800 p-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--ssc-overlay)] px-4 pb-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-[22px] border border-ssc-border-soft bg-white p-4 shadow-[var(--ssc-shadow-float)]">
             <MentorMessage message={MENTOR_COPY.EDIT_PROFILE_SAVED} variant="success" />
             <div className="mt-3">
               <MentorMessage message="Kya aap aaj se naya plan generate karna chahte hain? Plan updated timeline ke hisaab se adjust ho jayega." />
             </div>
             {genError ? (
-              <div className="mt-3 rounded-2xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
+              <div className="mt-3 rounded-2xl border border-[#FBCACA] bg-[#FEECEC] p-3 text-sm font-semibold text-[#DC2626]">
                 Preparation details update ho gayi hain, lekin naya plan generate nahi ho paya.
               </div>
             ) : null}
@@ -410,7 +410,7 @@ export default function MentorSetupEditPage() {
                 type="button"
                 onClick={handleUpdatePlan}
                 disabled={generating}
-                className="rounded-2xl bg-orange-500 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                className="rounded-2xl bg-gradient-to-r from-[#FF7A1A] to-[#F45100] py-3 text-sm font-black text-white disabled:opacity-60"
               >
                 {generating ? 'Generating...' : genError ? 'Retry Plan Generation' : 'Update Plan'}
               </button>
@@ -418,7 +418,7 @@ export default function MentorSetupEditPage() {
                 type="button"
                 disabled={generating}
                 onClick={() => router.push('/mentor')}
-                className="rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-semibold text-slate-300 disabled:opacity-60"
+                className="rounded-2xl border border-[#BDEDEA] bg-white py-3 text-sm font-black text-ssc-teal disabled:opacity-60"
               >
                 Keep Old Plan
               </button>

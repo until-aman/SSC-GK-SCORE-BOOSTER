@@ -9,29 +9,29 @@ import { MENTOR_COPY, SUBJECT_STATUS, getISTDateKey } from '@/lib/mentorCopy';
 import { generateTodaysPlan } from '@/lib/mentorPlanEngine';
 
 const EXAM_OPTIONS = [
-  'SSC CGL',
-  'SSC CHSL',
-  'SSC CPO',
-  'SSC MTS',
-  'SSC GD',
-  'Other SSC Exam',
+  { value: 'SSC CGL', icon: '◎' },
+  { value: 'SSC CHSL', icon: '♜' },
+  { value: 'SSC CPO', icon: '♛' },
+  { value: 'SSC MTS', icon: '●' },
+  { value: 'SSC GD', icon: '✦' },
+  { value: 'Other SSC Exam', icon: '◈' },
 ];
 
 const DAYS_OPTIONS = [
-  { value: '0-15', label: '0 - 15 days', sublabel: 'Exam is very close' },
-  { value: '16-30', label: '16 - 30 days' },
-  { value: '31-45', label: '31 - 45 days' },
-  { value: '46-60', label: '46 - 60 days' },
-  { value: '60+', label: '60+ days' },
-  { value: "I don't know yet", label: "I don't know yet", sublabel: "We'll use a 45-day plan" },
+  { value: '0-15', label: '< 15 days', sublabel: 'Very close' },
+  { value: '16-30', label: '16-30', sublabel: 'Final push' },
+  { value: '31-45', label: '31-45', sublabel: 'Focused plan' },
+  { value: '46-60', label: '46-60', sublabel: 'Steady prep' },
+  { value: '60+', label: '60+', sublabel: 'Build base' },
+  { value: "I don't know yet", label: "I don't know", sublabel: 'Use 45 days' },
 ];
 
 const TIME_OPTIONS = ['15-20 min', '30 min', '45 min', '1 hour', '1.5+ hours'];
 
 const PACE_OPTIONS = [
-  { value: 'Light', icon: '🐢', detail: 'Slow and steady, less pressure' },
-  { value: 'Balanced', icon: '⚖️', detail: 'Consistent daily effort' },
-  { value: 'Aggressive', icon: '🔥', detail: 'Maximum coverage, fast pace' },
+  { value: 'Light', icon: '◌', detail: 'Slow and steady' },
+  { value: 'Balanced', icon: '↗', detail: 'Consistent daily effort' },
+  { value: 'Aggressive', icon: '⚡', detail: 'Fast coverage' },
 ];
 
 function getDefaultSubjectStatus() {
@@ -76,20 +76,43 @@ function buildLocalSnapshot(profile, plan) {
   };
 }
 
-function OptionCard({ selected, title, subtitle, onClick }) {
+function OptionCard({ selected, title, subtitle, icon, onClick }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-2xl border p-4 text-left transition-all ${
+      className={`w-full rounded-[18px] border bg-white p-3 text-center shadow-[var(--ssc-shadow-card)] transition-all ${
         selected
-          ? 'border-orange-500 bg-orange-500/10 text-white'
-          : 'border-white/[0.06] bg-slate-800 text-slate-200 hover:border-orange-500'
+          ? 'border-ssc-teal bg-[#E8F8F6] text-ssc-text-primary ring-1 ring-ssc-teal'
+          : 'border-ssc-border-soft text-ssc-text-primary hover:border-ssc-teal'
       }`}
     >
-      <span className="block text-sm font-semibold">{title}</span>
-      {subtitle ? <span className="mt-1 block text-xs text-slate-400">{subtitle}</span> : null}
+      {icon ? (
+        <span className={`mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-2xl border ${selected ? 'border-ssc-teal bg-white text-ssc-teal' : 'border-[#DDE8F0] bg-[#F8FEFD] text-ssc-text-muted'} text-lg font-black`}>
+          {icon}
+        </span>
+      ) : null}
+      <span className="block text-sm font-black">{title}</span>
+      {subtitle ? <span className="mt-1 block text-xs font-semibold text-ssc-text-secondary">{subtitle}</span> : null}
     </button>
+  );
+}
+
+function SectionTitle({ title, subtitle }) {
+  return (
+    <div>
+      <h2 className="font-display text-xl font-black leading-tight text-ssc-text-primary">{title}</h2>
+      {subtitle ? <p className="mt-1 text-xs font-semibold leading-relaxed text-ssc-text-secondary">{subtitle}</p> : null}
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2">
+      <span className="text-xs font-bold text-ssc-text-secondary">{label}</span>
+      <span className="text-right text-sm font-black text-ssc-text-primary">{value || 'Not set'}</span>
+    </div>
   );
 }
 
@@ -126,22 +149,16 @@ export default function MentorSetupPage() {
   };
 
   const canContinue =
-    (step === 1 && Boolean(formData.examTarget)) ||
-    (step === 2 && Boolean(formData.daysLeftRange)) ||
-    (step === 3 && Boolean(formData.dailyGKTime) && Boolean(formData.pace)) ||
-    step === 4 ||
-    step === 5;
+    (step === 1 && Boolean(formData.examTarget) && Boolean(formData.daysLeftRange)) ||
+    (step === 2 && Boolean(formData.dailyGKTime) && Boolean(formData.pace)) ||
+    step === 3;
 
   const handleNext = () => {
-    if (step < 5) {
-      setStep(current => current + 1);
-    }
+    if (step < 3) setStep(current => current + 1);
   };
 
   const handleBack = () => {
-    if (step > 1 && step < 5) {
-      setStep(current => current - 1);
-    }
+    if (step > 1 && step < 3) setStep(current => current - 1);
   };
 
   const handleSubmit = async () => {
@@ -193,12 +210,12 @@ export default function MentorSetupPage() {
   };
 
   if (status === 'loading') {
-    return <div className="min-h-screen bg-slate-950" />;
+    return <div className="min-h-screen bg-[var(--ssc-bg)]" />;
   }
 
   if (status !== 'authenticated' && !guestMode) {
     return (
-      <div className="min-h-screen bg-slate-950 px-4 py-10 text-white">
+      <div className="min-h-screen bg-[var(--ssc-bg)] px-4 py-10 text-ssc-text-primary">
         <GoogleSignInCard
           title="Sign in to build your GK plan"
           subtitle="Your mentor plan is saved to your account."
@@ -212,112 +229,123 @@ export default function MentorSetupPage() {
   return (
     <MentorSetupStep
       currentStep={step}
+      totalSteps={3}
       onBack={handleBack}
-      onContinue={step === 5 ? handleSubmit : handleNext}
-      continueLabel={step === 5 ? 'Start My Plan' : 'Continue'}
+      onContinue={step === 3 ? handleSubmit : handleNext}
+      continueLabel={step === 3 ? 'Create My Plan' : step === 2 ? 'Save & Continue' : 'Continue'}
       continueDisabled={!canContinue}
       submitting={submitting}
-      showBack={step > 1 && step < 5}
+      showBack={step > 1 && step < 3}
+      title={step === 3 ? 'Your Mentor Plan' : 'Set up Mentor'}
     >
       {step === 1 ? (
-        <section className="space-y-4">
-          <h1 className="text-2xl font-bold">Exam Target</h1>
-          <MentorMessage message={MENTOR_COPY.SETUP_WELCOME} />
-          <div className="space-y-3">
+        <section className="space-y-5">
+          <SectionTitle title="Which exam are you preparing for?" subtitle={MENTOR_COPY.SETUP_WELCOME} />
+          <div className="grid grid-cols-2 gap-2.5">
             {EXAM_OPTIONS.map(option => (
               <OptionCard
-                key={option}
-                title={option}
-                selected={formData.examTarget === option}
-                onClick={() => updateForm({ examTarget: option })}
+                key={option.value}
+                title={option.value}
+                icon={option.icon}
+                selected={formData.examTarget === option.value}
+                onClick={() => updateForm({ examTarget: option.value })}
               />
             ))}
+          </div>
+
+          <div className="border-t border-ssc-border-soft pt-5">
+            <SectionTitle title="How many days are left for your exam?" subtitle={MENTOR_COPY.SETUP_DAYS_LEFT} />
+            <div className="mt-3 grid grid-cols-2 gap-2.5">
+              {DAYS_OPTIONS.map(option => (
+                <OptionCard
+                  key={option.value}
+                  title={option.label}
+                  subtitle={option.sublabel}
+                  selected={formData.daysLeftRange === option.value}
+                  onClick={() => updateForm({ daysLeftRange: option.value })}
+                />
+              ))}
+            </div>
           </div>
         </section>
       ) : null}
 
       {step === 2 ? (
-        <section className="space-y-4">
-          <h1 className="text-2xl font-bold">Days Left</h1>
-          <MentorMessage message={MENTOR_COPY.SETUP_DAYS_LEFT} />
-          <div className="space-y-3">
-            {DAYS_OPTIONS.map(option => (
-              <OptionCard
-                key={option.value}
-                title={option.label}
-                subtitle={option.sublabel}
-                selected={formData.daysLeftRange === option.value}
-                onClick={() => updateForm({ daysLeftRange: option.value })}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {step === 3 ? (
         <section className="space-y-5">
-          <h1 className="text-2xl font-bold">Study Preferences</h1>
-          <MentorMessage message={MENTOR_COPY.SETUP_TIME_PACE} />
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-slate-300">Daily GK Time</h2>
-            {TIME_OPTIONS.map(option => (
-              <OptionCard
-                key={option}
-                title={option}
-                selected={formData.dailyGKTime === option}
-                onClick={() => updateForm({ dailyGKTime: option })}
-              />
-            ))}
-          </div>
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-slate-300">Pace</h2>
+          <SectionTitle title="What is your current preparation stage?" subtitle={MENTOR_COPY.SETUP_TIME_PACE} />
+          <div className="grid grid-cols-3 gap-2.5">
             {PACE_OPTIONS.map(option => (
               <OptionCard
                 key={option.value}
-                title={`${option.icon} ${option.value}`}
+                title={option.value}
                 subtitle={option.detail}
+                icon={option.icon}
                 selected={formData.pace === option.value}
                 onClick={() => updateForm({ pace: option.value })}
               />
             ))}
           </div>
-        </section>
-      ) : null}
 
-      {step === 4 ? (
-        <section className="space-y-4">
-          <h1 className="text-2xl font-bold">Subject Status</h1>
-          <MentorMessage message={MENTOR_COPY.SETUP_SUBJECT_STATUS} />
-          <SubjectStatusPicker
-            value={formData.subjectStatus}
-            onChange={subjectStatus => updateForm({ subjectStatus })}
-          />
-        </section>
-      ) : null}
-
-      {step === 5 ? (
-        <section className="space-y-4">
-          <h1 className="text-2xl font-bold">Plan Preview</h1>
-          <MentorMessage message={MENTOR_COPY.SETUP_PLAN_READY} variant="success" />
-          <div className="rounded-2xl border border-white/[0.06] bg-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">{formData.examTarget}</p>
-            <p className="mt-1 text-xs text-slate-400">
-              {formData.daysLeftRange} · {formData.pace} · {formData.dailyGKTime}
-            </p>
+          <div className="rounded-[20px] border border-ssc-border-soft bg-white p-4 shadow-[var(--ssc-shadow-card)]">
+            <h3 className="text-sm font-black text-ssc-text-primary">Daily GK Time</h3>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {TIME_OPTIONS.map(option => (
+                <OptionCard
+                  key={option}
+                  title={option}
+                  selected={formData.dailyGKTime === option}
+                  onClick={() => updateForm({ dailyGKTime: option })}
+                />
+              ))}
+            </div>
           </div>
+
           <div className="space-y-3">
-            {previewPlan.tasks.slice(0, 3).map(task => (
-              <div key={task.taskId} className="rounded-2xl border border-white/[0.06] bg-slate-800 p-4">
-                <p className="text-sm font-semibold text-white">{task.displayName}</p>
-                <p className="mt-1 text-xs text-slate-400">
-                  {task.ctaLabel} · {task.estimatedMinutes} min
-                </p>
-              </div>
-            ))}
+            <SectionTitle title="How confident are you in each subject?" subtitle={MENTOR_COPY.SETUP_SUBJECT_STATUS} />
+            <SubjectStatusPicker
+              value={formData.subjectStatus}
+              onChange={subjectStatus => updateForm({ subjectStatus })}
+            />
           </div>
+        </section>
+      ) : null}
+
+      {step === 3 ? (
+        <section className="space-y-4">
+          <div className="rounded-[20px] border border-ssc-border-soft bg-white p-4 shadow-[var(--ssc-shadow-card)]">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <h2 className="font-display text-base font-black text-ssc-text-primary">Your Preparation Summary</h2>
+              <button type="button" onClick={() => setStep(1)} className="text-xs font-black text-ssc-teal">Edit</button>
+            </div>
+            <SummaryRow label="Exam Goal" value={formData.examTarget} />
+            <SummaryRow label="Days Left" value={formData.daysLeftRange} />
+            <SummaryRow label="Daily Study Time" value={formData.dailyGKTime} />
+            <SummaryRow label="Current Stage" value={formData.pace} />
+          </div>
+
+          <div className="rounded-[20px] border border-ssc-border-soft bg-white p-4 shadow-[var(--ssc-shadow-card)]">
+            <h2 className="font-display text-base font-black text-ssc-text-primary">Your Daily Plan Preview</h2>
+            <div className="mt-3 space-y-3">
+              {previewPlan.tasks.slice(0, 3).map((task, index) => (
+                <div key={task.taskId} className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl border border-[#F8D9A0] bg-[#FFF7E6] text-sm font-black text-[#EA580C]">
+                    {index + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-ssc-text-primary">{task.displayName}</p>
+                    <p className="mt-0.5 text-xs font-semibold text-ssc-text-secondary">
+                      {task.ctaLabel} · {task.estimatedMinutes} min
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <MentorMessage message={MENTOR_COPY.SETUP_PLAN_READY} variant="success" />
           <MentorMessage message={getDaysClosingLine(formData.daysLeftRange)} />
           {error ? (
-            <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
+            <div className="rounded-2xl border border-[#FBCACA] bg-[#FEECEC] p-3 text-sm font-semibold text-[#DC2626]">
               {error}
             </div>
           ) : null}

@@ -64,7 +64,7 @@ function BookmarkIcon({ filled }) {
   );
 }
 
-function QuestionCard({ item, onToggleSave, onPracticeOne }) {
+function QuestionCard({ item, onToggleSave }) {
   const [expanded, setExpanded] = useState(false);
   const [questionExpanded, setQuestionExpanded] = useState(false);
   const [cache, setCache] = useState(null);
@@ -155,7 +155,6 @@ function QuestionCard({ item, onToggleSave, onPracticeOne }) {
 
       <div className="review-action-row">
         <button onClick={handleShowExplanation} className="secondary-btn">{expanded ? 'Hide Explanation' : '📖 Show Explanation'}</button>
-        {!item.isCorrect && <button onClick={() => onPracticeOne(item)} className="primary-btn">↺ Practice Again</button>}
       </div>
 
       {expanded && cache && (
@@ -389,7 +388,7 @@ export default function SessionReviewPage() {
           .review-history-row p{color:var(--ssc-text-muted);font-size:11px;font-weight:700;margin:0 0 5px}
           .review-history-row strong{display:block;color:var(--ssc-text-secondary);font-size:12px;line-height:1.4}
           .review-history-row .mastery{flex:0 0 auto;font-size:10px;padding:4px 8px;max-width:122px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-          .review-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
+          .review-action-row{display:grid;grid-template-columns:1fr;gap:8px;margin-top:13px}
           .review-action-row .secondary-btn:only-child{grid-column:1 / -1}
           .filter-chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 16px 8px;margin:0 -16px;scrollbar-width:none;-ms-overflow-style:none}
           .filter-chip-row::-webkit-scrollbar{display:none}
@@ -461,7 +460,7 @@ export default function SessionReviewPage() {
                 <button type="button" className="secondary-btn" disabled={safeActiveQuestionIndex >= filtered.length - 1} onClick={() => setActiveQuestionIndex(index => Math.min(index + 1, filtered.length - 1))}>Next &#8594;</button>
               </div>
             </section>
-            <QuestionCard key={activeQuestion.questionId} item={activeQuestion} onToggleSave={toggleSave} onPracticeOne={q => startReattempt('session_mistakes', q)} />
+            <QuestionCard key={activeQuestion.questionId} item={activeQuestion} onToggleSave={toggleSave} />
           </>
         ) : (
           <div className="review-card text-center">

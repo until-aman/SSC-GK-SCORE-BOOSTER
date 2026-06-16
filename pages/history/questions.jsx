@@ -44,7 +44,7 @@ function BookmarkIcon({ filled }) {
   );
 }
 
-function QuestionReviewCard({ item, aiCache, setAiCache, onPractice, onToggleSave }) {
+function QuestionReviewCard({ item, aiCache, setAiCache, onToggleSave }) {
   const [open, setOpen] = useState(false);
   const [explanationOpen, setExplanationOpen] = useState(false);
   const [questionExpanded, setQuestionExpanded] = useState(false);
@@ -76,14 +76,29 @@ function QuestionReviewCard({ item, aiCache, setAiCache, onPractice, onToggleSav
   }
 
   return (
-    <article className="history-card question-review-card">
+    <article
+      className="history-card question-review-card"
+      role="button"
+      tabIndex={0}
+      onClick={() => { setOpen(value => !value); if (open) setExplanationOpen(false); }}
+      onKeyDown={event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          setOpen(value => !value);
+          if (open) setExplanationOpen(false);
+        }
+      }}
+    >
       <div className="question-card-top">
         <p className="question-kicker">{item.subject} &middot; {item.topic}</p>
-        <span className="tone-pill question-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{item.masteryLabel}</span>
+        <div className="flex items-center gap-2">
+          <span className="tone-pill question-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{item.masteryLabel}</span>
+          <span className="question-chevron" aria-hidden="true">{open ? '⌃' : '›'}</span>
+        </div>
       </div>
       <p className={`question-review-text font-display ${questionExpanded ? 'open' : ''}`}>{item.question}</p>
       {item.question?.length > 260 && (
-        <button type="button" className="read-more-btn" onClick={() => setQuestionExpanded(value => !value)}>{questionExpanded ? 'Show Less' : 'Read More'}</button>
+        <button type="button" className="read-more-btn" onClick={event => { event.stopPropagation(); setQuestionExpanded(value => !value); }}>{questionExpanded ? 'Show Less' : 'Read More'}</button>
       )}
       <div className="question-history-stats">
         <span className="stat-correct">&#10003; Correct {item.correctCount}x</span>
@@ -91,7 +106,7 @@ function QuestionReviewCard({ item, aiCache, setAiCache, onPractice, onToggleSav
         <span className="stat-skipped">&#9675; Skipped {item.skippedCount}x</span>
       </div>
       {open && (
-        <div className="open-detail-panel">
+        <div className="open-detail-panel" onClick={event => event.stopPropagation()}>
           <div className="detail-section">
             <p className="detail-label">Full Question</p>
             <p className="detail-question font-display">{item.question}</p>
@@ -140,8 +155,6 @@ function QuestionReviewCard({ item, aiCache, setAiCache, onPractice, onToggleSav
         </div>
       )}
       <div className="question-action-row">
-        <button type="button" className="primary-btn" onClick={() => onPractice(item)}>↺ Practice Again</button>
-        <button type="button" className="secondary-btn" onClick={() => { setOpen(value => !value); if (open) setExplanationOpen(false); }}>{open ? 'Close' : 'Open'}</button>
         <button type="button" className={`save-icon-btn ${item.isSaved ? 'saved' : ''}`} onClick={event => { event.stopPropagation(); onToggleSave(item); }} aria-label={item.isSaved ? 'Remove bookmark' : 'Save question'} title={item.isSaved ? 'Saved' : 'Save'}>
           <BookmarkIcon filled={item.isSaved} />
         </button>
@@ -224,17 +237,6 @@ export default function HistoryQuestionsPage() {
     }
   }, [activeQuestionIndex, filtered.length]);
 
-  async function practiceQuestion(question) {
-    sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
-      questions: [question],
-      quizMode: 'filtered_mistakes',
-      subject: question.subject,
-      topic: question.topic,
-      sourceCollection: question.sourceCollection || 'general',
-    }));
-    router.push('/quiz?mode=history&count=1&sourceScreen=history');
-  }
-
   function startQuestionSet(questions, quizMode, topicLabel) {
     if (!questions.length) return;
     sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
@@ -314,7 +316,7 @@ export default function HistoryQuestionsPage() {
           .stat-correct{color:var(--ssc-teal)}
           .stat-wrong{color:#DC2626}
           .stat-skipped{color:var(--ssc-text-muted)}
-          .question-action-row{display:grid;grid-template-columns:1fr .72fr 40px;gap:8px;margin-top:13px;align-items:center}
+          .question-review-card{cursor:pointer}.question-review-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}.question-action-row{display:flex;justify-content:flex-end;margin-top:13px;align-items:center}.question-chevron{display:inline-flex;height:24px;width:24px;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-text-secondary);font-size:18px;font-weight:900}
           .save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid var(--ssc-border-soft);background:rgba(248,250,252,1);display:flex;align-items:center;justify-content:center}
           .save-icon-btn:active{transform:scale(.92)}
           .save-icon-btn.saved{border-color:rgba(20,184,166,0.40);background:rgba(20,184,166,0.12)}
@@ -382,7 +384,7 @@ export default function HistoryQuestionsPage() {
                       <button type="button" className="secondary-btn" disabled={safeActiveQuestionIndex >= filtered.length - 1} onClick={() => setActiveQuestionIndex(index => Math.min(index + 1, filtered.length - 1))}>Next &#8594;</button>
                     </div>
                   </section>
-                  <QuestionReviewCard key={activeQuestion.questionId} item={activeQuestion} aiCache={aiCache} setAiCache={setAiCache} onPractice={practiceQuestion} onToggleSave={toggleSave} />
+                  <QuestionReviewCard key={activeQuestion.questionId} item={activeQuestion} aiCache={aiCache} setAiCache={setAiCache} onToggleSave={toggleSave} />
                   <section className="bottom-action-card">
                     <button type="button" className="primary-btn" disabled={!practiceSet.length} onClick={() => startQuestionSet(practiceSet, activeFilter === 'skipped' ? 'reattempt_skipped' : 'reattempt_mistakes', activeFilter === 'skipped' ? 'Skipped Practice' : 'Mistake Practice')}>Practice {practiceSet.length} {practiceSetLabel}</button>
                     <button type="button" className="secondary-btn" disabled={!allQuestions.length} onClick={() => startQuestionSet(allQuestions, 'reattempt_all', 'Full Set Re-attempt')}>Re-attempt All {allQuestions.length}</button>

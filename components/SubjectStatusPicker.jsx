@@ -21,44 +21,64 @@ const STATUS_ORDER = [
 ];
 
 const STATUS_STYLES = {
-  [SUBJECT_STATUS.NOT_STARTED]: 'border-slate-600 bg-slate-800 text-slate-300',
-  [SUBJECT_STATUS.THEORY_DONE]: 'border-amber-500/50 bg-amber-500/15 text-amber-200',
-  [SUBJECT_STATUS.PRACTICE_STARTED]: 'border-orange-500/30 bg-orange-500/10 text-orange-400',
+  [SUBJECT_STATUS.NOT_STARTED]: {
+    short: 'Not Started',
+    button: 'border-[#DDE8F0] bg-white text-ssc-text-muted',
+    active: 'border-[#CBD5E1] bg-[#EEF3F7] text-ssc-text-secondary',
+  },
+  [SUBJECT_STATUS.THEORY_DONE]: {
+    short: 'Theory Done',
+    button: 'border-[#F8D9A0] bg-white text-[#B45309]',
+    active: 'border-[#F59E0B] bg-[#FFF7E6] text-[#B45309]',
+  },
+  [SUBJECT_STATUS.PRACTICE_STARTED]: {
+    short: 'Practice Started',
+    button: 'border-[#BDEDD8] bg-white text-[#0F9F75]',
+    active: 'border-[#0EA5A4] bg-[#E7FAF3] text-[#0F9F75]',
+  },
 };
 
 export { SUBJECTS, STATUS_ORDER };
 
 export default function SubjectStatusPicker({ value = {}, onChange }) {
-  const cycleStatus = subjectId => {
-    const current = value[subjectId] || SUBJECT_STATUS.NOT_STARTED;
-    const currentIndex = STATUS_ORDER.indexOf(current);
-    const next = STATUS_ORDER[(currentIndex + 1) % STATUS_ORDER.length];
+  const setStatus = (subjectId, next) => {
     onChange?.({ ...value, [subjectId]: next });
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       {SUBJECTS.map(subjectId => {
         const status = value[subjectId] || SUBJECT_STATUS.NOT_STARTED;
         return (
-          <button
+          <div
             key={subjectId}
-            type="button"
-            onClick={() => cycleStatus(subjectId)}
-            className="flex w-full items-center justify-between rounded-2xl border border-white/[0.06] bg-slate-800 p-3 text-left transition-all hover:border-orange-500"
+            className="rounded-[18px] border border-ssc-border-soft bg-white p-3 shadow-[var(--ssc-shadow-card)]"
           >
-            <span className="flex min-w-0 items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 text-lg">
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#F8FEFD] text-lg">
                 {SUBJECT_ICONS[subjectId]}
               </span>
-              <span className="truncate text-sm font-medium text-slate-100">
+              <span className="min-w-0 flex-1 truncate text-sm font-black text-ssc-text-primary">
                 {SUBJECT_DISPLAY_NAMES[subjectId]}
               </span>
-            </span>
-            <span className={`ml-3 shrink-0 rounded-full border px-2.5 py-1 text-xs ${STATUS_STYLES[status]}`}>
-              {status}
-            </span>
-          </button>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-1.5">
+              {STATUS_ORDER.map(option => {
+                const active = option === status;
+                const style = STATUS_STYLES[option];
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setStatus(subjectId, option)}
+                    className={`min-h-[34px] rounded-xl border px-1.5 text-[10px] font-black leading-tight transition-all ${active ? style.active : style.button}`}
+                  >
+                    {style.short}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         );
       })}
     </div>

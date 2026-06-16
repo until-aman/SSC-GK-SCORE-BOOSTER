@@ -81,7 +81,7 @@ function ChevronSVG() {
   );
 }
 
-function QuestionCard({ item, isOpen, onToggleOpen, onPracticeOne, onToggleSave }) {
+function QuestionCard({ item, isOpen, onToggleOpen, onToggleSave }) {
   const correctCount = Number(item.correctCount) || 0;
   const wrongCount = Number(item.wrongCount) || 0;
   const skippedCount = Number(item.skippedCount) || 0;
@@ -93,7 +93,18 @@ function QuestionCard({ item, isOpen, onToggleOpen, onPracticeOne, onToggleSave 
   const lastAnswerTone = !item.lastUserAnswer ? 'skipped' : item.lastUserAnswer === item.correctOption ? 'correct' : 'wrong';
 
   return (
-    <article className="rm-card">
+    <article
+      className={`rm-card ${isOpen ? 'open' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={onToggleOpen}
+      onKeyDown={event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onToggleOpen();
+        }
+      }}
+    >
       <div className="rm-header">
         <div className="rm-tags">
           {item.subject && <span className="rm-subject-tag">{item.subject}</span>}
@@ -121,6 +132,7 @@ function QuestionCard({ item, isOpen, onToggleOpen, onPracticeOne, onToggleSave 
         >
           <BookmarkIcon filled={item.isSaved} />
         </button>
+        <span className="rm-open-icon" aria-hidden="true">{isOpen ? '⌃' : <ChevronSVG />}</span>
       </div>
 
       {correctPct !== null && (
@@ -133,7 +145,7 @@ function QuestionCard({ item, isOpen, onToggleOpen, onPracticeOne, onToggleSave 
       )}
 
       {isOpen && (
-        <div className="question-expanded">
+        <div className="question-expanded" onClick={event => event.stopPropagation()}>
           <div className="expanded-block">
             <p className="expanded-label">Full Question</p>
             <p className="expanded-question font-display">{item.question || item.questionPreview}</p>
@@ -158,11 +170,6 @@ function QuestionCard({ item, isOpen, onToggleOpen, onPracticeOne, onToggleSave 
         </div>
       )}
 
-      <div className="question-actions">
-        <button type="button" className="primary-btn" onClick={() => onPracticeOne(item)}>Practice Again</button>
-        <button type="button" className="secondary-btn" onClick={onToggleOpen}>{isOpen ? 'Close' : 'Open'}</button>
-        <div />
-      </div>
     </article>
   );
 }
@@ -327,14 +334,14 @@ export default function RepeatedMistakesPage() {
     .rm-subject-count{font-size:13px;font-weight:700;color:var(--ssc-text-secondary);margin-right:4px}
     .rm-list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
     .rm-list-count{font-size:12px;color:var(--ssc-text-secondary);font-weight:500}
-    .rm-card{background:var(--ssc-surface);border:1px solid rgba(239,68,68,0.18);border-radius:18px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--ssc-shadow-card)}
+    .rm-card{background:var(--ssc-surface);border:1px solid rgba(239,68,68,0.18);border-radius:18px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--ssc-shadow-card);cursor:pointer}.rm-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}
     .rm-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
     .rm-tags{display:flex;gap:6px;flex-wrap:wrap;flex:1;min-width:0}
     .rm-subject-tag{font-size:11px;font-weight:700;color:var(--ssc-teal);background:var(--ssc-teal-soft);border-radius:99px;padding:2px 9px}
     .rm-topic-tag{font-size:11px;font-weight:700;color:#FF6A00;background:rgba(255,106,0,0.10);border-radius:99px;padding:2px 9px}
     .rm-repeat-pill{font-size:11px;font-weight:900;color:var(--ssc-danger);background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.20);border-radius:99px;padding:3px 10px;white-space:nowrap;flex-shrink:0}
     .rm-question-text{font-size:14px;font-weight:700;color:var(--ssc-text-primary);line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin:0 0 10px}
-    .rm-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+    .rm-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}.rm-open-icon{display:inline-flex;height:32px;width:32px;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-text-secondary);font-size:18px;font-weight:900;flex:0 0 auto}
     .rm-meta{font-size:11px;color:var(--ssc-text-muted)}
     .rm-correct-label{font-size:11px;color:var(--ssc-text-secondary);font-weight:600}
     .sq-progress-track{height:4px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden}
@@ -483,7 +490,6 @@ export default function RepeatedMistakesPage() {
                     item={item}
                     isOpen={expandedQuestionId === item.questionId}
                     onToggleOpen={() => setExpandedQuestionId(current => current === item.questionId ? '' : item.questionId)}
-                    onPracticeOne={question => startPractice({ singleQuestion: question })}
                     onToggleSave={toggleSave}
                   />
                 )) : (
