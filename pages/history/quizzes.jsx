@@ -861,6 +861,7 @@ export default function HistoryPage() {
   async function startFilteredPractice(payload = modal) {
     if (!payload) return;
     setStarting(true);
+    const returnUrl = router.asPath || '/history/quizzes';
     try {
       if (payload.singleQuestion) {
         sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
@@ -869,8 +870,9 @@ export default function HistoryPage() {
           subject: payload.singleQuestion.subject,
           topic: payload.singleQuestion.topic,
           sourceCollection: payload.singleQuestion.sourceCollection || 'general',
+          returnUrl,
         }));
-        router.push('/quiz?mode=history&count=1&sourceScreen=history');
+        router.push(`/quiz?mode=history&count=1&sourceScreen=history&returnUrl=${encodeURIComponent(returnUrl)}`);
         return;
       }
       const res = await fetch('/api/history/reattempt-filtered', {
@@ -892,8 +894,9 @@ export default function HistoryPage() {
         subject: payload.subject || 'History',
         topic: payload.topic || 'Filtered Practice',
         sourceCollection: 'general',
+        returnUrl,
       }));
-      router.push(`/quiz?mode=history&count=${data.data.questionCount}&sourceScreen=history`);
+      router.push(`/quiz?mode=history&count=${data.data.questionCount}&sourceScreen=history&returnUrl=${encodeURIComponent(returnUrl)}`);
     } finally {
       setStarting(false);
     }
@@ -904,7 +907,30 @@ export default function HistoryPage() {
       openPracticeModal({ subject: session.subject, topic: session.topic, count: session.questionCount, answerStatus: 'all', title: 'Re-attempt this quiz?' });
       return;
     }
-    openPracticeModal({ subject: session.subject, topic: session.topic, count: session.incorrect + session.skipped, answerStatus: 'wrong_skipped' });
+    const returnUrl = router.asPath || '/history/quizzes';
+    setStarting(true);
+    try {
+      const res = await fetch('/api/history/reattempt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceType: 'session_mistakes', sessionId: session.sessionId }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || 'Failed');
+      sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
+        questions: json.data.questions,
+        quizMode: json.data.quizMode,
+        parentSessionId: json.data.parentSessionId,
+        attemptNumber: (session.attemptNumber || 1) + 1,
+        subject: json.data.subject,
+        topic: json.data.topic,
+        sourceCollection: json.data.sourceCollection,
+        returnUrl,
+      }));
+      router.push(`/quiz?mode=history&count=${json.data.questionCount}&sourceScreen=history&returnUrl=${encodeURIComponent(returnUrl)}`);
+    } finally {
+      setStarting(false);
+    }
   }
 
   async function toggleSave(question) {
@@ -1109,7 +1135,7 @@ export default function HistoryPage() {
                   </div>
                   {quickFilter === 'custom' && customRangeSummary && <p className="custom-range-summary">{customRangeSummary}</p>}
                   {quizLoading ? <Loader card size="sm" label="Loading quizzes..." /> : filteredQuizzes.length ? filteredQuizzes.map(item => (
-                    <QuizCard key={item.sessionId} session={item} onReview={session => router.push(`/history/session/${session.sessionId}`)} onPractice={session => startSessionPractice(session)} onFull={session => startSessionPractice(session, true)} />
+                    <QuizCard key={item.sessionId} session={item} onReview={session => router.push(`/history/session/${session.sessionId}`)} onPractice={session => startSessionPractice(session)} />
                   )) : quickFilter === 'custom' ? (
                     <EmptyPanel title="No quizzes in this range." body="Try different dates or reset the filter." action="Reset Date Filter" onClick={resetDateFilter} />
                   ) : (

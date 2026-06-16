@@ -263,6 +263,7 @@ export default function RepeatedMistakesPage() {
   async function startPractice(payload) {
     if (starting) return;
     setStarting(true);
+    const returnUrl = router.asPath || '/history/mistakes';
     try {
       if (payload.singleQuestion) {
         sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
@@ -271,8 +272,9 @@ export default function RepeatedMistakesPage() {
           subject: payload.singleQuestion.subject,
           topic: payload.singleQuestion.topic,
           sourceCollection: payload.singleQuestion.sourceCollection || 'general',
+          returnUrl,
         }));
-        router.push('/quiz?mode=history&count=1&sourceScreen=history');
+        router.push(`/quiz?mode=history&count=1&sourceScreen=history&returnUrl=${encodeURIComponent(returnUrl)}`);
         return;
       }
 
@@ -295,8 +297,9 @@ export default function RepeatedMistakesPage() {
         subject: questionSubject || 'History',
         topic: questionTopic || 'Repeated Mistakes',
         sourceCollection: 'general',
+        returnUrl,
       }));
-      router.push(`/quiz?mode=history&count=${json.data.questionCount}&sourceScreen=history`);
+      router.push(`/quiz?mode=history&count=${json.data.questionCount}&sourceScreen=history&returnUrl=${encodeURIComponent(returnUrl)}`);
     } catch (err) {
       setError(err.message || 'Failed to start practice');
     } finally {

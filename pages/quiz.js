@@ -343,6 +343,14 @@ function normalizeSourceScreen(value) {
   return VALID_SOURCE_SCREENS.has(value) ? value : 'unknown';
 }
 
+function normalizeInternalReturnUrl(value) {
+  const url = Array.isArray(value) ? value[0] : value;
+  if (!url || typeof url !== 'string') return '';
+  if (!url.startsWith('/') || url.startsWith('//')) return '';
+  if (/^[a-z][a-z0-9+.-]*:/i.test(url)) return '';
+  return url;
+}
+
 function getAttemptedCount(answers = {}) {
   return Object.keys(answers).length;
 }
@@ -496,6 +504,12 @@ export default function Quiz() {
   const effectiveSubject = restoredMeta?.subject || historyMeta?.subject || (isSavedMode ? 'Saved' : isDailyMode ? 'Daily Challenge' : subject);
   const effectiveTopic   = restoredMeta?.topic   || historyMeta?.topic   || (isSavedMode ? 'Mixed'  : isDailyMode ? 'Mixed GK'        : topic);
   const sourceScreen = normalizeSourceScreen(isDailyMode ? 'daily_challenge' : isSavedMode ? 'saved' : isHistoryMode ? 'history' : qSourceScreen);
+  const queryReturnUrl = normalizeInternalReturnUrl(returnUrl);
+  const quizReturnUrl = sourceScreen === 'history'
+    ? (historyMeta?.returnUrl || queryReturnUrl || '/history/quizzes')
+    : sourceScreen === 'saved'
+      ? (queryReturnUrl || '/history/saved')
+      : '';
   const mentorContext = useMemo(() => (
     sourceScreen === 'mentor_plan' || sourcePage === 'mentor'
       ? {
@@ -503,10 +517,10 @@ export default function Quiz() {
           sourceScreen: 'mentor_plan',
           sourceTaskId: String(sourceTaskId || ''),
           planId: String(planId || ''),
-          returnUrl: String(returnUrl || '/mentor'),
+          returnUrl: queryReturnUrl || '/mentor',
         }
       : null
-  ), [planId, returnUrl, sourcePage, sourceScreen, sourceTaskId]);
+  ), [planId, queryReturnUrl, sourcePage, sourceScreen, sourceTaskId]);
 
   const [questions, setQuestions]       = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -745,6 +759,7 @@ export default function Quiz() {
           subject: payload.subject || 'History',
           topic: payload.topic || 'Re-attempt',
           sourceCollection: payload.sourceCollection || 'general',
+          returnUrl: normalizeInternalReturnUrl(payload.returnUrl) || queryReturnUrl || '/history/quizzes',
         });
         setQuestions(shuffle(historyQuestions));
         setLoading(false);
@@ -883,7 +898,7 @@ export default function Quiz() {
 
     fetchWithRetry(3);
     })();
-  }, [router.isReady, subject, topic, questionCount, collection, isSavedMode, isHistoryMode, mode, recoveryChecked, recoveryPrompt, retryCount]);
+  }, [router.isReady, subject, topic, questionCount, collection, isSavedMode, isHistoryMode, mode, recoveryChecked, recoveryPrompt, retryCount, queryReturnUrl]);
 
   useEffect(() => {
     if (!loading || error || mode === 'daily') return;
@@ -913,6 +928,7 @@ export default function Quiz() {
       mode: mode || 'standard',
       historyMeta,
       sourceScreen,
+      returnUrl: quizReturnUrl || '',
       mentorContext,
       selectedQuestionCount: questions.length,
       totalQuestions: questions.length,
@@ -936,6 +952,7 @@ export default function Quiz() {
     effectiveTopic,
     mode,
     historyMeta,
+    quizReturnUrl,
     mentorContext,
     sourceScreen,
     questionStartedAt,
@@ -992,7 +1009,7 @@ export default function Quiz() {
       sourcePage: mentorContext?.sourcePage || '',
       sourceTaskId: mentorContext?.sourceTaskId || '',
       planId: mentorContext?.planId || '',
-      returnUrl: mentorContext?.returnUrl || '',
+      returnUrl: mentorContext?.returnUrl || quizReturnUrl || '',
       sessionId: clientSessionId,
       clientSessionId,
       startedAt: new Date(startedAtMs).toISOString(),
@@ -1004,7 +1021,7 @@ export default function Quiz() {
     router.push(
       `/result?subject=${encodeURIComponent(effectiveSubject)}&topic=${encodeURIComponent(effectiveTopic)}&sessionId=${clientSessionId}&correct=${results.correct}&incorrect=${results.incorrect}&skipped=${results.skipped}&total=${results.totalQuestions}&score=${results.rawScore}`
     );
-  }, [questions, sessionId, router, quizComplete, effectiveSubject, effectiveTopic, collection, mode, answerTimes, sourceScreen, historyMeta, mentorContext]);
+  }, [questions, sessionId, router, quizComplete, effectiveSubject, effectiveTopic, collection, mode, answerTimes, sourceScreen, historyMeta, mentorContext, quizReturnUrl]);
 
   const requestQuizExit = useCallback((targetUrl = '/dashboard') => {
     if (!quizInProgress || allowQuizExitRef.current) return true;
@@ -1119,7 +1136,7 @@ export default function Quiz() {
       sourcePage: session.mentorContext?.sourcePage || '',
       sourceTaskId: session.mentorContext?.sourceTaskId || '',
       planId: session.mentorContext?.planId || '',
-      returnUrl: session.mentorContext?.returnUrl || '',
+      returnUrl: session.mentorContext?.returnUrl || normalizeInternalReturnUrl(session.returnUrl) || '',
       sessionId: storedSessionId,
       clientSessionId: storedSessionId,
       startedAt: new Date(startedAtMs).toISOString(),
@@ -1328,16 +1345,21 @@ export default function Quiz() {
     const sessionAttemptedCount = getAttemptedCount(sessionAnswers);
     const sessionAnsweredCount = getAnsweredCount(sessionAnswers);
     const isExpiredPrompt = recoveryPrompt.type === 'expired';
+    const sessionQuestionCount = session.totalQuestions || session.questions?.length || 0;
+    const attemptedProgress = sessionQuestionCount > 0
+      ? Math.round((sessionAttemptedCount / sessionQuestionCount) * 100)
+      : 0;
 
     return (
       <div className="min-h-screen flex items-center justify-center px-5" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
         <Head><title>{isExpiredPrompt ? 'Quiz Expired' : 'Resume Quiz'} — SSC GK Score Booster</title></Head>
         <AppCard
           variant="premium"
-          className="w-full max-w-[370px] p-5"
+          className="w-full max-w-[360px] p-6"
           style={{
             background: 'var(--ssc-surface)',
             border: '1px solid var(--ssc-border-soft)',
+            borderRadius: 28,
             boxShadow: 'var(--ssc-shadow-float)',
           }}
         >
@@ -1359,18 +1381,41 @@ export default function Quiz() {
             )}
           </div>
 
-          <h1 className="font-display font-black text-2xl mb-2" style={{ color: 'var(--ssc-text-primary)' }}>
+          <h1 id="resume-quiz-title" className="t-page-title font-display mb-3" style={{ color: 'var(--ssc-text-primary)' }}>
             {isExpiredPrompt ? 'Quiz Attempt Expired' : 'Resume Quiz?'}
           </h1>
-          <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--ssc-text-secondary)' }}>
+          <p className="t-body mb-4" style={{ color: 'var(--ssc-text-secondary)' }}>
             {isExpiredPrompt
-              ? `Your previous quiz was inactive for too long. You answered ${sessionAnsweredCount} questions.`
+              ? `Your previous quiz was inactive for too long. You answered ${sessionAnsweredCount} of ${sessionQuestionCount} questions.`
               : `You have an unfinished ${getDisplaySubject(session.subject, session.collection) || 'Quiz'} · ${session.topic || 'Mixed'} quiz. You answered ${sessionAnsweredCount} of ${session.totalQuestions || session.questions?.length || 0} questions.`}
           </p>
 
           {sessionAttemptedCount > 0 && (
-            <p className="text-xs leading-relaxed rounded-2xl px-3 py-2 mb-4" style={{ color: 'var(--ssc-text-secondary)', background: 'var(--ssc-surface-soft)', border: '1px solid var(--ssc-border-soft)' }}>
-              Progress saved locally: {sessionAttemptedCount} attempted of {session.totalQuestions || session.questions?.length || 0}.
+            <div className="w-full mb-4">
+              <div className="t-badge inline-flex items-center mb-2" style={{
+                color: 'var(--ssc-orange)',
+                background: 'rgba(255,106,0,0.10)',
+                border: '1px solid rgba(255,106,0,0.18)',
+                borderRadius: 999,
+                padding: '4px 12px',
+              }}>
+                {sessionAttemptedCount} / {sessionQuestionCount} attempted
+              </div>
+              <div style={{ height: 4, borderRadius: 999, background: 'var(--ssc-border-soft)', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  borderRadius: 999,
+                  width: `${attemptedProgress}%`,
+                  background: 'linear-gradient(90deg, var(--ssc-orange), var(--ssc-orange-deep))',
+                  transition: 'width 0.4s ease',
+                }} />
+              </div>
+            </div>
+          )}
+
+          {!isExpiredPrompt && (
+            <p className="text-xs mb-4" style={{ color: 'var(--ssc-text-muted)' }}>
+              Resume from the same question without restarting the set.
             </p>
           )}
 
@@ -1385,7 +1430,7 @@ export default function Quiz() {
                 boxShadow: 'var(--ssc-shadow-cta)',
               }}
             >
-              {isExpiredPrompt ? 'View Partial Result' : 'Resume Quiz'}
+              {isExpiredPrompt ? 'View Partial Result' : 'Continue Quiz'}
             </AppButton>
             <AppButton
               as="button"
@@ -1398,7 +1443,7 @@ export default function Quiz() {
                 color: isExpiredPrompt ? 'var(--ssc-text-secondary)' : 'var(--ssc-danger)',
               }}
             >
-              {isExpiredPrompt ? 'Start Fresh' : 'End Attempt'}
+              {isExpiredPrompt ? 'Start Fresh' : 'End & See Result'}
             </AppButton>
           </div>
         </AppCard>
