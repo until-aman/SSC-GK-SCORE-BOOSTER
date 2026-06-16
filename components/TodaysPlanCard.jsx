@@ -80,6 +80,7 @@ export default function TodaysPlanCard({
   onDone,
   onLater,
   onShowNextDay,
+  onViewAll,
 }) {
   const router = useRouter();
   const [trayOpen, setTrayOpen] = useState(false);
@@ -128,9 +129,20 @@ export default function TodaysPlanCard({
 
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-display text-base font-black text-ssc-text-primary">Today&apos;s Tasks</h2>
-        <span className="rounded-full border border-[#BDEDEA] bg-[#E8F8F6] px-2.5 py-1 text-xs font-black text-ssc-teal">
-          {decoratedActive.length}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full border border-[#BDEDEA] bg-[#E8F8F6] px-2.5 py-1 text-xs font-black text-ssc-teal">
+            {decoratedActive.length}
+          </span>
+          {onViewAll ? (
+            <button
+              type="button"
+              onClick={onViewAll}
+              className="rounded-full border border-[#BDEDEA] bg-white px-3 py-1 text-xs font-black text-ssc-teal active:scale-[0.98]"
+            >
+              View all
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {decoratedActive.map((task, index) => (
