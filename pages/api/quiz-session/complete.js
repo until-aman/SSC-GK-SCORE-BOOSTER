@@ -4,6 +4,7 @@ import { authOptions } from '../auth/[...nextauth]';
 import { getSheetsClient } from '@/lib/sheets';
 import { getAppConfig } from '@/lib/config/appConfig';
 import { persistScore } from '@/lib/server/scorePersistence';
+import { calculateAccuracy, calculateRawScore } from '@/lib/scoring';
 
 function buildHeaderIndex(headers) {
   return (headers || []).reduce((index, header, position) => {
@@ -189,8 +190,8 @@ async function handler(req, res) {
     const correct = answers.filter(answer => !answer.isSkipped && answer.isCorrect).length;
     const skipped = answers.filter(answer => answer.isSkipped).length;
     const incorrect = answers.length - correct - skipped;
-    const score = correct * 2 - incorrect * 0.5;
-    const accuracy = answers.length ? (correct / answers.length) * 100 : 0;
+    const score = calculateRawScore({ correct, incorrect });
+    const accuracy = calculateAccuracy({ correct, totalQuestions: answers.length });
     const completionStatus = 'completed';
     const coins = calculateSessionCoins({ correct, accuracy, completionStatus });
     const deviceType = getDeviceType(req);
@@ -204,12 +205,16 @@ async function handler(req, res) {
     // (hasDuplicateScore) so coins are never awarded twice. Prefer explicit
     // score fields from the body (identical to what /api/score received), with
     // a fallback to the values derived from `answers`.
+    const scoreCorrect = typeof req.body.correctAnswers === 'number' ? req.body.correctAnswers : correct;
+    const scoreIncorrect = typeof req.body.incorrectAnswers === 'number' ? req.body.incorrectAnswers : incorrect;
+    const scoreSkipped = typeof req.body.skipped === 'number' ? req.body.skipped : skipped;
+    const scoreTotal = typeof req.body.totalQuestions === 'number' ? req.body.totalQuestions : answers.length;
     const scoreInput = {
-      correctAnswers:   typeof req.body.correctAnswers   === 'number' ? req.body.correctAnswers   : correct,
-      incorrectAnswers: typeof req.body.incorrectAnswers === 'number' ? req.body.incorrectAnswers : incorrect,
-      skipped:          typeof req.body.skipped          === 'number' ? req.body.skipped          : skipped,
-      totalQuestions:   typeof req.body.totalQuestions   === 'number' ? req.body.totalQuestions   : answers.length,
-      rawScore:         typeof req.body.rawScore         === 'number' ? req.body.rawScore         : score,
+      correctAnswers:   scoreCorrect,
+      incorrectAnswers: scoreIncorrect,
+      skipped:          scoreSkipped,
+      totalQuestions:   scoreTotal,
+      rawScore:         calculateRawScore({ correct: scoreCorrect, incorrect: scoreIncorrect }),
       subject,
       topic,
       sessionId:        req.body.sessionId || clientSessionId || sessionId,

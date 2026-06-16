@@ -957,9 +957,7 @@ export default function HistoryPage() {
 
   const styles = `
     .history-shell{padding:16px 16px calc(158px + env(safe-area-inset-bottom))}
-    .intro-block{margin-bottom:16px}
-    .intro-title{color:var(--ssc-text-primary);font-size:20px;font-weight:900;margin:0 0 4px;line-height:1.2}
-    .intro-subtitle{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:0}
+    .intro-subtitle{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:0 0 16px}
     .summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 16px}
     .stat-card,.history-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;box-shadow:var(--ssc-shadow-card)}
     .stat-card{padding:14px 12px;display:flex;flex-direction:column;gap:4px}
@@ -987,16 +985,16 @@ export default function HistoryPage() {
 
     .question-card{padding:12px 14px;cursor:pointer}.question-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}.question-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.question-kicker{color:var(--ssc-teal);background:var(--ssc-teal-soft);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;margin:0;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.question-badge{font-size:10px;padding:4px 8px;max-width:132px;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.question-chevron{display:inline-flex;height:24px;width:24px;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-text-secondary);font-size:18px;font-weight:900}.question-preview{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.38;margin:9px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.question-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;padding:8px 0 0;border-top:1px solid var(--ssc-border-soft);font-size:12px;font-weight:900;white-space:nowrap}.question-stat-row .text-red-300{color:var(--ssc-danger)}.question-stat-row .text-slate-400{color:var(--ssc-text-muted)}.question-stat-row span+span:before{content:'';margin:0}.question-actions{display:flex;justify-content:flex-end;margin-top:11px;align-items:center}.save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);display:flex;align-items:center;justify-content:center;transition:transform .12s ease,background .12s ease,border-color .12s ease}.save-icon-btn:active{transform:scale(.92)}.save-icon-btn.saved{border-color:rgba(14,165,164,.36);background:var(--ssc-teal-soft)}
 
-    .mode-selector{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:0 0 2px;margin-bottom:14px;scrollbar-width:none;-ms-overflow-style:none}.mode-selector::-webkit-scrollbar{display:none}.mode-selector button{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-family:inherit;font-size:13px;font-weight:800;padding:9px 16px;white-space:nowrap;flex-shrink:0;cursor:pointer}.mode-selector button.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 5px 16px rgba(14,165,164,.18)}
+    .mode-selector{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 0 2px;margin-bottom:14px;scrollbar-width:none;-ms-overflow-style:none}.mode-selector::-webkit-scrollbar{display:none}.mode-selector button{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-family:inherit;font-size:13px;font-weight:800;height:42px;min-width:116px;padding:0 14px;white-space:nowrap;flex:0 0 116px;cursor:pointer;text-align:center}.mode-selector button.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 5px 16px rgba(14,165,164,.18)}
 
-    .chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin-left:-16px;margin-right:-16px;padding:0 16px 14px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.sheet-chip-row{margin-left:0;margin-right:0;padding:0 0 4px;flex-wrap:wrap}.chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:800;padding:7px 13px;white-space:nowrap;text-transform:capitalize;flex:0 0 auto;cursor:pointer}.chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 5px 16px rgba(14,165,164,.14)}
+    .chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin-left:-16px;margin-right:-16px;padding:0 16px 14px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.filter-chip-row{margin-bottom:0;padding-bottom:14px}.quiz-filter-chip-row{margin:0;padding:0 8px 0 0;flex:1}.sheet-chip-row{margin-left:0;margin-right:0;padding:0 0 4px;flex-wrap:wrap}.chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:800;min-height:36px;padding:0 14px;white-space:nowrap;text-transform:capitalize;flex:0 0 auto;cursor:pointer}.chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 5px 16px rgba(14,165,164,.14)}
 
     .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;min-height:40px}
     .primary-btn{border:0;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;box-shadow:var(--ssc-shadow-cta)}
     .secondary-btn{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-teal)}
     .primary-btn:disabled,.secondary-btn:disabled{opacity:1;cursor:default;box-shadow:none;background:var(--ssc-disabled-bg);color:var(--ssc-disabled-text);border-color:var(--ssc-border-soft)}
 
-    .section-title{color:var(--ssc-text-primary);font-size:17px;font-weight:900;line-height:1.25;margin:0}.section-subtitle{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:5px 0 12px}
+    .section-title{color:var(--ssc-text-primary);font-size:17px;font-weight:900;line-height:1.25;margin:0 0 12px}.section-subtitle{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:5px 0 12px}.filter-heading{color:var(--ssc-text-primary);font-size:17px;font-weight:900;line-height:1.25;margin:0 0 10px}.topic-result-title{margin:2px 0 14px}
 
     .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}
     .divider{height:1px;background:var(--ssc-border-soft);margin:12px 0}
@@ -1006,7 +1004,7 @@ export default function HistoryPage() {
 
     .date-modal-backdrop{position:fixed;inset:0;z-index:90;background:var(--ssc-overlay);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:18px}.date-modal-card{width:min(100%,420px);background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:22px;padding:20px;box-shadow:var(--ssc-shadow-float)}.date-modal-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}.date-modal-top h2{color:var(--ssc-text-primary);font-size:20px;font-weight:900;line-height:1.2;margin:0}.date-modal-top p{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:7px 0 0;font-weight:700}.date-close-btn{height:34px;width:34px;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-text-secondary);font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center}.date-field-group{display:grid;gap:8px;margin-bottom:14px}.date-field-group label{color:var(--ssc-text-secondary);font-size:12px;font-weight:900}.date-field-group input{width:100%;height:46px;border-radius:14px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-text-primary);padding:0 12px;font-family:inherit;font-size:14px;font-weight:800;color-scheme:light}.date-field-group input::-webkit-calendar-picker-indicator{opacity:.8}.date-error{color:var(--ssc-danger);font-size:12px;font-weight:800;line-height:1.35;margin:0 0 14px}.date-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}.custom-range-summary{color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.4;margin:-3px 2px 13px}
 
-    .mistake-filter-group{margin-bottom:16px}.mistake-filter-group .chip-row{padding-bottom:0}.mistake-filter-label{display:block;margin:0 0 10px 2px;color:var(--ssc-text-secondary);font-size:12px;font-weight:900;line-height:1}.active-filter-summary{margin:-2px 2px 14px;color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.4}
+    .mistake-filter-group{margin-bottom:0}.mistake-filter-label{display:block;margin:0 0 10px;color:var(--ssc-text-primary);font-size:17px;font-weight:900;line-height:1.25}.active-filter-summary{margin:0 2px 14px;color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.4}
 
     .empty-state-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:32px 24px;text-align:center;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
     .empty-state-icon{width:64px;height:64px;border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;background:var(--ssc-teal-soft)}
@@ -1014,8 +1012,8 @@ export default function HistoryPage() {
     .empty-state-body{color:var(--ssc-text-secondary);font-size:13px;line-height:1.5;margin:0 0 20px}
     .empty-state-cta{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:14px;padding:13px 22px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:var(--ssc-shadow-cta)}
 
-    .filter-trigger-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-    .filter-trigger-btn{display:flex;align-items:center;gap:6px;border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:800;padding:7px 12px;cursor:pointer;font-family:inherit}
+    .filter-trigger-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .filter-trigger-btn{display:flex;align-items:center;gap:6px;border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:800;height:36px;padding:0 12px;cursor:pointer;font-family:inherit}
     .filter-trigger-btn.has-filters{border-color:var(--ssc-teal);color:var(--ssc-teal);background:var(--ssc-teal-soft)}
 
     @media(max-width:380px){.mode-long{display:none}}@media(min-width:381px){.mode-short{display:none}}
@@ -1045,10 +1043,7 @@ export default function HistoryPage() {
           }
         />
         <main className="history-shell">
-          <section className="intro-block">
-            <h1 className="intro-title font-display">Quiz History</h1>
-            <p className="intro-subtitle">Review your attempts, identify weak areas, fix mistakes.</p>
-          </section>
+          <p className="intro-subtitle">Review your attempts, identify weak areas, fix mistakes.</p>
 
           {status === 'loading' || summaryLoading ? (
             <Loader card size="md" label="Loading quiz history..." />
@@ -1119,7 +1114,7 @@ export default function HistoryPage() {
               {activeMode === 'quiz' && (
                 <>
                   <div className="filter-trigger-row">
-                    <div className="chip-row" style={{ margin: 0, padding: 0, flex: 1, paddingRight: 8 }}>
+                    <div className="chip-row filter-chip-row quiz-filter-chip-row">
                       {QUICK_FILTERS.map(filter => (
                         <button key={filter.key} type="button" className={`chip ${quickFilter === filter.key ? 'active' : ''}`} onClick={() => handleQuickFilter(filter.key)}>{filter.label}</button>
                       ))}
@@ -1163,10 +1158,10 @@ export default function HistoryPage() {
 
               {activeMode === 'subject' && (
                 <section>
-                  <h2 className="section-title font-display">Choose a Subject</h2>
+                  <h2 className="filter-heading font-display">Select a subject</h2>
                   {subjectsLoading ? <Loader card size="sm" label="Loading subjects..." /> : subjects?.length ? (
                     <>
-                      <div className="chip-row">
+                      <div className="chip-row filter-chip-row">
                         <button type="button" className={`chip ${!subjectFilter ? 'active' : ''}`} onClick={() => setSubjectFilter('')}>All</button>
                         {subjects.map(item => <button key={item.subject} type="button" className={`chip ${subjectFilter === item.subject ? 'active' : ''}`} onClick={() => setSubjectFilter(item.subject)}>{item.subject}</button>)}
                       </div>
@@ -1180,14 +1175,14 @@ export default function HistoryPage() {
 
               {activeMode === 'topic' && (
                 <section>
-                  <p className="filter-label">Select Subject</p>
-                  <div className="chip-row">
+                  <h2 className="filter-heading font-display">Select a subject</h2>
+                  <div className="chip-row filter-chip-row">
                     {(subjects || []).map(item => <button key={item.subject} type="button" className={`chip ${selectedSubject === item.subject ? 'active' : ''}`} onClick={() => setSelectedSubject(item.subject)}>{item.subject}</button>)}
                   </div>
                   {!selectedSubject ? <EmptyPanel title="Select a subject to see topics." body="Choose a subject above to see attempted topics." /> : topicsLoading ? <Loader card size="sm" label="Loading topics..." /> : topics.length ? (
                     <>
-                      <h2 className="section-title font-display">{selectedSubject} - Attempted Topics</h2>
-                      <div className="mt-3">{topics.map(item => <StatEntityCard key={item.topic} item={item} type="topic" onPractice={topic => openPracticeModal({ subject: topic.subject, topic: topic.topic, count: topic.wrongCount + topic.skippedCount })} onReview={topic => router.push(`/history/questions?subject=${encodeURIComponent(topic.subject)}&topic=${encodeURIComponent(topic.topic)}`)} />)}</div>
+                      <h2 className="section-title topic-result-title font-display">Select a topic</h2>
+                      <div>{topics.map(item => <StatEntityCard key={item.topic} item={item} type="topic" onPractice={topic => openPracticeModal({ subject: topic.subject, topic: topic.topic, count: topic.wrongCount + topic.skippedCount })} onReview={topic => router.push(`/history/questions?subject=${encodeURIComponent(topic.subject)}&topic=${encodeURIComponent(topic.topic)}`)} />)}</div>
                     </>
                   ) : <EmptyPanel title={`No topics attempted in ${selectedSubject} yet.`} body={`Start a ${selectedSubject} quiz to build topic history.`} action={`Practice ${selectedSubject} →`} onClick={() => router.push('/dashboard')} />}
                 </section>
@@ -1196,14 +1191,14 @@ export default function HistoryPage() {
               {activeMode === 'mistakes' && (
                 <section>
                   <div className="mistake-filter-group">
-                    <p className="mistake-filter-label">Mistake Type</p>
-                    <div className="chip-row">
+                    <p className="mistake-filter-label font-display">Select a mistake type</p>
+                    <div className="chip-row filter-chip-row">
                       {QUESTION_TYPES.map(type => <button key={type.key} type="button" className={`chip ${questionType === type.key ? 'active' : ''}`} onClick={() => setQuestionType(type.key)}>{type.label}</button>)}
                     </div>
                   </div>
                   <div className="mistake-filter-group">
-                    <p className="mistake-filter-label">Subject / Source</p>
-                    <div className="chip-row">
+                    <p className="mistake-filter-label font-display">Select a subject</p>
+                    <div className="chip-row filter-chip-row">
                       <button type="button" className={`chip ${!questionSubject ? 'active' : ''}`} onClick={() => setQuestionSubject('')}>All</button>
                       {questionSubjects.map(item => <button key={item.subject} type="button" className={`chip ${questionSubject === item.subject ? 'active' : ''}`} onClick={() => setQuestionSubject(item.subject)}>{item.subject}</button>)}
                     </div>
