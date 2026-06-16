@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Loader from '@/components/ui/Loader';
 import MentorMessage, { TeacherMentorIcon } from '@/components/MentorMessage';
+import MentorTaskCard from '@/components/MentorTaskCard';
 import TodaysPlanCard from '@/components/TodaysPlanCard';
 import WhatsAppBell from '@/components/WhatsAppBell';
 import {
@@ -522,6 +523,176 @@ function ConfirmTaskModal({ task, busy, onClose, onConfirm }) {
   );
 }
 
+function BackIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function FilterIcon() {
+  return (
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 6h16l-6 7v4l-4 2v-6L4 6z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function collectTaskFlowTasks(snapshot) {
+  const seen = new Set();
+  const add = (items, list) => {
+    (items || []).forEach(task => {
+      const key = task.taskId || `${task.taskType}-${task.subject}-${task.topic}-${list.length}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      list.push(task);
+    });
+  };
+  const tasks = [];
+  add(snapshot?.activeTasks, tasks);
+  add((snapshot?.plan?.tasks || []).filter(task => task.status === 'active'), tasks);
+  add(snapshot?.completedToday, tasks);
+  add(snapshot?.deferredTasks, tasks);
+  add((snapshot?.plan?.tasks || []).filter(task => task.status === 'completed' || task.status === 'snoozed' || task.status === 'blocked' || task.status === 'pending'), tasks);
+  add(snapshot?.pendingTasks, tasks);
+  return tasks;
+}
+
+function taskMatchesFlowFilter(task, filter) {
+  if (filter === 'active') return task.status === 'active' || task.status === 'pending' || task.status === 'blocked';
+  if (filter === 'completed') return task.status === 'completed';
+  if (filter === 'later') return task.status === 'snoozed';
+  return true;
+}
+
+function TaskFlowScreen({
+  snapshot,
+  busyTaskId,
+  manualDoneTaskIds,
+  onBack,
+  onPrimary,
+  onDone,
+  onLater,
+}) {
+  const router = useRouter();
+  const [filter, setFilter] = useState('all');
+  const tasks = useMemo(() => collectTaskFlowTasks(snapshot), [snapshot]);
+  const visibleTasks = useMemo(() => tasks.filter(task => taskMatchesFlowFilter(task, filter)), [tasks, filter]);
+  const nextTask = tasks.find(task => task.status === 'active') || tasks.find(task => task.status === 'pending') || tasks[0];
+  const chips = [
+    ['all', 'All'],
+    ['active', 'Active'],
+    ['completed', 'Completed'],
+    ['later', 'Later'],
+  ];
+
+  function handleTaskPrimary(task) {
+    if (task.status === 'completed') {
+      router.push('/history');
+      return;
+    }
+    onPrimary?.(task);
+  }
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0 });
+  }, []);
+
+  return (
+    <>
+      <Head><title>Today&apos;s Tasks - SSC GK Score Booster</title></Head>
+      <div className="min-h-screen bg-[var(--ssc-bg)]">
+        <div className="app-shell !px-0 !bg-transparent">
+          <main className="px-4 pb-[calc(var(--ssc-bottom-nav-safe-padding)+112px)] pt-4 text-ssc-text-primary">
+            <header className="sticky top-0 z-40 -mx-4 bg-[rgba(243,251,250,0.96)] px-4 pb-3 pt-2 backdrop-blur">
+              <div className="flex h-10 items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={onBack}
+                  aria-label="Back to Mentor"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-ssc-text-primary active:scale-95"
+                >
+                  <BackIcon />
+                </button>
+                <h1 className="font-display text-base font-black text-ssc-text-primary">Today&apos;s Tasks</h1>
+                <button
+                  type="button"
+                  aria-label="Task filters"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-ssc-text-primary active:scale-95"
+                >
+                  <FilterIcon />
+                </button>
+              </div>
+
+              <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
+                {chips.map(([value, label]) => {
+                  const active = value === filter;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setFilter(value)}
+                      className={`shrink-0 rounded-full border px-4 py-2 text-xs font-black transition-all ${
+                        active
+                          ? 'border-[#0EA5A4] bg-[#0EA5A4] text-white shadow-[0_10px_20px_rgba(14,165,164,0.18)]'
+                          : 'border-[#DDE8F0] bg-white text-ssc-text-secondary'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </header>
+
+            <section className="mt-3 space-y-3">
+              {visibleTasks.length ? (
+                visibleTasks.map((task, index) => (
+                  <MentorTaskCard
+                    key={task.taskId || `${task.taskType}-${index}`}
+                    task={task}
+                    index={index}
+                    variant="flow"
+                    busy={busyTaskId === task.taskId}
+                    showManualDone={manualDoneTaskIds?.has?.(task.taskId)}
+                    onPrimary={handleTaskPrimary}
+                    onDone={onDone}
+                    onLater={onLater}
+                  />
+                ))
+              ) : (
+                <section className="rounded-[20px] border border-ssc-border-soft bg-white p-4 text-center shadow-[var(--ssc-shadow-card)]">
+                  <p className="font-display text-base font-black text-ssc-text-primary">No tasks here yet.</p>
+                  <p className="mt-1 text-xs font-semibold text-ssc-text-secondary">Try another filter or check back after your plan updates.</p>
+                </section>
+              )}
+            </section>
+          </main>
+
+          <div className="fixed inset-x-0 bottom-[calc(var(--ssc-bottom-nav-height)+10px+env(safe-area-inset-bottom))] z-50 mx-auto grid max-w-[430px] grid-cols-[0.9fr_1.1fr] gap-2 rounded-t-[22px] border border-[#DDE8F0] bg-[rgba(255,255,255,0.96)] px-4 pb-3 pt-3 shadow-[0_-12px_30px_rgba(16,32,51,0.08)] backdrop-blur">
+            <button
+              type="button"
+              onClick={onBack}
+              className="rounded-xl border border-[#0EA5A4] bg-white py-3 text-xs font-black text-[#0EA5A4] active:scale-[0.98]"
+            >
+              Plan Overview
+            </button>
+            <button
+              type="button"
+              disabled={!nextTask || Boolean(busyTaskId)}
+              onClick={() => nextTask && handleTaskPrimary(nextTask)}
+              className="rounded-xl bg-gradient-to-r from-[#FF7A1A] to-[#F45100] py-3 text-xs font-black text-white shadow-[var(--ssc-shadow-cta)] active:scale-[0.98] disabled:bg-ssc-disabled-bg disabled:from-ssc-disabled-bg disabled:to-ssc-disabled-bg disabled:text-ssc-disabled-text disabled:shadow-none"
+            >
+              Start Next Task
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function MentorPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -539,6 +710,7 @@ export default function MentorPage() {
   const [confirmTask, setConfirmTask] = useState(null);
   const [toast, setToast] = useState(null);
   const [now, setNow] = useState(() => new Date());
+  const [taskFlowOpen, setTaskFlowOpen] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60 * 1000);
@@ -933,6 +1105,73 @@ export default function MentorPage() {
     }
   }
 
+  const actionOverlays = (
+    <>
+      <CountModal
+        task={practiceTask}
+        busy={Boolean(busyTaskId)}
+        onClose={() => {
+          setPracticeTask(null);
+          setBusyTaskId('');
+        }}
+        onSelect={launchPractice}
+      />
+      <ConfidenceModal
+        task={confidenceTask}
+        busy={Boolean(busyTaskId)}
+        onClose={() => {
+          setConfidenceTask(null);
+          setBusyTaskId('');
+        }}
+        onSelect={saveConfidence}
+      />
+      <CoverageModal
+        task={coverageTask}
+        busy={Boolean(busyTaskId)}
+        onClose={() => {
+          setCoverageTask(null);
+          setBusyTaskId('');
+        }}
+        onSelect={saveCoverage}
+      />
+      <BlockerModal
+        task={blockerTask}
+        busy={Boolean(busyTaskId)}
+        onClose={() => {
+          setBlockerTask(null);
+          setBusyTaskId('');
+        }}
+        onSelect={saveBlocker}
+      />
+      <ConfirmTaskModal
+        task={confirmTask}
+        busy={Boolean(busyTaskId)}
+        onClose={() => {
+          setConfirmTask(null);
+          setBusyTaskId('');
+        }}
+        onConfirm={async () => {
+          const task = confirmTask;
+          if (!task) return;
+          try {
+            await runTaskAction(task, 'complete', manualDoneTaskIds.has(task.taskId) ? 'manual_recovery' : '');
+            setConfirmTask(null);
+            setToast({ type: 'success', message: manualDoneTaskIds.has(task.taskId) ? 'Task completed mark ho gaya.' : 'Task completed' });
+            setTimeout(() => setToast(null), 2400);
+          } catch (err) {
+            setError(err.message || 'Task complete hua, lekin save nahi ho paya. Please retry.');
+            setBusyTaskId('');
+          }
+        }}
+      />
+      {toast ? (
+        <div className={`fixed bottom-24 left-4 right-4 z-[90] mx-auto max-w-[430px] rounded-2xl border px-4 py-3 text-sm font-black shadow-[var(--ssc-shadow-float)] ${toast.type === 'success' ? 'border-[#BDEDD8] bg-white text-[#0F9F75]' : 'border-[#FBCACA] bg-white text-[#DC2626]'}`}>
+          {toast.message}
+        </div>
+      ) : null}
+    </>
+  );
+
   if (status === 'loading' || ((status === 'authenticated' || guestMode) && loading && !snapshot)) {
     return <Loader fullScreen label="Loading mentor..." />;
   }
@@ -942,6 +1181,23 @@ export default function MentorPage() {
       <>
         <Head><title>Mentor - SSC GK Score Booster</title></Head>
         <SignInPreview />
+      </>
+    );
+  }
+
+  if (taskFlowOpen && onboarded) {
+    return (
+      <>
+        <TaskFlowScreen
+          snapshot={snapshot}
+          busyTaskId={busyTaskId}
+          manualDoneTaskIds={manualDoneTaskIds}
+          onBack={() => setTaskFlowOpen(false)}
+          onPrimary={handlePrimary}
+          onDone={setConfirmTask}
+          onLater={handleLater}
+        />
+        {actionOverlays}
       </>
     );
   }
@@ -1027,6 +1283,7 @@ export default function MentorPage() {
                       onDone={setConfirmTask}
                       onLater={handleLater}
                       onShowNextDay={handleShowNextDay}
+                      onViewAll={() => setTaskFlowOpen(true)}
                     />
                   </section>
 
@@ -1083,68 +1340,7 @@ export default function MentorPage() {
           </main>
         </div>
       </div>
-      <CountModal
-        task={practiceTask}
-        busy={Boolean(busyTaskId)}
-        onClose={() => {
-          setPracticeTask(null);
-          setBusyTaskId('');
-        }}
-        onSelect={launchPractice}
-      />
-      <ConfidenceModal
-        task={confidenceTask}
-        busy={Boolean(busyTaskId)}
-        onClose={() => {
-          setConfidenceTask(null);
-          setBusyTaskId('');
-        }}
-        onSelect={saveConfidence}
-      />
-      <CoverageModal
-        task={coverageTask}
-        busy={Boolean(busyTaskId)}
-        onClose={() => {
-          setCoverageTask(null);
-          setBusyTaskId('');
-        }}
-        onSelect={saveCoverage}
-      />
-      <BlockerModal
-        task={blockerTask}
-        busy={Boolean(busyTaskId)}
-        onClose={() => {
-          setBlockerTask(null);
-          setBusyTaskId('');
-        }}
-        onSelect={saveBlocker}
-      />
-      <ConfirmTaskModal
-        task={confirmTask}
-        busy={Boolean(busyTaskId)}
-        onClose={() => {
-          setConfirmTask(null);
-          setBusyTaskId('');
-        }}
-        onConfirm={async () => {
-          const task = confirmTask;
-          if (!task) return;
-          try {
-            await runTaskAction(task, 'complete', manualDoneTaskIds.has(task.taskId) ? 'manual_recovery' : '');
-            setConfirmTask(null);
-            setToast({ type: 'success', message: manualDoneTaskIds.has(task.taskId) ? 'Task completed mark ho gaya.' : 'Task completed' });
-            setTimeout(() => setToast(null), 2400);
-          } catch (err) {
-            setError(err.message || 'Task complete hua, lekin save nahi ho paya. Please retry.');
-            setBusyTaskId('');
-          }
-        }}
-      />
-      {toast ? (
-        <div className={`fixed bottom-24 left-4 right-4 z-[90] mx-auto max-w-[430px] rounded-2xl border px-4 py-3 text-sm font-black shadow-[var(--ssc-shadow-float)] ${toast.type === 'success' ? 'border-[#BDEDD8] bg-white text-[#0F9F75]' : 'border-[#FBCACA] bg-white text-[#DC2626]'}`}>
-          {toast.message}
-        </div>
-      ) : null}
+      {actionOverlays}
     </>
   );
 }

@@ -105,7 +105,16 @@ function StatusPill({ task }) {
   return <span className="rounded-full border border-[#BDEDD8] bg-[#E7FAF3] px-2 py-0.5 text-[10px] font-black text-[#0F9F75]">Good</span>;
 }
 
-export default function MentorTaskCard({ task, index = 0, busy, onPrimary, onDone, onLater, showManualDone = false }) {
+export default function MentorTaskCard({
+  task,
+  index = 0,
+  busy,
+  onPrimary,
+  onDone,
+  onLater,
+  showManualDone = false,
+  variant = 'compact',
+}) {
   const isCompleted = task.status === 'completed';
   const isSnoozed = task.status === 'snoozed';
   const isBlocked = task.status === 'blocked';
@@ -113,7 +122,64 @@ export default function MentorTaskCard({ task, index = 0, busy, onPrimary, onDon
   const theme = getTheme(task);
   const taskNumber = Number(task.taskNumber || task.sequenceNumber || index + 1);
   const meta = getMeta(task);
-  const cta = task.ctaLabel || (task.taskType === 'revision_task' ? 'Revise' : task.taskType === 'confidence_check' ? 'Start Quiz' : 'Practice');
+  const cta = task.ctaLabel || (
+    isCompleted
+      ? 'Review Result'
+      : task.taskType === 'revision_task'
+        ? 'Revise Now'
+        : task.taskType === 'confidence_check'
+          ? 'Start Quiz'
+          : 'Practice Now'
+  );
+
+  if (variant === 'flow') {
+    return (
+      <article className={`rounded-[18px] border bg-white p-3.5 shadow-[0_8px_20px_rgba(16,32,51,0.06)] ${isCompleted ? 'border-[#BDEDD8] bg-[#F6FFFB]' : isBlocked ? 'border-[#DDE8F0] bg-[#F8FAFC]' : theme.card}`}>
+        <div className="flex items-start justify-between gap-3">
+          <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-wide ${theme.chip}`}>
+            {task.sequenceLabel || getTaskTypeLabel(task.taskType)}
+          </span>
+          <StatusPill task={task} />
+        </div>
+
+        <h3 className={`mt-2 font-display text-[15px] font-black leading-snug ${isBlocked ? 'text-ssc-text-muted' : 'text-ssc-text-primary'}`}>
+          {getTaskTitle(task)}
+        </h3>
+        <p className={`mt-0.5 text-[11px] font-semibold leading-snug ${isBlocked ? 'text-ssc-text-muted' : 'text-ssc-text-secondary'}`}>
+          {getPurpose(task)}
+        </p>
+
+        <div className="mt-2.5 flex items-center justify-between gap-2">
+          {meta.length ? (
+            <div className="flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-[10px] font-bold text-ssc-text-secondary">
+              {meta.map(item => <span key={item}>{item}</span>)}
+            </div>
+          ) : (
+            <span className="text-[10px] font-bold text-ssc-text-muted">Task {taskNumber}</span>
+          )}
+        </div>
+
+        {!isBlocked ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onPrimary?.(task)}
+            className={`mt-3 w-full rounded-xl py-2.5 text-xs font-black active:scale-[0.98] disabled:opacity-60 ${
+              isCompleted
+                ? 'border border-[#0EA5A4] bg-white text-[#0EA5A4]'
+                : 'bg-gradient-to-r from-[#FF7A1A] to-[#F45100] text-white shadow-[0_10px_22px_rgba(255,106,0,0.22)]'
+            }`}
+          >
+            {busy ? 'Saving...' : cta}
+          </button>
+        ) : (
+          <p className="mt-3 text-center text-[11px] font-bold text-ssc-text-muted">
+            {task.blockedReason || 'Complete the previous step first.'}
+          </p>
+        )}
+      </article>
+    );
+  }
 
   return (
     <article className={`rounded-[18px] border bg-white p-3 shadow-[0_8px_20px_rgba(16,32,51,0.06)] ${isBlocked ? 'border-[#DDE8F0] opacity-80' : theme.card}`}>
