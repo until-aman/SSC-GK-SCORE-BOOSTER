@@ -266,6 +266,7 @@ export default function SessionReviewPage() {
 
   async function startReattempt(sourceType, poolItem = null) {
     setStarting(true);
+    const returnUrl = router.asPath || `/history/session/${session?.sessionId || router.query.sessionId || ''}`;
     try {
       if (poolItem) {
         sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
@@ -276,8 +277,9 @@ export default function SessionReviewPage() {
           subject: session.subject,
           topic: session.topic,
           sourceCollection: session.sourceCollection,
+          returnUrl,
         }));
-        router.push('/quiz?mode=history&count=1&sourceScreen=history');
+        router.push(`/quiz?mode=history&count=1&sourceScreen=history&returnUrl=${encodeURIComponent(returnUrl)}`);
         return;
       }
       const res = await fetch('/api/history/reattempt', {
@@ -295,8 +297,9 @@ export default function SessionReviewPage() {
         subject: json.data.subject,
         topic: json.data.topic,
         sourceCollection: json.data.sourceCollection,
+        returnUrl,
       }));
-      router.push(`/quiz?mode=history&count=${json.data.questionCount}&sourceScreen=history`);
+      router.push(`/quiz?mode=history&count=${json.data.questionCount}&sourceScreen=history&returnUrl=${encodeURIComponent(returnUrl)}`);
     } catch {
       setStarting(false);
     }
@@ -410,7 +413,7 @@ export default function SessionReviewPage() {
           .carousel-nav button:disabled{opacity:.45;cursor:default}
           .review-page-shell{padding-bottom:calc(190px + env(safe-area-inset-bottom))}
           .session-action-bar{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);width:100%;max-width:430px;z-index:60;padding:0 16px 10px;background:linear-gradient(to top,var(--ssc-bg) 68%,transparent)}
-          .session-action-inner{display:grid;grid-template-columns:1fr 1fr;gap:8px;border-radius:18px;padding:8px;background:rgba(255,255,255,0.96);border:1px solid var(--ssc-border-soft);box-shadow:0 16px 38px rgba(16,32,51,0.12);backdrop-filter:blur(12px)}
+          .session-action-inner{display:grid;grid-template-columns:1fr;gap:8px;border-radius:18px;padding:8px;background:rgba(255,255,255,0.96);border:1px solid var(--ssc-border-soft);box-shadow:0 16px 38px rgba(16,32,51,0.12);backdrop-filter:blur(12px)}
           .session-action-inner .primary-btn{box-shadow:0 4px 14px rgba(255,90,0,0.24)}
         `}</style>
         <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
@@ -475,7 +478,6 @@ export default function SessionReviewPage() {
         <div className="session-action-bar">
           <div className="session-action-inner">
             <button disabled={starting} className="primary-btn" onClick={() => startReattempt('session_mistakes')}>Practice {mistakes} Mistakes →</button>
-            <button disabled={starting} className="secondary-btn" onClick={() => startReattempt('session_full')}>↺ Re-attempt Full Quiz</button>
           </div>
         </div>
       )}

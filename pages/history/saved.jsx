@@ -513,6 +513,7 @@ export default function HistorySavedPage() {
 
   // â"€â"€ Practice all â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   function startPractice(pool) {
+    const returnUrl = router.asPath || '/history/saved';
     // Map to quiz-compatible shape
     const quizQuestions = pool.map(q => ({
       id:            q.questionId,
@@ -527,7 +528,7 @@ export default function HistorySavedPage() {
       explanation:   q.explanation || '',
     }));
     try { sessionStorage.setItem('ssc_saved_quiz_questions', JSON.stringify(quizQuestions)); } catch {}
-    router.push(`/quiz?mode=saved&count=${quizQuestions.length}&sourceScreen=saved`);
+    router.push(`/quiz?mode=saved&count=${quizQuestions.length}&sourceScreen=saved&returnUrl=${encodeURIComponent(returnUrl)}`);
   }
 
   // â"€â"€ Stats â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€

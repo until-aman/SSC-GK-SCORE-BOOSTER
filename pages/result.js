@@ -181,6 +181,21 @@ function readMentorReturnContext(result) {
   return direct;
 }
 
+function normalizeInternalReturnUrl(value) {
+  if (!value || typeof value !== 'string') return '';
+  if (!value.startsWith('/') || value.startsWith('//')) return '';
+  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return '';
+  return value;
+}
+
+function getResultBackUrl(result) {
+  const mentorContext = readMentorReturnContext(result);
+  if (mentorContext?.sourceTaskId) return normalizeInternalReturnUrl(mentorContext.returnUrl) || '/mentor';
+  if (result?.sourceScreen === 'history') return normalizeInternalReturnUrl(result.returnUrl) || '/history/quizzes';
+  if (result?.sourceScreen === 'saved') return normalizeInternalReturnUrl(result.returnUrl) || '/history/saved';
+  return '/dashboard';
+}
+
 function isGuestMode() {
   if (typeof document === 'undefined') return false;
   return document.cookie.split(';').some(cookie => cookie.trim().startsWith('userMode=guest'));
@@ -334,6 +349,7 @@ export default function Result() {
   const landingConfettiShownRef = useRef(false);
   const leaderboardRefreshedAfterScoreRef = useRef(false);
   const mentorReturnSavedRef = useRef(false);
+  const resultBackUrl = getResultBackUrl(result);
 
 
 
@@ -763,9 +779,9 @@ export default function Result() {
       {/* ── STICKY HEADER ── */}
       <div style={{ position: 'sticky', top: 0, zIndex: 30, background: 'var(--ssc-surface)', borderBottom: '1px solid var(--ssc-border-soft)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 8px rgba(16,32,51,0.06)' }}>
         <button
-          onClick={() => router.push('/dashboard')}
+          onClick={() => router.push(resultBackUrl)}
           style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid var(--ssc-border-soft)', background: 'var(--ssc-surface-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          aria-label="Back to Dashboard"
+          aria-label={resultBackUrl.startsWith('/history') ? 'Back to History' : 'Back to Dashboard'}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-primary)" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         </button>

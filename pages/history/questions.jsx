@@ -46,7 +46,6 @@ function BookmarkIcon({ filled }) {
 
 function QuestionReviewCard({ item, aiCache, setAiCache, onToggleSave }) {
   const [open, setOpen] = useState(false);
-  const [explanationOpen, setExplanationOpen] = useState(false);
   const [questionExpanded, setQuestionExpanded] = useState(false);
   const tone = TONES[item.masteryTone] || TONES.grey;
   const cache = aiCache[item.questionId] || { official: item.explanation || '', ai: null, loading: false };
@@ -80,12 +79,11 @@ function QuestionReviewCard({ item, aiCache, setAiCache, onToggleSave }) {
       className="history-card question-review-card"
       role="button"
       tabIndex={0}
-      onClick={() => { setOpen(value => !value); if (open) setExplanationOpen(false); }}
+      onClick={() => setOpen(value => !value)}
       onKeyDown={event => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
           setOpen(value => !value);
-          if (open) setExplanationOpen(false);
         }
       }}
     >
@@ -134,8 +132,7 @@ function QuestionReviewCard({ item, aiCache, setAiCache, onToggleSave }) {
             </div>
           </div>
           <div className="divider" />
-          <button type="button" className="secondary-btn w-full" onClick={() => setExplanationOpen(value => !value)}>{explanationOpen ? 'Hide Explanation' : '📖 Show Explanation'}</button>
-          {explanationOpen && (
+          {true && (
             <div className="explanation-panel">
               <p className="detail-label">Explanation</p>
               {item.explanation ? (
@@ -239,14 +236,16 @@ export default function HistoryQuestionsPage() {
 
   function startQuestionSet(questions, quizMode, topicLabel) {
     if (!questions.length) return;
+    const returnUrl = router.asPath || '/history/questions';
     sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
       questions,
       quizMode,
       subject: String(router.query.subject || 'History'),
       topic: topicLabel,
       sourceCollection: questions[0]?.sourceCollection || 'general',
+      returnUrl,
     }));
-    router.push(`/quiz?mode=history&count=${questions.length}&sourceScreen=history`);
+    router.push(`/quiz?mode=history&count=${questions.length}&sourceScreen=history&returnUrl=${encodeURIComponent(returnUrl)}`);
   }
 
   async function practiceFilteredSet() {
@@ -267,14 +266,16 @@ export default function HistoryQuestionsPage() {
     });
     const json = await res.json();
     if (!res.ok || !json.success) return;
+    const returnUrl = router.asPath || '/history/questions';
     sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
       questions: json.data.questions,
       quizMode: json.data.quizMode,
       subject: subject || 'History',
       topic: topic || 'Filtered Practice',
       sourceCollection: 'general',
+      returnUrl,
     }));
-    router.push(`/quiz?mode=history&count=${json.data.questionCount}&sourceScreen=history`);
+    router.push(`/quiz?mode=history&count=${json.data.questionCount}&sourceScreen=history&returnUrl=${encodeURIComponent(returnUrl)}`);
   }
 
   async function toggleSave(question) {
@@ -387,7 +388,6 @@ export default function HistoryQuestionsPage() {
                   <QuestionReviewCard key={activeQuestion.questionId} item={activeQuestion} aiCache={aiCache} setAiCache={setAiCache} onToggleSave={toggleSave} />
                   <section className="bottom-action-card">
                     <button type="button" className="primary-btn" disabled={!practiceSet.length} onClick={() => startQuestionSet(practiceSet, activeFilter === 'skipped' ? 'reattempt_skipped' : 'reattempt_mistakes', activeFilter === 'skipped' ? 'Skipped Practice' : 'Mistake Practice')}>Practice {practiceSet.length} {practiceSetLabel}</button>
-                    <button type="button" className="secondary-btn" disabled={!allQuestions.length} onClick={() => startQuestionSet(allQuestions, 'reattempt_all', 'Full Set Re-attempt')}>Re-attempt All {allQuestions.length}</button>
                   </section>
                 </>
               ) : (
