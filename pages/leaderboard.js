@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -99,30 +99,13 @@ export default function Leaderboard() {
   const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [updatedAt, setUpdatedAt] = useState(null);
-  const [showCTA, setShowCTA] = useState(false);
-
-  useEffect(() => {
-    let timer;
-    function onInteract() {
-      timer = setTimeout(() => setShowCTA(true), 4000);
-    }
-    window.addEventListener('scroll', onInteract, { capture: true, once: true });
-    window.addEventListener('touchstart', onInteract, { capture: true, once: true });
-    window.addEventListener('pointermove', onInteract, { capture: true, once: true });
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('scroll', onInteract, true);
-      window.removeEventListener('touchstart', onInteract, true);
-      window.removeEventListener('pointermove', onInteract, true);
-    };
-  }, []);
 
   async function fetchLeaderboard(scope, { forceRefresh = false } = {}) {
     let showedCache = false;
     let cacheFresh  = false;
     const refreshStartedAt = forceRefresh ? Date.now() : 0;
 
-    // Outer try/finally guarantees setLoading(false) runs no matter what â€”
+    // Outer try/finally guarantees setLoading(false) runs no matter what â€"
     // even if cache reads throw, early returns fire, or the fetch hangs.
     try {
       if (scope === 'weekly') {
@@ -142,7 +125,7 @@ export default function Leaderboard() {
         } catch { /* ignore corrupt leaderboard cache */ }
       }
 
-      // Cache is fresh â€” nothing more to do unless the user explicitly refreshes.
+      // Cache is fresh â€" nothing more to do unless the user explicitly refreshes.
       if (cacheFresh && !forceRefresh) return;
 
       // Throttle background re-fetch only when stale cache is already visible
@@ -175,7 +158,7 @@ export default function Leaderboard() {
       }
 
     } finally {
-      // Always runs â€” clears loading/refreshing even if something threw above
+      // Always runs â€" clears loading/refreshing even if something threw above
       if (forceRefresh) {
         const remainingMs = 650 - (Date.now() - refreshStartedAt);
         if (remainingMs > 0) await new Promise(resolve => setTimeout(resolve, remainingMs));
@@ -219,31 +202,41 @@ export default function Leaderboard() {
       <Head><title>Leaderboard - SSC GK Score Booster</title></Head>
       <div className="h-screen flex flex-col pb-16 bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)]">
 
-        {/* Fixed header */}
+        {/* Sticky header — matches all other tab topbars */}
         <div
-          className="flex-shrink-0 px-4 pt-4 pb-4"
-          style={{ background: 'rgba(255,255,255,0.94)', borderBottom: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}
+          className="flex-shrink-0"
+          style={{
+            background: 'rgba(255,255,255,0.94)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            borderBottom: '1px solid var(--ssc-border-soft)',
+            borderRadius: '0 0 22px 22px',
+            boxShadow: '0 10px 30px rgba(16,32,51,0.08)',
+          }}
         >
-          {/* Close + Title on same row â€” title truly centred */}
-          <div className="relative flex items-center mb-3">
-            <button
-              onClick={() => router.back()}
-              className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-[var(--ssc-surface-soft)] border border-[var(--ssc-border-soft)] active:bg-[var(--ssc-teal-soft)] transition-colors"
-              aria-label="Go back"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-primary)" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M18 6L6 18M6 6l12 12"/>
-              </svg>
-            </button>
-            <SectionHeader
-              title="Leaderboard"
-              className="absolute left-1/2 -translate-x-1/2"
-              titleClassName="text-[var(--ssc-text-primary)] whitespace-nowrap"
-            />
+          {/* Title row — 58px, same as every other tab */}
+          <div className="px-4 flex items-center" style={{ height: 58 }}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-[11px] flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,107,22,0.10)' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                  <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                  <path d="M4 22h16"/>
+                  <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                  <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                  <path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
+                </svg>
+              </div>
+              <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center" style={{ color: 'var(--ssc-text-primary)' }}>
+                Leaderboard
+              </span>
+            </div>
           </div>
+        </div>
 
-          {/* Tab switcher */}
-          <div className="flex rounded-full p-1 w-fit mx-auto gap-1" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}>
+        {/* Tab switcher — below topbar, stays fixed */}
+        <div className="flex-shrink-0 flex justify-center py-3">
+          <div className="flex rounded-full p-1 w-fit gap-1" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}>
             {[
               { key: 'weekly', label: 'This Week' },
               { key: 'all',    label: 'All Time' },
@@ -301,7 +294,7 @@ export default function Leaderboard() {
             ) : (
               <>
 
-                {/* â”€â”€ Your Rank â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                {/* â"€â"€ Your Rank â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
                 {!session ? (
                   <GoogleSignInCard
                     className="mb-4"
@@ -318,7 +311,7 @@ export default function Leaderboard() {
                   <div className="mb-4 px-4 py-4" style={{ background: 'linear-gradient(135deg, var(--ssc-teal-soft), #FFFFFF)', border: '1px solid rgba(14,165,164,0.24)', borderRadius: 22, boxShadow: 'var(--ssc-shadow-card)' }}>
                     <p className="t-section-label" style={{ color: 'var(--ssc-teal)', marginBottom: 10 }}>Your Rank</p>
 
-                    {/* Rank Â· Name Â· Level â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€” Score */}
+                    {/* Rank Â· Name Â· Level â€"â€"â€"â€"â€"â€"â€"â€"â€"â€"â€" Score */}
                     <div className="flex items-center gap-2">
                       <span className="t-stat-lg font-display text-[var(--ssc-rank)] flex-shrink-0">
                         #{effectiveCurrentUser.rank}
@@ -339,7 +332,7 @@ export default function Leaderboard() {
                       </div>
                     </div>
 
-                    {/* Message â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€” Practice â†’ */}
+                    {/* Message â€"â€"â€"â€"â€"â€"â€"â€"â€"â€"â€"â€"â€"â€"â€"â€"â€"â€"â€"â€"â€" Practice â†’ */}
                     <div className="flex items-center justify-between mt-2.5">
                       {effectiveCurrentUser.rank <= 3 ? (
                         <p className="font-sans text-[13px] text-[var(--ssc-teal)]" style={{ margin: 0 }}>You are in the Top 3!</p>
@@ -361,7 +354,7 @@ export default function Leaderboard() {
                   </div>
                 )}
 
-                {/* â”€â”€ Top 3 Champions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                {/* â"€â"€ Top 3 Champions â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
                 {(() => {
                   const top3 = [
                     { leader: first,  medal: '1', color: 'var(--ssc-coin)', rowBg: 'var(--ssc-warning-soft)', avatarBorder: 'rgba(246,179,49,0.58)' },
@@ -411,7 +404,7 @@ export default function Leaderboard() {
                   );
                 })()}
 
-                {/* â”€â”€ Refresh / cache info bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                {/* â"€â"€ Refresh / cache info bar â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
                 <div className="flex justify-end mt-2 mb-3">
                   <RefreshStatus
                     updatedAt={updatedAt}
@@ -429,7 +422,7 @@ export default function Leaderboard() {
                   />
                 </div>
 
-                {/* â”€â”€ Rank 4 and beyond â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                {/* â"€â"€ Rank 4 and beyond â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
                 {rest.length > 0 && (
                   <>
                     {rest.map(leader => (
@@ -449,31 +442,6 @@ export default function Leaderboard() {
           </div>
         </div>
 
-        {/* Practice CTA â€” fixed above bottom nav, slides in after user interaction */}
-        <div
-          className="fixed bottom-[74px] left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 z-40"
-          style={{
-            opacity: showCTA ? 1 : 0,
-            transform: showCTA ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(16px)',
-            transition: 'opacity 0.4s ease, transform 0.4s ease',
-            pointerEvents: showCTA ? 'auto' : 'none',
-          }}
-        >
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="w-full font-display font-bold text-base text-white active:scale-[0.98] transition-transform"
-            style={{
-              borderRadius: 18,
-              padding: '15px 0',
-              border: 'none',
-              cursor: 'pointer',
-              background: 'linear-gradient(135deg, #FF7A1A, #FF4D00)',
-              boxShadow: '0 12px 28px rgba(255,90,0,0.22)',
-            }}
-          >
-            Practice to climb rank &rarr;
-          </button>
-        </div>
       </div>
 
 

@@ -11,9 +11,20 @@ const { auditV2Mutations, evaluateMonitorAlerts, EXPECTED_AFFECTED_REAL_PLAN } =
 
 const MR_H = ['IdempotencyKey', 'UserScopeHash', 'PlanId', 'TaskId', 'Action', 'Status'];
 const LOG_H = ['CanonicalAction', 'TaskId', 'SourcePage', 'ToStatus', 'IdempotencyKey', 'PlanId'];
-// `Type` appended LAST so existing 7-field task fixtures stay valid (missing => '').
-const TASK_H = ['TaskId', 'PlanId', 'Status', 'PendingReason', 'MovedToPendingAt', 'RowVersion', 'CompletionSource', 'Type'];
-const PLAN_H = ['PlanId', 'LastProcessedCalendarDay'];
+// `Type` then `CreatedAt` appended LAST so existing shorter task fixtures stay valid (missing => '').
+const TASK_H = ['TaskId', 'PlanId', 'Status', 'PendingReason', 'MovedToPendingAt', 'RowVersion', 'CompletionSource', 'Type', 'CreatedAt'];
+// Status + CreatedAt appended so existing 2-col plan fixtures (PlanId, LastProcessedCalendarDay) stay valid.
+// Phase 10F2: Email/PlanStartLocalDate/Timezone/TotalPlanDays appended for the rollover-lag counter.
+const PLAN_H = ['PlanId', 'LastProcessedCalendarDay', 'Status', 'CreatedAt', 'Email', 'PlanStartLocalDate', 'Timezone', 'TotalPlanDays'];
+// PLAN_H-ordered plan-row fixture: [PlanId, LastProcessedCalendarDay, Status, CreatedAt].
+const planGen = (planId, { status = 'active', createdAt = '2026-01-01T00:00:00Z', lastProcessed = '' } = {}) => [planId, lastProcessed, status, createdAt];
+// Full plan row incl. the lag-relevant columns.
+const crypto = require('crypto');
+const scopeOf = e => `u_${crypto.createHash('sha256').update(String(e || 'unknown')).digest('hex').slice(0, 16)}`;
+const planFull = (planId, { email, status = 'active', createdAt = '2026-06-11T00:00:00Z', lastProcessed = '', planStart = '2026-06-11', tz = 'Asia/Kolkata', total = '30' } = {}) =>
+  [planId, lastProcessed, status, createdAt, email, planStart, tz, total];
+// TASK_H-ordered active-task fixture with an explicit CreatedAt (for generation scoping).
+const activeTask = (taskId, planId, createdAt) => [taskId, planId, 'active', '', '', '1', '', 'practice_task', createdAt];
 const REAL = 'MP_1780920810055';
 const key = (scope, action, op) => `mentor-task:${scope}:P:T:${action}:${op}`;
 const rKey = (scope, plan, day) => `mentor-rollover:${scope}:${plan}:${day}`;
@@ -170,10 +181,12 @@ test('R7b. quick-check pending on a NON-rollover plan => no anomaly (scoped, avo
   })), { allowedUserHashes: [] });
   assert.strictEqual(audit.quickChecksIncorrectlyPendingByRollover, 0);
 });
-test('R8. active task count > 3 on a rollover-processed plan => CRITICAL', async () => {
+test('R8. active task count > 3 on a rollover-processed plan (current generation) => CRITICAL', async () => {
   const taskRows = [];
-  for (let i = 0; i < 4; i++) taskRows.push([`AT${i}`, 'P1', 'active', '', '', '1', '', 'practice_task']);
-  const audit = await auditV2Mutations(fakeSheets(tabs({ tasks: taskRows, logs: [rolloverLog('P1')] })), { allowedUserHashes: [] });
+  for (let i = 0; i < 4; i++) taskRows.push(activeTask(`AT${i}`, 'P1', '2026-06-02T00:00:00Z'));
+  const audit = await auditV2Mutations(fakeSheets(tabs({
+    tasks: taskRows, plans: [planGen('P1', { status: 'active', createdAt: '2026-06-01T00:00:00Z' })], logs: [rolloverLog('P1')],
+  })), { allowedUserHashes: [] });
   assert.strictEqual(audit.activeTaskCountOverLimit, 1);
   const r = evaluateMonitorAlerts(audit);
   assert.strictEqual(r.status, 'CRITICAL');
@@ -181,10 +194,63 @@ test('R8. active task count > 3 on a rollover-processed plan => CRITICAL', async
 });
 test('R8b. >3 active on a NON-rollover plan (normal generator output) => OK (Phase 9M3-style false-positive guard)', async () => {
   const taskRows = [];
-  for (let i = 0; i < 5; i++) taskRows.push([`AT${i}`, 'P9', 'active', '', '', '1', '', 'practice_task']);
-  const audit = await auditV2Mutations(fakeSheets(tabs({ tasks: taskRows })), { allowedUserHashes: [] });
+  for (let i = 0; i < 5; i++) taskRows.push(activeTask(`AT${i}`, 'P9', '2026-06-02T00:00:00Z'));
+  const audit = await auditV2Mutations(fakeSheets(tabs({ tasks: taskRows, plans: [planGen('P9')] })), { allowedUserHashes: [] });
   assert.strictEqual(audit.activeTaskCountOverLimit, 0);
   assert.strictEqual(evaluateMonitorAlerts(audit).status, 'OK');
+});
+test('C1. Phase 10D-FIX: multi-generation same-PlanId — OLD gens have >3 active, CURRENT gen <=3 => activeTaskCountOverLimit=0, OK', async () => {
+  // Exact Phase 10D pilot shape: 11 invalid old gens + 1 active; old-gen active tasks must NOT count.
+  const plans = [
+    planGen('MP_T9B2', { status: 'invalid', createdAt: '2026-06-11T00:00:00Z' }),
+    planGen('MP_T9B2', { status: 'active', createdAt: '2026-06-12T03:09:44Z', lastProcessed: '3' }),
+  ];
+  const tasks = [];
+  for (let i = 0; i < 6; i++) tasks.push(activeTask(`OLD${i}`, 'MP_T9B2', '2026-06-11T05:00:00Z')); // old gen (before active)
+  for (let i = 0; i < 2; i++) tasks.push(activeTask(`CUR${i}`, 'MP_T9B2', '2026-06-12T04:00:00Z')); // current gen
+  const audit = await auditV2Mutations(fakeSheets(tabs({ plans, tasks, logs: [rolloverLog('MP_T9B2')] })), { allowedUserHashes: [] });
+  assert.strictEqual(audit.activeTaskCountOverLimit, 0, 'stale generations must not inflate the active count');
+  assert.strictEqual(audit.rolloverPlansMissingLastProcessedCalendarDay, 0, 'active-row marker present');
+  assert.ok(!evaluateMonitorAlerts(audit).alerts.some(a => a.code === 'ACTIVE_TASK_LIMIT_EXCEEDED'));
+});
+test('C2. Phase 10D-FIX: CURRENT generation genuinely has >3 active => activeTaskCountOverLimit>0, CRITICAL', async () => {
+  const plans = [planGen('MP_T9B2', { status: 'active', createdAt: '2026-06-12T03:00:00Z', lastProcessed: '3' })];
+  const tasks = [];
+  for (let i = 0; i < 4; i++) tasks.push(activeTask(`CUR${i}`, 'MP_T9B2', '2026-06-12T04:00:00Z'));
+  const audit = await auditV2Mutations(fakeSheets(tabs({ plans, tasks, logs: [rolloverLog('MP_T9B2')] })), { allowedUserHashes: [] });
+  assert.strictEqual(audit.activeTaskCountOverLimit, 1);
+  const r = evaluateMonitorAlerts(audit);
+  assert.strictEqual(r.status, 'CRITICAL');
+  assert.ok(r.alerts.some(a => a.code === 'ACTIVE_TASK_LIMIT_EXCEEDED'));
+});
+test('C3. Phase 10D-FIX: marker on a STALE invalid row but blank on the ACTIVE row => still WARNING (missing)', async () => {
+  const plans = [
+    planGen('MP_T9B2', { status: 'invalid', createdAt: '2026-06-11T00:00:00Z', lastProcessed: '3' }), // stale marker
+    planGen('MP_T9B2', { status: 'active', createdAt: '2026-06-12T03:00:00Z', lastProcessed: '' }),    // active blank
+  ];
+  const audit = await auditV2Mutations(fakeSheets(tabs({ plans, logs: [rolloverLog('MP_T9B2')] })), { allowedUserHashes: [] });
+  assert.strictEqual(audit.rolloverPlansMissingLastProcessedCalendarDay, 1, 'only the ACTIVE row counts for the marker');
+  assert.ok(evaluateMonitorAlerts(audit).alerts.some(a => a.code === 'ROLLOVER_LAST_PROCESSED_MISSING'));
+});
+test('C4. Phase 10F2 rollover-lag: eligible owed plan with no ROLLOVER row => WARNING; completed/off/non-allowlisted => none', async () => {
+  const EM = 'lagtest@x'; const SC = scopeOf(EM); const NOW = '2026-06-13T08:00:00Z';
+  // planStart 2026-06-11 -> calendarDay 3 (>lastProcessed 1); allowlisted; no ROLLOVER row.
+  const plans = [planFull('PL', { email: EM, lastProcessed: '1', planStart: '2026-06-11', createdAt: '2026-06-11T00:00:00Z' })];
+  const owed = await auditV2Mutations(fakeSheets(tabs({ plans })), { rolloverAllowedUserHashes: [SC], rolloverFlagOn: true, nowIso: NOW });
+  assert.strictEqual(owed.rolloverEligiblePlansLagging, 1, 'eligible owed plan is lagging');
+  const r = evaluateMonitorAlerts(owed);
+  const lagAlert = r.alerts.find(a => a.code === 'ROLLOVER_ELIGIBLE_PLANS_LAGGING');
+  assert.ok(lagAlert, 'ROLLOVER_ELIGIBLE_PLANS_LAGGING WARNING raised');
+  assert.strictEqual(lagAlert.level, 'WARNING', 'lag is WARNING, never CRITICAL');
+  // completed ROLLOVER row for that plan/day => not lagging
+  const done = await auditV2Mutations(fakeSheets(tabs({ plans, mr: [[rKey(SC, 'PL', '3'), SC, 'PL', '', 'ROLLOVER', 'completed']] })), { rolloverAllowedUserHashes: [SC], rolloverFlagOn: true, nowIso: NOW });
+  assert.strictEqual(done.rolloverEligiblePlansLagging, 0, 'completed rollover clears lag');
+  // flag off => never counted
+  const off = await auditV2Mutations(fakeSheets(tabs({ plans })), { rolloverAllowedUserHashes: [SC], rolloverFlagOn: false, nowIso: NOW });
+  assert.strictEqual(off.rolloverEligiblePlansLagging, 0, 'no lag when MENTOR_DAILY_ROLLOVER_V2 off');
+  // non-allowlisted owner => never counted
+  const nal = await auditV2Mutations(fakeSheets(tabs({ plans })), { rolloverAllowedUserHashes: ['u_someoneelse'], rolloverFlagOn: true, nowIso: NOW });
+  assert.strictEqual(nal.rolloverEligiblePlansLagging, 0, 'no lag for non-allowlisted user');
 });
 test('R9. successful rollover events but blank LastProcessedCalendarDay => WARNING', async () => {
   const audit = await auditV2Mutations(fakeSheets(tabs({

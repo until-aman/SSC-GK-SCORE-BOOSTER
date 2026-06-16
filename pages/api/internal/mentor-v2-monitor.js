@@ -20,7 +20,11 @@ export default async function handler(req, res) {
   try {
     const sheets = await getSheetsClient();
     const allowedUserHashes = flags.getV2MutationAllowedUserHashes();
-    const audit = await auditV2Mutations(sheets, { allowedUserHashes }); // read-only
+    const audit = await auditV2Mutations(sheets, {
+      allowedUserHashes,
+      rolloverAllowedUserHashes: flags.getDailyRolloverAllowedUserHashes(),
+      rolloverFlagOn: flags.isMentorDailyRolloverV2Enabled(),
+    }); // read-only
     const flagState = {
       MENTOR_TASK_MUTATIONS_V2: flags.isMentorTaskMutationsV2Enabled(),
       MENTOR_SHEETS_MUTATIONS_V2: flags.isMentorSheetsMutationsV2Enabled(),

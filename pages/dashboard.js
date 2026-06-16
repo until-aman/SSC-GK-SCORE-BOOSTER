@@ -854,15 +854,12 @@ export default function Dashboard() {
           className="sticky top-0 z-50 px-4 flex items-center justify-between"
           style={{
             height: '58px',
-            background: 'rgba(255,255,255,0.88)',
+            background: 'rgba(255,255,255,0.94)',
             backdropFilter: 'blur(14px)',
             WebkitBackdropFilter: 'blur(14px)',
-            border: '1px solid var(--ssc-border-soft)',
-            borderTop: 'none',
-            borderLeft: 'none',
-            borderRight: 'none',
+            borderBottom: '1px solid var(--ssc-border-soft)',
             borderRadius: '0 0 22px 22px',
-            boxShadow: 'var(--ssc-shadow-card)',
+            boxShadow: '0 10px 30px rgba(16,32,51,0.08)',
           }}
         >
           {/* Left: Bolt + App name */}
@@ -1162,109 +1159,124 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => handleDiscoverClick('PYQ', '/subjects?collection=PYQ')}
-              className="card-lift w-full text-left"
-              style={{
-                minHeight: 142,
-                borderRadius: 16,
-                padding: '16px 12px',
-                background: 'var(--ssc-surface)',
-                border: '1px solid var(--ssc-border-soft)',
-                boxShadow: 'var(--ssc-shadow-card)',
-                cursor: 'pointer',
-              }}
-            >
-              <div className="flex items-start gap-3">
-                <span style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 999,
-                  background: 'var(--ssc-teal-soft)',
-                  color: 'var(--ssc-teal)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  fontSize: 20,
-                }}>
-                  ▣
-                </span>
-                <div style={{ minWidth: 0 }}>
-                  <p className="t-card-title" style={{ color: 'var(--text-primary)', margin: 0, fontSize: 14 }}>SSC PYQs</p>
-                  <p className="t-card-subtitle" style={{ color: 'var(--text-secondary)', marginTop: 5, fontSize: 12, lineHeight: 1.35 }}>
-                    Previous year questions by topic
-                  </p>
-                </div>
-              </div>
-              <p className="t-badge" style={{
-                color: 'var(--ssc-teal)',
+          {/* SSC PYQs — full-width primary card */}
+          <div style={{
+            background: 'var(--ssc-surface)',
+            border: '1px solid var(--ssc-border-soft)',
+            borderRadius: 22,
+            padding: 20,
+            marginBottom: 12,
+            boxShadow: 'var(--ssc-shadow-card)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14 }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: 999, flexShrink: 0,
                 background: 'var(--ssc-teal-soft)',
-                borderRadius: 999,
-                display: 'inline-block',
-                marginTop: 18,
-                padding: '5px 10px',
-                fontSize: 11,
-              }}>
-                7,000+ Questions
-              </p>
-            </button>
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 26, lineHeight: 1,
+                fontFamily: '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif',
+              }}>📚</div>
+              <div style={{ minWidth: 0 }}>
+                <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', margin: '0 0 3px', fontSize: 16 }}>SSC PYQs</p>
+                <p className="t-card-subtitle" style={{ color: 'var(--ssc-text-secondary)', margin: 0, fontSize: 13, lineHeight: 1.4 }}>Practice real previous year questions</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+              {['7,000+ Questions', 'Exam-level', 'Subject-wise'].map(chip => (
+                <span key={chip} className="t-badge" style={{
+                  color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)',
+                  border: '1px solid rgba(14,165,164,0.20)',
+                  borderRadius: 999, padding: '4px 10px', lineHeight: 1.5,
+                }}>{chip}</span>
+              ))}
+            </div>
 
             <button
-              onClick={() => setModal('Parmar')}
-              className="card-lift w-full text-left"
+              onClick={() => handleDiscoverClick('PYQ', '/subjects?collection=PYQ')}
+              className="w-full active:scale-[0.98] transition-transform font-display font-bold text-white"
               style={{
-                minHeight: 142,
-                borderRadius: 16,
-                padding: '16px 12px',
-                background: 'var(--ssc-surface)',
-                border: '1px solid var(--ssc-border-soft)',
-                boxShadow: 'var(--ssc-shadow-card)',
-                cursor: 'pointer',
+                padding: '13px 0', borderRadius: 14, border: 'none', cursor: 'pointer',
+                background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)',
+                boxShadow: '0 8px 20px rgba(255,90,0,0.22)', fontSize: 15,
               }}
             >
-              <div className="flex items-start gap-3">
-                <span style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 999,
-                  background: '#F2EAFE',
-                  color: 'var(--ssc-rank)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  fontSize: 22,
-                }}>
-                  ◒
-                </span>
-                <div style={{ minWidth: 0 }}>
-                  <p className="t-card-title" style={{ color: 'var(--text-primary)', margin: 0, fontSize: 14 }}>Parmar SSC</p>
-                  <p className="t-card-subtitle" style={{ color: 'var(--text-secondary)', marginTop: 5, fontSize: 12, lineHeight: 1.35 }}>
-                    Parmar SSC special quizzes
-                  </p>
-                </div>
-              </div>
-              <p className="t-badge" style={{
-                color: 'var(--ssc-rank)',
-                background: '#F7ECFF',
-                borderRadius: 999,
-                display: 'inline-block',
-                marginTop: 18,
-                padding: '5px 10px',
-                fontSize: 11,
-              }}>
-                Coming Soon
-              </p>
+              Start PYQ Practice →
             </button>
+          </div>
+
+          {/* Parmar SSC — full-width secondary card */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setModal('Parmar')}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setModal('Parmar'); } }}
+            className="active:scale-[0.98] transition-transform"
+            style={{
+              background: 'var(--ssc-surface)',
+              border: '1px solid var(--ssc-border-soft)',
+              borderRadius: 22,
+              padding: 20,
+              boxShadow: 'var(--ssc-shadow-card)',
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 16,
+            }}
+          >
+            <div style={{
+              width: 56, height: 56, borderRadius: 999, flexShrink: 0,
+              background: '#F2EAFE',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 26, lineHeight: 1,
+              fontFamily: '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif',
+            }}>🎬</div>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', margin: '0 0 3px', fontSize: 16 }}>Parmar SSC</p>
+              <p className="t-card-subtitle" style={{ color: 'var(--ssc-text-secondary)', margin: '0 0 10px', fontSize: 13, lineHeight: 1.4 }}>Video-wise GK quizzes coming soon</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span className="t-badge" style={{
+                  color: '#7C3AED', background: '#F2EAFE',
+                  border: '1px solid rgba(124,58,237,0.20)',
+                  borderRadius: 999, padding: '4px 10px', lineHeight: 1.5,
+                }}>Coming Soon</span>
+                <span className="font-display font-bold" style={{ color: 'var(--ssc-orange-deep)', fontSize: 13 }}>
+                  Notify Me →
+                </span>
+              </div>
+            </div>
+
+            <div style={{
+              width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+              background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-secondary)" strokeWidth="2.5">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
           </div>
         </div>
 
         {/* ── WEEKLY CHAMPIONS ── */}
-        <div className="mb-4 px-4">
+        <div className="mb-4" style={{ padding: '0 20px' }}>
+          {/* Section header — outside the card, same pattern as DISCOVER QUIZZES */}
+          <div className="flex items-center justify-between mb-3">
+            <p className="t-section-label app-section-label" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+              WEEKLY CHAMPIONS
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push('/leaderboard')}
+              className="t-button-sm font-sans font-bold active:opacity-70"
+              style={{ color: 'var(--ssc-teal)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+            >
+              View full leaderboard →
+            </button>
+          </div>
+
+          {/* Card — champions only, no inner header */}
           <div
-            className="app-card p-4"
+            className="app-card"
             role="button"
             tabIndex={0}
             onClick={() => router.push('/leaderboard')}
@@ -1274,11 +1286,7 @@ export default function Dashboard() {
                 router.push('/leaderboard');
               }
             }}
-            style={{
-            padding: 18,
-            cursor: 'pointer',
-            transition: 'transform 150ms ease',
-          }}
+            style={{ padding: 18, cursor: 'pointer', transition: 'transform 150ms ease' }}
             onPointerDown={e => { setChampsPaused(true); e.currentTarget.style.transform = 'scale(0.98)'; }}
             onPointerUp={e => { setChampsPaused(false); e.currentTarget.style.transform = 'scale(1)'; }}
             onPointerLeave={e => { setChampsPaused(false); e.currentTarget.style.transform = 'scale(1)'; }}
@@ -1286,32 +1294,6 @@ export default function Dashboard() {
             onTouchEnd={() => setChampsPaused(false)}
             onTouchCancel={() => setChampsPaused(false)}
           >
-
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div>
-                <p className="t-card-title" style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <span style={{ fontSize: 16, lineHeight: 1 }}>🏆</span>
-                  Weekly Champions
-                </p>
-              </div>
-              <div className="flex items-center gap-3" style={{ paddingTop: 4 }}>
-                <button
-                  onClick={e => {
-                    e.stopPropagation();
-                    router.push('/leaderboard');
-                  }}
-                  className="t-button-sm flex items-center gap-1 font-sans active:opacity-70"
-                  style={{ color: 'var(--ssc-teal)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontWeight: 700 }}
-                >
-                  View full leaderboard
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M9 18l6-6-6-6" strokeLinecap="round"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
             {weeklyLoading && topPlayers.length === 0 ? (
               <div className="py-4">
                 <Loader card size="sm" label="Loading weekly champions..." />
@@ -1330,6 +1312,12 @@ export default function Dashboard() {
                       { bg: '#EEF3F7', border: '#9AA8B8', text: '#64748B' },
                       { bg: '#FFF1E8', border: '#F97316', text: '#EA580C' },
                     ][idx] || { bg: 'var(--ssc-surface-soft)', border: 'var(--ssc-border-soft)', text: 'var(--ssc-text-secondary)' };
+                    const tagLabel  = idx === 0 ? 'Champion' : (player.level || 'Scholar');
+                    const tagColors = [
+                      { bg: '#FFF7E6', color: '#F59E0B' },
+                      { bg: '#EEF3F7', color: '#64748B' },
+                      { bg: '#FFF1E8', color: '#EA580C' },
+                    ][idx] || { bg: 'var(--ssc-surface-soft)', color: 'var(--ssc-text-muted)' };
                     return (
                       <div
                         key={player.email || player.name || idx}
@@ -1366,21 +1354,19 @@ export default function Dashboard() {
                         <p className="font-display font-black truncate" style={{ color: isSelf ? 'var(--ssc-teal)' : 'var(--ssc-text-primary)', fontSize: 12, margin: 0 }}>
                           {(player.name || 'User').split(' ')[0]}
                         </p>
-                        {idx === 0 && (
-                          <span style={{
-                            display: 'inline-block',
-                            marginTop: 3,
-                            padding: '2px 7px',
-                            borderRadius: 999,
-                            background: '#FFF7E6',
-                            color: '#F59E0B',
-                            fontSize: 10,
-                            fontWeight: 800,
-                          }}>
-                            Champion
-                          </span>
-                        )}
-                        <p className="font-sans font-bold" style={{ color: 'var(--ssc-text-secondary)', fontSize: 11, margin: idx === 0 ? '4px 0 0' : '21px 0 0' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          marginTop: 3,
+                          padding: '2px 7px',
+                          borderRadius: 999,
+                          background: tagColors.bg,
+                          color: tagColors.color,
+                          fontSize: 10,
+                          fontWeight: 800,
+                        }}>
+                          {tagLabel}
+                        </span>
+                        <p className="font-sans font-bold" style={{ color: 'var(--ssc-text-secondary)', fontSize: 11, margin: '4px 0 0' }}>
                           {Math.round(player.totalScore || 0).toLocaleString()} Coins
                         </p>
                       </div>
@@ -1406,10 +1392,8 @@ export default function Dashboard() {
                     />
                   </div>
                 )}
-
               </>
             )}
-
           </div>
         </div>
 

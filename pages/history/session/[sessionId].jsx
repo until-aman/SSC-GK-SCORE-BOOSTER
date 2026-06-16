@@ -11,12 +11,12 @@ import { getAIExplanation as getAIExplanationHelper } from '@/lib/data/aiData';
 
 const FILTERS = ['Wrong + Skipped', 'Wrong', 'Skipped', 'Correct', 'Saved'];
 const TONES = {
-  red: ['#FCA5A5', 'rgba(239,68,68,0.12)'],
-  amber: ['#FCD34D', 'rgba(245,158,11,0.12)'],
-  green: ['#86EFAC', 'rgba(34,197,94,0.12)'],
-  blue: ['#93C5FD', 'rgba(59,130,246,0.12)'],
-  orange: ['#FDBA74', 'rgba(255,122,26,0.12)'],
-  grey: ['#CBD5E1', 'rgba(148,163,184,0.10)'],
+  red:    ['#B91C1C', 'rgba(239,68,68,0.10)'],
+  amber:  ['#B45309', 'rgba(245,158,11,0.10)'],
+  green:  ['#047857', 'rgba(16,185,129,0.10)'],
+  blue:   ['#1D4ED8', 'rgba(59,130,246,0.10)'],
+  orange: ['#C2410C', 'rgba(249,115,22,0.10)'],
+  grey:   ['#374151', 'rgba(107,114,128,0.10)'],
 };
 
 const QuizReviewIcon = (
@@ -126,12 +126,22 @@ function QuestionCard({ item, onToggleSave }) {
 
       <div className="answer-compare">
         <div className={`answer-row ${item.isSkipped ? 'skipped' : item.isCorrect ? 'correct' : 'wrong'}`}>
-          <span>Your Answer</span>
-          <b>{item.isSkipped ? 'Skipped' : `${optionText(item, item.userAnswer) || item.userAnswer || '-'}${item.userAnswer ? ` (Option ${item.userAnswer})` : ''}`}</b>
+          <span className="answer-label">Your Answer</span>
+          <div className="answer-value">
+            <b>{item.isSkipped ? 'Skipped' : `${optionText(item, item.userAnswer) || item.userAnswer || '-'}${item.userAnswer ? ` (Option ${item.userAnswer})` : ''}`}</b>
+            {!item.isSkipped && (item.isCorrect ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            ))}
+          </div>
         </div>
         <div className="answer-row correct">
-          <span>Correct Answer</span>
-          <b>{optionText(item, item.correctOption) || item.correctOption} (Option {item.correctOption})</b>
+          <span className="answer-label">Correct Answer</span>
+          <div className="answer-value">
+            <b>{optionText(item, item.correctOption) || item.correctOption} (Option {item.correctOption})</b>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
         </div>
       </div>
 
@@ -144,18 +154,27 @@ function QuestionCard({ item, onToggleSave }) {
       </div>
 
       <div className="review-action-row">
-        <button onClick={handleShowExplanation} className="secondary-btn">{expanded ? 'Hide Explanation' : 'Show Explanation'}</button>
+        <button onClick={handleShowExplanation} className="secondary-btn">{expanded ? 'Hide Explanation' : '📖 Show Explanation'}</button>
       </div>
 
       {expanded && cache && (
         <div className="explain-box">
           <p className="explain-title">Explanation</p>
-          {cache.official ? <p className="text-sm text-slate-200 leading-relaxed">{cache.official}</p> : <p className="text-sm text-slate-500">No official explanation available.</p>}
-          {cache.ai && <p className="text-sm text-orange-100 leading-relaxed mt-3">{cache.ai}</p>}
+          {cache.official ? (
+            <p style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', lineHeight: 1.58, margin: 0 }}>{cache.official}</p>
+          ) : (
+            <p style={{ fontSize: 13, color: 'var(--ssc-text-muted)', lineHeight: 1.55 }}>No official explanation available.</p>
+          )}
+          {cache.ai && (
+            <div style={{ marginTop: 10, padding: 11, background: 'rgba(139,92,246,0.07)', border: '1px solid rgba(139,92,246,0.18)', borderRadius: 12 }}>
+              <p style={{ fontSize: 11, fontWeight: 900, color: '#7C3AED', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 7px' }}>✦ AI Explanation</p>
+              <p style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', lineHeight: 1.55, margin: 0 }}>{cache.ai}</p>
+            </div>
+          )}
           {cache.loading ? (
             <div className="mt-3 space-y-2"><div className="skeleton h-3 w-full rounded" /><div className="skeleton h-3 w-4/5 rounded" /></div>
           ) : (
-            !item.isCorrect && <button onClick={handleGetAIExplanation} className="secondary-btn mt-3 w-full">Get AI Explanation</button>
+            !item.isCorrect && <button onClick={handleGetAIExplanation} className="secondary-btn mt-3 w-full">Get AI Explanation ✦</button>
           )}
         </div>
       )}
@@ -285,9 +304,9 @@ export default function SessionReviewPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen [background:var(--bg-app)] pb-24">
+      <div className="min-h-screen bg-[var(--ssc-bg)] pb-24">
         <Head><title>Review Session - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack />
+        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
         <main className="px-4 pt-5">
           <Loader card size="md" label="Loading review..." />
         </main>
@@ -297,11 +316,11 @@ export default function SessionReviewPage() {
 
   if (status === 'unauthenticated') {
     return (
-      <div className="min-h-screen [background:var(--bg-app)] pb-24">
+      <div className="min-h-screen bg-[var(--ssc-bg)] pb-24">
         <Head><title>Review Session - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack />
+        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
         <main className="px-4 pt-5">
-          <p className="font-display font-bold text-white mb-2">Sign in to see your history.</p>
+          <p className="font-display font-bold text-[var(--ssc-text-primary)] mb-2">Sign in to see your history.</p>
           <button className="primary-btn" onClick={() => router.push('/api/auth/signin')}>Continue with Google</button>
         </main>
       </div>
@@ -310,12 +329,12 @@ export default function SessionReviewPage() {
 
   if (error || !session) {
     return (
-      <div className="min-h-screen [background:var(--bg-app)] pb-24">
+      <div className="min-h-screen bg-[var(--ssc-bg)] pb-24">
         <Head><title>Review Session - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack />
+        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
         <main className="px-4 pt-5">
           <div className="review-card text-center">
-            <p className="font-display font-bold text-white">This session is no longer available.</p>
+            <p className="font-display font-bold text-[var(--ssc-text-primary)]">This session is no longer available.</p>
             <button className="primary-btn mt-4" onClick={() => router.push('/history')}>Back to History</button>
           </div>
         </main>
@@ -324,62 +343,77 @@ export default function SessionReviewPage() {
   }
 
   const mistakes = session.incorrect + session.skipped;
+  const scoreColor = Number(session.score) < 0 ? '#DC2626' : Number(session.score) > 0 ? 'var(--ssc-orange-deep)' : 'var(--ssc-text-muted)';
 
   return (
     <>
       <Head><title>Review Session - SSC GK Score Booster</title></Head>
-      <div className="min-h-screen [background:var(--bg-app)] review-page-shell">
+      <div className="min-h-screen bg-[var(--ssc-bg)] review-page-shell">
         <style>{`
-          .review-card{background:#172D47;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;margin-bottom:12px}
-          .primary-btn{border:0;border-radius:14px;background:linear-gradient(135deg,#FF7A1A,#FF4D00);color:white;font-size:13px;font-weight:800;padding:11px 12px;text-align:center;cursor:pointer}
-          .secondary-btn{border:1px solid rgba(148,163,184,.16);border-radius:14px;background:rgba(255,255,255,.04);color:#CBD5E1;font-size:13px;font-weight:800;padding:11px 12px;text-align:center;cursor:pointer}.primary-btn:disabled,.secondary-btn:disabled{opacity:.45;cursor:default;box-shadow:none}
-          .chip{border:1px solid rgba(148,163,184,.16);border-radius:999px;background:#172D47;color:#94A3B8;font-size:12px;font-weight:800;padding:8px 13px;white-space:nowrap}
-          .chip.active{background:rgba(255,122,26,.16);border-color:rgba(255,122,26,.45);color:#FDBA74}
-          .status{border-radius:999px;padding:3px 8px;font-size:11px;font-weight:900}.status.wrong{background:rgba(239,68,68,.12);color:#FCA5A5}.status.skipped{background:rgba(245,158,11,.12);color:#FCD34D}.status.correct{background:rgba(34,197,94,.12);color:#86EFAC}
-          .save-btn{height:34px;width:34px;border:1px solid rgba(148,163,184,.14);background:rgba(255,255,255,.04);border-radius:999px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}.save-btn.saved{border-color:rgba(20,184,166,.40);background:rgba(20,184,166,.18)}
-          .divider{height:1px;background:rgba(255,255,255,.07);margin:14px 0}.mastery{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900}.explain-box{background:rgba(15,23,42,.55);border:1px solid rgba(148,163,184,.10);border-radius:14px;padding:13px;margin-top:12px}.explain-title{color:#FDBA74;font-size:11px;font-weight:900;margin:0 0 8px}
-          .review-question-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}.review-question-meta{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden}.review-question-number{color:#F8FAFC;font-size:13px;font-weight:900}.review-time{color:#64748B;font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.review-question-text{color:#F8FAFC;font-size:14px;font-weight:900;line-height:1.48;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical}.review-question-text.open{-webkit-line-clamp:unset;display:block}.read-more-btn{border:0;background:transparent;color:#FDBA74;font-size:12px;font-weight:900;padding:8px 0 0}
-          .answer-compare{display:grid;gap:8px;margin-top:13px}.answer-row{border:1px solid rgba(148,163,184,.10);background:rgba(15,23,42,.38);border-radius:13px;padding:10px 11px}.answer-row span{display:block;color:#94A3B8;font-size:11px;font-weight:900;margin-bottom:4px}.answer-row b{display:block;font-size:12px;line-height:1.45}.answer-row.wrong b{color:#FCA5A5}.answer-row.correct b{color:#5EEAD4}.answer-row.skipped b{color:#94A3B8}
-          .review-history-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:13px;padding:11px 0;border-top:1px solid rgba(148,163,184,.10);border-bottom:1px solid rgba(148,163,184,.10)}.review-history-row div{min-width:0}.review-history-row p{color:#64748B;font-size:11px;font-weight:900;margin:0 0 5px}.review-history-row strong{display:block;color:#CBD5E1;font-size:12px;line-height:1.4}.review-history-row .mastery{flex:0 0 auto;font-size:10px;padding:4px 8px;max-width:122px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-          .review-action-row{display:grid;grid-template-columns:1fr;gap:8px;margin-top:13px}.review-action-row .secondary-btn:only-child{grid-column:1 / -1}
-          .filter-chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 16px 8px;margin:0 -16px;scrollbar-width:none;-ms-overflow-style:none}.filter-chip-row::-webkit-scrollbar{display:none}
-          .review-filter-summary{color:#94A3B8;font-size:12px;font-weight:800;line-height:1.4;margin:0 0 12px 2px}
-          .session-summary{background:#172D47;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:15px;margin-bottom:12px}
-          .session-title{color:#F8FAFC;font-size:17px;line-height:1.25;font-weight:900;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-          .session-date{color:#64748B;font-size:12px;font-weight:800;margin:4px 0 0}
+          .review-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
+          .primary-btn{border:0;border-radius:14px;background:linear-gradient(135deg,#FF8A1F,#FF5A00);color:white;font-size:13px;font-weight:800;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(255,107,22,0.25)}
+          .secondary-btn{border:1px solid var(--ssc-border-soft);border-radius:14px;background:var(--ssc-surface);color:var(--ssc-teal);font-size:13px;font-weight:800;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit}
+          .primary-btn:disabled,.secondary-btn:disabled{opacity:.45;cursor:default;box-shadow:none}
+          .chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:700;padding:7px 14px;white-space:nowrap;font-family:inherit;cursor:pointer}
+          .chip.active{background:linear-gradient(135deg,#FF8A1F,#FF5A00);border-color:transparent;color:white}
+          .status{border-radius:999px;padding:3px 9px;font-size:11px;font-weight:800;border:1px solid}
+          .status.wrong{background:rgba(239,68,68,0.10);color:#DC2626;border-color:rgba(239,68,68,0.22)}
+          .status.skipped{background:rgba(245,158,11,0.10);color:#D97706;border-color:rgba(245,158,11,0.22)}
+          .status.correct{background:rgba(20,184,166,0.10);color:var(--ssc-teal);border-color:rgba(20,184,166,0.22)}
+          .save-btn{height:34px;width:34px;border:1px solid var(--ssc-border-soft);background:rgba(248,250,252,1);border-radius:999px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer}
+          .save-btn.saved{border-color:rgba(20,184,166,0.40);background:rgba(20,184,166,0.12)}
+          .mastery{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900}
+          .explain-box{background:rgba(14,165,164,0.06);border:1px solid rgba(14,165,164,0.18);border-radius:14px;padding:13px;margin-top:12px}
+          .explain-title{color:var(--ssc-teal);font-size:11px;font-weight:900;margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em}
+          .review-question-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}
+          .review-question-meta{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden}
+          .review-question-number{color:var(--ssc-text-muted);font-size:13px;font-weight:900}
+          .review-time{color:var(--ssc-text-muted);font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+          .review-question-text{color:var(--ssc-text-primary);font-size:14px;font-weight:800;line-height:1.48;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical}
+          .review-question-text.open{-webkit-line-clamp:unset;display:block}
+          .read-more-btn{border:0;background:transparent;color:var(--ssc-teal);font-size:12px;font-weight:800;padding:8px 0 0;cursor:pointer;font-family:inherit}
+          .answer-compare{display:grid;gap:8px;margin-top:13px}
+          .answer-row{border-radius:13px;padding:10px 12px}
+          .answer-row .answer-label{display:block;color:var(--ssc-text-muted);font-size:11px;font-weight:700;margin-bottom:5px}
+          .answer-row .answer-value{display:flex;align-items:center;justify-content:space-between;gap:8px}
+          .answer-row .answer-value b{font-size:13px;line-height:1.45;flex:1}
+          .answer-row.wrong{background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.18)}
+          .answer-row.wrong .answer-value b{color:#DC2626}
+          .answer-row.correct{background:rgba(20,184,166,0.07);border:1px solid rgba(20,184,166,0.18)}
+          .answer-row.correct .answer-value b{color:var(--ssc-teal)}
+          .answer-row.skipped{background:rgba(148,163,184,0.08);border:1px solid rgba(148,163,184,0.18)}
+          .answer-row.skipped .answer-value b{color:var(--ssc-text-muted)}
+          .review-history-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:13px;padding:11px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft)}
+          .review-history-row div{min-width:0}
+          .review-history-row p{color:var(--ssc-text-muted);font-size:11px;font-weight:700;margin:0 0 5px}
+          .review-history-row strong{display:block;color:var(--ssc-text-secondary);font-size:12px;line-height:1.4}
+          .review-history-row .mastery{flex:0 0 auto;font-size:10px;padding:4px 8px;max-width:122px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+          .review-action-row{display:grid;grid-template-columns:1fr;gap:8px;margin-top:13px}
+          .review-action-row .secondary-btn:only-child{grid-column:1 / -1}
+          .filter-chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 16px 8px;margin:0 -16px;scrollbar-width:none;-ms-overflow-style:none}
+          .filter-chip-row::-webkit-scrollbar{display:none}
+          .review-filter-summary{color:var(--ssc-text-muted);font-size:12px;font-weight:700;line-height:1.4;margin:0 0 12px 2px}
+          .session-summary{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:22px;padding:16px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
+          .session-title{color:var(--ssc-text-primary);font-size:17px;line-height:1.25;font-weight:900;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+          .session-date{color:var(--ssc-text-muted);font-size:12px;font-weight:700;margin:4px 0 0}
           .session-score-row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-top:15px}
-          .session-score strong{display:block;color:#F8FAFC;font-size:25px;line-height:1;font-weight:900}
-          .session-score span{display:block;color:#64748B;font-size:11px;font-weight:900;margin-top:6px}
-          .session-time{color:#94A3B8;font-size:11px;font-weight:800;text-align:right}
-          .session-stat-row{display:flex;align-items:center;justify-content:space-between;gap:8px;row-gap:7px;flex-wrap:wrap;margin-top:13px;padding:10px 0;border-top:1px solid rgba(148,163,184,.10);border-bottom:1px solid rgba(148,163,184,.10);font-size:13px;font-weight:900}
-          .session-insight{background:#172D47;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:13px 14px;margin-bottom:12px}
-          .carousel-shell{background:#172D47;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:13px 14px;margin-bottom:12px}
+          .session-score strong{display:block;font-size:26px;line-height:1;font-weight:900}
+          .session-score span{display:block;color:var(--ssc-text-muted);font-size:11px;font-weight:700;margin-top:6px}
+          .session-time{color:var(--ssc-text-muted);font-size:11px;font-weight:700;text-align:right}
+          .session-stat-row{display:flex;align-items:center;justify-content:space-between;gap:8px;row-gap:7px;flex-wrap:wrap;margin-top:13px;padding:10px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft);font-size:13px;font-weight:800}
+          .session-insight{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.24);border-radius:16px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px}
+          .carousel-shell{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:13px 14px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
           .carousel-progress{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
-          .carousel-progress strong{display:block;color:#F8FAFC;font-size:14px;font-weight:900;line-height:1.2}
-          .carousel-progress span{display:block;color:#94A3B8;font-size:12px;font-weight:800;margin-top:4px}
+          .carousel-progress strong{display:block;color:var(--ssc-text-primary);font-size:14px;font-weight:900;line-height:1.2}
+          .carousel-progress span{display:block;color:var(--ssc-text-muted);font-size:12px;font-weight:700;margin-top:4px}
           .carousel-nav{display:grid;grid-template-columns:1fr 1fr;gap:8px}
           .carousel-nav button:disabled{opacity:.45;cursor:default}
           .review-page-shell{padding-bottom:calc(190px + env(safe-area-inset-bottom))}
-          .session-action-bar{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);width:100%;max-width:430px;z-index:60;padding:0 16px 10px;background:linear-gradient(to top,var(--bg-app) 68%,transparent)}
-          .session-action-inner{display:grid;grid-template-columns:1fr 1fr;gap:8px;border-radius:18px;padding:8px;background:rgba(13,27,46,.96);border:1px solid rgba(255,255,255,.08);box-shadow:0 16px 38px rgba(0,0,0,.24)}
-          .session-action-inner .primary-btn{box-shadow:0 14px 34px rgba(255,90,0,.24)}
-          .review-card,.session-summary,.session-insight,.carousel-shell{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);box-shadow:var(--ssc-shadow-card)}
-          .session-title,.session-score strong,.carousel-progress strong,.review-question-number,.review-question-text{color:var(--ssc-text-primary)}
-          .session-date,.session-score span,.session-time,.carousel-progress span,.review-filter-summary,.review-time,.review-history-row p{color:var(--ssc-text-secondary)}
-          .secondary-btn{border-color:var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-teal)}
-          .chip{background:var(--ssc-surface);border-color:var(--ssc-border-soft);color:var(--ssc-text-secondary)}
-          .chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white}
-          .status.wrong{background:var(--ssc-danger-soft);color:var(--ssc-danger)}.status.skipped{background:var(--ssc-warning-soft);color:var(--ssc-warning)}.status.correct{background:var(--ssc-success-soft);color:var(--ssc-success)}
-          .save-btn{border-color:var(--ssc-border-soft);background:var(--ssc-surface-soft)}.save-btn.saved{border-color:rgba(14,165,164,.36);background:var(--ssc-teal-soft)}
-          .explain-box{background:var(--ssc-surface-soft);border-color:var(--ssc-border-soft)}.explain-title{color:var(--ssc-teal)}
-          .explain-box .text-slate-200,.explain-box .text-orange-100{color:var(--ssc-text-secondary)}.explain-box .text-slate-500{color:var(--ssc-text-muted)}
-          .answer-row{background:var(--ssc-surface);border-color:var(--ssc-border-soft)}.answer-row span{color:var(--ssc-text-muted)}.answer-row.correct{background:var(--ssc-success-soft);border-color:rgba(18,184,134,.28)}.answer-row.wrong{background:var(--ssc-danger-soft);border-color:rgba(239,68,68,.28)}.answer-row.skipped{background:var(--ssc-surface-soft)}
-          .answer-row.correct b{color:var(--ssc-success)}.answer-row.wrong b{color:var(--ssc-danger)}.answer-row.skipped b{color:var(--ssc-text-secondary)}
-          .review-history-row,.session-stat-row{border-color:var(--ssc-border-soft)}.review-history-row strong{color:var(--ssc-text-secondary)}
-          .session-insight .text-slate-200,.review-card .text-slate-400,.review-card .text-white{color:var(--ssc-text-secondary)}
-          .session-action-bar{background:linear-gradient(to top,var(--ssc-bg) 68%,transparent)}.session-action-inner{background:var(--ssc-surface);border-color:var(--ssc-border-soft);box-shadow:var(--ssc-shadow-card)}
+          .session-action-bar{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);width:100%;max-width:430px;z-index:60;padding:0 16px 10px;background:linear-gradient(to top,var(--ssc-bg) 68%,transparent)}
+          .session-action-inner{display:grid;grid-template-columns:1fr 1fr;gap:8px;border-radius:18px;padding:8px;background:rgba(255,255,255,0.96);border:1px solid var(--ssc-border-soft);box-shadow:0 16px 38px rgba(16,32,51,0.12);backdrop-filter:blur(12px)}
+          .session-action-inner .primary-btn{box-shadow:0 4px 14px rgba(255,90,0,0.24)}
         `}</style>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack />
+        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
         <main className="px-4 pt-5">
         <section className="session-summary">
           <h1 className="session-title font-display">{session.subject} &middot; {session.topic}</h1>
@@ -387,23 +421,24 @@ export default function SessionReviewPage() {
 
           <div className="session-score-row">
             <div className="session-score">
-              <strong className="font-display">{session.score} / {session.questionCount * 2}</strong>
+              <strong className="font-display" style={{ color: scoreColor }}>{session.score} / {session.questionCount * 2}</strong>
               <span>Score</span>
             </div>
             {session.timeSpentSeconds ? <p className="session-time">Time: {formatTime(session.timeSpentSeconds)}</p> : null}
           </div>
 
           <div className="session-stat-row">
-            <span className="text-slate-400">{session.questionCount} Qs</span>
-            <span className="text-emerald-300">&#10003; {session.correct}</span>
-            <span className="text-red-300">&times; {session.incorrect}</span>
-            <span className="text-slate-400">&#9675; {session.skipped}</span>
-            {Number(session.coinsEarned) ? <span className="text-orange-300">+{session.coinsEarned} coins</span> : null}
+            <span style={{ color: 'var(--ssc-text-secondary)' }}>{session.questionCount} Qs</span>
+            <span style={{ color: 'var(--ssc-teal)', fontWeight: 800 }}>&#10003; {session.correct}</span>
+            <span style={{ color: '#DC2626', fontWeight: 800 }}>&times; {session.incorrect}</span>
+            <span style={{ color: 'var(--ssc-text-muted)' }}>&#9675; {session.skipped}</span>
+            {Number(session.coinsEarned) ? <span style={{ color: '#F59E0B', fontWeight: 800 }}>+{session.coinsEarned} coins</span> : null}
           </div>
         </section>
 
         <div className="session-insight">
-          <p className="text-sm text-slate-200 leading-relaxed">{insight(session)}</p>
+          <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>💡</span>
+          <p style={{ fontSize: 13, color: '#92400E', lineHeight: 1.55, margin: 0 }}>{insight(session)}</p>
         </div>
 
         <div className="filter-chip-row">
@@ -421,16 +456,16 @@ export default function SessionReviewPage() {
                 </div>
               </div>
               <div className="carousel-nav">
-                <button type="button" className="secondary-btn" disabled={safeActiveQuestionIndex === 0} onClick={() => setActiveQuestionIndex(index => Math.max(index - 1, 0))}>Previous</button>
-                <button type="button" className="secondary-btn" disabled={safeActiveQuestionIndex >= filtered.length - 1} onClick={() => setActiveQuestionIndex(index => Math.min(index + 1, filtered.length - 1))}>Next</button>
+                <button type="button" className="secondary-btn" disabled={safeActiveQuestionIndex === 0} onClick={() => setActiveQuestionIndex(index => Math.max(index - 1, 0))}>&#8592; Previous</button>
+                <button type="button" className="secondary-btn" disabled={safeActiveQuestionIndex >= filtered.length - 1} onClick={() => setActiveQuestionIndex(index => Math.min(index + 1, filtered.length - 1))}>Next &#8594;</button>
               </div>
             </section>
             <QuestionCard key={activeQuestion.questionId} item={activeQuestion} onToggleSave={toggleSave} />
           </>
         ) : (
-          <div className="review-card text-center text-slate-400">
-            <p className="font-display font-black text-white mb-1">No questions found in this filter.</p>
-            <p>Try another filter.</p>
+          <div className="review-card text-center">
+            <p className="font-display font-black text-[var(--ssc-text-primary)] mb-1">No questions found in this filter.</p>
+            <p className="text-[var(--ssc-text-muted)]">Try another filter.</p>
           </div>
         )}
         </main>
@@ -440,7 +475,7 @@ export default function SessionReviewPage() {
         <div className="session-action-bar">
           <div className="session-action-inner">
             <button disabled={starting} className="primary-btn" onClick={() => startReattempt('session_mistakes')}>Practice {mistakes} Mistakes →</button>
-            <button disabled={starting} className="secondary-btn" onClick={() => startReattempt('session_full')}>Re-attempt Full Quiz</button>
+            <button disabled={starting} className="secondary-btn" onClick={() => startReattempt('session_full')}>↺ Re-attempt Full Quiz</button>
           </div>
         </div>
       )}

@@ -85,8 +85,15 @@ export default function Profile() {
       <div className="h-screen flex flex-col overflow-hidden pb-16 bg-[var(--ssc-bg)]">
 
         {/* Header bar h-14 */}
-        <div className="h-14 px-4 flex items-center flex-shrink-0">
+        <div className="h-14 px-4 flex items-center justify-between flex-shrink-0">
           <h1 className="t-page-title font-display text-[var(--ssc-text-primary)]">Profile</h1>
+          <div className="relative">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[var(--ssc-orange)]" />
+          </div>
         </div>
 
         {/* Scrollable content */}
@@ -102,24 +109,40 @@ export default function Profile() {
               boxShadow: 'var(--ssc-shadow-card)',
             }}
           >
-            {/* Avatar */}
-            <div className="w-[72px] h-[72px] rounded-full overflow-hidden border-2 border-[rgba(14,165,164,0.24)] flex-shrink-0 bg-[var(--ssc-teal-soft)]">
-              {isLoggedIn && session?.user?.image ? (
-                <Image
-                  src={session.user.image}
-                  alt={displayName}
-                  width={72}
-                  height={72}
-                  className="object-cover w-full h-full"
-                  unoptimized
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="font-display font-black text-3xl text-[var(--ssc-teal)]">
-                    {displayName.charAt(0).toUpperCase()}
-                  </span>
+            {/* Avatar with gradient ring + edit button */}
+            <div className="relative flex-shrink-0">
+              <div
+                className="w-[76px] h-[76px] rounded-full flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #f6b331 0%, #f97316 60%, #a78bfa 100%)', padding: 3 }}
+              >
+                <div className="w-full h-full rounded-full overflow-hidden bg-[var(--ssc-teal-soft)]">
+                  {isLoggedIn && session?.user?.image ? (
+                    <Image
+                      src={session.user.image}
+                      alt={displayName}
+                      width={70}
+                      height={70}
+                      className="object-cover w-full h-full"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="font-display font-black text-3xl text-[var(--ssc-teal)]">
+                        {displayName.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+              {/* Edit button */}
+              <div
+                className="absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center"
+                style={{ background: 'var(--ssc-teal)', border: '2px solid var(--ssc-surface)' }}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="white">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+              </div>
             </div>
 
             {/* Info */}
@@ -158,13 +181,14 @@ export default function Profile() {
           <div className="grid grid-cols-3 gap-2 mt-3">
             {/* Coins → Coins History */}
             <button
-              onClick={() => !isGuest && router.push('/history')}
+              onClick={() => !isGuest && router.push('/history/coins')}
               className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
               style={{ background: 'var(--ssc-surface)', border: '1px solid rgba(246,179,49,0.26)', boxShadow: 'var(--ssc-shadow-card)' }}
             >
               <span className="text-lg leading-none mb-0.5">🪙</span>
               <span className="t-stat-sm font-display" style={{ color: 'var(--ssc-coin)' }}>{isGuest ? '—' : totalCoins.toLocaleString()}</span>
-              <span className="t-stat-label font-sans text-[var(--ssc-text-muted)]">Total Coins</span>
+              <span className="t-stat-label font-sans text-[var(--ssc-text-muted)] uppercase tracking-wide" style={{ fontSize: 9 }}>Total Coins</span>
+              <span className="font-sans font-semibold text-[var(--ssc-teal)]" style={{ fontSize: 10, marginTop: 2 }}>Keep learning!</span>
             </button>
 
             {/* Streak → Streak History */}
@@ -175,7 +199,8 @@ export default function Profile() {
             >
               <span className="text-lg leading-none mb-0.5">🔥</span>
               <span className="t-stat-sm font-display text-[var(--ssc-streak)]">{isGuest ? '—' : streak}</span>
-              <span className="t-stat-label font-sans text-[var(--ssc-text-muted)]">Day Streak</span>
+              <span className="t-stat-label font-sans text-[var(--ssc-text-muted)] uppercase tracking-wide" style={{ fontSize: 9 }}>Day Streak</span>
+              <span className="font-sans font-semibold text-[var(--ssc-orange)]" style={{ fontSize: 10, marginTop: 2 }}>You&#39;re on fire!</span>
             </button>
 
             {/* Level → level modal */}
@@ -184,9 +209,10 @@ export default function Profile() {
               className="rounded-[18px] p-3 flex flex-col items-center gap-0.5 active:scale-[0.96] transition-transform"
               style={{ background: 'var(--ssc-surface)', border: '1px solid rgba(109,93,246,0.24)', boxShadow: 'var(--ssc-shadow-card)' }}
             >
-              <span className="text-lg leading-none mb-0.5">⭐</span>
+              <span className="text-lg leading-none mb-0.5" style={{ filter: 'hue-rotate(220deg)' }}>⭐</span>
               <span className="t-stat-sm font-display text-[var(--ssc-rank)] text-center">{isGuest ? '—' : level}</span>
-              <span className="t-stat-label font-sans text-[var(--ssc-text-muted)]">Level</span>
+              <span className="t-stat-label font-sans text-[var(--ssc-text-muted)] uppercase tracking-wide" style={{ fontSize: 9 }}>Level</span>
+              <span className="font-sans font-semibold text-[var(--ssc-rank)]" style={{ fontSize: 10, marginTop: 2 }}>Keep it up!</span>
             </button>
           </div>
 
@@ -279,7 +305,10 @@ export default function Profile() {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--ssc-orange)">
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
               </svg>
-              <span className="t-card-subtitle font-sans text-[var(--ssc-text-primary)] flex-1 text-left">Streak History</span>
+              <div className="flex-1 text-left">
+                <span className="t-card-subtitle font-sans text-[var(--ssc-text-primary)] block">Streak History</span>
+                <span className="font-sans text-xs text-[var(--ssc-text-muted)]">Track your daily learning streak</span>
+              </div>
               <ChevronSVG />
             </button>
 
@@ -291,22 +320,30 @@ export default function Profile() {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="1.5">
                 <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <span className="t-card-subtitle font-sans text-[var(--ssc-text-primary)] flex-1 text-left">Coins History</span>
+              <div className="flex-1 text-left">
+                <span className="t-card-subtitle font-sans text-[var(--ssc-text-primary)] block">Coins History</span>
+                <span className="font-sans text-xs text-[var(--ssc-text-muted)]">View your earned coins &amp; history</span>
+              </div>
               <ChevronSVG />
             </button>
 
             {/* Sign Out / Sign In */}
             {isLoggedIn ? (
               <div className="mt-1">
-                <p className="t-section-label font-sans text-[var(--ssc-text-muted)] px-1">Account</p>
+                <p className="t-section-label font-sans text-[var(--ssc-text-muted)] px-1 uppercase tracking-widest mb-2" style={{ fontSize: 10 }}>Account</p>
                 <button
                   onClick={() => signOut({ callbackUrl: '/' })}
-                  className="w-full flex items-center gap-2 px-1 py-2 active:opacity-60 transition-opacity"
+                  className="w-full rounded-2xl px-4 py-4 flex items-center gap-3 active:scale-[0.98] transition-transform"
+                  style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', boxShadow: 'var(--ssc-shadow-card)' }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-danger)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                   </svg>
-                  <span className="font-sans text-sm text-[var(--ssc-danger)]">Sign out</span>
+                  <div className="flex-1 text-left">
+                    <span className="font-sans font-semibold text-sm text-[var(--ssc-danger)] block">Sign out</span>
+                    <span className="font-sans text-xs text-[var(--ssc-text-muted)]">Securely sign out from your account</span>
+                  </div>
+                  <ChevronSVG />
                 </button>
               </div>
             ) : (

@@ -272,6 +272,34 @@ async function saveQuizSession(result, routeSessionId, scoreFields = {}) {
 }
 
 
+function ScoreCircle({ pct }) {
+  const [animPct, setAnimPct] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setAnimPct(pct), 80);
+    return () => clearTimeout(t);
+  }, [pct]);
+  const r = 52;
+  const circ = 2 * Math.PI * r;
+  const color = pct >= 75 ? 'var(--ssc-success)' : pct >= 50 ? 'var(--ssc-teal)' : pct >= 30 ? 'var(--ssc-warning)' : 'var(--ssc-danger)';
+  const dash = circ - (animPct / 100) * circ;
+  return (
+    <div style={{ position: 'relative', width: 124, height: 124, flexShrink: 0 }}>
+      <svg width="124" height="124" viewBox="0 0 124 124">
+        <circle cx="62" cy="62" r={r} fill="none" stroke="var(--ssc-border-soft)" strokeWidth="10"/>
+        <circle cx="62" cy="62" r={r} fill="none" stroke={color} strokeWidth="10"
+          strokeDasharray={circ} strokeDashoffset={dash}
+          strokeLinecap="round" transform="rotate(-90 62 62)"
+          style={{ transition: 'stroke-dashoffset 0.8s ease-out' }}
+        />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+        <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 26, color, lineHeight: 1 }}>{Math.round(pct)}%</span>
+        <span style={{ fontSize: 10, color: 'var(--ssc-text-muted)', fontWeight: 600, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Score</span>
+      </div>
+    </div>
+  );
+}
+
 export default function Result() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -732,7 +760,51 @@ export default function Result() {
         .btn-pulse { animation: btnPulse 2.2s ease-in-out infinite; }
       `}</style>
 
-      <div style={{ maxWidth: 430, margin: '0 auto', padding: '24px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* ── STICKY HEADER ── */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 30, background: 'var(--ssc-surface)', borderBottom: '1px solid var(--ssc-border-soft)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 8px rgba(16,32,51,0.06)' }}>
+        <button
+          onClick={() => router.push('/dashboard')}
+          style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid var(--ssc-border-soft)', background: 'var(--ssc-surface-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          aria-label="Back to Dashboard"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-primary)" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </button>
+        <h1 className="font-display" style={{ fontSize: 17, fontWeight: 800, color: 'var(--ssc-text-primary)', margin: 0 }}>Quiz Result</h1>
+        <button
+          onClick={handleShareWhatsApp}
+          style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid var(--ssc-border-soft)', background: 'var(--ssc-surface-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          aria-label="Share result"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+        </button>
+      </div>
+
+      <div style={{ maxWidth: 430, margin: '0 auto', padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        {/* ── HERO ── */}
+        {(() => {
+          const acc = result.accuracy ?? 0;
+          const firstName = (status === 'authenticated' ? session?.user?.name : null)?.split(' ')[0] || null;
+          let heroTitle;
+          if (acc >= 85) heroTitle = firstName ? `Excellent, ${firstName}!` : 'Excellent Work!';
+          else if (acc >= 65) heroTitle = firstName ? `Strong Score, ${firstName}!` : 'Strong Score!';
+          else if (acc >= 45) heroTitle = firstName ? `Good Effort, ${firstName}!` : 'Good Effort!';
+          else heroTitle = firstName ? `Keep Going, ${firstName}!` : 'Keep Going!';
+          return (
+            <div style={{ textAlign: 'center', padding: '12px 8px 0' }}>
+              <div style={{ fontSize: 52, lineHeight: 1, marginBottom: 8 }}>
+                {acc >= 75 ? '🏆' : acc >= 50 ? '⭐' : '💪'}
+              </div>
+              <h2 className="font-display" style={{ fontSize: 22, fontWeight: 900, color: 'var(--ssc-text-primary)', margin: '0 0 4px' }}>
+                {heroTitle} 🎉
+              </h2>
+              <p style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', margin: 0 }}>You completed the quiz</p>
+            </div>
+          );
+        })()}
 
         {/* ── 1. RESULT SUMMARY CARD ── */}
         {(() => {
@@ -765,33 +837,28 @@ export default function Result() {
             : `${getDisplaySubject(result.subject, result.collection) || 'Quiz'} Result`;
 
           return (
-            <div className="card-in" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', borderRadius: 28, padding: '18px 20px', boxShadow: 'var(--ssc-shadow-card)' }}>
-              <p className="t-stat-label" style={{ color: 'var(--ssc-text-secondary)', marginBottom: 8, textAlign: 'center' }}>
-                {cardLabel}
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
-                <span className="t-button-sm" style={{ background: statusBg, border: `1px solid ${statusBorder}`, color: statusColor, borderRadius: 999, padding: '4px 16px' }}>
-                  {statusLabel}
-                </span>
-              </div>
-              {/* Score + Accuracy tiles */}
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                <div style={{ flex: 1, background: 'var(--ssc-surface-soft)', border: '1px solid var(--ssc-border-soft)', borderRadius: 16, padding: '12px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                  <span className="t-stat-lg font-display" style={{ color: scoreColor }}>{score}</span>
-                  <span className="t-stat-label" style={{ color: 'var(--ssc-text-secondary)' }}>Score</span>
-                </div>
-                <div style={{ flex: 1, background: 'var(--ssc-surface-soft)', border: '1px solid var(--ssc-border-soft)', borderRadius: 16, padding: '12px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                  <span className="t-stat-lg font-display" style={{ color: 'var(--ssc-teal)' }}>{Math.round(acc)}%</span>
-                  <span className="t-stat-label" style={{ color: 'var(--ssc-text-secondary)' }}>Accuracy</span>
+            <div className="card-in" style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', borderRadius: 28, padding: '20px', boxShadow: 'var(--ssc-shadow-card)' }}>
+              {/* Score circle + fraction + status */}
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 18 }}>
+                <ScoreCircle pct={acc} />
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--ssc-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>Your Score</p>
+                  <p className="font-display" style={{ fontSize: 30, fontWeight: 900, color: 'var(--ssc-text-primary)', lineHeight: 1, margin: '0 0 10px' }}>
+                    {result.correct} <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--ssc-text-muted)' }}>/ {result.totalQuestions || 0}</span>
+                  </p>
+                  <span style={{ background: statusBg, border: `1px solid ${statusBorder}`, color: statusColor, borderRadius: 999, padding: '4px 14px', fontSize: 12, fontWeight: 700 }}>
+                    {statusLabel}
+                  </span>
                 </div>
               </div>
 
-              {/* Correct / Wrong / Skipped */}
-              <div style={{ display: 'flex', justifyContent: 'space-around', paddingTop: 10, paddingBottom: 10, borderTop: '1px solid var(--ssc-border-soft)', borderBottom: '1px solid var(--ssc-border-soft)', marginBottom: 16 }}>
+              {/* Correct / Wrong / Skipped / Answered */}
+              <div style={{ display: 'flex', justifyContent: 'space-around', paddingTop: 12, paddingBottom: 12, borderTop: '1px solid var(--ssc-border-soft)', marginBottom: 0 }}>
                 {[
-                  { val: result.correct,   label: 'Correct', color: 'var(--ssc-success)' },
-                  { val: result.incorrect, label: 'Wrong',   color: 'var(--ssc-danger)' },
-                  { val: result.skipped,   label: 'Skipped', color: 'var(--ssc-text-muted)' },
+                  { val: result.correct,   label: 'Correct',  color: 'var(--ssc-success)' },
+                  { val: result.incorrect, label: 'Wrong',    color: 'var(--ssc-danger)' },
+                  { val: result.skipped,   label: 'Skipped',  color: 'var(--ssc-text-muted)' },
+                  { val: answeredCount,    label: 'Answered', color: 'var(--ssc-teal)' },
                 ].map(({ val, label, color: c }) => (
                   <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                     <span className="t-stat-sm font-display" style={{ color: c }}>{val}</span>
@@ -800,46 +867,6 @@ export default function Result() {
                 ))}
               </div>
 
-              {/* CTAs */}
-              <p className="t-badge" style={{ textAlign: 'center', color: 'var(--ssc-text-secondary)', marginBottom: 10 }}>
-                You answered {answeredCount} of {result.totalQuestions || 0} questions
-              </p>
-              <button
-                className="btn-pulse t-button-lg"
-                onClick={() => { setLoadingDetailed(true); setTimeout(() => router.push('/result/detailed'), 100); }}
-                style={{
-                  width: '100%', height: 52, borderRadius: 16, cursor: 'pointer',
-                  background: 'linear-gradient(135deg, var(--ssc-orange), var(--ssc-orange-deep))',
-                  color: '#FFFFFF', border: 'none',
-                  marginBottom: 10,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transform: 'translateY(0)', transition: 'transform 140ms ease, box-shadow 140ms ease',
-                  fontFamily: 'Nunito, sans-serif',
-                }}
-                onPointerEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 16px 32px rgba(174,80,15,0.45)'; }}
-                onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(174,80,15,0.15)'; }}
-                onPointerUp={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
-                onPointerLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
-              >
-                {loadingDetailed ? 'Loading…' : 'Review Mistakes →'}
-              </button>
-
-              <button
-                onClick={handleContinue}
-                className="t-button-sm"
-                style={{
-                  width: '100%', height: 46, borderRadius: 14, cursor: 'pointer',
-                  background: 'var(--ssc-surface-soft)', color: 'var(--ssc-text-primary)',
-                  border: '1px solid var(--ssc-border-soft)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transform: 'scale(1)', transition: 'transform 140ms ease, background 140ms ease',
-                }}
-                onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.background = 'var(--ssc-teal-soft)'; }}
-                onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'var(--ssc-surface-soft)'; }}
-                onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'var(--ssc-surface-soft)'; }}
-              >
-                Practice Again
-              </button>
             </div>
           );
         })()}
@@ -889,86 +916,112 @@ export default function Result() {
           </div>
         )}
         {coinsResult && (
-          <div className="coins-strip-in" style={{ background: 'linear-gradient(135deg, var(--ssc-success-soft), #fffaf0)', border: '1px solid rgba(18,184,134,0.20)', borderRadius: 20, padding: 16, borderLeft: '4px solid var(--ssc-success)', boxShadow: 'var(--ssc-shadow-card)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--ssc-text-primary)' }}>+{coinsResult.coins ?? 0} coins</span>
-              {coinsResult.streakCount > 0 && (
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ssc-streak)' }}>🔥 {coinsResult.streakCount} day streak</span>
-              )}
+          <div className="coins-strip-in" style={{ background: 'var(--ssc-surface)', border: '1px solid rgba(246,179,49,0.30)', borderRadius: 20, padding: '16px 18px', boxShadow: 'var(--ssc-shadow-card)', display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(246,179,49,0.14)', border: '1px solid rgba(246,179,49,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 22 }}>🪙</span>
             </div>
-            <p style={{ fontSize: 12, color: 'var(--ssc-text-secondary)' }}>
-              Level: {coinsResult.level} · {coinsResult.totalCoins ?? 0} coins total
-            </p>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--ssc-text-primary)', margin: '0 0 2px' }}>+{coinsResult.coins ?? 0} Coins Earned</p>
+              <p style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', margin: 0 }}>Current Balance: {coinsResult.totalCoins ?? 0} Coins</p>
+            </div>
+            <span style={{ fontSize: 26, flexShrink: 0 }}>🪙</span>
+          </div>
+        )}
+        {coinsResult?.streakCount > 0 && (
+          <div className="coins-strip-in" style={{ background: 'var(--ssc-surface)', border: '1px solid rgba(245,158,11,0.22)', borderRadius: 20, padding: '14px 18px', boxShadow: 'var(--ssc-shadow-card)', display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--ssc-warning-soft)', border: '1px solid rgba(245,158,11,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 20 }}>🔥</span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ssc-text-primary)', margin: '0 0 2px' }}>{coinsResult.streakCount} Day Streak</p>
+              <p style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', margin: 0 }}>Keep it up! Your streak is active.</p>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-muted)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
           </div>
         )}
 
-        {/* ── 3. SSC PYQ PRACTICE CARD ── */}
-        <div
-          className="pyq-in"
-          onClick={() => router.push('/subjects?collection=PYQ')}
-          style={{
-            position: 'relative',
-            overflow: 'hidden',
-            background: 'var(--ssc-surface)',
-            border: '1px solid rgba(255,106,0,0.18)',
-            borderRadius: 24,
-            padding: 20,
-            cursor: 'pointer',
-            boxShadow: 'var(--ssc-shadow-card)',
-          }}
-        >
-          <div
-            aria-hidden="true"
-            style={{
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: '82%',
-              height: '100%',
-              borderTop: '2px solid rgba(249,115,22,0.72)',
-              borderRight: '2px solid rgba(249,115,22,0.72)',
-              borderTopRightRadius: 24,
-              pointerEvents: 'none',
-            }}
-          />
-          <div style={{ display: 'inline-flex', alignItems: 'center', marginBottom: 14, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: 999, padding: '3px 12px' }}>
-            <span className="t-badge" style={{ color: 'var(--ssc-orange-deep)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most Useful Next Step</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: 16 }}>📚</span>
-            </div>
-            <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', margin: 0 }}>SSC PYQ Practice</p>
-          </div>
-          <p className="t-card-subtitle" style={{ color: 'var(--ssc-text-secondary)', marginBottom: 14 }}>
-            Practice previous year SSC questions by subject.<br />
-            Choose Polity, History, Science, Geography and more.
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-            {["7,000+ Q's", 'Exam-level Practice', 'Subject-wise'].map(tag => (
-              <span key={tag} className="t-badge" style={{ color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)', border: '1px solid rgba(14,165,164,0.18)', borderRadius: 999, padding: '3px 10px' }}>
-                {tag}
-              </span>
-            ))}
-          </div>
+        {/* ── ACTION ROW ── */}
+        <div style={{ display: 'flex', gap: 10 }}>
           <button
-            className="btn-pulse t-button-lg"
-            onClick={() => router.push('/subjects?collection=PYQ')}
+            onClick={() => { setLoadingDetailed(true); setTimeout(() => router.push('/result/detailed'), 100); }}
+            className="t-button-sm"
             style={{
-              width: '100%', height: 52, borderRadius: 18, cursor: 'pointer',
+              flex: 1, height: 50, borderRadius: 14, cursor: 'pointer',
+              background: 'var(--ssc-teal-soft)', color: 'var(--ssc-teal)',
+              border: '1px solid rgba(14,165,164,0.28)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              fontFamily: 'Nunito, sans-serif',
+              transition: 'transform 140ms ease, background 140ms ease',
+            }}
+            onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.97)'; e.currentTarget.style.background = 'rgba(14,165,164,0.18)'; }}
+            onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'var(--ssc-teal-soft)'; }}
+            onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'var(--ssc-teal-soft)'; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            {loadingDetailed ? 'Loading...' : 'Review Mistakes'}
+          </button>
+          <button
+            className="btn-pulse t-button-sm"
+            onClick={handleContinue}
+            style={{
+              flex: 1, height: 50, borderRadius: 14, cursor: 'pointer',
               background: 'linear-gradient(135deg, var(--ssc-orange), var(--ssc-orange-deep))',
               color: '#FFFFFF', border: 'none',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transform: 'translateY(0)', transition: 'transform 140ms ease, box-shadow 140ms ease',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               fontFamily: 'Nunito, sans-serif',
+              transition: 'transform 140ms ease, box-shadow 140ms ease',
             }}
-            onPointerEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 16px 32px rgba(255,122,26,0.45)'; }}
-            onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,122,26,0.15)'; }}
+            onPointerEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 14px 28px rgba(174,80,15,0.40)'; }}
+            onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.97)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(174,80,15,0.15)'; }}
             onPointerUp={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
             onPointerLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
           >
-            Start PYQ Practice →
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+            </svg>
+            Practice Again
           </button>
+        </div>
+
+        {/* ── NEXT STEP FOR YOU ── */}
+        <div className="pyq-in">
+          <p className="t-section-label" style={{ color: 'var(--ssc-text-secondary)', marginBottom: 10, paddingLeft: 2 }}>Next Step for You</p>
+          <div style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', borderRadius: 20, padding: 18, boxShadow: 'var(--ssc-shadow-card)' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 20 }}>📚</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', margin: '0 0 4px' }}>SSC PYQ Practice</p>
+                <p className="t-card-subtitle" style={{ color: 'var(--ssc-text-secondary)', margin: 0, lineHeight: 1.55 }}>Practice previous year questions from this topic.</p>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-muted)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+            <button
+              className="btn-pulse t-button-lg"
+              onClick={() => router.push('/subjects?collection=PYQ')}
+              style={{
+                width: '100%', height: 50, borderRadius: 14, cursor: 'pointer',
+                background: 'linear-gradient(135deg, var(--ssc-orange), var(--ssc-orange-deep))',
+                color: '#FFFFFF', border: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'Nunito, sans-serif',
+                transition: 'transform 140ms ease, box-shadow 140ms ease',
+              }}
+              onPointerEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 16px 32px rgba(255,122,26,0.45)'; }}
+              onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,122,26,0.15)'; }}
+              onPointerUp={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
+              onPointerLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
+            >
+              Start PYQ Practice →
+            </button>
+          </div>
         </div>
 
         {/* ── 4. AI MENTOR ── */}
@@ -1015,92 +1068,6 @@ export default function Result() {
           );
         })()}
 
-        {/* ── Mentor Feedback Section ── */}
-        {result && (() => {
-          const counts = getResultCounts(result);
-          const cat = classifyPerformance(
-            counts.correctAnswers,
-            counts.incorrectAnswers,
-            counts.skipped,
-            counts.totalQuestions
-          );
-          const mentorContext = readMentorReturnContext(result);
-          const variant = cat === 'EXCELLENT' ? 'success' : cat === 'WEAK' ? 'strict' : 'info';
-          return (
-            <div className="mt-4 space-y-3">
-              <MentorMessage message={MENTOR_COPY[`RESULT_${cat}`]} variant={variant} />
-
-              {!chipSent ? (
-                <div>
-                  <p className="text-xs mb-2" style={{ color: 'var(--ssc-text-secondary)' }}>How did this feel?</p>
-                  <div className="flex flex-wrap gap-2">
-                    {FEEDBACK_CHIPS.map(chip => (
-                      <button
-                        key={chip}
-                        onClick={async () => {
-                          setFeedbackChip(chip);
-                          setChipSent(true);
-                          try {
-                            await fetch('/api/mentor/task-feedback', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({
-                                subject: result.subject || '',
-                                topic: result.topic || '',
-                                quizSessionId: coinsResult?.sessionId || '',
-                                feedbackChip: chip,
-                                resultCategory: cat,
-                                correctRate: counts.totalQuestions > 0
-                                  ? (counts.correctAnswers / counts.totalQuestions) * 100 : 0,
-                                wrongRate: counts.totalQuestions > 0
-                                  ? (counts.incorrectAnswers / counts.totalQuestions) * 100 : 0,
-                                skippedRate: counts.totalQuestions > 0
-                                  ? (counts.skipped / counts.totalQuestions) * 100 : 0,
-                                totalQuestions: counts.totalQuestions,
-                                quizMode: result.quizMode || 'subject_topic',
-                                sourceTaskId: mentorContext?.sourceTaskId || '',
-                                sourcePage: mentorContext?.sourcePage || '',
-                                mentorNextAction: cat === 'EXCELLENT' || cat === 'GOOD' ? 'spaced_revision' : 'revision_followup',
-                                mentorActionSavedAt: new Date().toISOString(),
-                              }),
-                            });
-                          } catch { /* silent — feedback is non-critical */ }
-                        }}
-                        className={`px-3 py-1.5 rounded-full text-xs border transition-all ${
-                          feedbackChip === chip
-                            ? 'border-orange-500 bg-orange-500/10 text-orange-600'
-                            : 'border-slate-200 bg-white text-slate-600 hover:bg-teal-50'
-                        }`}
-                      >
-                        {chip}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs" style={{ color: 'var(--ssc-orange-deep)' }}>Feedback recorded. Plan is updating.</p>
-              )}
-
-              {(cat === 'WEAK' || cat === 'AVERAGE' || cat === 'LOW_CONFIDENCE') ? (
-                <button
-                  onClick={() => router.push('/history/mistakes')}
-                  className="w-full py-3 rounded-2xl border text-sm font-semibold"
-                  style={{ background: 'var(--ssc-danger-soft)', borderColor: 'rgba(239,68,68,0.28)', color: 'var(--ssc-danger)' }}
-                >
-                  Review Mistakes
-                </button>
-              ) : (
-                <button
-                  onClick={() => router.push('/mentor')}
-                  className="w-full py-3 rounded-2xl text-white text-sm font-semibold"
-                  style={{ background: 'linear-gradient(135deg, var(--ssc-orange), var(--ssc-orange-deep))', boxShadow: 'var(--ssc-shadow-cta)' }}
-                >
-                  Next Task
-                </button>
-              )}
-            </div>
-          );
-        })()}
 
         {/* ── 5. GUEST SIGN-IN NUDGE ── */}
         {isGuest && (
@@ -1112,257 +1079,50 @@ export default function Result() {
           />
         )}
 
-        {/* ── 6. WEEKLY CHAMPIONS ── */}
-        <div
-          className="champs-in"
-          role="button"
-          tabIndex={0}
-          onClick={() => router.push('/leaderboard')}
-          onKeyDown={e => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              router.push('/leaderboard');
-            }
-          }}
-          style={{
-            background: 'var(--ssc-surface)',
-            border: '1px solid var(--ssc-border-soft)',
-            borderRadius: 24,
-            boxShadow: 'var(--ssc-shadow-card)',
-            padding: 18,
-            cursor: 'pointer',
-            transition: 'transform 150ms ease',
-          }}
-          onPointerDown={e => { setChampsPaused(true); e.currentTarget.style.transform = 'scale(0.98)'; }}
-          onPointerUp={e => { setChampsPaused(false); e.currentTarget.style.transform = 'scale(1)'; }}
-          onPointerLeave={e => { setChampsPaused(false); e.currentTarget.style.transform = 'scale(1)'; }}
-          onTouchStart={() => setChampsPaused(true)}
-          onTouchEnd={() => setChampsPaused(false)}
-          onTouchCancel={() => setChampsPaused(false)}
-        >
-          {/* Header */}
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div>
-              <p className="t-card-title font-display" style={{ color: 'var(--ssc-text-primary)', display: 'flex', alignItems: 'center', gap: 7 }}>
-                <span style={{ fontSize: 16, lineHeight: 1 }}>🔥</span>
-                Weekly Champions
-              </p>
-            </div>
-            <div className="flex items-center gap-3" style={{ paddingTop: 4 }}>
-              <button
-                onClick={e => {
-                  e.stopPropagation();
-                  router.push('/leaderboard');
-                }}
-                className="t-button-sm flex items-center gap-1 font-sans active:opacity-70"
-                style={{ color: '#14B8A6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-              >
-                View your rank
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 18l6-6-6-6" strokeLinecap="round"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {leaderboardRefreshing && topPerformers.length === 0 ? (
-            <div className="py-4">
-              <Loader card size="sm" label="Loading weekly champions..." />
-            </div>
-          ) : topPerformers.length === 0 ? (
-            <p className="font-sans text-xs text-center py-4" style={{ color: 'var(--ssc-text-muted)' }}>
-              Showing last saved leaderboard
-            </p>
-          ) : (
-            <>
-              {/* Full-width auto-advancing card */}
-              {(() => {
-                const idx = champsSlide % Math.min(topPerformers.length, 3);
-                const player = topPerformers[idx];
-                const isSelf = player.email === session?.user?.email;
-                const cardTheme = [
-                  { bg: 'rgba(255,184,0,0.08)',   border: 'rgba(255,184,0,0.24)'   },
-                  { bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.22)' },
-                  { bg: 'rgba(180,83,9,0.08)',    border: 'rgba(180,83,9,0.20)'    },
-                ][idx];
-                return (
-                  <div
-                    key={idx}
-                    className="champ-slide"
-                    style={{
-                      background: cardTheme.bg,
-                      border: `1px solid ${cardTheme.border}`,
-                      borderRadius: 18,
-                      padding: '14px 16px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 14,
-                    }}
-                  >
-                    {/* Avatar with medal badge overlaid top-left */}
-                    <div style={{ position: 'relative', flexShrink: 0 }}>
-                      <ChampionAvatar imageUrl={player.image || null} name={player.name} size={36} />
-                      <span style={{ position: 'absolute', top: -4, left: -4, fontSize: 16, lineHeight: 1 }}>
-                        {RANK_MEDALS[idx]}
-                      </span>
-                    </div>
-
-                    {/* Name + level + coins */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                        <p className="font-display font-bold truncate"
-                          style={{ fontSize: 15, color: isSelf ? 'var(--ssc-teal)' : 'var(--ssc-text-primary)', margin: 0 }}>
-                          {(player.name || 'User').split(' ')[0]}
-                        </p>
-                        <span style={{
-                          fontSize: 10, fontWeight: 700, flexShrink: 0,
-                          color: '#facc15',
-                          background: 'rgba(250,204,21,0.15)',
-                          border: '1px solid rgba(250,204,21,0.3)',
-                          borderRadius: 20, padding: '2px 8px',
-                        }}>
-                          ⭐ {player.level || 'Aspirant'}
-                        </span>
-                        {isSelf && (
-                          <span style={{
-                            fontSize: 10, fontWeight: 700, flexShrink: 0,
-                            background: 'rgba(20,184,166,0.15)', color: '#14B8A6',
-                            border: '1px solid rgba(20,184,166,0.30)',
-                            borderRadius: 20, padding: '2px 7px',
-                          }}>You</span>
-                        )}
-                      </div>
-                    </div>
-
-                      {/* Coins */}
-                    <p className="font-display font-bold"
-                      style={{ fontSize: 17, color: '#FDBA3B', margin: 0, flexShrink: 0 }}>
-                      {Math.round(player.totalScore || 0).toLocaleString()} Coins
-                    </p>
-                  </div>
-                );
-              })()}
-
-              {(leaderboardMsg || leaderboardRefreshing || weeklyUpdatedAt) && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-                  <RefreshStatus
-                    updatedAt={weeklyUpdatedAt}
-                    isRefreshing={leaderboardRefreshing}
-                    onRefresh={e => {
-                      e.stopPropagation();
-                      loadWeeklyLeaderboard({ forceRefresh: true });
-                    }}
-                    refreshText={
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="23 4 23 10 17 10"/>
-                        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
-                      </svg>
-                    }
-                  />
-                </div>
-              )}
-
-              {/* Your rank row */}
-              {isLoggedIn && (
-                  <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--ssc-border-soft)' }}>
-                  <div className="flex items-center gap-2">
-                    <span className="font-sans text-xs" style={{ color: 'var(--ssc-text-secondary)' }}>Your Rank</span>
-                    <span className="font-display font-black text-base" style={{ color: 'var(--ssc-text-primary)' }}>
-                      {userRankIdx !== -1 ? `#${userRankIdx + 1}` : '—'}
-                    </span>
-                  </div>
-                  <span className="text-xs font-semibold rounded-full px-3 py-1" style={{ background: 'rgba(20,184,166,0.12)', color: '#14B8A6', border: '1px solid rgba(20,184,166,0.25)' }}>
-                    ✓ Active today
-                  </span>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* ── FEEDBACK CARD ── */}
-        {feedbackSent ? (
-          <div style={{ borderRadius: 20, padding: 20, background: 'var(--ssc-success-soft)', border: '1px solid rgba(18,184,134,0.18)', borderLeft: '4px solid var(--ssc-success)', boxSizing: 'border-box', boxShadow: 'var(--ssc-shadow-card)' }}>
-            <p style={{ fontSize: 13, color: 'var(--ssc-success)', margin: 0, fontWeight: 600 }}>Thanks for your feedback! We'll look into it.</p>
-          </div>
-        ) : (
-          <AppCard
-            as="button"
-            interactive
-            onClick={() => setShowFeedbackSheet(true)}
-            className="w-full"
-            style={{ display: 'flex', alignItems: 'center', gap: 12, boxSizing: 'border-box', background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', borderLeft: '4px solid var(--ssc-orange)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', boxShadow: 'var(--ssc-shadow-card)' }}
-          >
-            <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(255,122,26,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF7A1A" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
-              </svg>
-            </div>
+        {/* ── SHARE + FEEDBACK ── */}
+        <div style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', borderRadius: 20, overflow: 'hidden', boxShadow: 'var(--ssc-shadow-card)' }}>
+          <div style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ssc-text-primary)', margin: '0 0 2px' }}>Help us improve the app</p>
-              <p style={{ fontSize: 11, color: 'var(--ssc-text-secondary)', margin: 0, lineHeight: 1.4 }}>Tell us what to improve, add, or fix.</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ssc-text-primary)', margin: '0 0 2px' }}>Share your result</p>
+              <p style={{ fontSize: 12, color: 'var(--ssc-text-muted)', margin: 0 }}>Let your friends know about your score!</p>
             </div>
-            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#ffb26b' }}>Share Feedback</span>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffb26b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
-            </div>
-          </AppCard>
-        )}
-
-        {/* ── 7. SHARE RESULT ── */}
-        <AppCard style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)', borderLeft: '4px solid var(--ssc-teal)', boxShadow: 'var(--ssc-shadow-card)' }}>
-          <SectionHeader
-            title="Share your result"
-            subtitle="Challenge friends to beat your score."
-            titleClassName="text-[13px]"
-            subtitleClassName="text-[12px] mb-3"
-          />
-          <div style={{ display: 'flex', gap: 10 }}>
-            <AppButton
-              as="button"
+            <button
               onClick={handleShareWhatsApp}
-              className="justify-center"
-              style={{
-                flex: 1.5, height: 48, borderRadius: 12, cursor: 'pointer',
-                background: 'var(--ssc-teal)', color: '#FFFFFF', border: 'none',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                transform: 'scale(1)', transition: 'background 140ms ease, transform 140ms ease',
-              }}
-              onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; e.currentTarget.style.background = '#0F9488'; }}
-              onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'var(--ssc-teal)'; }}
-              onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'var(--ssc-teal)'; }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="#FFFFFF">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-              </svg>
-              Share on WhatsApp
-            </AppButton>
-            <AppButton
-              as="button"
-              variant="secondary"
-              onClick={handleCopy}
-              style={{
-                flex: 0.8, height: 48, borderRadius: 12, cursor: 'pointer',
-                background: copied ? 'var(--ssc-teal-soft)' : 'var(--ssc-surface-soft)',
-                color: copied ? 'var(--ssc-teal)' : 'var(--ssc-text-primary)',
-                border: `1px solid ${copied ? 'rgba(14,165,164,0.28)' : 'var(--ssc-border-soft)'}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                transform: 'scale(1)', transition: 'background 200ms ease, transform 140ms ease',
-              }}
-              onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+              style={{ flexShrink: 0, height: 36, paddingLeft: 14, paddingRight: 14, borderRadius: 999, border: '1px solid var(--ssc-border-soft)', background: 'var(--ssc-surface-soft)', color: 'var(--ssc-text-primary)', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+              onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.96)'; }}
               onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
               onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
             >
-              {copied ? (
-                <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Copied ✓</>
-              ) : (
-                <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#93A4BC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy Result</>
-              )}
-            </AppButton>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+              Share
+            </button>
           </div>
-        </AppCard>
+          <div style={{ height: 1, background: 'var(--ssc-border-soft)', margin: '0 18px' }} />
+          {feedbackSent ? (
+            <div style={{ padding: '16px 18px' }}>
+              <p style={{ fontSize: 13, color: 'var(--ssc-success)', margin: 0, fontWeight: 600 }}>Thanks for your feedback! We'll look into it.</p>
+            </div>
+          ) : (
+            <div style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ssc-text-primary)', margin: '0 0 2px' }}>We value your feedback</p>
+                <p style={{ fontSize: 12, color: 'var(--ssc-text-muted)', margin: 0 }}>Help us improve the app for you.</p>
+              </div>
+              <button
+                onClick={() => setShowFeedbackSheet(true)}
+                style={{ flexShrink: 0, height: 36, paddingLeft: 14, paddingRight: 14, borderRadius: 999, border: '1px solid rgba(255,122,26,0.28)', background: 'rgba(255,122,26,0.06)', color: 'var(--ssc-orange-deep)', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.96)'; }}
+                onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+              >
+                Give Feedback
+              </button>
+            </div>
+          )}
+        </div>
 
 
       </div>

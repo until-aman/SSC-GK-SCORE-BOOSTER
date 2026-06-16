@@ -23,14 +23,22 @@ const GoogleSVG = () => (
   </svg>
 );
 
+const ChevronSVG = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={TEXT_MUT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+    <path d="M9 18l6-6-6-6" />
+  </svg>
+);
+
 const historyFeatures = [
   {
     title: 'Quiz History',
-    body: 'Review attempted quizzes and re-attempt weak areas.',
+    body: 'View all your quiz attempts and performance',
     route: '/history/quizzes',
     unlockTitle: 'Unlock Quiz History',
     unlockBody: 'Sign in to review your attempted quizzes and re-attempt mistakes.',
-    unlockNote: 'Free \u2022 No payment \u2022 Saves progress across devices',
+    unlockNote: 'Free • No payment • Saves progress across devices',
+    iconColor: 'var(--ssc-teal)',
+    iconBg: 'var(--ssc-teal-soft)',
     icon: (
       <>
         <rect x="5" y="4" width="14" height="16" rx="2" />
@@ -42,11 +50,13 @@ const historyFeatures = [
   },
   {
     title: 'Saved Questions',
-    body: 'Revise bookmarked questions topic-wise.',
+    body: "Questions you've saved for later practice",
     route: '/history/saved',
     unlockTitle: 'Unlock Saved Questions',
     unlockBody: 'Sign in to revise your bookmarked questions across devices.',
-    unlockNote: 'Free \u2022 Keeps your revision list safe',
+    unlockNote: 'Free • Keeps your revision list safe',
+    iconColor: ORANGE,
+    iconBg: ORANGE_DIM,
     icon: (
       <>
         <path d="M6 4h12v17l-6-3-6 3V4z" />
@@ -55,11 +65,13 @@ const historyFeatures = [
   },
   {
     title: 'Repeated Mistakes',
-    body: 'See which questions you keep getting wrong.',
+    body: 'Focus on questions you get wrong repeatedly',
     route: '/history/mistakes',
     unlockTitle: 'Unlock Repeated Mistakes',
     unlockBody: 'Sign in to see questions you got wrong multiple times and practice them again.',
-    unlockNote: 'Free \u2022 Helps you revise smarter',
+    unlockNote: 'Free • Helps you revise smarter',
+    iconColor: 'var(--ssc-danger)',
+    iconBg: 'var(--ssc-danger-soft)',
     icon: (
       <>
         <path d="M12 9v4" />
@@ -70,11 +82,14 @@ const historyFeatures = [
   },
   {
     title: 'Coins History',
-    body: 'Track quiz rewards and bonuses.',
+    body: 'Track your earned coins',
+    isNew: true,
     route: '/history/coins',
     unlockTitle: 'Unlock Coins History',
     unlockBody: 'Sign in to track your rewards and quiz activity.',
-    unlockNote: 'Free \u2022 Saves your rewards history',
+    unlockNote: 'Free • Saves your rewards history',
+    iconColor: 'var(--ssc-coin)',
+    iconBg: 'rgba(246,179,49,0.14)',
     icon: (
       <>
         <circle cx="12" cy="12" r="8" />
@@ -86,11 +101,14 @@ const historyFeatures = [
   },
   {
     title: 'Streak History',
-    body: 'Monitor your practice consistency.',
+    body: 'Track your learning streak',
+    isNew: true,
     route: '/streak',
     unlockTitle: 'Unlock Streak History',
     unlockBody: 'Sign in to track your daily practice consistency.',
-    unlockNote: 'Free \u2022 Keeps your streak safe',
+    unlockNote: 'Free • Keeps your streak safe',
+    iconColor: '#f97316',
+    iconBg: 'rgba(249,115,22,0.12)',
     icon: (
       <>
         <path d="M8 14a4 4 0 1 0 8 0c0-3-4-4-2.5-9C10 7 8 10 8 14z" />
@@ -100,26 +118,37 @@ const historyFeatures = [
   },
   {
     title: 'Reports',
-    body: 'Open your AI GK analysis and weekly reports.',
+    body: 'Detailed performance reports & insights',
     route: '/analysis',
     unlockTitle: 'Unlock Reports',
     unlockBody: 'Sign in to view your GK analysis, weak areas, and weekly reports.',
-    unlockNote: 'Free \u2022 No payment \u2022 Uses your real practice data',
+    unlockNote: 'Free • No payment • Uses your real practice data',
+    iconColor: '#3B82F6',
+    iconBg: 'rgba(59,130,246,0.12)',
     icon: (
       <>
-        <path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
-        <path d="M14 3v5h5" />
-        <path d="M8 13h8" />
-        <path d="M8 17h5" />
+        <path d="M9 19v-6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm0 0V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v10m-6 0a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2m0 0V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z" />
       </>
     ),
   },
 ];
 
-function FeatureIcon({ children }) {
+function FeatureIcon({ children, iconColor, iconBg }) {
   return (
-    <div className="history-feature-icon">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <div
+      style={{
+        width: 44,
+        height: 44,
+        borderRadius: 13,
+        background: iconBg || ORANGE_DIM,
+        color: iconColor || ORANGE,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      }}
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         {children}
       </svg>
     </div>
@@ -132,6 +161,50 @@ const HistoryHeaderIcon = () => (
     <path d="M12 7v5l3 3" />
   </svg>
 );
+
+const SHARED_STYLES = `
+  .history-intro { margin-bottom: 20px; }
+  .history-intro-title { font-size: 22px; font-weight: 900; color: ${TEXT_PRI}; margin: 0 0 4px; line-height: 1.2; }
+  .history-intro-body { font-size: 13px; color: ${TEXT_SEC}; margin: 0; line-height: 1.5; }
+  .history-list-card {
+    background: ${BG_CARD};
+    border: 1px solid ${BORDER};
+    border-radius: 20px;
+    padding: 4px 16px;
+    box-shadow: var(--ssc-shadow-card);
+  }
+  .history-feature-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid ${BORDER};
+    width: 100%;
+    background: transparent;
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+  }
+  .history-feature-row:active { transform: scale(.99); }
+  .history-feature-row:last-child { border-bottom: none; }
+  .history-feature-title {
+    display: block;
+    font-size: 14px;
+    font-weight: 900;
+    color: ${TEXT_PRI};
+    line-height: 1.3;
+  }
+  .history-feature-body {
+    display: block;
+    font-size: 12px;
+    color: ${TEXT_SEC};
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+`;
 
 function HistoryGuestState() {
   const [lockedFeature, setLockedFeature] = useState(null);
@@ -146,102 +219,7 @@ function HistoryGuestState() {
       <Head><title>History - SSC GK Score Booster</title></Head>
       <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
         <style>{`
-          .history-guest-card {
-            background: ${BG_CARD};
-            border: 1px solid ${BORDER};
-            border-radius: 18px;
-            padding: 4px 16px;
-            box-shadow: var(--ssc-shadow-card);
-          }
-          .history-benefit-strip {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            background: ${BG_DEEP};
-            border: 1px solid ${BORDER};
-            border-radius: 999px;
-            padding: 9px 14px;
-            flex-wrap: wrap;
-            box-shadow: 0 8px 20px rgba(16,32,51,0.05);
-          }
-          .history-benefit-strip span {
-            color: ${TEXT_SEC};
-            font-size: 12px;
-          }
-          .history-benefit-separator {
-            color: ${TEXT_MUT};
-          }
-          .history-feature-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 13px 0;
-            border-bottom: 1px solid ${BORDER};
-            width: 100%;
-            background: transparent;
-            border-left: 0;
-            border-right: 0;
-            border-top: 0;
-            cursor: pointer;
-            text-align: left;
-            font-family: inherit;
-          }
-          .history-feature-row:active {
-            transform: scale(.99);
-          }
-          .history-feature-row:last-child {
-            border-bottom: none;
-          }
-          .history-feature-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 9px;
-            background: ${ORANGE_DIM};
-            color: ${ORANGE};
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-          }
-          .history-arrow {
-            color: ${TEXT_MUT};
-            flex-shrink: 0;
-            font-size: 16px;
-          }
-          .history-preview-shell {
-            position: relative;
-            height: 360px;
-            margin-top: auto;
-            overflow: hidden;
-            border-radius: 18px;
-            background: transparent;
-            flex: 0 0 auto;
-          }
-          .history-preview-blur {
-            filter: blur(6px);
-            opacity: .4;
-            pointer-events: none;
-            user-select: none;
-            padding: 4px;
-          }
-          .history-lock-card {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            pointer-events: none;
-          }
-          .history-preview-block {
-            background: ${BG_CARD};
-            border: 1px solid ${BORDER};
-            border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 10px;
-            box-shadow: var(--ssc-shadow-card);
-          }
+          ${SHARED_STYLES}
           .history-google-btn {
             width: 100%;
             border: none;
@@ -258,9 +236,7 @@ function HistoryGuestState() {
             font-family: inherit;
             cursor: pointer;
           }
-          .history-google-btn:active {
-            transform: scale(.98);
-          }
+          .history-google-btn:active { transform: scale(.98); }
           .history-modal-backdrop {
             position: fixed;
             inset: 0;
@@ -300,9 +276,7 @@ function HistoryGuestState() {
             line-height: 1;
             cursor: pointer;
           }
-          .history-modal-close:active {
-            transform: scale(.96);
-          }
+          .history-modal-close:active { transform: scale(.96); }
           .history-modal-lock {
             width: 46px;
             height: 46px;
@@ -322,11 +296,40 @@ function HistoryGuestState() {
             padding: 22px 16px calc(94px + env(safe-area-inset-bottom));
             box-sizing: border-box;
           }
-          @media (max-height: 700px) {
-            .history-preview-shell {
-              height: 300px;
-            }
+          .history-preview-shell {
+            position: relative;
+            height: 320px;
+            margin-top: auto;
+            overflow: hidden;
+            border-radius: 18px;
+            background: transparent;
+            flex: 0 0 auto;
           }
+          .history-preview-blur {
+            filter: blur(6px);
+            opacity: .4;
+            pointer-events: none;
+            user-select: none;
+            padding: 4px;
+          }
+          .history-lock-card {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            pointer-events: none;
+          }
+          .history-preview-block {
+            background: ${BG_CARD};
+            border: 1px solid ${BORDER};
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+            box-shadow: var(--ssc-shadow-card);
+          }
+          @media (max-height: 700px) { .history-preview-shell { height: 260px; } }
         `}</style>
 
         <div
@@ -346,93 +349,72 @@ function HistoryGuestState() {
               <HistoryHeaderIcon />
             </div>
             <span className="font-display font-black text-[18px] tracking-wide leading-none whitespace-nowrap self-center" style={{ color: TEXT_PRI }}>
-              My History
-            </span>
-            <span style={{ fontSize: 9, fontWeight: 800, color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)', border: '1px solid rgba(14,165,164,0.20)', borderRadius: 99, padding: '3px 8px', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-              PRACTICE ARCHIVE
+              History
             </span>
           </div>
         </div>
 
         <div className="history-guest-content">
 
-        <section className="history-benefit-strip mb-[18px]">
-          <span>Review</span>
-          <span className="history-benefit-separator">&middot;</span>
-          <span>Revise</span>
-          <span className="history-benefit-separator">&middot;</span>
-          <span>Re-attempt</span>
-          <span className="history-benefit-separator">&middot;</span>
-          <span>Track</span>
-        </section>
+          <div className="history-intro">
+            <h2 className="history-intro-title font-display">Review &amp; Improve</h2>
+            <p className="history-intro-body">Choose what you want to review today</p>
+          </div>
 
-        <section className="history-guest-card mb-[18px]">
-          {historyFeatures.map(feature => (
-            <button key={feature.title} type="button" className="history-feature-row" onClick={() => setLockedFeature(feature)}>
-              <FeatureIcon>{feature.icon}</FeatureIcon>
-              <span className="font-display min-w-0 flex-1" style={{ fontSize: 14, fontWeight: 800, color: TEXT_PRI }}>{feature.title}</span>
-              <span className="history-arrow" aria-hidden="true">&rarr;</span>
-            </button>
-          ))}
-        </section>
-
-        <section className="history-preview-shell">
-          <div className="history-preview-blur">
-            {[
-              {
-                title: 'Polity • Fundamental Rights',
-                meta: '68% Accuracy',
-                body: 'Review / Re-attempt',
-                accent: ORANGE,
-              },
-              {
-                title: 'Saved Question',
-                meta: 'Question preview',
-                body: 'Saved for revision',
-                accent: '#14B8A6',
-              },
-              {
-                title: 'Repeated Mistake',
-                meta: 'Wrong 3x',
-                body: 'Practice now',
-                accent: '#EF4444',
-              },
-              {
-                title: 'Rewards',
-                meta: 'Total Coins',
-                body: 'Weekly rewards',
-                accent: '#F59E0B',
-              },
-            ].map(({ title, meta, body, accent }) => (
-              <div key={title} className="history-preview-block">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-display font-black text-[14px]" style={{ color: TEXT_PRI }}>{title}</p>
-                    <p className="font-sans text-[11px] mt-1" style={{ color: TEXT_MUT }}>{meta}</p>
-                  </div>
-                  <div className="h-8 w-8 rounded-xl" style={{ background: `${accent}33` }} />
+          <section className="history-list-card mb-5">
+            {historyFeatures.map(feature => (
+              <button key={feature.title} type="button" className="history-feature-row" onClick={() => setLockedFeature(feature)}>
+                <FeatureIcon iconColor={feature.iconColor} iconBg={feature.iconBg}>{feature.icon}</FeatureIcon>
+                <div className="min-w-0 flex-1">
+                  <span className="history-feature-title font-display">{feature.title}</span>
+                  <span className="history-feature-body">{feature.body}</span>
                 </div>
-                <p className="font-sans text-[12px] mt-3" style={{ color: TEXT_SEC }}>{body}</p>
-                <div className="h-2 w-2/3 rounded mt-3" style={{ background: 'var(--ssc-border-soft)' }} />
-              </div>
+                {feature.isNew && (
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)', border: '1px solid rgba(14,165,164,0.22)', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap', flexShrink: 0 }}>New</span>
+                )}
+                <ChevronSVG />
+              </button>
             ))}
-          </div>
-          <div className="history-lock-card">
-            <div className="text-center rounded-2xl px-6 py-[18px]" style={{ background: 'rgba(255,255,255,.94)', border: `1px solid ${BORDER}`, boxShadow: 'var(--ssc-shadow-float)' }}>
-              <div className="w-[42px] h-[42px] rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ background: ORANGE_DIM }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-              </div>
-              <p className="font-display text-[15px] font-extrabold mb-1" style={{ color: TEXT_PRI }}>Your history is waiting</p>
-              <p className="font-sans text-[12px]" style={{ color: TEXT_MUT }}>Sign in to unlock your quiz archive</p>
+          </section>
+
+          <section className="history-preview-shell">
+            <div className="history-preview-blur">
+              {[
+                { title: 'Polity • Fundamental Rights', meta: '68% Accuracy', body: 'Review / Re-attempt', accent: ORANGE },
+                { title: 'Saved Question', meta: 'Question preview', body: 'Saved for revision', accent: '#14B8A6' },
+                { title: 'Repeated Mistake', meta: 'Wrong 3x', body: 'Practice now', accent: '#EF4444' },
+                { title: 'Rewards', meta: 'Total Coins', body: 'Weekly rewards', accent: '#F59E0B' },
+              ].map(({ title, meta, body, accent }) => (
+                <div key={title} className="history-preview-block">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-display font-black text-[14px]" style={{ color: TEXT_PRI }}>{title}</p>
+                      <p className="font-sans text-[11px] mt-1" style={{ color: TEXT_MUT }}>{meta}</p>
+                    </div>
+                    <div className="h-8 w-8 rounded-xl" style={{ background: `${accent}33` }} />
+                  </div>
+                  <p className="font-sans text-[12px] mt-3" style={{ color: TEXT_SEC }}>{body}</p>
+                  <div className="h-2 w-2/3 rounded mt-3" style={{ background: 'var(--ssc-border-soft)' }} />
+                </div>
+              ))}
             </div>
-          </div>
-        </section>
+            <div className="history-lock-card">
+              <div className="text-center rounded-2xl px-6 py-[18px]" style={{ background: 'rgba(255,255,255,.94)', border: `1px solid ${BORDER}`, boxShadow: 'var(--ssc-shadow-float)' }}>
+                <div className="w-[42px] h-[42px] rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ background: ORANGE_DIM }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </div>
+                <p className="font-display text-[15px] font-extrabold mb-1" style={{ color: TEXT_PRI }}>Your history is waiting</p>
+                <p className="font-sans text-[12px]" style={{ color: TEXT_MUT }}>Sign in to unlock your quiz archive</p>
+              </div>
+            </div>
+          </section>
 
         </div>
       </div>
+
       {lockedFeature && (
         <div className="history-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="history-unlock-title" onClick={() => setLockedFeature(null)}>
           <div className="history-modal-card" onClick={(event) => event.stopPropagation()}>
@@ -481,7 +463,7 @@ export default function HistoryPage() {
     return (
       <div className="min-h-screen pb-24" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
         <Head><title>History - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="My History" badge="PRACTICE ARCHIVE" icon={<HistoryHeaderIcon />} />
+        <HistoryTopBar title="History" badge="PRACTICE ARCHIVE" icon={<HistoryHeaderIcon />} />
         <main className="px-4 pt-5">
           <Loader card size="md" label="Loading history..." />
         </main>
@@ -497,91 +479,28 @@ export default function HistoryPage() {
     <>
       <Head><title>History - SSC GK Score Booster</title></Head>
       <div className="min-h-screen pb-28" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
-        <style>{`
-          .history-guest-card {
-            background: ${BG_CARD};
-            border: 1px solid ${BORDER};
-            border-radius: 18px;
-            padding: 4px 16px;
-            box-shadow: var(--ssc-shadow-card);
-          }
-          .history-benefit-strip {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            background: ${BG_DEEP};
-            border: 1px solid ${BORDER};
-            border-radius: 999px;
-            padding: 9px 14px;
-            flex-wrap: wrap;
-            box-shadow: 0 8px 20px rgba(16,32,51,0.05);
-          }
-          .history-benefit-strip span {
-            color: ${TEXT_SEC};
-            font-size: 12px;
-          }
-          .history-benefit-separator {
-            color: ${TEXT_MUT};
-          }
-          .history-feature-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 13px 0;
-            border-bottom: 1px solid ${BORDER};
-            width: 100%;
-            background: transparent;
-            border-left: 0;
-            border-right: 0;
-            border-top: 0;
-            cursor: pointer;
-            text-align: left;
-            font-family: inherit;
-          }
-          .history-feature-row:active {
-            transform: scale(.99);
-          }
-          .history-feature-row:last-child {
-            border-bottom: none;
-          }
-          .history-feature-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 9px;
-            background: ${ORANGE_DIM};
-            color: ${ORANGE};
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-          }
-          .history-arrow {
-            color: ${TEXT_MUT};
-            flex-shrink: 0;
-            font-size: 16px;
-          }
-        `}</style>
+        <style>{SHARED_STYLES}</style>
 
-        <HistoryTopBar title="My History" badge="PRACTICE ARCHIVE" icon={<HistoryHeaderIcon />} />
+        <HistoryTopBar title="History" badge="PRACTICE ARCHIVE" icon={<HistoryHeaderIcon />} />
 
         <main className="px-4 pt-[22px]">
-          <section className="history-benefit-strip mb-[18px]">
-            <span>Review</span>
-            <span className="history-benefit-separator">&middot;</span>
-            <span>Revise</span>
-            <span className="history-benefit-separator">&middot;</span>
-            <span>Re-attempt</span>
-            <span className="history-benefit-separator">&middot;</span>
-            <span>Track</span>
-          </section>
+          <div className="history-intro">
+            <h2 className="history-intro-title font-display">Review &amp; Improve</h2>
+            <p className="history-intro-body">Choose what you want to review today</p>
+          </div>
 
-          <section className="history-guest-card">
+          <section className="history-list-card">
             {historyFeatures.map(feature => (
               <button key={feature.title} type="button" className="history-feature-row" onClick={() => router.push(feature.route)}>
-                <FeatureIcon>{feature.icon}</FeatureIcon>
-                <span className="font-display min-w-0 flex-1" style={{ fontSize: 14, fontWeight: 800, color: TEXT_PRI }}>{feature.title}</span>
-                <span className="history-arrow" aria-hidden="true">&rarr;</span>
+                <FeatureIcon iconColor={feature.iconColor} iconBg={feature.iconBg}>{feature.icon}</FeatureIcon>
+                <div className="min-w-0 flex-1">
+                  <span className="history-feature-title font-display">{feature.title}</span>
+                  <span className="history-feature-body">{feature.body}</span>
+                </div>
+                {feature.isNew && (
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)', border: '1px solid rgba(14,165,164,0.22)', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap', flexShrink: 0 }}>New</span>
+                )}
+                <ChevronSVG />
               </button>
             ))}
           </section>

@@ -25,11 +25,11 @@ const FILTER_LABELS = {
   saved: 'Saved',
 };
 const TONES = {
-  red: ['#fca5a5', 'rgba(239,68,68,.12)'],
-  amber: ['#fcd34d', 'rgba(245,158,11,.12)'],
-  green: ['#86efac', 'rgba(34,197,94,.12)'],
-  blue: ['#93c5fd', 'rgba(59,130,246,.12)'],
-  grey: ['#cbd5e1', 'rgba(148,163,184,.10)'],
+  red:   ['#B91C1C', 'rgba(239,68,68,0.10)'],
+  amber: ['#B45309', 'rgba(245,158,11,0.10)'],
+  green: ['#047857', 'rgba(16,185,129,0.10)'],
+  blue:  ['#1D4ED8', 'rgba(59,130,246,0.10)'],
+  grey:  ['#374151', 'rgba(107,114,128,0.10)'],
 };
 
 function optionText(question, option) {
@@ -134,12 +134,21 @@ function QuestionReviewCard({ item, aiCache, setAiCache, onToggleSave }) {
             </div>
           </div>
           <div className="divider" />
-          <button type="button" className="secondary-btn w-full" onClick={() => setExplanationOpen(value => !value)}>{explanationOpen ? 'Hide Explanation' : 'Show Explanation'}</button>
+          <button type="button" className="secondary-btn w-full" onClick={() => setExplanationOpen(value => !value)}>{explanationOpen ? 'Hide Explanation' : '📖 Show Explanation'}</button>
           {explanationOpen && (
             <div className="explanation-panel">
               <p className="detail-label">Explanation</p>
-              {item.explanation ? <p className="text-sm text-slate-300 leading-relaxed">{item.explanation}</p> : <p className="text-sm text-[var(--ssc-text-secondary)]">No official explanation available.</p>}
-              {cache.ai && <p className="text-sm text-orange-100 leading-relaxed mt-3">{cache.ai}</p>}
+              {item.explanation ? (
+                <p style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', lineHeight: 1.55 }}>{item.explanation}</p>
+              ) : (
+                <p style={{ fontSize: 13, color: 'var(--ssc-text-muted)', lineHeight: 1.55 }}>No official explanation available.</p>
+              )}
+              {cache.ai && (
+                <div style={{ marginTop: 10, padding: 11, background: 'rgba(139,92,246,0.07)', border: '1px solid rgba(139,92,246,0.18)', borderRadius: 12 }}>
+                  <p style={{ fontSize: 11, fontWeight: 900, color: '#7C3AED', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 7px' }}>✦ AI Explanation</p>
+                  <p style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', lineHeight: 1.55, margin: 0 }}>{cache.ai}</p>
+                </div>
+              )}
               <button type="button" className="secondary-btn mt-3 w-full" disabled={cache.loading} onClick={getAIExplanation}>{cache.loading ? 'Loading...' : 'Get AI Explanation ✦'}</button>
             </div>
           )}
@@ -281,16 +290,70 @@ export default function HistoryQuestionsPage() {
   return (
     <>
       <Head><title>Question Review - SSC GK Score Booster</title></Head>
-      <div className="min-h-screen [background:linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-28">
+      <div className="min-h-screen bg-[var(--ssc-bg)] pb-28">
         <style>{`
-          .history-card{background:#172d47;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;margin-bottom:12px}.review-summary-card{background:linear-gradient(180deg,rgba(23,45,71,.98),rgba(20,40,64,.98));border:1px solid rgba(148,163,184,.14);border-radius:18px;padding:15px;margin-bottom:12px;box-shadow:0 18px 45px rgba(0,0,0,.16)}.summary-total{font-family:var(--font-display);font-size:20px;font-weight:950;line-height:1;color:#fff}.summary-label{font-size:12px;font-weight:800;color:#8fa3bd;margin-top:4px}.summary-stat-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);font-size:13px;font-weight:900}.summary-stat.correct{color:#5eead4}.summary-stat.wrong{color:#fca5a5}.summary-stat.skipped{color:#93a4ba}.carousel-shell{background:#172d47;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:13px 14px;margin-bottom:12px}.carousel-progress{margin-bottom:12px}.carousel-progress strong{display:block;color:#f8fafc;font-size:14px;font-weight:900;line-height:1.2}.carousel-progress span{display:block;color:#94a3b8;font-size:12px;font-weight:800;margin-top:4px}.carousel-nav{display:grid;grid-template-columns:1fr 1fr;gap:8px}.question-review-card{padding:14px 15px}.question-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.question-kicker{color:#5eead4;font-size:11px;font-weight:900;line-height:1.35;margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.question-badge{font-size:10px;padding:4px 8px;max-width:132px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 0 auto}.question-review-text{color:#f8fafc;font-size:15px;font-weight:900;line-height:1.5;margin:13px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical}.question-review-text.open{-webkit-line-clamp:unset;display:block}.read-more-btn{border:0;background:transparent;color:#fdba74;font-size:12px;font-weight:900;padding:8px 0 0}.question-history-stats{display:flex;align-items:center;justify-content:space-between;gap:8px;row-gap:7px;flex-wrap:wrap;margin-top:14px;padding:11px 0;border-top:1px solid rgba(148,163,184,.10);border-bottom:1px solid rgba(148,163,184,.10);font-size:12px;font-weight:900}.stat-correct{color:#5eead4}.stat-wrong{color:#fca5a5}.stat-skipped{color:#93a4ba}.question-action-row{display:grid;grid-template-columns:1fr .72fr 40px;gap:8px;margin-top:13px;align-items:center}.save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid rgba(148,163,184,.14);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;transition:transform .12s ease,background .12s ease,border-color .12s ease}.save-icon-btn:active{transform:scale(.92)}.save-icon-btn.saved{border-color:rgba(20,184,166,.40);background:rgba(20,184,166,.18)}.bottom-action-card{display:grid;gap:8px;margin:18px 0 8px;padding:8px;border-radius:18px;background:rgba(13,27,46,.72);border:1px solid rgba(255,255,255,.08);box-shadow:0 16px 38px rgba(0,0,0,.18)}.bottom-action-card .primary-btn{box-shadow:0 14px 34px rgba(255,90,0,.22)}.primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit}.primary-btn{border:0;background:linear-gradient(135deg,#ff7a1a,#ff4d00);color:white}.secondary-btn{border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.04);color:#cbd5e1}.primary-btn:disabled,.secondary-btn:disabled{opacity:.45;cursor:default}.chip{border:1px solid rgba(148,163,184,.16);border-radius:999px;background:#172d47;color:#94a3b8;font-size:12px;font-weight:800;padding:8px 13px;white-space:nowrap;text-transform:capitalize}.chip.active{background:rgba(255,122,26,.16);border-color:rgba(255,122,26,.45);color:#fdba74}.filter-chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 16px 8px;margin:0 -16px;scrollbar-width:none;-ms-overflow-style:none}.filter-chip-row::-webkit-scrollbar{display:none}.review-filter-summary{color:#94a3b8;font-size:12px;font-weight:800;line-height:1.4;margin:0 0 12px 2px}.tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900}.open-detail-panel{margin-top:14px;padding:12px;border:1px solid rgba(148,163,184,.10);border-radius:16px;background:rgba(15,23,42,.28)}.detail-section{margin-bottom:10px}.detail-label{color:#94a3b8;font-size:10px;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px}.detail-question{color:#f8fafc;font-size:13px;font-weight:900;line-height:1.48;margin:0}.answer-summary-grid{display:grid;gap:8px}.answer-summary-row{border:1px solid rgba(148,163,184,.10);background:rgba(255,255,255,.035);border-radius:12px;padding:9px 10px}.answer-summary-row span{display:block;color:#94a3b8;font-size:10px;font-weight:900;margin-bottom:4px}.answer-summary-row b{display:block;font-size:12px;line-height:1.4}.answer-summary-row.correct b{color:#5eead4}.answer-summary-row.wrong b{color:#fca5a5}.answer-summary-row.skipped b{color:#93a4ba}.explanation-panel{margin-top:10px;border:1px solid rgba(148,163,184,.10);border-radius:14px;background:rgba(15,23,42,.45);padding:11px}.option-row{display:flex;justify-content:space-between;gap:10px;border:1px solid rgba(148,163,184,.12);background:rgba(255,255,255,.035);border-radius:12px;padding:10px;margin-top:8px;color:#cbd5e1;font-size:13px}.option-row.correct{border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.10);color:#bbf7d0}.option-row.wrong{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.10);color:#fecaca}.divider{height:1px;background:rgba(255,255,255,.07);margin:12px 0}
-          .history-card,.review-summary-card,.carousel-shell,.bottom-action-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);box-shadow:var(--ssc-shadow-card)}.summary-total,.carousel-progress strong,.question-review-text,.detail-question{color:var(--ssc-text-primary)}.summary-label,.carousel-progress span,.review-filter-summary,.detail-label{color:var(--ssc-text-secondary)}.summary-stat-row,.question-history-stats{border-color:var(--ssc-border-soft)}.summary-stat.correct,.stat-correct{color:var(--ssc-success)}.summary-stat.wrong,.stat-wrong{color:var(--ssc-danger)}.summary-stat.skipped,.stat-skipped{color:var(--ssc-text-muted)}.question-review-card{cursor:pointer}.question-review-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}.question-kicker{color:var(--ssc-teal);background:var(--ssc-teal-soft);border-radius:999px;padding:3px 9px}.question-chevron{display:inline-flex;height:24px;width:24px;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-text-secondary);font-size:18px;font-weight:900}.question-action-row{display:flex;justify-content:flex-end;margin-top:13px}.save-icon-btn{border-color:var(--ssc-border-soft);background:var(--ssc-surface-soft)}.save-icon-btn.saved{border-color:rgba(14,165,164,.36);background:var(--ssc-teal-soft)}.secondary-btn{border-color:var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-teal)}.chip{background:var(--ssc-surface);border-color:var(--ssc-border-soft);color:var(--ssc-text-secondary)}.chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white}.open-detail-panel,.explanation-panel{border-color:var(--ssc-border-soft);background:var(--ssc-surface-soft)}.answer-summary-row,.option-row{border-color:var(--ssc-border-soft);background:var(--ssc-surface);color:var(--ssc-text-secondary)}.option-row.correct{border-color:rgba(18,184,134,.28);background:var(--ssc-success-soft);color:var(--ssc-success)}.option-row.wrong{border-color:rgba(239,68,68,.28);background:var(--ssc-danger-soft);color:var(--ssc-danger)}.explanation-panel .text-slate-300,.explanation-panel .text-orange-100{color:var(--ssc-text-secondary)}.divider{background:var(--ssc-border-soft)}
+          .history-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
+          .review-summary-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:15px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
+          .summary-total{font-family:var(--font-display);font-size:22px;font-weight:950;line-height:1;color:var(--ssc-text-primary)}
+          .summary-label{font-size:12px;font-weight:700;color:var(--ssc-text-muted);margin-top:4px}
+          .summary-stat-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-top:12px;padding-top:12px;border-top:1px solid var(--ssc-border-soft);font-size:13px;font-weight:800}
+          .summary-stat.correct{color:var(--ssc-teal)}
+          .summary-stat.wrong{color:#DC2626}
+          .summary-stat.skipped{color:var(--ssc-text-muted)}
+          .carousel-shell{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:13px 14px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
+          .carousel-progress{margin-bottom:12px}
+          .carousel-progress strong{display:block;color:var(--ssc-text-primary);font-size:14px;font-weight:900;line-height:1.2}
+          .carousel-progress span{display:block;color:var(--ssc-text-muted);font-size:12px;font-weight:700;margin-top:4px}
+          .carousel-nav{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+          .question-review-card{padding:14px 15px}
+          .question-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+          .question-kicker{color:var(--ssc-teal);font-size:11px;font-weight:800;line-height:1.35;margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+          .question-badge{font-size:10px;padding:4px 8px;max-width:132px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 0 auto}
+          .question-review-text{color:var(--ssc-text-primary);font-size:15px;font-weight:800;line-height:1.5;margin:13px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical}
+          .question-review-text.open{-webkit-line-clamp:unset;display:block}
+          .read-more-btn{border:0;background:transparent;color:var(--ssc-teal);font-size:12px;font-weight:800;padding:8px 0 0;cursor:pointer;font-family:inherit}
+          .question-history-stats{display:flex;align-items:center;justify-content:space-between;gap:8px;row-gap:7px;flex-wrap:wrap;margin-top:14px;padding:11px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft);font-size:12px;font-weight:800}
+          .stat-correct{color:var(--ssc-teal)}
+          .stat-wrong{color:#DC2626}
+          .stat-skipped{color:var(--ssc-text-muted)}
+          .question-review-card{cursor:pointer}.question-review-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}.question-action-row{display:flex;justify-content:flex-end;margin-top:13px;align-items:center}.question-chevron{display:inline-flex;height:24px;width:24px;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-text-secondary);font-size:18px;font-weight:900}
+          .save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid var(--ssc-border-soft);background:rgba(248,250,252,1);display:flex;align-items:center;justify-content:center}
+          .save-icon-btn:active{transform:scale(.92)}
+          .save-icon-btn.saved{border-color:rgba(20,184,166,0.40);background:rgba(20,184,166,0.12)}
+          .bottom-action-card{display:grid;gap:8px;margin:18px 0 8px;padding:8px;border-radius:18px;background:rgba(255,255,255,0.96);border:1px solid var(--ssc-border-soft);box-shadow:0 16px 38px rgba(16,32,51,0.12)}
+          .bottom-action-card .primary-btn{box-shadow:0 4px 14px rgba(255,90,0,0.22)}
+          .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:800;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit}
+          .primary-btn{border:0;background:linear-gradient(135deg,#FF8A1F,#FF5A00);color:white;box-shadow:0 4px 12px rgba(255,107,22,0.25)}
+          .secondary-btn{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface);color:var(--ssc-teal)}
+          .primary-btn:disabled,.secondary-btn:disabled{opacity:.45;cursor:default;box-shadow:none}
+          .chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:700;padding:7px 14px;white-space:nowrap;text-transform:capitalize;cursor:pointer;font-family:inherit}
+          .chip.active{background:linear-gradient(135deg,#FF8A1F,#FF5A00);border-color:transparent;color:white}
+          .filter-chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 16px 8px;margin:0 -16px;scrollbar-width:none;-ms-overflow-style:none}
+          .filter-chip-row::-webkit-scrollbar{display:none}
+          .review-filter-summary{color:var(--ssc-text-muted);font-size:12px;font-weight:700;line-height:1.4;margin:0 0 12px 2px}
+          .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900}
+          .open-detail-panel{margin-top:14px;padding:12px;border:1px solid var(--ssc-border-soft);border-radius:16px;background:rgba(248,250,252,1)}
+          .detail-section{margin-bottom:10px}
+          .detail-label{color:var(--ssc-text-muted);font-size:10px;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px}
+          .detail-question{color:var(--ssc-text-primary);font-size:13px;font-weight:800;line-height:1.48;margin:0}
+          .answer-summary-grid{display:grid;gap:8px}
+          .answer-summary-row{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface);border-radius:12px;padding:9px 10px}
+          .answer-summary-row span{display:block;color:var(--ssc-text-muted);font-size:10px;font-weight:900;margin-bottom:4px}
+          .answer-summary-row b{display:block;font-size:12px;line-height:1.4;color:var(--ssc-text-primary)}
+          .answer-summary-row.correct b{color:var(--ssc-teal)}
+          .answer-summary-row.wrong b{color:#DC2626}
+          .answer-summary-row.skipped b{color:var(--ssc-text-muted)}
+          .explanation-panel{margin-top:10px;border:1px solid rgba(14,165,164,0.20);border-radius:14px;background:rgba(14,165,164,0.06);padding:11px}
+          .option-row{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface);border-radius:12px;padding:10px;margin-top:8px;color:var(--ssc-text-secondary);font-size:13px}
+          .option-row.correct{border-color:rgba(20,184,166,0.35);background:rgba(20,184,166,0.07);color:var(--ssc-teal)}
+          .option-row.wrong{border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.07);color:#DC2626}
+          .divider{height:1px;background:var(--ssc-border-soft);margin:12px 0}
         `}</style>
-        <HistoryTopBar title="Question Review" showBack />
+        <HistoryTopBar title="Question Review" showBack badge="HISTORY" />
         <main className="px-4 pt-5">
           <header className="mb-4">
             <h1 className="font-display text-xl font-black text-[var(--ssc-text-primary)]">{queryTitle}</h1>
-            <p className="text-sm text-[var(--ssc-text-secondary)]">Attempted questions · {router.query.status || 'All'}</p>
+            <p className="text-sm text-[var(--ssc-text-muted)]">Attempted questions · {router.query.status || 'All'}</p>
           </header>
           {status === 'loading' || loading ? <Loader card size="md" label="Loading questions..." /> : status === 'unauthenticated' ? (
             <div className="history-card text-center text-[var(--ssc-text-secondary)]">Sign in to review questions.</div>
@@ -317,8 +380,8 @@ export default function HistoryQuestionsPage() {
                       <span>Use Previous and Next to review one question at a time</span>
                     </div>
                     <div className="carousel-nav">
-                      <button type="button" className="secondary-btn" disabled={safeActiveQuestionIndex === 0} onClick={() => setActiveQuestionIndex(index => Math.max(index - 1, 0))}>Previous</button>
-                      <button type="button" className="secondary-btn" disabled={safeActiveQuestionIndex >= filtered.length - 1} onClick={() => setActiveQuestionIndex(index => Math.min(index + 1, filtered.length - 1))}>Next</button>
+                      <button type="button" className="secondary-btn" disabled={safeActiveQuestionIndex === 0} onClick={() => setActiveQuestionIndex(index => Math.max(index - 1, 0))}>&#8592; Previous</button>
+                      <button type="button" className="secondary-btn" disabled={safeActiveQuestionIndex >= filtered.length - 1} onClick={() => setActiveQuestionIndex(index => Math.min(index + 1, filtered.length - 1))}>Next &#8594;</button>
                     </div>
                   </section>
                   <QuestionReviewCard key={activeQuestion.questionId} item={activeQuestion} aiCache={aiCache} setAiCache={setAiCache} onToggleSave={toggleSave} />
@@ -328,7 +391,7 @@ export default function HistoryQuestionsPage() {
                   </section>
                 </>
               ) : (
-                <div className="history-card text-center text-[var(--ssc-text-secondary)]">
+                <div className="history-card text-center text-[var(--ssc-text-muted)]">
                   <p className="font-display font-black text-[var(--ssc-text-primary)] mb-1">No questions found in this filter.</p>
                   <p>Try another filter.</p>
                 </div>

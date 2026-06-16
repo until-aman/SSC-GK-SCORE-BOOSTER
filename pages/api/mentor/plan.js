@@ -13,12 +13,17 @@ import { getUserAttemptAnswers } from '@/lib/historyData';
 import { generateTodaysPlan } from '@/lib/mentorPlanEngine';
 import { getMentorDayMessage } from '@/lib/mentorCopy';
 import { createSheetsMentorRepository, runMentorShadowComparison } from '@/lib/mentor/repository';
-import { isMentorRepoV2Enabled, isMentorCanonicalDayReadEnabled, isMentorDailyRolloverV2Enabled, isMentorPendingLifecycleV2Enabled, isMentorDailyRolloverUserAllowed } from '@/lib/mentor/repository/featureFlags';
+import { isMentorRepoV2Enabled, isMentorCanonicalDayReadEnabled, isMentorDailyRolloverV2Enabled, isMentorPendingLifecycleV2Enabled, isMentorDailyRolloverUserAllowed, isMentorDailyRolloverBackgroundEnabled } from '@/lib/mentor/repository/featureFlags';
 import { processDailyRollover } from '@/lib/mentor/services/dailyRolloverService';
 import { executeDailyRolloverWrite } from '@/lib/mentor/services/rolloverWriteExecutor';
 import { userScopeFromIdentity } from '@/lib/mentor/services/taskMutationService';
 import { createSheetsMutationRepository, createSheetsIdempotencyStore, createSheetsPlanWriter } from '@/lib/mentor/repository/sheetsMutationRepository';
+import { runBackgroundTask } from '@/lib/mentor/util/backgroundTask';
 import { applyRepoV2Compatibility } from '@/lib/mentor/read/serveCompatibleSnapshot';
+
+// Phase 10F2: give the eligible rollover write headroom over the default ~10s when it runs
+// (awaited fallback) or as a waitUntil background task. Hobby supports up to 60s.
+export const config = { maxDuration: 60 };
 
 function normalizeSubjectId(subjectId) {
   return String(subjectId || '').replace(/^Q_PYQ_/, '');
@@ -242,14 +247,17 @@ async function handler(req, res) {
     if (isMentorDailyRolloverV2Enabled() || isMentorPendingLifecycleV2Enabled()) {
       // Phase 10C: real user scope hash (no full email in keys/logs/monitor).
       const userScope = userScopeFromIdentity({ email: session.user.email });
-      const repo = createSheetsMentorRepository();
-      repo.getMentorSnapshotData({ email: session.user.email })
-        .then(async canonical => {
-          // WRITE path — gated by the rollover master flag + rollover cohort. Default OFF
-          // (isMentorDailyRolloverUserAllowed returns false unless MENTOR_DAILY_ROLLOVER_V2
-          // is true AND the user is allow-all/allowlisted), so this branch is dead until
-          // a controlled enablement phase.
-          if (isMentorDailyRolloverUserAllowed(userScope)) {
+      if (isMentorDailyRolloverUserAllowed(userScope)) {
+        // WRITE path — the SAME proven executor (Phase 10C/10D), ordering unchanged
+        // (tasks+events → LastProcessedCalendarDay → ROLLOVER row LAST; idempotent;
+        // RowVersion-guarded). Phase 10F2 only changes WHEN it runs relative to the
+        // response, not WHAT it does. A write failure is always logged and NEVER fails
+        // the user's plan response.
+        const backgroundMode = isMentorDailyRolloverBackgroundEnabled() ? 'waitUntil' : 'awaited';
+        const runRollover = async () => {
+          try {
+            const repo = createSheetsMentorRepository();
+            const canonical = await repo.getMentorSnapshotData({ email: session.user.email });
             const sheets = await getSheetsClient();
             const result = await executeDailyRolloverWrite({
               snapshot: canonical,
@@ -261,30 +269,53 @@ async function handler(req, res) {
               planWriter: createSheetsPlanWriter({ sheets, email: session.user.email }),
               totalPlanDays: canonical.totalPlanDays,
             });
-            console.log('[mentor-rollover-write]', { ok: result.ok, code: result.code, idempotent: result.idempotent, rolloverRequired: result.rolloverRequired, applied: result.appliedCount, finalDay: result.finalDay, diagnostics: result.diagnostics });
-            return;
+            // Bug B (Phase 10D-FIX): rollover write failures MUST be visible, never swallowed.
+            if (!result || result.ok === false) {
+              console.error('[mentor-rollover-write] FAILED', { backgroundMode, code: result && result.code, reason: result && result.reason, error: result && result.error, applied: result && result.appliedCount, lastProcessedWritten: result && result.lastProcessedWritten, diagnostics: result && result.diagnostics });
+            } else {
+              console.log('[mentor-rollover-write]', { backgroundMode, ok: result.ok, idempotent: result.idempotent, rolloverRequired: result.rolloverRequired, applied: result.appliedCount, finalDay: result.finalDay, lastProcessedWritten: result.lastProcessedWritten, diagnostics: result.diagnostics });
+            }
+          } catch (err) {
+            console.error('[mentor-rollover-write] threw', { backgroundMode }, err && err.message, err && err.stack);
           }
-          // SHADOW path — compute only, log-only, no-op store (no writes).
-          const result = await processDailyRollover({
-            userScope,
-            activePlan: canonical.activePlan,
-            repositorySnapshot: canonical,
-            currentServerTime: canonical.serverGeneratedAt,
-            idempotencyStore: { get: async () => null, save: async () => {} },
-          });
-          if (!result?.ok) return;
-          console.log('[mentor-rollover-shadow]', {
-            calendarDay: result.calendarDay,
-            lastProcessedCalendarDay: result.lastProcessedCalendarDay,
-            rolloverRequired: result.rolloverRequired,
-            wouldMoveToPendingCount: result.movedToPendingCount || 0,
-            wouldRescheduleCount: result.rescheduledCount || 0,
-            wouldFeatureTask: Boolean(result.featuredPendingTaskId),
-            currentGenerationTaskCount: snapshot.activeTasks?.length || 0,
-            diagnosticCodes: result.diagnostics || [],
-          });
-        })
-        .catch(() => {});
+        };
+        if (isMentorDailyRolloverBackgroundEnabled()) {
+          // BACKGROUND (Phase 10F2): register the proven write with Vercel waitUntil so the
+          // function stays alive until it completes, and return the response WITHOUT awaiting
+          // it — no page-load blocking. runBackgroundTask never rejects/throws to the caller.
+          runBackgroundTask(runRollover(), 'mentor-rollover-write');
+        } else {
+          // AWAITED fallback (Phase 10D-FIX-3): block the response until the write finishes,
+          // for narrow/manual pilot when background mode is off.
+          await runRollover();
+        }
+      } else {
+        // SHADOW path — compute only, log-only, NO writes. Safe to leave fire-and-forget:
+        // a truncated shadow writes nothing, so serverless freeze is harmless here.
+        const repo = createSheetsMentorRepository();
+        repo.getMentorSnapshotData({ email: session.user.email })
+          .then(async canonical => {
+            const result = await processDailyRollover({
+              userScope,
+              activePlan: canonical.activePlan,
+              repositorySnapshot: canonical,
+              currentServerTime: canonical.serverGeneratedAt,
+              idempotencyStore: { get: async () => null, save: async () => {} },
+            });
+            if (!result?.ok) return;
+            console.log('[mentor-rollover-shadow]', {
+              calendarDay: result.calendarDay,
+              lastProcessedCalendarDay: result.lastProcessedCalendarDay,
+              rolloverRequired: result.rolloverRequired,
+              wouldMoveToPendingCount: result.movedToPendingCount || 0,
+              wouldRescheduleCount: result.rescheduledCount || 0,
+              wouldFeatureTask: Boolean(result.featuredPendingTaskId),
+              currentGenerationTaskCount: snapshot.activeTasks?.length || 0,
+              diagnosticCodes: result.diagnostics || [],
+            });
+          })
+          .catch(err => console.error('[mentor-rollover] unhandled', err && err.message, err && err.stack));
+      }
     }
     return res.status(200).json(snapshot);
   } catch (err) {
