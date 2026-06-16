@@ -5,7 +5,7 @@ import GoogleSignInCard from '@/components/GoogleSignInCard';
 import MentorMessage from '@/components/MentorMessage';
 import MentorSetupStep from '@/components/MentorSetupStep';
 import SubjectStatusPicker, { SUBJECTS } from '@/components/SubjectStatusPicker';
-import { MENTOR_COPY, SUBJECT_STATUS, getISTDateKey } from '@/lib/mentorCopy';
+import { MENTOR_COPY, SUBJECT_DISPLAY_NAMES, SUBJECT_STATUS, getISTDateKey } from '@/lib/mentorCopy';
 import { generateTodaysPlan } from '@/lib/mentorPlanEngine';
 
 const EXAM_OPTIONS = [
@@ -81,7 +81,7 @@ function OptionCard({ selected, title, subtitle, icon, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-[18px] border bg-white p-3 text-center shadow-[var(--ssc-shadow-card)] transition-all ${
+      className={`w-full rounded-[16px] border bg-white p-3 text-center shadow-[0_8px_20px_rgba(16,32,51,0.05)] transition-all ${
         selected
           ? 'border-ssc-teal bg-[#E8F8F6] text-ssc-text-primary ring-1 ring-ssc-teal'
           : 'border-ssc-border-soft text-ssc-text-primary hover:border-ssc-teal'
@@ -92,8 +92,8 @@ function OptionCard({ selected, title, subtitle, icon, onClick }) {
           {icon}
         </span>
       ) : null}
-      <span className="block text-sm font-black">{title}</span>
-      {subtitle ? <span className="mt-1 block text-xs font-semibold text-ssc-text-secondary">{subtitle}</span> : null}
+      <span className="block text-xs font-black">{title}</span>
+      {subtitle ? <span className="mt-1 block text-[10px] font-semibold text-ssc-text-secondary">{subtitle}</span> : null}
     </button>
   );
 }
@@ -101,7 +101,7 @@ function OptionCard({ selected, title, subtitle, icon, onClick }) {
 function SectionTitle({ title, subtitle }) {
   return (
     <div>
-      <h2 className="font-display text-xl font-black leading-tight text-ssc-text-primary">{title}</h2>
+      <h2 className="font-display text-lg font-black leading-tight text-ssc-text-primary">{title}</h2>
       {subtitle ? <p className="mt-1 text-xs font-semibold leading-relaxed text-ssc-text-secondary">{subtitle}</p> : null}
     </div>
   );
@@ -138,6 +138,13 @@ export default function MentorSetupPage() {
     { repeatedMistakesPreview: [] },
     { subjects: {} }
   ), [formData]);
+  const weakSubjectsLabel = useMemo(() => {
+    const weak = Object.entries(formData.subjectStatus || {})
+      .filter(([, value]) => value === SUBJECT_STATUS.NOT_STARTED || value === SUBJECT_STATUS.THEORY_DONE)
+      .slice(0, 3)
+      .map(([subjectId]) => SUBJECT_DISPLAY_NAMES[subjectId] || subjectId);
+    return weak.length ? weak.join(', ') : 'None selected';
+  }, [formData.subjectStatus]);
 
   useEffect(() => {
     setGuestMode(isGuestMode());
@@ -321,6 +328,7 @@ export default function MentorSetupPage() {
             <SummaryRow label="Days Left" value={formData.daysLeftRange} />
             <SummaryRow label="Daily Study Time" value={formData.dailyGKTime} />
             <SummaryRow label="Current Stage" value={formData.pace} />
+            <SummaryRow label="Weak Subjects" value={weakSubjectsLabel} />
           </div>
 
           <div className="rounded-[20px] border border-ssc-border-soft bg-white p-4 shadow-[var(--ssc-shadow-card)]">

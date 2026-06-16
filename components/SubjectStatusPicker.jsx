@@ -1,4 +1,4 @@
-import { SUBJECT_DISPLAY_NAMES, SUBJECT_ICONS, SUBJECT_STATUS } from '@/lib/mentorCopy';
+import { SUBJECT_DISPLAY_NAMES, SUBJECT_STATUS } from '@/lib/mentorCopy';
 
 const SUBJECTS = [
   'Polity',
@@ -27,12 +27,12 @@ const STATUS_STYLES = {
     active: 'border-[#CBD5E1] bg-[#EEF3F7] text-ssc-text-secondary',
   },
   [SUBJECT_STATUS.THEORY_DONE]: {
-    short: 'Theory Done',
+    short: 'Average',
     button: 'border-[#F8D9A0] bg-white text-[#B45309]',
     active: 'border-[#F59E0B] bg-[#FFF7E6] text-[#B45309]',
   },
   [SUBJECT_STATUS.PRACTICE_STARTED]: {
-    short: 'Practice Started',
+    short: 'Strong',
     button: 'border-[#BDEDD8] bg-white text-[#0F9F75]',
     active: 'border-[#0EA5A4] bg-[#E7FAF3] text-[#0F9F75]',
   },
@@ -46,23 +46,18 @@ export default function SubjectStatusPicker({ value = {}, onChange }) {
   };
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2 rounded-[18px] border border-ssc-border-soft bg-white p-2 shadow-[var(--ssc-shadow-card)]">
       {SUBJECTS.map(subjectId => {
         const status = value[subjectId] || SUBJECT_STATUS.NOT_STARTED;
         return (
           <div
             key={subjectId}
-            className="rounded-[18px] border border-ssc-border-soft bg-white p-3 shadow-[var(--ssc-shadow-card)]"
+            className="flex items-center gap-2 rounded-2xl border border-[#EEF3F7] bg-white px-2 py-2"
           >
-            <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#F8FEFD] text-lg">
-                {SUBJECT_ICONS[subjectId]}
-              </span>
-              <span className="min-w-0 flex-1 truncate text-sm font-black text-ssc-text-primary">
-                {SUBJECT_DISPLAY_NAMES[subjectId]}
-              </span>
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-1.5">
+            <span className="min-w-0 flex-1 truncate text-xs font-black text-ssc-text-primary">
+              {SUBJECT_DISPLAY_NAMES[subjectId]}
+            </span>
+            <div className="grid w-[174px] grid-cols-3 gap-1">
               {STATUS_ORDER.map(option => {
                 const active = option === status;
                 const style = STATUS_STYLES[option];
@@ -71,7 +66,7 @@ export default function SubjectStatusPicker({ value = {}, onChange }) {
                     key={option}
                     type="button"
                     onClick={() => setStatus(subjectId, option)}
-                    className={`min-h-[34px] rounded-xl border px-1.5 text-[10px] font-black leading-tight transition-all ${active ? style.active : style.button}`}
+                    className={`min-h-[28px] rounded-lg border px-1 text-[9px] font-black leading-tight transition-all ${active ? style.active : style.button}`}
                   >
                     {style.short}
                   </button>

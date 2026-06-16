@@ -12,7 +12,7 @@ export default function MentorSetupStep({
 }) {
   return (
     <div className="min-h-screen bg-[var(--ssc-bg)] text-ssc-text-primary">
-      <main className="mx-auto flex min-h-screen w-full max-w-[430px] flex-col px-4 pb-[calc(104px+env(safe-area-inset-bottom))] pt-5">
+      <main className="mx-auto flex min-h-screen w-full max-w-[430px] flex-col px-4 pb-[calc(104px+env(safe-area-inset-bottom))] pt-4">
         <header className="sticky top-0 z-30 -mx-4 mb-4 bg-[rgba(243,251,250,0.92)] px-4 pb-3 pt-1 backdrop-blur">
           <div className="flex items-center justify-between gap-3">
             {showBack ? (
@@ -22,7 +22,7 @@ export default function MentorSetupStep({
                 aria-label="Go back"
                 className="flex h-9 w-9 items-center justify-center rounded-full text-ssc-text-primary active:scale-95"
               >
-                ←
+                Back
               </button>
             ) : (
               <span className="h-9 w-9" />
@@ -49,7 +49,7 @@ export default function MentorSetupStep({
           </div>
         </header>
 
-        <div className="flex-1 space-y-5">{children}</div>
+        <div className="flex-1 space-y-4">{children}</div>
       </main>
 
       <div className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-[430px] border-t border-[#DDE8F0] bg-[rgba(255,255,255,0.96)] px-4 pb-[calc(14px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-12px_30px_rgba(16,32,51,0.08)] backdrop-blur">
@@ -64,7 +64,7 @@ export default function MentorSetupStep({
           }`}
         >
           {submitting ? 'Saving...' : continueLabel}
-          {!submitting && !(continueDisabled || submitting) ? <span aria-hidden="true">→</span> : null}
+          {!submitting && !(continueDisabled || submitting) ? <span aria-hidden="true">-&gt;</span> : null}
         </button>
       </div>
     </div>

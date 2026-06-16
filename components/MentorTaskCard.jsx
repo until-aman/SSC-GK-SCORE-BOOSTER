@@ -1,5 +1,3 @@
-import { TeacherMentorIcon } from '@/components/MentorMessage';
-
 const TASK_TYPE_LABELS = {
   coverage_check: 'Coverage',
   confidence_check: 'Confidence',
@@ -14,7 +12,7 @@ const TASK_TYPE_LABELS = {
 const TASK_THEME = {
   revision_task: {
     label: 'Revision',
-    icon: '↻',
+    icon: 'R',
     chip: 'border-[#FDBA74] bg-[#FFF7E6] text-[#EA580C]',
     iconChip: 'bg-[#FFF7E6] text-[#EA580C] border-[#FDBA74]',
     card: 'border-[#F8D9A0]',
@@ -22,7 +20,7 @@ const TASK_THEME = {
   },
   practice_task: {
     label: 'Practice',
-    icon: '◎',
+    icon: 'P',
     chip: 'border-[#FDBA74] bg-[#FFF7E6] text-[#EA580C]',
     iconChip: 'bg-[#FFF7E6] text-[#EA580C] border-[#FDBA74]',
     card: 'border-[#F8D9A0]',
@@ -30,7 +28,7 @@ const TASK_THEME = {
   },
   mistake_recovery_task: {
     label: 'Practice',
-    icon: '◎',
+    icon: 'P',
     chip: 'border-[#FDBA74] bg-[#FFF7E6] text-[#EA580C]',
     iconChip: 'bg-[#FFF7E6] text-[#EA580C] border-[#FDBA74]',
     card: 'border-[#F8D9A0]',
@@ -38,7 +36,7 @@ const TASK_THEME = {
   },
   confidence_check: {
     label: 'Quiz',
-    icon: 'P',
+    icon: 'Q',
     chip: 'border-[#DDD6FE] bg-[#F5F3FF] text-[#6D5DF6]',
     iconChip: 'bg-[#F5F3FF] text-[#6D5DF6] border-[#DDD6FE]',
     card: 'border-[#DDD6FE]',
@@ -46,7 +44,7 @@ const TASK_THEME = {
   },
   coverage_check: {
     label: 'Coverage',
-    icon: '✓',
+    icon: 'C',
     chip: 'border-[#BDEDEA] bg-[#E8F8F6] text-[#0EA5A4]',
     iconChip: 'bg-[#E8F8F6] text-[#0EA5A4] border-[#BDEDEA]',
     card: 'border-[#BDEDEA]',
@@ -115,105 +113,91 @@ export default function MentorTaskCard({ task, index = 0, busy, onPrimary, onDon
   const theme = getTheme(task);
   const taskNumber = Number(task.taskNumber || task.sequenceNumber || index + 1);
   const meta = getMeta(task);
+  const cta = task.ctaLabel || (task.taskType === 'revision_task' ? 'Revise' : task.taskType === 'confidence_check' ? 'Start Quiz' : 'Practice');
 
   return (
-    <article className={`rounded-[18px] border bg-white p-3.5 shadow-[var(--ssc-shadow-card)] ${isBlocked ? 'border-[#DDE8F0] opacity-80' : theme.card}`}>
-      <div className="mb-2.5 flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl border text-sm font-black ${isCompleted ? 'border-[#BDEDD8] bg-[#E7FAF3] text-[#0F9F75]' : isSnoozed || isBlocked ? 'border-[#DDE8F0] bg-[#EEF3F7] text-[#8A98AA]' : theme.iconChip}`}>
-            {isCompleted ? '✓' : isBlocked ? '⌕' : theme.icon}
-          </span>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${theme.chip}`}>
+    <article className={`rounded-[18px] border bg-white p-3 shadow-[0_8px_20px_rgba(16,32,51,0.06)] ${isBlocked ? 'border-[#DDE8F0] opacity-80' : theme.card}`}>
+      <div className="flex items-start gap-3">
+        <span className={`mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border text-sm font-black ${isCompleted ? 'border-[#BDEDD8] bg-[#E7FAF3] text-[#0F9F75]' : isSnoozed || isBlocked ? 'border-[#DDE8F0] bg-[#EEF3F7] text-[#8A98AA]' : theme.iconChip}`}>
+          {isCompleted ? 'OK' : isBlocked ? 'Lock' : theme.icon}
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-wide ${theme.chip}`}>
                 {task.sequenceLabel || getTaskTypeLabel(task.taskType)}
               </span>
-              <StatusPill task={task} />
+              <h3 className={`mt-1 font-display text-[14px] font-black leading-snug ${isBlocked ? 'text-ssc-text-muted' : 'text-ssc-text-primary'}`}>
+                {getTaskTitle(task)}
+              </h3>
             </div>
-            <p className="mt-1 text-[11px] font-bold text-ssc-text-muted">Task {taskNumber}</p>
+            <StatusPill task={task} />
+          </div>
+
+          <p className={`mt-0.5 text-[11px] font-semibold leading-snug ${isBlocked ? 'text-ssc-text-muted' : 'text-ssc-text-secondary'}`}>
+            {getPurpose(task)}
+          </p>
+
+          <div className="mt-2 flex items-center justify-between gap-2">
+            {meta.length ? (
+              <div className="flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-[10px] font-bold text-ssc-text-secondary">
+                {meta.map(item => <span key={item}>{item}</span>)}
+              </div>
+            ) : (
+              <span className="text-[10px] font-bold text-ssc-text-muted">Task {taskNumber}</span>
+            )}
+
+            {!inactive && !isBlocked ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => onPrimary?.(task)}
+                className="shrink-0 rounded-xl border border-[#0EA5A4] bg-white px-3 py-2 text-[11px] font-black text-[#0EA5A4] active:scale-[0.98] disabled:opacity-60"
+              >
+                {busy ? 'Saving...' : cta}
+              </button>
+            ) : null}
           </div>
         </div>
       </div>
-
-      <h3 className={`font-display text-[16px] font-black leading-snug ${isBlocked ? 'text-ssc-text-muted' : 'text-ssc-text-primary'}`}>
-        {getTaskTitle(task)}
-      </h3>
-      <p className={`mt-1 text-xs font-semibold leading-relaxed ${isBlocked ? 'text-ssc-text-muted' : 'text-ssc-text-secondary'}`}>
-        {getPurpose(task)}
-      </p>
-
-      {meta.length ? (
-        <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-bold text-ssc-text-secondary">
-          {meta.map(item => (
-            <span key={item} className="rounded-full border border-[#DDE8F0] bg-[#F8FEFD] px-2 py-0.5">{item}</span>
-          ))}
-        </div>
-      ) : null}
 
       {task.duplicateNote ? (
         <p className="mt-2 text-xs font-bold text-[#B45309]">{task.duplicateNote}</p>
       ) : null}
 
-      {task.mentorMessage && task.mentorMessage !== getPurpose(task) ? (
-        <div className="mt-3 flex items-start gap-2 rounded-2xl border border-[#BDEDEA] bg-[#F2FCFA] p-2.5">
-          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-white">
-            <TeacherMentorIcon className="h-5 w-5" />
-          </span>
-          <p className="text-xs font-semibold leading-relaxed text-ssc-text-secondary">{task.mentorMessage}</p>
+      {isBlocked ? (
+        <p className="mt-2 text-center text-[11px] font-bold text-ssc-text-muted">
+          {task.blockedReason || 'Complete the previous step first.'}
+        </p>
+      ) : !inactive && showManualDone ? (
+        <div className="mt-3 space-y-1.5">
+          <p className="text-center text-[11px] font-bold text-ssc-text-muted">
+            Task sync nahi hua? Already completed mark kar sakte hain.
+          </p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onDone?.(task)}
+            className="w-full rounded-xl border border-[#0EA5A4] bg-white py-2 text-xs font-black text-[#0EA5A4] active:scale-[0.98] disabled:opacity-60"
+          >
+            Mark as Done
+          </button>
         </div>
+      ) : inactive ? (
+        <p className="mt-2 text-xs font-bold text-ssc-text-muted">{isCompleted ? 'Completed' : 'Saved for later'}</p>
       ) : null}
 
-      {isBlocked ? (
-        <div className="mt-3 space-y-1.5">
-          <button
-            type="button"
-            disabled
-            aria-disabled="true"
-            className="w-full cursor-not-allowed rounded-2xl border border-[#DDE8F0] bg-[#EEF3F7] py-3 text-sm font-black text-ssc-disabled-text"
-          >
-            {task.ctaLabel || 'Practice Questions'} →
-          </button>
-          <p className="text-center text-[11px] font-bold text-ssc-text-muted">
-            {task.blockedReason || 'Complete the previous step first.'}
-          </p>
-        </div>
-      ) : !inactive ? (
-        <div className="mt-3 space-y-1.5">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onPrimary?.(task)}
-            className={`w-full rounded-2xl py-3 text-sm font-black active:scale-[0.98] disabled:opacity-60 ${theme.button}`}
-          >
-            {busy ? 'Saving...' : `${task.ctaLabel || 'Practice Questions'} →`}
-          </button>
-          {showManualDone ? (
-            <>
-              <p className="text-center text-[11px] font-bold text-ssc-text-muted">
-                Task sync nahi hua? Already completed mark kar sakte hain.
-              </p>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => onDone?.(task)}
-                className="w-full rounded-xl border border-[#0EA5A4] bg-white py-2 text-xs font-black text-[#0EA5A4] active:scale-[0.98] disabled:opacity-60"
-              >
-                ✓ Mark as Done
-              </button>
-            </>
-          ) : null}
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onLater?.(task)}
-            className="w-full py-1.5 text-xs font-bold text-ssc-text-muted active:opacity-70 disabled:opacity-50"
-          >
-            {task.secondaryAction || 'Maybe later'}
-          </button>
-        </div>
-      ) : (
-        <p className="mt-3 text-xs font-bold text-ssc-text-muted">{isCompleted ? 'Completed' : 'Saved for later'}</p>
-      )}
+      {!inactive && !isBlocked && !showManualDone && onLater ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onLater?.(task)}
+          className="mt-1.5 text-[11px] font-bold text-ssc-text-muted active:opacity-70 disabled:opacity-50"
+        >
+          {task.secondaryAction || 'Later'}
+        </button>
+      ) : null}
     </article>
   );
 }
