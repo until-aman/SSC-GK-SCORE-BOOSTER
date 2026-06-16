@@ -60,6 +60,7 @@ const ACTION_TO_STATUS = {
   complete: 'completed',
   snooze: 'snoozed',
   response: 'completed',
+  resume: 'active',
 };
 
 export default withApiTrace('/api/mentor/task-action', handler);
@@ -102,6 +103,12 @@ async function handler(req, res) {
         SnoozedUntil: status === 'snoozed' ? new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString() : '',
       };
       if (status === 'snoozed') statusUpdates.SnoozeCount = '__increment__';
+      if (actionType === 'resume') {
+        statusUpdates.PendingReason = '';
+        statusUpdates.MovedToPendingAt = '';
+        statusUpdates.NextEligibleResurfaceAt = '';
+        statusUpdates.LastResurfacedAt = '';
+      }
       await updateMentorTaskStatus(sheets, session.user.email, taskId, {
         ...statusUpdates,
       });
