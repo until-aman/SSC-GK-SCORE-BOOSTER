@@ -178,12 +178,6 @@ const HistorySpotlightIllustration = () => (
 function HistorySpotlightCard() {
   return (
     <section className="history-spotlight-card" aria-label="History summary">
-      <span className="history-spotlight-icon" aria-hidden="true">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0EA5A4" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 7v5l3 3" />
-        </svg>
-      </span>
       <div className="min-w-0 flex-1">
         <h2 className="history-spotlight-title font-display">Track, review and improve every day.</h2>
         <p className="history-spotlight-body">All your practice data in one place.</p>
@@ -489,7 +483,6 @@ function HistoryGuestState() {
 
         <div className="history-guest-content">
           <HistorySpotlightCard />
-          <HistoryActionPill />
 
           <section className="history-list-card mb-5">
             {historyFeatures.map(feature => (
@@ -615,8 +608,6 @@ export default function HistoryPage() {
 
         <main className="px-4 pt-[14px]">
           <HistorySpotlightCard />
-          <HistoryActionPill />
-
           <section className="history-list-card">
             {historyFeatures.map(feature => (
               <button key={feature.title} type="button" className="history-feature-row" onClick={() => router.push(feature.route)}>

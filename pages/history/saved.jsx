@@ -132,11 +132,25 @@ function SubjectIcon({ subject, sheetIcon = '' }) {
   );
 }
 
+function getSavedQuestionStatus({ correctCount = 0, wrongCount = 0, skippedCount = 0 }) {
+  if (skippedCount >= 2 && skippedCount >= wrongCount) {
+    return { label: 'Often Skipped', tone: 'blue' };
+  }
+  if (correctCount === 0 && wrongCount + skippedCount > 0) {
+    return { label: 'Never Correct', tone: 'red' };
+  }
+  return { label: 'Needs Revision', tone: 'amber' };
+}
+
 function QuestionRow({ q, index, onView, onUnsave }) {
-  const totalAttempts = (Number(q.correctCount) || 0) + (Number(q.wrongCount) || 0);
+  const correctCount = Number(q.correctCount) || 0;
+  const wrongCount = Number(q.wrongCount) || 0;
+  const skippedCount = Number(q.skippedCount) || 0;
+  const totalAttempts = correctCount + wrongCount + skippedCount;
+  const status = getSavedQuestionStatus({ correctCount, wrongCount, skippedCount });
   let correctPct = null;
   if (totalAttempts > 0) {
-    correctPct = Math.round((Number(q.correctCount) || 0) / totalAttempts * 100);
+    correctPct = Math.round((correctCount / totalAttempts) * 100);
   } else if (q.userAnswer) {
     correctPct = q.userAnswer === q.correctOption ? 100 : 0;
   }
@@ -170,7 +184,10 @@ function QuestionRow({ q, index, onView, onUnsave }) {
           {q.subject && <span className="sq-subject-dot">{getDisplaySubject(q.subject, q.collection)}</span>}
           {q.topic && <span className="sq-topic-inline">{q.topic}</span>}
         </div>
-        {savedAgo && <span className="sq-card-age">{savedAgo}</span>}
+        <div className="sq-card-status-stack">
+          <span className={`sq-status-pill ${status.tone}`}>{status.label}</span>
+          {savedAgo && <span className="sq-card-age">{savedAgo}</span>}
+        </div>
       </div>
       <p className="sq-question-text">{q.question}</p>
       <div className="sq-footer">
@@ -187,12 +204,19 @@ function QuestionRow({ q, index, onView, onUnsave }) {
         </span>
       </div>
       {correctPct !== null && (
-        <div className="sq-progress-track">
-          <div className="sq-progress-fill" style={{
-            width: `${correctPct}%`,
-            background: correctPct >= 50 ? 'var(--ssc-success)' : 'var(--ssc-danger)',
-          }} />
-        </div>
+        <>
+          <div className="sq-progress-track">
+            <div className="sq-progress-fill" style={{
+              width: `${correctPct}%`,
+              background: correctPct >= 50 ? 'var(--ssc-success)' : 'var(--ssc-danger)',
+            }} />
+          </div>
+          <div className="sq-attempt-stats">
+            <span className="sq-stat-correct">Correct {correctCount}x</span>
+            <span className="sq-stat-wrong">Wrong {wrongCount}x</span>
+            <span className="sq-stat-skipped">Skipped {skippedCount}x</span>
+          </div>
+        </>
       )}
       <button
         className="sq-bookmark-btn"
@@ -209,10 +233,11 @@ function QuestionRow({ q, index, onView, onUnsave }) {
 /* â"€â"€ Full-screen revision overlay â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
 function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
   const [idx, setIdx]                     = useState(startIndex);
-  const [revealed, setRevealed]           = useState(false);
+  const [revealed, setRevealed]           = useState(true);
   const [markedDone, setMarkedDone]       = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
   const touchStartX = useRef(null);
+  const q = questions[idx];
 
   // Clamp if questions shrink (after unsave)
   useEffect(() => {
@@ -220,19 +245,31 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
   }, [questions.length, idx]);
 
   // Reset state on every new question
-  useEffect(() => { setRevealed(false); setMarkedDone(false); setSelectedOption(null); }, [idx]);
+  useEffect(() => {
+    const current = questions[idx];
+    setRevealed(true);
+    setMarkedDone(false);
+    setSelectedOption(current?.userAnswer || null);
+  }, [idx, questions]);
 
   if (!questions.length) return null;
-  const q     = questions[idx];
+  if (!q) return null;
   const total = questions.length;
+  const correctCount = Number(q.correctCount) || 0;
+  const wrongCount = Number(q.wrongCount) || (q.userAnswer && q.userAnswer !== q.correctOption ? 1 : 0);
+  const skippedCount = Number(q.skippedCount) || 0;
+  const ts = q.lastPracticedAt || q.savedAt || q.createdAt;
+  let lastPracticed = null;
+  if (ts) {
+    const d = new Date(ts);
+    if (Number.isFinite(d.getTime())) {
+      lastPracticed = `${d.getDate()} ${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear()}`;
+    }
+  }
 
   function goNext() { if (idx < total - 1) setIdx(i => i + 1); }
   function goPrev() { if (idx > 0)         setIdx(i => i - 1); }
 
-  function handleReveal() {
-    setRevealed(true);
-    if (onReveal) onReveal(q.questionId);
-  }
   function handleMarkRevised() {
     setMarkedDone(true);
     if (onReveal) onReveal(q.questionId); // idempotent
@@ -250,219 +287,166 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)', zIndex: 60,
+        position: 'fixed', inset: 0, background: 'linear-gradient(180deg, #FFFFFF 0%, #F7FCFC 100%)', zIndex: 60,
         display: 'flex', flexDirection: 'column', maxWidth: 430, margin: '0 auto',
         boxShadow: '0 0 0 1px rgba(14,165,164,0.10)',
       }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Header */}
       <div style={{
-        minHeight: 64, padding: '12px 16px', flexShrink: 0,
+        minHeight: 58, padding: '10px 16px', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'rgba(255,255,255,0.96)',
-        borderBottom: '1px solid var(--ssc-border-soft)',
-        borderRadius: '0 0 22px 22px',
-        boxShadow: 'var(--ssc-shadow-card)',
+        background: '#FFFFFF',
       }}>
         <button
           onClick={onClose}
           style={{
-            width: 36, height: 36, borderRadius: '50%',
-            background: 'var(--ssc-orange-soft, #FFF3E8)', border: '1px solid rgba(255,106,0,0.20)',
+            width: 34, height: 34, borderRadius: '50%',
+            background: 'transparent', border: '0',
             display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
           }}
-          aria-label="Close"
+          aria-label="Back to saved questions"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-orange)" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-primary)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
-        <div style={{ textAlign: 'center', minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--ssc-text-primary)', margin: 0, fontFamily: 'var(--font-display)' }}>Saved Revision</p>
-            <span style={{
-              fontSize: 9, fontWeight: 800, color: 'var(--ssc-warning)',
-              border: '1px solid rgba(245,158,11,0.30)', borderRadius: 999,
-              padding: '3px 7px', letterSpacing: '0.02em',
-              background: 'var(--ssc-warning-soft)',
-            }}>SAVED</span>
-          </div>
-          <p style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', margin: '3px 0 0', fontWeight: 700 }}>{idx + 1} / {total}</p>
+        <div style={{ textAlign: 'center', minWidth: 0, fontSize: 13, fontWeight: 1000, color: 'var(--ssc-text-primary)' }}>
+          {idx + 1} of {total}
         </div>
-        {/* Spacer keeps title centred */}
-        <div style={{ width: 36 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={() => onUnsave(q.questionId)}
+            style={{ width: 32, height: 32, borderRadius: '50%', background: 'transparent', border: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            title="Remove bookmark"
+            aria-label="Remove bookmark"
+          >
+            <BookmarkIcon filled size={16} />
+          </button>
+          <button
+            onClick={handleMarkRevised}
+            style={{ width: 32, height: 32, borderRadius: '50%', background: 'transparent', border: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            title={markedDone ? 'Marked revised' : 'Mark revised'}
+            aria-label={markedDone ? 'Marked revised' : 'Mark revised'}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={markedDone ? 'var(--ssc-success)' : 'var(--ssc-text-primary)'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+          </button>
+        </div>
       </div>
 
-      {/* Scrollable body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '18px 16px 18px' }}>
-        <section style={{
-          background: 'var(--ssc-surface)',
-          border: '1px solid var(--ssc-border-soft)',
-          borderRadius: 22,
-          padding: '16px 16px 14px',
-          boxShadow: 'var(--ssc-shadow-card)',
-        }}>
-
-        {/* Subject â€¢ Topic */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 96px' }}>
         {(q.subject || q.topic) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
             {q.subject && (
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)', borderRadius: 99, padding: '2px 10px' }}>
+              <span style={{ fontSize: 10, fontWeight: 1000, color: 'var(--ssc-orange)', background: 'var(--ssc-orange-soft)', borderRadius: 999, padding: '4px 8px', lineHeight: 1 }}>
                 {getDisplaySubject(q.subject, q.collection)}
               </span>
             )}
             {q.topic && (
-              <span style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', fontWeight: 600 }}>{q.topic}</span>
+              <span style={{ fontSize: 10, fontWeight: 1000, color: 'var(--ssc-orange)', background: 'var(--ssc-orange-soft)', borderRadius: 999, padding: '4px 8px', lineHeight: 1 }}>{q.topic}</span>
             )}
           </div>
         )}
 
-        {/* Question */}
-        <p className="t-body" style={{ color: 'var(--ssc-text-primary)', fontWeight: 800, marginBottom: 18, lineHeight: 1.55 }}>
+        <p style={{ color: 'var(--ssc-text-primary)', fontSize: 14, fontWeight: 1000, margin: '0 0 16px', lineHeight: 1.45 }}>
           {q.question}
         </p>
 
-        {/* Options â€" tappable before reveal */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
           {OPTION_LABELS.map((label, i) => {
             const text       = q[OPTION_KEYS[i]];
             if (!text) return null;
-            const isSelected = !revealed && selectedOption === label;
             const isCorrect  = revealed && label === q.correctOption;
             const isWrong    = revealed && selectedOption === label && label !== q.correctOption;
 
-            // Compute per-state colours
-            let rowBg, rowBorder, textColor, dotBg, dotColor;
+            let rowBg, rowBorder, textColor, markerBg, markerColor, markerBorder;
             if (isCorrect) {
-              rowBg = 'var(--ssc-success-soft)'; rowBorder = 'rgba(18,184,134,0.36)';
-              textColor = 'var(--ssc-success)'; dotBg = 'var(--ssc-success)'; dotColor = '#FFFFFF';
+              rowBg = 'var(--ssc-success-soft)'; rowBorder = 'rgba(18,184,134,0.42)';
+              textColor = 'var(--ssc-success)'; markerBg = '#DDFBF0'; markerColor = 'var(--ssc-success)'; markerBorder = 'rgba(18,184,134,0.28)';
             } else if (isWrong) {
-              rowBg = 'var(--ssc-danger-soft)'; rowBorder = 'rgba(239,68,68,0.34)';
-              textColor = 'var(--ssc-danger)'; dotBg = 'var(--ssc-danger)'; dotColor = '#FFF';
-            } else if (isSelected) {
-              rowBg = 'var(--ssc-teal-soft)'; rowBorder = 'rgba(14,165,164,0.45)';
-              textColor = 'var(--ssc-teal)'; dotBg = 'var(--ssc-teal)'; dotColor = '#FFF';
+              rowBg = 'var(--ssc-danger-soft)'; rowBorder = 'rgba(239,68,68,0.38)';
+              textColor = 'var(--ssc-danger)'; markerBg = '#FEE2E2'; markerColor = 'var(--ssc-danger)'; markerBorder = 'rgba(239,68,68,0.24)';
             } else {
-              rowBg = 'var(--ssc-surface-soft)'; rowBorder = 'var(--ssc-border-soft)';
-              textColor = 'var(--ssc-text-primary)'; dotBg = 'var(--ssc-teal-soft)'; dotColor = 'var(--ssc-teal)';
+              rowBg = '#FFFFFF'; rowBorder = 'var(--ssc-border-soft)';
+              textColor = 'var(--ssc-text-secondary)'; markerBg = 'var(--ssc-surface-soft)'; markerColor = 'var(--ssc-text-secondary)'; markerBorder = 'var(--ssc-border-soft)';
             }
 
             return (
               <button
                 key={label}
-                onClick={() => { if (!revealed) { setSelectedOption(label); setRevealed(true); if (onReveal) onReveal(q.questionId); } }}
-                onPointerDown={e => { if (!revealed) e.currentTarget.style.transform = 'scale(0.98)'; }}
-                onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                type="button"
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,
-                  borderRadius: 16, padding: '13px 14px', width: '100%', textAlign: 'left',
+                  borderRadius: 12, padding: '12px 13px', width: '100%', textAlign: 'left',
                   background: rowBg, border: `1px solid ${rowBorder}`,
-                  cursor: revealed ? 'default' : 'pointer',
-                  transition: 'background 250ms ease, border-color 250ms ease, transform 80ms ease',
-                  transform: 'scale(1)',
+                  cursor: 'default',
                 }}
               >
                 <span style={{
                   width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 700,
-                  background: dotBg, color: dotColor,
-                  transition: 'background 250ms ease, color 250ms ease',
+                  fontSize: 12, fontWeight: 1000,
+                  background: markerBg, color: markerColor, border: `1px solid ${markerBorder}`,
                 }}>
                   {label}
                 </span>
-                <span style={{ fontSize: 13, lineHeight: 1.4, color: textColor, fontWeight: (isCorrect || isWrong || isSelected) ? 600 : 400, transition: 'color 250ms ease', flex: 1 }}>
+                <span style={{ fontSize: 13, lineHeight: 1.4, color: textColor, fontWeight: (isCorrect || isWrong) ? 900 : 700, flex: 1 }}>
                   {text}
                 </span>
                 {isCorrect && (
-                  <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-success)" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-success)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 )}
                 {isWrong && (
-                  <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-danger)" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-danger)" strokeWidth="2.6" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 )}
               </button>
             );
           })}
         </div>
 
-        {/* Correct / Wrong result badge â€" shown after reveal when user picked an option */}
-        {revealed && selectedOption && (
-          <div style={{
-            textAlign: 'center', marginBottom: 14,
-            fontSize: 14, fontWeight: 700,
+        {selectedOption && (
+          <p style={{
+            textAlign: 'center',
+            margin: '2px 0 14px',
+            fontSize: 12,
+            fontWeight: 1000,
             color: selectedOption === q.correctOption ? 'var(--ssc-success)' : 'var(--ssc-danger)',
           }}>
-            {selectedOption === q.correctOption
-              ? 'Correct!'
-              : `Incorrect - answer is ${q.correctOption}`}
-          </div>
+            {selectedOption === q.correctOption ? 'Correct! Well done' : `Incorrect - correct answer is ${q.correctOption}`}
+          </p>
         )}
 
-        {/* Show / Check Answer button â€" hidden once revealed */}
-        {!revealed && (
-          <button
-            onClick={handleReveal}
-            style={{
-              width: '100%', padding: '14px 0', borderRadius: 14,
-              border: 'none', cursor: 'pointer',
-              background: selectedOption
-                ? 'linear-gradient(135deg, #FF7A1A, #FF5A00)'
-                : 'linear-gradient(135deg, var(--ssc-teal), #0C8F8D)',
-              color: '#FFFFFF', fontSize: 16, fontWeight: 700,
-              marginBottom: 8,
-              transition: 'background 200ms ease',
-            }}
-          >
-            {selectedOption ? 'Check Answer ->' : 'Show Answer'}
-          </button>
-        )}
+        <div style={{
+          background: 'linear-gradient(180deg,#F4FFFF 0%,#ECFAFB 100%)',
+          border: '1px solid rgba(14,165,164,0.20)',
+          borderRadius: 13,
+          padding: '13px 14px',
+          marginBottom: 14,
+        }}>
+          <p style={{ margin: '0 0 7px', fontSize: 12, fontWeight: 1000, color: 'var(--ssc-teal)' }}>Explanation:</p>
+          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.58, fontWeight: 700, color: 'var(--ssc-text-secondary)' }}>
+            {q.explanation || `The correct answer is option ${q.correctOption}.`}
+          </p>
+        </div>
 
-        {/* Answer + explanation â€" shown after reveal */}
-        {revealed && (
-          <>
-            <div style={{ background: 'var(--ssc-teal-soft)', border: '1px solid rgba(14,165,164,0.24)', borderRadius: 16, padding: '14px 16px', marginBottom: 16 }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ssc-teal)', marginBottom: q.explanation ? 10 : 0 }}>
-                Correct Answer: {q.correctOption}
-              </p>
-              {q.explanation && (
-                <p style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', lineHeight: 1.65, margin: 0 }}>
-                  {q.explanation}
-                </p>
-              )}
-            </div>
-
-            {/* Secondary actions â€" muted, not loud */}
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 24, paddingBottom: 8 }}>
-              <button
-                onClick={() => onUnsave(q.questionId)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ssc-text-secondary)', fontWeight: 700 }}
-              >
-                <BookmarkIcon filled size={13} />
-                Remove from Saved
-              </button>
-              <button
-                onClick={handleMarkRevised}
-                disabled={markedDone}
-                style={{ background: 'none', border: 'none', cursor: markedDone ? 'default' : 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: markedDone ? 'var(--ssc-success)' : 'var(--ssc-text-secondary)', fontWeight: 700 }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={markedDone ? 'var(--ssc-success)' : 'var(--ssc-text-secondary)'} strokeWidth="2.5" strokeLinecap="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                {markedDone ? 'Marked as Revised' : 'Mark as Revised'}
-              </button>
-            </div>
-          </>
-        )}
-        </section>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 11, fontWeight: 900, color: 'var(--ssc-text-secondary)' }}>
+          {wrongCount > 0 && <span style={{ color: 'var(--ssc-danger)' }}>Wrong {wrongCount}x</span>}
+          <span>Skipped {skippedCount}x</span>
+          {correctCount > 0 && <span style={{ color: 'var(--ssc-success)' }}>Correct {correctCount}x</span>}
+        </div>
+        <p style={{ margin: '8px 0 0', fontSize: 11, fontWeight: 800, color: 'var(--ssc-text-muted)' }}>
+          Last Practiced: {lastPracticed || 'Not practiced yet'}
+        </p>
       </div>
 
-      {/* Footer nav â€" Previous | Next */}
       <div style={{
-        padding: '12px 16px 24px', flexShrink: 0,
-        borderTop: '1px solid var(--ssc-border-soft)',
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        padding: '12px 16px 18px',
         background: 'rgba(255,255,255,0.96)',
         display: 'flex', alignItems: 'center', gap: 10,
+        boxShadow: '0 -14px 28px rgba(255,255,255,0.88)',
       }}>
         <button
           onClick={goPrev}
@@ -470,13 +454,14 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           style={{
             flex: 1, height: 48, borderRadius: 14,
             cursor: idx === 0 ? 'default' : 'pointer',
-            background: idx === 0 ? 'var(--ssc-disabled-bg)' : 'var(--ssc-surface-soft)',
+            background: idx === 0 ? 'var(--ssc-disabled-bg)' : '#FFFFFF',
             border: '1px solid var(--ssc-border-soft)',
-            color: idx === 0 ? 'var(--ssc-disabled-text)' : 'var(--ssc-text-primary)',
-            fontSize: 14, fontWeight: 700,
+            color: idx === 0 ? 'var(--ssc-disabled-text)' : 'var(--ssc-teal)',
+            fontSize: 14, fontWeight: 1000,
+            boxShadow: idx === 0 ? 'none' : '0 10px 22px rgba(16,32,51,0.07)',
           }}
         >
-          Previous
+          ← Previous
         </button>
         <button
           onClick={goNext}
@@ -493,7 +478,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
             boxShadow: idx === total - 1 ? 'none' : '0 10px 28px rgba(255,90,0,0.26)',
           }}
         >
-          Next
+          Next →
         </button>
       </div>
     </div>
@@ -514,24 +499,7 @@ export default function HistorySavedPage() {
   const [sortOrder, setSortOrder]       = useState('newest');
   const [revisedIds, setRevisedIds]     = useState(new Set());
   const [visibleCount, setVisibleCount] = useState(20);
-  const [showCTA, setShowCTA] = useState(false);
   const sentinelRef = useRef(null);
-
-  useEffect(() => {
-    let timer;
-    function onInteract() {
-      timer = setTimeout(() => setShowCTA(true), 4000);
-    }
-    window.addEventListener('scroll', onInteract, { capture: true, once: true });
-    window.addEventListener('touchstart', onInteract, { capture: true, once: true });
-    window.addEventListener('pointermove', onInteract, { capture: true, once: true });
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('scroll', onInteract, true);
-      window.removeEventListener('touchstart', onInteract, true);
-      window.removeEventListener('pointermove', onInteract, true);
-    };
-  }, []);
 
   const isLoggedIn = status === 'authenticated';
   const isGuest    = status === 'unauthenticated';
@@ -612,6 +580,7 @@ export default function HistorySavedPage() {
 
   // â"€â"€ Practice all â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   function startPractice(pool) {
+    if (!pool.length) return;
     const returnUrl = router.asPath || '/history/saved';
     // Map to quiz-compatible shape
     const quizQuestions = pool.map(q => ({
@@ -703,7 +672,6 @@ export default function HistorySavedPage() {
     setActiveMode('Subject');
     setActiveFilter(name);
     setActiveTopic('All');
-    setShowCTA(false);
     setRevisionIdx(null);
   }
 
@@ -729,16 +697,23 @@ export default function HistorySavedPage() {
     router.push('/history');
   }
 
+  const visiblePracticePool = showOverview() ? questions : filtered;
+
   const savedStyles = `
-    .sq-detail-filters{padding:12px 10px 8px}
+    .sq-content-rail{padding-left:12px;padding-right:12px}
+    .sq-detail-filters{padding:16px 0 10px}
     .sq-filter-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding:0 0 8px}
     .sq-filter-row::-webkit-scrollbar{display:none}
+    .sq-filter-label{font-size:12px;font-weight:1000;color:var(--ssc-text-primary);margin:2px 0 8px}
     .sq-filter-chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:7px 12px;white-space:nowrap;flex:0 0 auto;box-shadow:0 5px 12px rgba(16,32,51,.04)}
     .sq-filter-chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:#fff}
-    .sq-control-row{display:flex;align-items:center;justify-content:space-between;padding:2px 0 0}
-    .sq-mini-select{height:30px;border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:0 11px;outline:none}
-    .sq-select-btn{height:30px;border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-primary);font-size:10px;font-weight:900;padding:0 14px}
-    .sq-summary-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);border:1px solid #BDEDEA;border-radius:16px;padding:15px 16px;margin:12px 12px;box-shadow:var(--ssc-shadow-card)}
+    .sq-control-row{display:flex;align-items:center;justify-content:flex-start;padding:2px 0 0;margin-bottom:8px}
+    .sq-sort-group{display:inline-flex;align-items:center;gap:8px}
+    .sq-sort-label{font-size:11px;font-weight:900;color:var(--ssc-text-secondary);white-space:nowrap}
+    .sq-select-wrap{position:relative;display:inline-flex;align-items:center}
+    .sq-select-wrap:after{content:'';position:absolute;right:12px;width:7px;height:7px;border-right:2px solid var(--ssc-text-secondary);border-bottom:2px solid var(--ssc-text-secondary);transform:rotate(45deg) translateY(-2px);pointer-events:none}
+    .sq-mini-select{height:32px;border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:0 32px 0 13px;outline:none;appearance:none;-webkit-appearance:none;line-height:32px}
+    .sq-summary-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);border:1px solid #BDEDEA;border-radius:16px;padding:15px 16px;margin:12px 0 0;box-shadow:var(--ssc-shadow-card)}
     .sq-summary-top{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
     .sq-summary-icon{width:42px;height:42px;border-radius:13px;background:#E8F8F6;border:1px solid rgba(14,165,164,0.20);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
     .sq-summary-count{font-size:24px;font-weight:1000;color:var(--ssc-teal);line-height:1;font-family:var(--font-display);margin:0}
@@ -755,19 +730,28 @@ export default function HistorySavedPage() {
     .sq-subject-count{font-size:12px;font-weight:1000;color:var(--ssc-teal);margin-right:2px}
     .sq-sort-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
     .sq-sort-select{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:12px;padding:8px 12px;font-size:12px;color:var(--ssc-text-secondary);font-weight:600;outline:none;font-family:inherit;cursor:pointer}
-    .sq-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:12px;padding:9px 10px 8px;margin-bottom:9px;position:relative;box-shadow:0 8px 18px rgba(16,32,51,.05);cursor:pointer}.sq-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}
-    .sq-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;padding-right:22px}
+    .sq-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:12px;padding:9px 10px 8px;margin:0 0 9px;position:relative;box-shadow:0 8px 18px rgba(16,32,51,.05);cursor:pointer}.sq-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}
+    .sq-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px;padding-right:0}
     .sq-bookmark-btn{position:absolute;top:32px;right:9px;width:24px;height:24px;border-radius:8px;background:transparent;border:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
-    .sq-tags-row{display:flex;gap:4px;align-items:center;min-width:0;overflow:hidden}
-    .sq-subject-dot{font-size:9px;font-weight:1000;color:var(--ssc-teal);white-space:nowrap}
-    .sq-subject-dot:after{content:' •';color:var(--ssc-text-muted);font-weight:900}
-    .sq-topic-inline{font-size:9px;font-weight:900;color:var(--ssc-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sq-tags-row{display:flex;gap:7px;align-items:center;min-width:0;overflow:hidden}
+    .sq-subject-dot,.sq-topic-inline{display:inline-flex;align-items:center;max-width:48%;height:22px;border-radius:999px;padding:0 9px;font-size:10px;font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sq-subject-dot{color:var(--ssc-teal);background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.14)}
+    .sq-topic-inline{color:var(--ssc-orange);background:var(--ssc-orange-soft);border:1px solid rgba(255,106,0,.14)}
+    .sq-card-status-stack{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;max-width:118px}
     .sq-card-age{font-size:9px;font-weight:800;color:var(--ssc-text-secondary);white-space:nowrap}
+    .sq-status-pill{display:inline-flex;align-items:center;justify-content:center;min-height:21px;border-radius:999px;border:1px solid;padding:0 8px;font-size:9px;font-weight:1000;white-space:nowrap}
+    .sq-status-pill.amber{color:var(--ssc-warning);background:var(--ssc-warning-soft);border-color:rgba(245,158,11,.30)}
+    .sq-status-pill.red{color:var(--ssc-danger);background:var(--ssc-danger-soft);border-color:rgba(239,68,68,.30)}
+    .sq-status-pill.blue{color:#2563EB;background:#EFF6FF;border-color:rgba(37,99,235,.28)}
     .sq-question-text{font-size:11px;font-weight:900;color:var(--ssc-text-primary);line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin:0 24px 9px 0}
     .sq-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.sq-footer-right{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto}
     .sq-meta{font-size:9px;color:var(--ssc-text-muted);font-weight:800}
     .sq-progress-track{height:3px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden;margin-right:2px}
     .sq-progress-fill{height:100%;border-radius:99px}
+    .sq-attempt-stats{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:9px;font-weight:900;white-space:nowrap;overflow:hidden}
+    .sq-stat-correct{color:var(--ssc-success)}
+    .sq-stat-wrong{color:var(--ssc-danger)}
+    .sq-stat-skipped{color:var(--ssc-warning)}
     .sq-empty-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:16px;padding:32px 16px;text-align:center}
   `;
 
@@ -891,23 +875,25 @@ export default function HistorySavedPage() {
           </>
                 ) : (
           <>
-            <div className="sq-summary-card">
-              <div className="sq-summary-top">
-                <div className="sq-summary-icon">
-                  <BookmarkIcon filled size={22} />
+            <div className="sq-content-rail">
+              <div className="sq-summary-card">
+                <div className="sq-summary-top">
+                  <div className="sq-summary-icon">
+                    <BookmarkIcon filled size={22} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="sq-summary-count">{visiblePracticePool.length}</p>
+                    <p className="sq-summary-label">Questions saved</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="sq-summary-count">{questions.length}</p>
-                  <p className="sq-summary-label">Questions saved</p>
-                </div>
+                <button type="button" className="sq-summary-cta" onClick={() => startPractice(visiblePracticePool)}>
+                  Practice all {visiblePracticePool.length}
+                </button>
               </div>
-              <button type="button" className="sq-summary-cta" onClick={() => startPractice(questions)}>
-                Practice all {questions.length}
-              </button>
             </div>
 
             {showOverview() ? (
-              <div className="px-3">
+              <div className="sq-content-rail" style={{ paddingTop: 14 }}>
                 {subjectGroups.map(item => {
                   const subjectName = item.name;
                   const meta = getSubjectMeta(subjectName);
@@ -932,7 +918,7 @@ export default function HistorySavedPage() {
                 })}
               </div>
             ) : (
-              <div className="px-3" style={{ paddingBottom: filtered.length > 0 ? 96 : 16 }}>
+              <div className="sq-content-rail" style={{ paddingBottom: filtered.length > 0 ? 96 : 16 }}>
                 <div className="sq-detail-filters">
                   <div className="sq-filter-row" aria-label="Saved question subjects">
                     <button
@@ -954,6 +940,7 @@ export default function HistorySavedPage() {
                     ))}
                   </div>
 
+                  <p className="sq-filter-label">Select a topic</p>
                   <div className="sq-filter-row" aria-label="Saved question topics">
                     <button
                       type="button"
@@ -975,17 +962,21 @@ export default function HistorySavedPage() {
                   </div>
 
                   <div className="sq-control-row">
-                  <select
-                    className="sq-mini-select"
-                    value={sortOrder}
-                    onChange={e => setSortOrder(e.target.value)}
-                  >
-                    <option value="newest">Recent First</option>
-                    <option value="oldest">Oldest First</option>
-                    <option value="subject">Subject-wise</option>
-                    <option value="wrong">Wrong First</option>
-                  </select>
-                    <button type="button" className="sq-select-btn">Select</button>
+                    <div className="sq-sort-group">
+                      <span className="sq-sort-label">Sort by</span>
+                      <span className="sq-select-wrap">
+                        <select
+                          className="sq-mini-select"
+                          value={sortOrder}
+                          onChange={e => setSortOrder(e.target.value)}
+                        >
+                          <option value="newest">Recent First</option>
+                          <option value="oldest">Oldest First</option>
+                          <option value="subject">Subject-wise</option>
+                          <option value="wrong">Wrong First</option>
+                        </select>
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -1016,27 +1007,6 @@ export default function HistorySavedPage() {
                     )}
                   </>
                 )}
-              </div>
-            )}
-
-            {/* Start Revision CTA */}
-            {!showOverview() && filtered.length > 0 && (
-              <div
-                className="fixed bottom-[74px] left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-2 z-40"
-                style={{
-                  opacity: showCTA ? 1 : 0,
-                  transform: showCTA ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(16px)',
-                  transition: 'opacity 0.4s ease, transform 0.4s ease',
-                  pointerEvents: showCTA ? 'auto' : 'none',
-                }}
-              >
-                <button
-                  onClick={() => setRevisionIdx(0)}
-                  className="w-full font-display font-bold text-base text-white active:scale-[0.98] transition-transform"
-                  style={{ borderRadius: 18, padding: '16px 0', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #FF7A1A, #FF4D00)', boxShadow: '0 10px 28px rgba(255,90,0,0.30)' }}
-                >
-                  Start Revision: {filtered.length} Question{filtered.length !== 1 ? 's' : ''} &rarr;
-                </button>
               </div>
             )}
 
