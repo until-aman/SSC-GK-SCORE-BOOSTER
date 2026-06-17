@@ -4,7 +4,6 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 
 import GoogleSignInCard from '@/components/GoogleSignInCard';
-import HistoryTopBar from '@/components/HistoryTopBar';
 import Loader from '@/components/ui/Loader';
 import { getSavedQuestions, unsaveQuestion } from '@/lib/data/savedData';
 import { getUserCacheScope } from '@/lib/userCacheScope';
@@ -49,6 +48,77 @@ function ChevronSVG() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 18l6-6-6-6" />
     </svg>
+  );
+}
+
+function SavedTopBar({ onBack }) {
+  return (
+    <div className="sq-topbar">
+      <button type="button" className="sq-topbar-back" onClick={onBack} aria-label="Back">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#102033" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+      </button>
+      <h1 className="sq-topbar-title font-display">Saved Questions</h1>
+      <div className="sq-topbar-spacer" aria-hidden="true" />
+    </div>
+  );
+}
+
+const SUBJECT_META = {
+  Polity: { subtitle: 'Constitution - Govt', accent: '#14B8A6', bg: '#E8F8F6', glyph: 'bookmark' },
+  Economics: { subtitle: 'Banking - Budget', accent: '#8B5CF6', bg: '#F3F0FF', glyph: 'chart' },
+  Geography: { subtitle: 'Maps - Climate', accent: '#0EA5E9', bg: '#E8F5FF', glyph: 'globe' },
+  'Current Affairs': { subtitle: 'Latest GK', accent: '#FF5C8A', bg: '#FFF0F4', glyph: 'paper' },
+  'Static GK': { subtitle: 'Awards - Books', accent: '#10B981', bg: '#EAFBF3', glyph: 'book' },
+  Physics: { subtitle: 'Motion - Energy', accent: '#2563EB', bg: '#EAF1FF', glyph: 'atom' },
+  Chemistry: { subtitle: 'Elements - Reactions', accent: '#14B8A6', bg: '#E8F8F6', glyph: 'flask' },
+  Biology: { subtitle: 'Human Body - Life', accent: '#16A34A', bg: '#EAFBF0', glyph: 'leaf' },
+  'Ancient History': { subtitle: 'Vedic - Empires', accent: '#D97706', bg: '#FFF7E6', glyph: 'pillar' },
+  'Medieval History': { subtitle: 'Sultanate - Mughals', accent: '#DC2626', bg: '#FEECEC', glyph: 'fort' },
+  'Modern History': { subtitle: 'Freedom - Reforms', accent: '#8B5CF6', bg: '#F3F0FF', glyph: 'flag' },
+  Mixed: { subtitle: 'All Subjects', accent: '#9333EA', bg: '#F5F3FF', glyph: 'target' },
+};
+
+function getSubjectMeta(subject) {
+  return SUBJECT_META[subject] || {
+    subtitle: 'Saved topics',
+    accent: 'var(--ssc-teal)',
+    bg: 'var(--ssc-teal-soft)',
+    glyph: 'book',
+  };
+}
+
+function SubjectIcon({ subject }) {
+  const meta = getSubjectMeta(subject);
+  const common = {
+    width: 18,
+    height: 18,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: meta.accent,
+    strokeWidth: 1.9,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+  };
+  const paths = {
+    bookmark: <path d="M7 4h10v16l-5-3-5 3V4z" />,
+    chart: <><path d="M4 19V5" /><path d="M4 19h16" /><path d="M8 16v-5" /><path d="M12 16V8" /><path d="M16 16v-3" /></>,
+    globe: <><circle cx="12" cy="12" r="8" /><path d="M4 12h16" /><path d="M12 4c2 2.3 3 5 3 8s-1 5.7-3 8" /><path d="M12 4c-2 2.3-3 5-3 8s1 5.7 3 8" /></>,
+    paper: <><path d="M7 4h8l3 3v13H7z" /><path d="M15 4v4h4" /><path d="M9 12h6" /><path d="M9 16h5" /></>,
+    book: <><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 0-3-3V4z" /><path d="M8 8h6" /><path d="M8 12h5" /></>,
+    atom: <><circle cx="12" cy="12" r="1.5" /><path d="M19 12c0 2-3.1 3.6-7 3.6S5 14 5 12s3.1-3.6 7-3.6 7 1.6 7 3.6z" /><path d="M15.5 18c-1.7 1-4.1-1.2-5.4-4.6S9.4 6.7 11.1 6s4.1 1.2 5.4 4.6.7 6.7-1 7.4z" /></>,
+    flask: <><path d="M9 3h6" /><path d="M10 3v5l-5 9a3 3 0 0 0 2.6 4.5h8.8A3 3 0 0 0 19 17l-5-9V3" /><path d="M8 15h8" /></>,
+    leaf: <><path d="M19 5c-8 0-13 5-13 11a4 4 0 0 0 4 4c6 0 9-7 9-15z" /><path d="M6 19c2-5 5-8 10-10" /></>,
+    pillar: <><path d="M5 8h14" /><path d="M7 8v10" /><path d="M11 8v10" /><path d="M15 8v10" /><path d="M5 18h14" /><path d="M6 5h12l-6-3z" /></>,
+    fort: <><path d="M5 20V8h3V5h3v3h2V5h3v3h3v12" /><path d="M4 20h16" /><path d="M10 20v-5a2 2 0 0 1 4 0v5" /></>,
+    flag: <><path d="M6 21V4" /><path d="M6 5h10l-1.5 4L16 13H6" /></>,
+    target: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="1" /></>,
+  };
+  return (
+    <span className="sq-subject-icon" style={{ background: meta.bg, borderColor: `${meta.accent}33` }}>
+      <svg {...common}>{paths[meta.glyph] || paths.book}</svg>
+    </span>
   );
 }
 
@@ -422,6 +492,7 @@ export default function HistorySavedPage() {
   const [questions, setQuestions]     = useState([]);
   const [loading, setLoading]         = useState(true);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [activeMode, setActiveMode] = useState('All');
   const [revisionIdx, setRevisionIdx] = useState(null); // null = list, number = revision overlay
   const [searchQuery, setSearchQuery]   = useState('');
   const [sortOrder, setSortOrder]       = useState('newest');
@@ -546,15 +617,19 @@ export default function HistorySavedPage() {
       (q.topic    || '').toLowerCase().includes(sq)
     );
   }
-  if (activeFilter === 'Unrevised') {
+  if (activeMode === 'Recent') {
+    // Recent keeps the full pool and only changes sorting/display mode.
+  } else if (activeFilter === 'Unrevised') {
     filtered = filtered.filter(q => !revisedIds.has(q.questionId));
   } else if (activeFilter === 'Wrong') {
     filtered = filtered.filter(q => q.userAnswer && q.userAnswer !== q.correctOption);
-  } else if (activeFilter !== 'All') {
+  } else if (activeFilter !== 'All' && activeMode !== 'Topic') {
     filtered = filtered.filter(q => q.subject === activeFilter);
+  } else if (activeFilter !== 'All' && activeMode === 'Topic') {
+    filtered = filtered.filter(q => q.topic === activeFilter);
   }
 
-  if (sortOrder === 'newest') {
+  if (activeMode === 'Recent' || sortOrder === 'newest') {
     filtered.sort((a, b) => new Date(b.savedAt || b.createdAt || 0) - new Date(a.savedAt || a.createdAt || 0));
   } else if (sortOrder === 'oldest') {
     filtered.sort((a, b) => new Date(a.savedAt || a.createdAt || 0) - new Date(b.savedAt || b.createdAt || 0));
@@ -580,25 +655,59 @@ export default function HistorySavedPage() {
       .sort((a, b) => b.count - a.count);
   }, [questions]);
 
-  const filterChips = [
-    { key: 'All', label: `All ${questions.length}` },
-    ...subjectGroups.map(s => ({ key: s.name, label: `${s.name} ${s.count}` })),
-  ];
+  const topicGroups = useMemo(() => {
+    const map = new Map();
+    questions.forEach(q => {
+      const topic = q.topic || 'Mixed Topic';
+      const subject = q.subject || 'Saved Questions';
+      const item = map.get(topic) || { name: topic, subject, count: 0 };
+      item.count += 1;
+      map.set(topic, item);
+    });
+    return Array.from(map.values()).sort((a, b) => b.count - a.count);
+  }, [questions]);
+
+  function showOverview(mode = activeMode) {
+    return mode === 'All' || mode === 'By Subject' || mode === 'By Topic';
+  }
+
+  function handleModeSelect(mode) {
+    setActiveMode(mode);
+    setActiveFilter('All');
+    if (mode === 'Recent') setSortOrder('newest');
+  }
+
+  function openSubject(name) {
+    setActiveMode('Subject');
+    setActiveFilter(name);
+  }
+
+  function openTopic(name) {
+    setActiveMode('Topic');
+    setActiveFilter(name);
+  }
 
   const savedStyles = `
-    .sq-chips-row{display:flex;gap:8px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none;-ms-overflow-style:none}
+    .sq-topbar{height:58px;position:sticky;top:0;z-index:50;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:0 12px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--ssc-border-soft);border-radius:0 0 22px 22px;box-shadow:0 10px 30px rgba(16,32,51,.08)}
+    .sq-topbar-back{width:36px;height:36px;border:0;background:transparent;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+    .sq-topbar-title{font-size:15px;font-weight:900;color:var(--ssc-text-primary);text-align:center;margin:0;line-height:1}
+    .sq-topbar-spacer{width:36px;height:36px}
+    .sq-chips-row{display:flex;gap:8px;overflow-x:auto;padding:0 12px 10px;scrollbar-width:none;-ms-overflow-style:none}
     .sq-chips-row::-webkit-scrollbar{display:none}
-    .sq-chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:700;padding:7px 14px;white-space:nowrap;flex-shrink:0;cursor:pointer}
+    .sq-chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:11px;font-weight:800;padding:7px 13px;white-space:nowrap;flex-shrink:0;cursor:pointer;box-shadow:0 4px 12px rgba(16,32,51,.04)}
     .sq-chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white}
-    .sq-summary-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:20px 18px;margin-bottom:14px;box-shadow:var(--ssc-shadow-card)}
-    .sq-summary-icon{width:44px;height:44px;border-radius:13px;background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,0.20);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
-    .sq-summary-heading{font-size:13px;font-weight:700;color:var(--ssc-text-secondary);margin:0 0 4px}
-    .sq-summary-count{font-size:40px;font-weight:900;color:var(--ssc-text-primary);line-height:1;font-family:var(--font-display);margin:0}
-    .sq-summary-label{font-size:12px;color:var(--ssc-text-muted);font-weight:600;margin:4px 0 0}
-    .sq-subject-row{display:flex;align-items:center;gap:12px;background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:16px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--ssc-shadow-card);cursor:pointer}
-    .sq-subject-icon{width:40px;height:40px;border-radius:11px;background:var(--ssc-teal-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-    .sq-subject-name{flex:1;font-size:15px;font-weight:800;color:var(--ssc-text-primary)}
-    .sq-subject-count{font-size:13px;font-weight:700;color:var(--ssc-text-secondary);margin-right:4px}
+    .sq-summary-card{display:flex;align-items:center;gap:14px;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);border:1px solid #BDEDEA;border-radius:16px;padding:15px 16px;margin:6px 12px 12px;box-shadow:var(--ssc-shadow-card)}
+    .sq-summary-icon{width:42px;height:42px;border-radius:13px;background:#E8F8F6;border:1px solid rgba(14,165,164,0.20);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+    .sq-summary-heading{font-size:11px;font-weight:900;color:var(--ssc-text-primary);margin:0 0 3px;line-height:1.2}
+    .sq-summary-count{font-size:24px;font-weight:1000;color:var(--ssc-teal);line-height:1;font-family:var(--font-display);margin:0}
+    .sq-summary-label{font-size:11px;color:var(--ssc-text-secondary);font-weight:800;margin:3px 0 0}
+    .sq-subject-row{display:flex;align-items:center;gap:12px;background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:14px;padding:10px 12px;margin-bottom:8px;box-shadow:0 8px 20px rgba(16,32,51,.06);cursor:pointer}
+    .sq-subject-row:active{transform:scale(.99)}
+    .sq-subject-icon{width:34px;height:34px;border-radius:11px;border:1px solid rgba(14,165,164,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .sq-subject-copy{min-width:0;flex:1}
+    .sq-subject-name{display:block;font-size:12px;font-weight:1000;color:var(--ssc-text-primary);line-height:1.2}
+    .sq-subject-subtitle{display:block;margin-top:3px;font-size:10px;font-weight:800;color:var(--ssc-text-secondary);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sq-subject-count{font-size:12px;font-weight:1000;color:var(--ssc-teal);margin-right:2px}
     .sq-sort-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
     .sq-sort-select{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:12px;padding:8px 12px;font-size:12px;color:var(--ssc-text-secondary);font-weight:600;outline:none;font-family:inherit;cursor:pointer}
     .sq-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;padding:14px 16px;margin-bottom:10px;position:relative;box-shadow:var(--ssc-shadow-card);cursor:pointer}.sq-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}
@@ -617,10 +726,8 @@ export default function HistorySavedPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-24">
-        <HistoryTopBar title="Saved Questions" showBack />
-        <div className="px-4 pt-5 pb-5">
-          <p className="t-page-subtitle text-[var(--ssc-text-secondary)]">Build your personal revision bank</p>
-        </div>
+        <style suppressHydrationWarning>{savedStyles}</style>
+        <SavedTopBar onBack={() => router.push('/history')} />
         <div className="px-4">
           <Loader card size="md" label="Fetching your saved questions..." />
         </div>
@@ -631,13 +738,9 @@ export default function HistorySavedPage() {
   return (
     <>
       <Head><title>Saved Questions - SSC GK Score Booster</title></Head>
+      <style suppressHydrationWarning>{savedStyles}</style>
       <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-24">
-        <HistoryTopBar title="Saved Questions" showBack />
-
-        {/* Header */}
-        <div className="px-4 pt-5 pb-5">
-          <p className="t-page-subtitle text-[var(--ssc-text-secondary)]">Build your personal revision bank</p>
-        </div>
+        <SavedTopBar onBack={() => router.push('/history')} />
 
         {/* Guest sign-in banner */}
         {isGuest && questions.length > 0 && (
@@ -739,63 +842,60 @@ export default function HistorySavedPage() {
           </>
                 ) : (
           <>
-            <style suppressHydrationWarning>{savedStyles}</style>
+            <div className="sq-summary-card">
+              <div className="sq-summary-icon">
+                <BookmarkIcon filled size={22} />
+              </div>
+              <div className="min-w-0">
+                <p className="sq-summary-heading font-display">Your Saved Questions</p>
+                <p className="sq-summary-count">{questions.length}</p>
+                <p className="sq-summary-label">Questions saved</p>
+              </div>
+            </div>
 
-            {/* Subject filter chips */}
             <div className="sq-chips-row">
-              {filterChips.map(({ key, label }) => (
+              {['All', 'By Subject', 'By Topic', 'Recent'].map(label => (
                 <button
-                  key={key}
-                  className={`sq-chip ${activeFilter === key ? 'active' : ''}`}
-                  onClick={() => setActiveFilter(key)}
+                  key={label}
+                  className={`sq-chip ${activeMode === label ? 'active' : ''}`}
+                  onClick={() => handleModeSelect(label)}
                 >
                   {label}
                 </button>
               ))}
             </div>
 
-            {activeFilter === 'All' ? (
-              <div className="px-4">
-                {/* Summary card */}
-                <div className="sq-summary-card">
-                  <div className="sq-summary-icon">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" />
-                    </svg>
-                  </div>
-                  <p className="sq-summary-heading font-display">Your Saved Questions</p>
-                  <p className="sq-summary-count">{questions.length}</p>
-                  <p className="sq-summary-label">Questions saved</p>
-                </div>
-
-                {/* Subject category rows */}
-                {subjectGroups.map(subj => (
+            {showOverview() ? (
+              <div className="px-3">
+                {(activeMode === 'By Topic' ? topicGroups : subjectGroups).map(item => {
+                  const subjectName = activeMode === 'By Topic' ? item.subject : item.name;
+                  const meta = getSubjectMeta(subjectName);
+                  return (
                   <div
-                    key={subj.name}
+                    key={item.name}
                     className="sq-subject-row"
-                    onClick={() => setActiveFilter(subj.name)}
+                    onClick={() => activeMode === 'By Topic' ? openTopic(item.name) : openSubject(item.name)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={e => e.key === 'Enter' && setActiveFilter(subj.name)}
+                    onKeyDown={e => e.key === 'Enter' && (activeMode === 'By Topic' ? openTopic(item.name) : openSubject(item.name))}
                   >
-                    <div className="sq-subject-icon">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
-                      </svg>
+                    <SubjectIcon subject={subjectName} />
+                    <div className="sq-subject-copy">
+                      <span className="sq-subject-name">{item.name}</span>
+                      <span className="sq-subject-subtitle">{activeMode === 'By Topic' ? subjectName : meta.subtitle}</span>
                     </div>
-                    <span className="sq-subject-name">{subj.name}</span>
-                    <span className="sq-subject-count">{subj.count}</span>
+                    <span className="sq-subject-count">{item.count}</span>
                     <ChevronSVG />
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="px-4" style={{ paddingBottom: filtered.length > 0 ? 96 : 16 }}>
                 {/* Sort row */}
                 <div className="sq-sort-row">
                   <span style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', fontWeight: 500 }}>
-                    {filtered.length} question{filtered.length !== 1 ? 's' : ''}
+                    {activeFilter === 'All' ? `${filtered.length} saved question${filtered.length !== 1 ? 's' : ''}` : `${activeFilter} - ${filtered.length} question${filtered.length !== 1 ? 's' : ''}`}
                   </span>
                   <select
                     className="sq-sort-select"
@@ -840,7 +940,7 @@ export default function HistorySavedPage() {
             )}
 
             {/* Start Revision CTA */}
-            {activeFilter !== 'All' && filtered.length > 0 && (
+            {!showOverview() && filtered.length > 0 && (
               <div
                 className="fixed bottom-[74px] left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-2 z-40"
                 style={{
