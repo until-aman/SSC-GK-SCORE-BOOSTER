@@ -759,7 +759,7 @@ export default function Quiz() {
         const payload = JSON.parse(sessionStorage.getItem('ssc_history_quiz_questions') || 'null');
         const historyQuestions = Array.isArray(payload) ? payload : payload?.questions;
         if (!historyQuestions?.length) { setError('no-questions'); setLoading(false); return; }
-        setHistoryMeta({
+        const nextHistoryMeta = {
           quizMode: payload.quizMode || 'reattempt_mistakes',
           parentSessionId: payload.parentSessionId || '',
           isRetry: true,
@@ -768,8 +768,46 @@ export default function Quiz() {
           topic: payload.topic || 'Re-attempt',
           sourceCollection: payload.sourceCollection || 'general',
           returnUrl: normalizeInternalReturnUrl(payload.returnUrl) || queryReturnUrl || '/history/quizzes',
-        });
-        setQuestions(shuffle(historyQuestions));
+        };
+        const nextQuestions = shuffle(historyQuestions);
+        const now = Date.now();
+        const nextSessionId = qSessionId || crypto.randomUUID();
+        const initialMentorContext = sourcePage === 'mentor' || qSourceScreen === 'mentor_plan'
+          ? {
+              sourcePage: 'mentor',
+              sourceScreen: 'mentor_plan',
+              sourceTaskId: String(sourceTaskId || ''),
+              planId: String(planId || ''),
+              returnUrl: queryReturnUrl || '/mentor',
+            }
+          : null;
+        const initialHistorySession = {
+          quizSessionId: nextSessionId,
+          subject: nextHistoryMeta.subject,
+          topic: nextHistoryMeta.topic,
+          collection,
+          mode: 'history',
+          historyMeta: nextHistoryMeta,
+          sourceScreen: initialMentorContext ? 'mentor_plan' : 'history',
+          returnUrl: nextHistoryMeta.returnUrl,
+          mentorContext: initialMentorContext,
+          selectedQuestionCount: nextQuestions.length,
+          totalQuestions: nextQuestions.length,
+          questions: nextQuestions,
+          currentQuestionIndex: 0,
+          selectedAnswers: {},
+          selectedAnswerTimes: {},
+          startedAt: now,
+          lastActivityAt: now,
+          questionStartedAt: now,
+          status: 'in_progress',
+        };
+        activeSessionRef.current = initialHistorySession;
+        writeActiveQuizSession(initialHistorySession);
+        setHistoryMeta(nextHistoryMeta);
+        setQuestions(nextQuestions);
+        setSessionId(nextSessionId);
+        setQuestionStartedAt(now);
         setLoading(false);
       } catch { setError('fetch-failed'); setLoading(false); }
       return;
@@ -906,7 +944,7 @@ export default function Quiz() {
 
     fetchWithRetry(3);
     })();
-  }, [router.isReady, subject, topic, questionCount, collection, isSavedMode, isHistoryMode, mode, recoveryChecked, recoveryPrompt, retryCount, queryReturnUrl]);
+  }, [router.isReady, subject, topic, questionCount, collection, isSavedMode, isHistoryMode, mode, recoveryChecked, recoveryPrompt, retryCount, queryReturnUrl, qSessionId, sourcePage, qSourceScreen, sourceTaskId, planId]);
 
   useEffect(() => {
     if (!loading || error || mode === 'daily') return;
@@ -1044,8 +1082,21 @@ export default function Quiz() {
 
     const handleBeforeUnload = (event) => {
       if (allowQuizExitRef.current) return;
+      const session = activeSessionRef.current || readActiveQuizSession();
+      if (session?.status === 'in_progress') {
+        writeActiveQuizSession({ ...session, lastActivityAt: Date.now() });
+      }
       event.preventDefault();
       event.returnValue = '';
+    };
+
+    const handleRefreshShortcut = (event) => {
+      const key = String(event.key || '').toLowerCase();
+      const isRefreshShortcut = event.key === 'F5' || ((event.ctrlKey || event.metaKey) && key === 'r');
+      if (!isRefreshShortcut || allowQuizExitRef.current) return;
+      event.preventDefault();
+      event.stopPropagation();
+      requestQuizExit(currentQuizUrl);
     };
 
     const handleRouteChangeStart = (url) => {
@@ -1066,12 +1117,14 @@ export default function Quiz() {
 
     window.history.pushState({ quizGuard: true }, '', currentQuizUrl);
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('keydown', handleRefreshShortcut, true);
     window.addEventListener('popstate', handlePopState, true);
     router.events.on('routeChangeStart', handleRouteChangeStart);
     router.beforePopState(({ as }) => requestQuizExit(as || '/dashboard'));
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('keydown', handleRefreshShortcut, true);
       window.removeEventListener('popstate', handlePopState, true);
       router.events.off('routeChangeStart', handleRouteChangeStart);
       router.beforePopState(() => true);
