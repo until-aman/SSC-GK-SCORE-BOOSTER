@@ -278,12 +278,7 @@ export default function MentorTaskCard({
 
   return (
     <article className={`relative overflow-hidden rounded-[22px] border bg-white p-3.5 shadow-[0_10px_26px_rgba(16,32,51,0.07)] ${isCompleted ? 'border-[#BDEDD8] bg-[#FBFFFE]' : isSnoozed ? 'border-[#F8D9A0] bg-[#FFFDF8]' : isBlocked ? 'border-[#DDE8F0] bg-[#F8FAFC] opacity-85' : `${theme.accent} ${theme.softBg}`}`}>
-      <div className="flex items-start gap-3">
-        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px] border text-sm font-black ${isCompleted ? 'border-[#BDEDD8] bg-[#E7FAF3] text-[#0F9F75]' : isSnoozed || isBlocked ? 'border-[#F8D9A0] bg-[#FFF7E6] text-[#B45309]' : theme.iconChip}`}>
-          {isCompleted ? 'C' : isSnoozed ? 'R' : isBlocked ? 'L' : theme.icon}
-        </span>
-
-        <div className="min-w-0 flex-1">
+      <div className="min-w-0">
           <div className="flex items-start justify-between gap-2">
             <span className={`rounded-full border px-2.5 py-1 text-[9px] font-black uppercase leading-none tracking-wide ${theme.pill}`}>
               {typeLabel}
@@ -304,7 +299,6 @@ export default function MentorTaskCard({
           <div className="mt-3">
             {meta.length ? <MetaRow items={meta} /> : <span className="text-[11px] font-bold text-ssc-text-muted">Task {taskNumber}</span>}
           </div>
-        </div>
       </div>
 
       {task.duplicateNote ? (

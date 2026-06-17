@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -735,6 +735,7 @@ export default function MentorPage() {
   const [toast, setToast] = useState(null);
   const [now, setNow] = useState(() => new Date());
   const [taskFlowOpen, setTaskFlowOpen] = useState(false);
+  const checkedNoQuestionTaskIdsRef = useRef(new Set());
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60 * 1000);
@@ -798,6 +799,38 @@ export default function MentorPage() {
     if (status !== 'authenticated' && !(status === 'unauthenticated' && guestMode)) return;
     loadMentor();
   }, [guestMode, loadMentor, status]);
+
+  useEffect(() => {
+    if (status !== 'authenticated' || !snapshot?.activeTasks?.length) return;
+    let cancelled = false;
+    const candidates = snapshot.activeTasks.filter(task => {
+      if (!task?.taskId || checkedNoQuestionTaskIdsRef.current.has(task.taskId)) return false;
+      try {
+        const context = resolveLaunchContext(task);
+        return context.questionSource === 'repeated_mistakes' || context.questionSource === 'history_wrong';
+      } catch {
+        return false;
+      }
+    });
+    if (!candidates.length) return;
+
+    candidates.forEach(task => {
+      checkedNoQuestionTaskIdsRef.current.add(task.taskId);
+      (async () => {
+        try {
+          const context = resolveLaunchContext(task);
+          await fetchMentorMistakeQuestions(context);
+        } catch (err) {
+          if (!cancelled && isNoMistakeQuestionsError(err)) {
+            await scrapNoQuestionTask(task, { showMessage: false }).catch(() => {});
+          }
+        }
+      })();
+    });
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, snapshot?.activeTasks]);
 
   // Post plan-update toast (set by the Preparation Setup edit flow via ?updated=1).
   useEffect(() => {
@@ -879,6 +912,36 @@ export default function MentorPage() {
   function getGuestTaskType(item, actionType) {
     if (actionType === 'snooze' && Number(item.snoozeCount || 0) + 1 >= 3) return 'feedback_task';
     return item.taskType;
+  }
+
+  function optimisticallyCompleteTask(task, actionValue = 'no_questions') {
+    setSnapshot(prev => {
+      if (!prev?.plan?.tasks?.length) return prev;
+      const nextTasks = prev.plan.tasks.map(item => item.taskId === task.taskId ? {
+        ...item,
+        status: 'completed',
+        completedAt: new Date().toISOString(),
+        completionSource: actionValue,
+        actionValue,
+      } : item);
+      return buildLocalSnapshotFromParts(prev.profile, { ...prev.plan, tasks: nextTasks });
+    });
+  }
+
+  function isNoMistakeQuestionsError(err) {
+    return String(err?.message || '').includes('No mistake questions found for this topic');
+  }
+
+  async function scrapNoQuestionTask(task, { showMessage = true } = {}) {
+    optimisticallyCompleteTask(task, 'no_questions');
+    if (showMessage) {
+      setError("No mistake questions found for this topic. This task has been removed from today's active list.");
+    }
+    await runTaskAction(task, 'complete', 'no_questions');
+    if (showMessage) {
+      setToast({ type: 'success', message: "Task removed from today's plan." });
+      setTimeout(() => setToast(null), 2400);
+    }
   }
 
   async function handleRefresh() {
@@ -1064,7 +1127,16 @@ export default function MentorPage() {
     sessionStorage.setItem('ssc_mentor_return_context', JSON.stringify(mentorContext));
 
     if (context.questionSource === 'repeated_mistakes' || context.questionSource === 'history_wrong') {
-      const historyData = await fetchMentorMistakeQuestions(context);
+      let historyData;
+      try {
+        historyData = await fetchMentorMistakeQuestions(context);
+      } catch (err) {
+        if (isNoMistakeQuestionsError(err)) {
+          await scrapNoQuestionTask(task);
+          return;
+        }
+        throw err;
+      }
       await runTaskAction(task, 'launch_practice', String(context.questionCount));
       sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
         questions: historyData.questions,

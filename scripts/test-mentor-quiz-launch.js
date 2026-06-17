@@ -134,6 +134,14 @@ test('zero-question states are explicit and do not start generic quiz', () => {
   assert.ok(!/router\.push\('\/history\/mistakes'\)/.test(mentor), 'must not route generic history mistakes from Mentor task launch');
 });
 
+test('zero-question mistake tasks are scrapped from today plan', () => {
+  const mentor = read('pages/mentor.js');
+  assert.ok(/scrapNoQuestionTask/.test(mentor), 'mentor page must have a no-question scrap path');
+  assert.ok(/runTaskAction\(task,\s*'complete',\s*'no_questions'\)/.test(mentor), 'scrap path must use existing complete action with no_questions value');
+  assert.ok(/optimisticallyCompleteTask\(task,\s*'no_questions'\)/.test(mentor), 'task should be removed from active list immediately');
+  assert.ok(/fetchMentorMistakeQuestions\(context\)[\s\S]*scrapNoQuestionTask\(task\)[\s\S]*return;/.test(mentor), 'zero-question launch must stop after scrapping');
+});
+
 (async () => {
   for (const t of tests) {
     try {
