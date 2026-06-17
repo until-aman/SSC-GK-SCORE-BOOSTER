@@ -142,7 +142,7 @@ function getSavedQuestionStatus({ correctCount = 0, wrongCount = 0, skippedCount
   return { label: 'Needs Revision', tone: 'amber' };
 }
 
-function QuestionRow({ q, index, onView, onUnsave, subjectIcon = '' }) {
+function QuestionRow({ q, index, onView, onUnsave }) {
   const correctCount = Number(q.correctCount) || 0;
   const wrongCount = Number(q.wrongCount) || 0;
   const skippedCount = Number(q.skippedCount) || 0;
@@ -157,12 +157,10 @@ function QuestionRow({ q, index, onView, onUnsave, subjectIcon = '' }) {
 
   const ts = q.savedAt || q.createdAt;
   let lastPracticed = null;
-  let savedAgo = null;
   if (ts) {
     const d = new Date(ts);
     if (Number.isFinite(d.getTime())) {
       lastPracticed = `${d.getDate()} ${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear()}`;
-      savedAgo = formatSavedDate(ts)?.replace(/^Saved\s+/i, '') || null;
     }
   }
 
@@ -181,7 +179,6 @@ function QuestionRow({ q, index, onView, onUnsave, subjectIcon = '' }) {
     >
       <div className="sq-card-head">
         <div className="sq-card-head-main">
-          {q.subject && <SubjectIcon subject={getDisplaySubject(q.subject, q.collection)} sheetIcon={subjectIcon} />}
           <div className="sq-tags-row">
             {q.subject && <span className="sq-subject-dot">{getDisplaySubject(q.subject, q.collection)}</span>}
             {q.topic && <span className="sq-topic-inline">{q.topic}</span>}
@@ -189,7 +186,6 @@ function QuestionRow({ q, index, onView, onUnsave, subjectIcon = '' }) {
         </div>
         <div className="sq-card-status-stack">
           <span className={`sq-status-pill ${status.tone}`}>{status.label}</span>
-          {savedAgo && <span className="sq-card-age">{savedAgo}</span>}
         </div>
       </div>
       <p className="sq-question-text">{q.question}</p>
@@ -236,8 +232,7 @@ function QuestionRow({ q, index, onView, onUnsave, subjectIcon = '' }) {
 /* â"€â"€ Full-screen revision overlay â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
 function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
   const [idx, setIdx]                     = useState(startIndex);
-  const [revealed, setRevealed]           = useState(true);
-  const [markedDone, setMarkedDone]       = useState(false);
+  const [revealed, setRevealed]           = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
   const touchStartX = useRef(null);
   const q = questions[idx];
@@ -249,11 +244,9 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
 
   // Reset state on every new question
   useEffect(() => {
-    const current = questions[idx];
-    setRevealed(true);
-    setMarkedDone(false);
-    setSelectedOption(current?.userAnswer || null);
-  }, [idx, questions]);
+    setRevealed(false);
+    setSelectedOption(null);
+  }, [idx]);
 
   if (!questions.length) return null;
   if (!q) return null;
@@ -272,11 +265,6 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
 
   function goNext() { if (idx < total - 1) setIdx(i => i + 1); }
   function goPrev() { if (idx > 0)         setIdx(i => i - 1); }
-
-  function handleMarkRevised() {
-    setMarkedDone(true);
-    if (onReveal) onReveal(q.questionId); // idempotent
-  }
 
   function handleTouchStart(e) { touchStartX.current = e.touches[0].clientX; }
   function handleTouchEnd(e) {
@@ -325,14 +313,6 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           >
             <BookmarkIcon filled size={16} />
           </button>
-          <button
-            onClick={handleMarkRevised}
-            style={{ width: 32, height: 32, borderRadius: '50%', background: 'transparent', border: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-            title={markedDone ? 'Marked revised' : 'Mark revised'}
-            aria-label={markedDone ? 'Marked revised' : 'Mark revised'}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={markedDone ? 'var(--ssc-success)' : 'var(--ssc-text-primary)'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-          </button>
         </div>
       </div>
 
@@ -340,12 +320,12 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
         {(q.subject || q.topic) && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
             {q.subject && (
-              <span style={{ fontSize: 10, fontWeight: 1000, color: 'var(--ssc-orange)', background: 'var(--ssc-orange-soft)', borderRadius: 999, padding: '4px 8px', lineHeight: 1 }}>
+              <span style={{ fontSize: 10, fontWeight: 1000, color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)', borderRadius: 999, padding: '4px 8px', lineHeight: 1, border: '1px solid rgba(14,165,164,.14)' }}>
                 {getDisplaySubject(q.subject, q.collection)}
               </span>
             )}
             {q.topic && (
-              <span style={{ fontSize: 10, fontWeight: 1000, color: 'var(--ssc-orange)', background: 'var(--ssc-orange-soft)', borderRadius: 999, padding: '4px 8px', lineHeight: 1 }}>{q.topic}</span>
+              <span style={{ fontSize: 10, fontWeight: 1000, color: 'var(--ssc-orange)', background: 'var(--ssc-orange-soft)', borderRadius: 999, padding: '4px 8px', lineHeight: 1, border: '1px solid rgba(255,106,0,.14)' }}>{q.topic}</span>
             )}
           </div>
         )}
@@ -377,11 +357,17 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
               <button
                 key={label}
                 type="button"
+                onClick={() => {
+                  if (revealed) return;
+                  setSelectedOption(label);
+                  setRevealed(true);
+                  if (onReveal) onReveal(q.questionId);
+                }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   borderRadius: 12, padding: '12px 13px', width: '100%', textAlign: 'left',
                   background: rowBg, border: `1px solid ${rowBorder}`,
-                  cursor: 'default',
+                  cursor: revealed ? 'default' : 'pointer',
                 }}
               >
                 <span style={{
@@ -406,7 +392,7 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           })}
         </div>
 
-        {selectedOption && (
+        {revealed && selectedOption && (
           <p style={{
             textAlign: 'center',
             margin: '2px 0 14px',
@@ -418,18 +404,20 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           </p>
         )}
 
-        <div style={{
-          background: 'linear-gradient(180deg,#F4FFFF 0%,#ECFAFB 100%)',
-          border: '1px solid rgba(14,165,164,0.20)',
-          borderRadius: 13,
-          padding: '13px 14px',
-          marginBottom: 14,
-        }}>
-          <p style={{ margin: '0 0 7px', fontSize: 12, fontWeight: 1000, color: 'var(--ssc-teal)' }}>Explanation:</p>
-          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.58, fontWeight: 700, color: 'var(--ssc-text-secondary)' }}>
-            {q.explanation || `The correct answer is option ${q.correctOption}.`}
-          </p>
-        </div>
+        {revealed && (
+          <div style={{
+            background: 'linear-gradient(180deg,#F4FFFF 0%,#ECFAFB 100%)',
+            border: '1px solid rgba(14,165,164,0.20)',
+            borderRadius: 13,
+            padding: '13px 14px',
+            marginBottom: 14,
+          }}>
+            <p style={{ margin: '0 0 7px', fontSize: 12, fontWeight: 1000, color: 'var(--ssc-teal)' }}>Explanation:</p>
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.58, fontWeight: 700, color: 'var(--ssc-text-secondary)' }}>
+              {q.explanation || `The correct answer is option ${q.correctOption}.`}
+            </p>
+          </div>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 11, fontWeight: 900, color: 'var(--ssc-text-secondary)' }}>
           {wrongCount > 0 && <span style={{ color: 'var(--ssc-danger)' }}>Wrong {wrongCount}x</span>}
@@ -705,17 +693,17 @@ export default function HistorySavedPage() {
   const savedStyles = `
     .sq-content-rail{padding-left:12px;padding-right:12px}
     .sq-detail-filters{padding:16px 0 10px}
-    .sq-filter-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding:0 0 8px}
+    .sq-filter-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding:0 0 10px}
     .sq-filter-row::-webkit-scrollbar{display:none}
-    .sq-filter-label{font-size:12px;font-weight:1000;color:var(--ssc-text-primary);margin:2px 0 8px}
+    .sq-filter-label{font-size:12px;font-weight:1000;color:var(--ssc-text-primary);margin:4px 0 10px}
     .sq-filter-chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:7px 12px;white-space:nowrap;flex:0 0 auto;box-shadow:0 5px 12px rgba(16,32,51,.04)}
     .sq-filter-chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:#fff}
-    .sq-control-row{display:flex;align-items:center;justify-content:flex-start;padding:2px 0 0;margin-bottom:8px}
-    .sq-sort-group{display:inline-flex;align-items:center;gap:8px}
-    .sq-sort-label{font-size:11px;font-weight:900;color:var(--ssc-text-secondary);white-space:nowrap}
+    .sq-control-row{display:flex;align-items:flex-start;justify-content:flex-start;flex-direction:column;padding:2px 0 0;margin-bottom:12px}
+    .sq-sort-group{display:flex;align-items:flex-start;flex-direction:column;gap:0}
+    .sq-sort-label{font-size:12px;font-weight:1000;color:var(--ssc-text-primary);white-space:nowrap;margin:4px 0 10px}
     .sq-select-wrap{position:relative;display:inline-flex;align-items:center}
-    .sq-select-wrap:after{content:'';position:absolute;right:12px;width:7px;height:7px;border-right:2px solid var(--ssc-text-secondary);border-bottom:2px solid var(--ssc-text-secondary);transform:rotate(45deg) translateY(-2px);pointer-events:none}
-    .sq-mini-select{height:32px;border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:0 32px 0 13px;outline:none;appearance:none;-webkit-appearance:none;line-height:32px}
+    .sq-select-wrap:after{content:'';position:absolute;right:16px;width:7px;height:7px;border-right:2px solid var(--ssc-text-secondary);border-bottom:2px solid var(--ssc-text-secondary);transform:rotate(45deg) translateY(-2px);pointer-events:none}
+    .sq-mini-select{height:32px;border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:0 38px 0 13px;outline:none;appearance:none;-webkit-appearance:none;line-height:32px}
     .sq-summary-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);border:1px solid #BDEDEA;border-radius:16px;padding:15px 16px;margin:12px 0 0;box-shadow:var(--ssc-shadow-card)}
     .sq-summary-top{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
     .sq-summary-icon{width:42px;height:42px;border-radius:13px;background:#E8F8F6;border:1px solid rgba(14,165,164,0.20);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
@@ -736,16 +724,14 @@ export default function HistorySavedPage() {
     .sq-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:12px;padding:9px 10px 8px;margin:0 0 9px;position:relative;box-shadow:0 8px 18px rgba(16,32,51,.05);cursor:pointer}.sq-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}
     .sq-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px;padding-right:0}
     .sq-card-head-main{display:flex;align-items:flex-start;gap:8px;min-width:0;flex:1}
-    .sq-card .sq-subject-icon{width:28px;height:28px;border-radius:9px}
-    .sq-card .sq-subject-img{width:18px;height:18px}
-    .sq-card .sq-subject-sheet-icon{font-size:16px}
-    .sq-bookmark-btn{position:absolute;top:32px;right:9px;width:24px;height:24px;border-radius:8px;background:transparent;border:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
-    .sq-tags-row{display:flex;gap:7px;align-items:center;min-width:0;overflow:hidden;flex:1;flex-wrap:wrap}
-    .sq-subject-dot,.sq-topic-inline{display:inline-flex;align-items:center;max-width:48%;height:22px;border-radius:999px;padding:0 9px;font-size:10px;font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sq-bookmark-btn{position:absolute;top:47px;right:9px;width:24px;height:24px;border-radius:8px;background:transparent;border:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
+    .sq-tags-row{display:flex;gap:7px;align-items:center;min-width:0;overflow:hidden;flex:1;flex-wrap:nowrap}
+    .sq-subject-dot,.sq-topic-inline{display:inline-flex;align-items:center;height:22px;border-radius:999px;padding:0 9px;font-size:10px;font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sq-subject-dot{max-width:36%;flex:0 1 auto}
+    .sq-topic-inline{max-width:64%;flex:1 1 auto}
     .sq-subject-dot{color:var(--ssc-teal);background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.14)}
     .sq-topic-inline{color:var(--ssc-orange);background:var(--ssc-orange-soft);border:1px solid rgba(255,106,0,.14)}
     .sq-card-status-stack{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;max-width:118px}
-    .sq-card-age{font-size:9px;font-weight:800;color:var(--ssc-text-secondary);white-space:nowrap}
     .sq-status-pill{display:inline-flex;align-items:center;justify-content:center;min-height:21px;border-radius:999px;border:1px solid;padding:0 8px;font-size:9px;font-weight:1000;white-space:nowrap}
     .sq-status-pill.amber{color:var(--ssc-warning);background:var(--ssc-warning-soft);border-color:rgba(245,158,11,.30)}
     .sq-status-pill.red{color:var(--ssc-danger);background:var(--ssc-danger-soft);border-color:rgba(239,68,68,.30)}
@@ -1003,7 +989,6 @@ export default function HistorySavedPage() {
                         index={i}
                         onView={i => setRevisionIdx(i)}
                         onUnsave={handleUnsave}
-                        subjectIcon={subjectMeta[getDisplaySubject(q.subject, q.collection)]?.icon || subjectMeta[q.subject]?.icon || ''}
                       />
                     ))}
                     {visibleCount < filtered.length && (
