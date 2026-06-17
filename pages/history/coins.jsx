@@ -1,9 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/router';
 import Head from 'next/head';
-import BackButton from '@/components/BackButton';
 import GoogleSignInCard from '@/components/GoogleSignInCard';
+import HistoryTopBar from '@/components/HistoryTopBar';
 import SessionRow from '@/components/SessionRow';
 import Loader from '@/components/ui/Loader';
 import { getUserCacheScope } from '@/lib/userCacheScope';
@@ -28,7 +27,6 @@ const EARN_CARDS = [
 
 export default function CoinsHistoryPage() {
   const { data: session, status } = useSession();
-  const router = useRouter();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [coinsBarWidth, setCoinsBarWidth] = useState(0);
@@ -70,12 +68,11 @@ export default function CoinsHistoryPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-[var(--ssc-bg)] px-4 pt-10">
-        <div className="flex items-center gap-3 mb-6">
-          <BackButton />
-          <h1 className="font-display font-bold text-[20px] text-[var(--ssc-text-primary)]">Coins History</h1>
+      <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-24">
+        <HistoryTopBar title="Coins History" badge="HISTORY" showBack />
+        <div className="px-4 pt-5">
+          <Loader card size="md" label="Fetching your Coins history..." />
         </div>
-        <Loader card size="md" label="Fetching your Coins history..." />
       </div>
     );
   }
@@ -84,11 +81,8 @@ export default function CoinsHistoryPage() {
     return (
       <>
         <Head><title>Coins History - SSC GK Score Booster</title></Head>
-        <div className="min-h-screen bg-[var(--ssc-bg)] pb-10">
-          <div className="px-4 pt-10 pb-4 flex items-center gap-3">
-            <BackButton />
-            <h1 className="font-display font-black text-xl text-[var(--ssc-text-primary)]">Coins History</h1>
-          </div>
+        <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-10">
+          <HistoryTopBar title="Coins History" badge="HISTORY" showBack />
           <GoogleSignInCard
             className="mx-4 mt-8"
             title="Track Your Progress"
@@ -137,31 +131,9 @@ export default function CoinsHistoryPage() {
           box-shadow: 0 4px 12px rgba(255,107,22,0.22);
         }
       `}</style>
-      <div className="min-h-screen bg-[var(--ssc-bg)]" style={{ paddingBottom: 'var(--ssc-bottom-nav-safe-padding, 150px)' }}>
+      <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)]" style={{ paddingBottom: 'var(--ssc-bottom-nav-safe-padding, 150px)' }}>
 
-        {/* Header */}
-        <div style={{
-          position: 'sticky', top: 0, zIndex: 30,
-          display: 'flex', alignItems: 'center', gap: 12, padding: '0 16px',
-          height: 56, background: 'rgba(255,255,255,0.94)',
-          backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
-          borderBottom: '1px solid var(--ssc-border-soft)',
-        }}>
-          <BackButton />
-          <h1 className="font-display font-bold text-[18px] text-[var(--ssc-text-primary)] flex-1">Coins History</h1>
-          <button
-            type="button"
-            className="w-9 h-9 flex items-center justify-center rounded-full"
-            style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)' }}
-            title="About coins"
-          >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-muted)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 16v-4" />
-              <path d="M12 8h.01" />
-            </svg>
-          </button>
-        </div>
+        <HistoryTopBar title="Coins History" badge="HISTORY" showBack />
 
         {/* Hero card */}
         <div className="mx-4 mt-4 rounded-3xl px-5 py-5" style={{
@@ -270,13 +242,6 @@ export default function CoinsHistoryPage() {
               <span className="text-4xl">🎯</span>
               <p className="font-display font-bold text-base text-[var(--ssc-text-primary)]">No quizzes yet</p>
               <p className="font-sans font-medium text-sm text-[var(--ssc-text-secondary)]">Complete a quiz to start earning Coins and building your history.</p>
-              <button
-                onClick={() => router.push('/dashboard')}
-                className="text-white rounded-2xl py-3 px-6 font-display font-bold text-sm active:scale-[0.98] transition-transform"
-                style={{ background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)', boxShadow: '0 4px 12px rgba(255,107,22,0.30)' }}
-              >
-                Play Now →
-              </button>
             </div>
           ) : (
             <>
@@ -296,21 +261,6 @@ export default function CoinsHistoryPage() {
               ))}
             </>
           )}
-        </div>
-
-        {/* CTA */}
-        <div className="mx-4 mt-5">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="coins-cta-pulse w-full py-4 text-white rounded-2xl font-display font-bold text-base transition-transform flex items-center justify-center gap-2"
-            style={{ background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)', boxShadow: '0 4px 14px rgba(255,107,22,0.30)' }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-            </svg>
-            Start Practice
-          </button>
         </div>
 
       </div>
