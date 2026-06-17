@@ -142,7 +142,7 @@ function getSavedQuestionStatus({ correctCount = 0, wrongCount = 0, skippedCount
   return { label: 'Needs Revision', tone: 'amber' };
 }
 
-function QuestionRow({ q, index, onView, onUnsave }) {
+function QuestionRow({ q, index, onView, onUnsave, subjectIcon = '' }) {
   const correctCount = Number(q.correctCount) || 0;
   const wrongCount = Number(q.wrongCount) || 0;
   const skippedCount = Number(q.skippedCount) || 0;
@@ -180,9 +180,12 @@ function QuestionRow({ q, index, onView, onUnsave }) {
       }}
     >
       <div className="sq-card-head">
-        <div className="sq-tags-row">
-          {q.subject && <span className="sq-subject-dot">{getDisplaySubject(q.subject, q.collection)}</span>}
-          {q.topic && <span className="sq-topic-inline">{q.topic}</span>}
+        <div className="sq-card-head-main">
+          {q.subject && <SubjectIcon subject={getDisplaySubject(q.subject, q.collection)} sheetIcon={subjectIcon} />}
+          <div className="sq-tags-row">
+            {q.subject && <span className="sq-subject-dot">{getDisplaySubject(q.subject, q.collection)}</span>}
+            {q.topic && <span className="sq-topic-inline">{q.topic}</span>}
+          </div>
         </div>
         <div className="sq-card-status-stack">
           <span className={`sq-status-pill ${status.tone}`}>{status.label}</span>
@@ -732,8 +735,12 @@ export default function HistorySavedPage() {
     .sq-sort-select{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:12px;padding:8px 12px;font-size:12px;color:var(--ssc-text-secondary);font-weight:600;outline:none;font-family:inherit;cursor:pointer}
     .sq-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:12px;padding:9px 10px 8px;margin:0 0 9px;position:relative;box-shadow:0 8px 18px rgba(16,32,51,.05);cursor:pointer}.sq-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}
     .sq-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px;padding-right:0}
+    .sq-card-head-main{display:flex;align-items:flex-start;gap:8px;min-width:0;flex:1}
+    .sq-card .sq-subject-icon{width:28px;height:28px;border-radius:9px}
+    .sq-card .sq-subject-img{width:18px;height:18px}
+    .sq-card .sq-subject-sheet-icon{font-size:16px}
     .sq-bookmark-btn{position:absolute;top:32px;right:9px;width:24px;height:24px;border-radius:8px;background:transparent;border:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
-    .sq-tags-row{display:flex;gap:7px;align-items:center;min-width:0;overflow:hidden}
+    .sq-tags-row{display:flex;gap:7px;align-items:center;min-width:0;overflow:hidden;flex:1;flex-wrap:wrap}
     .sq-subject-dot,.sq-topic-inline{display:inline-flex;align-items:center;max-width:48%;height:22px;border-radius:999px;padding:0 9px;font-size:10px;font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .sq-subject-dot{color:var(--ssc-teal);background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.14)}
     .sq-topic-inline{color:var(--ssc-orange);background:var(--ssc-orange-soft);border:1px solid rgba(255,106,0,.14)}
@@ -996,6 +1003,7 @@ export default function HistorySavedPage() {
                         index={i}
                         onView={i => setRevisionIdx(i)}
                         onUnsave={handleUnsave}
+                        subjectIcon={subjectMeta[getDisplaySubject(q.subject, q.collection)]?.icon || subjectMeta[q.subject]?.icon || ''}
                       />
                     ))}
                     {visibleCount < filtered.length && (

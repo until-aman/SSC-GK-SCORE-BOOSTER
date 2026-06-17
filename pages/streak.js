@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import BackButton from '@/components/BackButton';
+import HistoryTopBar from '@/components/HistoryTopBar';
 import { getISTDateString } from '@/lib/streak';
 import { getUserCacheScope } from '@/lib/userCacheScope';
 import { getUserProfile } from '@/lib/data/profileData';
@@ -72,7 +72,6 @@ export default function StreakPage() {
   const [loading, setLoading]         = useState(true);
   const [calView, setCalView]         = useState('week');
   const [monthOffset, setMonthOffset] = useState(0);
-  const [btnPress, setBtnPress]       = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -83,35 +82,11 @@ export default function StreakPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router]);
 
-  const StickyHeader = () => (
-    <div style={{
-      position: 'sticky', top: 0, zIndex: 30,
-      display: 'flex', alignItems: 'center', gap: 12, padding: '0 16px',
-      height: 56, background: 'rgba(255,255,255,0.94)',
-      backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
-      borderBottom: '1px solid var(--ssc-border-soft)',
-    }}>
-      <BackButton />
-      <h1 className="font-display font-bold text-[18px] text-[var(--ssc-text-primary)] flex-1">Streak History</h1>
-      <button
-        type="button"
-        className="w-9 h-9 flex items-center justify-center rounded-full"
-        style={{ background: 'var(--ssc-surface)', border: '1px solid var(--ssc-border-soft)' }}
-        title="About streaks"
-      >
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-muted)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 16v-4" />
-          <path d="M12 8h.01" />
-        </svg>
-      </button>
-    </div>
-  );
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-[var(--ssc-bg)] pb-24">
-        <StickyHeader />
+      <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-24">
+        <HistoryTopBar title="Streak History" badge="HISTORY" showBack />
         <div className="px-4 pt-5">
           <div className="skeleton h-36 rounded-3xl mb-4" />
           <div className="skeleton h-52 rounded-3xl" />
@@ -169,9 +144,9 @@ export default function StreakPage() {
         }
       `}</style>
 
-      <div className="min-h-screen bg-[var(--ssc-bg)]" style={{ paddingBottom: 'var(--ssc-bottom-nav-safe-padding, 178px)' }}>
+      <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)]" style={{ paddingBottom: 'var(--ssc-bottom-nav-safe-padding, 178px)' }}>
 
-        <StickyHeader />
+        <HistoryTopBar title="Streak History" badge="HISTORY" showBack />
 
         {/* Hero — 2-column: current streak + best streak */}
         <div className="mx-4 mt-4 rounded-3xl px-5 pt-5 pb-4" style={{
@@ -539,35 +514,6 @@ export default function StreakPage() {
 
       </div>
 
-      {/* Sticky CTA — always visible */}
-      <div style={{
-        position: 'fixed', bottom: 82, left: 0, right: 0, zIndex: 40,
-        padding: '12px 16px 10px',
-        background: 'linear-gradient(to top, var(--ssc-bg) 70%, transparent)',
-      }}>
-        <button
-          onPointerDown={() => setBtnPress(true)}
-          onPointerUp={() => setBtnPress(false)}
-          onPointerLeave={() => setBtnPress(false)}
-          onClick={() => router.push('/quiz?mode=daily&sourceScreen=daily_challenge')}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            width: 'calc(100% - 40px)', maxWidth: 390, margin: '0 auto',
-            padding: '16px 0', borderRadius: 18, border: 'none', cursor: 'pointer',
-            fontFamily: 'inherit', fontSize: 15, fontWeight: 800, color: '#ffffff',
-            background: 'linear-gradient(135deg, #FF8A1F, #FF5A00)',
-            boxShadow: btnPress ? '0 4px 12px rgba(255,107,22,0.22)' : '0 4px 14px rgba(255,107,22,0.30)',
-            transform: btnPress ? 'scale(0.98)' : 'scale(1)',
-            transition: 'transform 120ms ease, box-shadow 120ms ease',
-            animation: btnPress ? 'none' : 'streakCtaPulse 2.4s ease-in-out infinite',
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <polygon points="5 3 19 12 5 21 5 3" />
-          </svg>
-          Play Quiz Now
-        </button>
-      </div>
     </>
   );
 }
