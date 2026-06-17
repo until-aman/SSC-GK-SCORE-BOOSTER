@@ -400,6 +400,17 @@ function touchActiveQuizSession() {
   writeActiveQuizSession({ ...session, lastActivityAt: Date.now() });
 }
 
+function wasPageReload() {
+  if (typeof window === 'undefined' || typeof performance === 'undefined') return false;
+  try {
+    const [navigation] = performance.getEntriesByType?.('navigation') || [];
+    if (navigation?.type === 'reload') return true;
+    return performance.navigation?.type === 1;
+  } catch {
+    return false;
+  }
+}
+
 function TimerRing({ timeLeft, duration = QUESTION_DURATION_SECONDS }) {
   const SIZE   = 52;
   const RADIUS = 20;
@@ -600,7 +611,8 @@ export default function Quiz() {
       return;
     }
 
-    setRecoveryPrompt({ type: isHistoryQuizSession(session) ? 'history_exit' : 'resume', session });
+    const shouldUseLeavePrompt = wasPageReload() || isHistoryQuizSession(session);
+    setRecoveryPrompt({ type: shouldUseLeavePrompt ? 'reload_exit' : 'resume', session });
     setLoading(false);
   }, [router.isReady, recoveryChecked]);
 
@@ -1406,13 +1418,13 @@ export default function Quiz() {
     const sessionAttemptedCount = getAttemptedCount(sessionAnswers);
     const sessionAnsweredCount = getAnsweredCount(sessionAnswers);
     const isExpiredPrompt = recoveryPrompt.type === 'expired';
-    const isHistoryExitPrompt = recoveryPrompt.type === 'history_exit';
+    const isLeaveExitPrompt = recoveryPrompt.type === 'reload_exit' || recoveryPrompt.type === 'history_exit';
     const sessionQuestionCount = session.totalQuestions || session.questions?.length || 0;
     const attemptedProgress = sessionQuestionCount > 0
       ? Math.round((sessionAttemptedCount / sessionQuestionCount) * 100)
       : 0;
 
-    if (isHistoryExitPrompt) {
+    if (isLeaveExitPrompt) {
       return (
         <div className="min-h-screen flex items-center justify-center px-5" style={{ background: 'linear-gradient(180deg, var(--ssc-bg) 0%, var(--ssc-bg-alt) 100%)' }}>
           <Head><title>Leave quiz? - SSC GK Score Booster</title></Head>
@@ -1443,26 +1455,24 @@ export default function Quiz() {
               Leave quiz?
             </h2>
 
-            {sessionAttemptedCount > 0 && (
-              <div className="w-full mb-4">
-                <div className="t-badge inline-flex items-center mb-2" style={{
-                  color: 'var(--ssc-orange)',
-                  background: 'rgba(255,106,0,0.10)', border: '1px solid rgba(255,106,0,0.18)',
-                  borderRadius: 999, padding: '4px 12px',
-                }}>
-                  {sessionAttemptedCount} / {sessionQuestionCount} attempted
-                </div>
-                <div style={{ height: 4, borderRadius: 999, background: 'var(--ssc-border-soft)', overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%',
-                    borderRadius: 999,
-                    width: `${attemptedProgress}%`,
-                    background: 'linear-gradient(90deg, var(--ssc-orange), var(--ssc-orange-deep))',
-                    transition: 'width 0.4s ease',
-                  }} />
-                </div>
+            <div className="w-full mb-4">
+              <div className="t-badge inline-flex items-center mb-2" style={{
+                color: 'var(--ssc-orange)',
+                background: 'rgba(255,106,0,0.10)', border: '1px solid rgba(255,106,0,0.18)',
+                borderRadius: 999, padding: '4px 12px',
+              }}>
+                {sessionAttemptedCount} / {sessionQuestionCount} attempted
               </div>
-            )}
+              <div style={{ height: 4, borderRadius: 999, background: 'var(--ssc-border-soft)', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  borderRadius: 999,
+                  width: `${attemptedProgress}%`,
+                  background: 'linear-gradient(90deg, var(--ssc-orange), var(--ssc-orange-deep))',
+                  transition: 'width 0.4s ease',
+                }} />
+              </div>
+            </div>
 
             <p className="t-body mb-5" style={{ color: 'var(--ssc-text-secondary)' }}>
               End now to see your current result, or continue the quiz.
@@ -1783,26 +1793,24 @@ export default function Quiz() {
               Leave quiz?
             </h2>
 
-            {attemptedCount > 0 && (
-              <div className="w-full mb-4">
-                <div className="t-badge inline-flex items-center mb-2" style={{
-                  color: 'var(--ssc-orange)',
-                  background: 'rgba(255,106,0,0.10)', border: '1px solid rgba(255,106,0,0.18)',
-                  borderRadius: 999, padding: '4px 12px',
-                }}>
-                  {attemptedCount} / {questions.length} attempted
-                </div>
-                <div style={{ height: 4, borderRadius: 999, background: 'var(--ssc-border-soft)', overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%',
-                    borderRadius: 999,
-                    width: `${Math.round((attemptedCount / questions.length) * 100)}%`,
-                    background: 'linear-gradient(90deg, var(--ssc-orange), var(--ssc-orange-deep))',
-                    transition: 'width 0.4s ease',
-                  }} />
-                </div>
+            <div className="w-full mb-4">
+              <div className="t-badge inline-flex items-center mb-2" style={{
+                color: 'var(--ssc-orange)',
+                background: 'rgba(255,106,0,0.10)', border: '1px solid rgba(255,106,0,0.18)',
+                borderRadius: 999, padding: '4px 12px',
+              }}>
+                {attemptedCount} / {questions.length} attempted
               </div>
-            )}
+              <div style={{ height: 4, borderRadius: 999, background: 'var(--ssc-border-soft)', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  borderRadius: 999,
+                  width: `${questions.length ? Math.round((attemptedCount / questions.length) * 100) : 0}%`,
+                  background: 'linear-gradient(90deg, var(--ssc-orange), var(--ssc-orange-deep))',
+                  transition: 'width 0.4s ease',
+                }} />
+              </div>
+            </div>
 
             <p className="t-body mb-5" style={{ color: 'var(--ssc-text-secondary)' }}>
               End now to see your current result, or continue the quiz.

@@ -33,6 +33,7 @@
     "test:mentor-allow-all": "node scripts/test-mentor-allow-all.js",
     "test:mentor-monitor-workflow": "node scripts/test-mentor-monitor-workflow.js",
     "test:mentor-cron-monitor": "node scripts/test-mentor-cron-monitor.js",
+    "test:quiz-refresh-leave-modal": "node scripts/test-quiz-refresh-leave-modal.js",
     "test:mentor-quiz-launch": "node scripts/test-mentor-quiz-launch.js",
     "test:mentor-rollover-dry-run": "node scripts/test-mentor-rollover-dry-run.js",
     "test:mentor-rollover-write": "node scripts/test-mentor-rollover-write.js"
