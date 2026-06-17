@@ -835,7 +835,7 @@ export default function MentorPage() {
   // Post plan-update toast (set by the Preparation Setup edit flow via ?updated=1).
   useEffect(() => {
     if (!router.isReady || router.query.updated !== '1') return;
-    setToast({ type: 'success', message: 'Aapka GK plan update ho gaya hai.' });
+    setToast({ type: 'success', message: 'Your Mentor plan is updated.' });
     const timer = setTimeout(() => setToast(null), 2800);
     router.replace('/mentor', undefined, { shallow: true });
     return () => clearTimeout(timer);
@@ -1405,18 +1405,6 @@ export default function MentorPage() {
                       onShowNextDay={handleShowNextDay}
                       onViewAll={() => setTaskFlowOpen(true)}
                     />
-                  </section>
-
-                  <section className="rounded-[20px] border border-[#BDEDEA] bg-[#F2FCFA] p-4 shadow-[var(--ssc-shadow-card)]">
-                    <div className="flex items-start gap-3">
-                      <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-white text-sm font-black text-ssc-teal">Tip</span>
-                      <div>
-                        <h2 className="font-display text-base font-black text-ssc-text-primary">Mentor Insight</h2>
-                        <p className="mt-1 text-sm font-semibold leading-relaxed text-ssc-text-secondary">
-                          Focus on {snapshot?.activeTasks?.[0]?.subject || snapshot?.activeTasks?.[0]?.subjectName || 'your weakest GK area'} today. Complete one task, then move to the next step.
-                        </p>
-                      </div>
-                    </div>
                   </section>
 
                 </>

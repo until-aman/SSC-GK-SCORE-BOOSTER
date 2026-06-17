@@ -89,6 +89,24 @@ function isGuestMode() {
   return document.cookie.split(';').some(cookie => cookie.trim().startsWith('userMode=guest'));
 }
 
+function normalizeComparable(value) {
+  return JSON.stringify(value || {});
+}
+
+function savedProfileMatchesPayload(profile, payload) {
+  if (!profile || !payload) return false;
+  return (
+    profile.examTarget === payload.examTarget &&
+    profile.daysLeftRange === payload.daysLeftRange &&
+    String(profile.customDaysLeft || '') === String(payload.customDaysLeft || '') &&
+    profile.dailyGKTime === payload.dailyGKTime &&
+    profile.pace === payload.pace &&
+    normalizeComparable(profile.subjectStatus) === normalizeComparable(payload.subjectStatus) &&
+    normalizeComparable(profile.topicsCompleted) === normalizeComparable(payload.topicsCompleted) &&
+    normalizeComparable(profile.topicStrength) === normalizeComparable(payload.topicStrength)
+  );
+}
+
 export default function MentorSetupEditPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -197,11 +215,12 @@ export default function MentorSetupEditPage() {
   const handleSave = async () => {
     setSaving(true);
     setError(null);
+    setGenError(false);
+    const payload = {
+      ...formData,
+      topicsCompleted: buildTopicsCompleted(formData.topicStrength),
+    };
     try {
-      const payload = {
-        ...formData,
-        topicsCompleted: buildTopicsCompleted(formData.topicStrength),
-      };
       if (!guestMode) {
         const res = await fetch('/api/mentor/profile', {
           method: 'PATCH',
@@ -214,6 +233,19 @@ export default function MentorSetupEditPage() {
       localStorage.setItem('mentor_onboarded', 'true');
       setShowConfirm(true);
     } catch (err) {
+      if (!guestMode) {
+        try {
+          const verifyRes = await fetch('/api/mentor/profile');
+          const verifyData = await verifyRes.json().catch(() => ({}));
+          if (verifyRes.ok && verifyData.exists && savedProfileMatchesPayload(verifyData.profile, payload)) {
+            localStorage.setItem('mentor_profile_cache', JSON.stringify(verifyData.profile));
+            localStorage.setItem('mentor_onboarded', 'true');
+            setError(null);
+            setShowConfirm(true);
+            return;
+          }
+        } catch {}
+      }
       setError('Preparation details could not be saved. Please retry.');
     } finally {
       setSaving(false);
