@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 
 import GoogleSignInCard from '@/components/GoogleSignInCard';
+import HistoryTopBar from '@/components/HistoryTopBar';
 import Loader from '@/components/ui/Loader';
 import { getSavedQuestions, unsaveQuestion } from '@/lib/data/savedData';
 import { getUserCacheScope } from '@/lib/userCacheScope';
@@ -51,17 +52,11 @@ function ChevronSVG() {
   );
 }
 
-function SavedTopBar({ onBack }) {
+function SavedHeaderIcon() {
   return (
-    <div className="sq-topbar">
-      <button type="button" className="sq-topbar-back" onClick={onBack} aria-label="Back">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#102033" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M15 18l-6-6 6-6" />
-        </svg>
-      </button>
-      <h1 className="sq-topbar-title font-display">Saved Questions</h1>
-      <div className="sq-topbar-spacer" aria-hidden="true" />
-    </div>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" />
+    </svg>
   );
 }
 
@@ -89,8 +84,23 @@ function getSubjectMeta(subject) {
   };
 }
 
-function SubjectIcon({ subject }) {
+function isImageIcon(icon) {
+  return /^https?:\/\//i.test(icon || '') || /^data:image\//i.test(icon || '');
+}
+
+function SubjectIcon({ subject, sheetIcon = '' }) {
   const meta = getSubjectMeta(subject);
+  if (sheetIcon) {
+    return (
+      <span className="sq-subject-icon" style={{ background: meta.bg, borderColor: `${meta.accent}33` }}>
+        {isImageIcon(sheetIcon) ? (
+          <img src={sheetIcon} alt="" className="sq-subject-img" />
+        ) : (
+          <span className="sq-subject-sheet-icon" aria-hidden="true">{sheetIcon}</span>
+        )}
+      </span>
+    );
+  }
   const common = {
     width: 18,
     height: 18,
@@ -133,10 +143,12 @@ function QuestionRow({ q, index, onView, onUnsave }) {
 
   const ts = q.savedAt || q.createdAt;
   let lastPracticed = null;
+  let savedAgo = null;
   if (ts) {
     const d = new Date(ts);
     if (Number.isFinite(d.getTime())) {
       lastPracticed = `${d.getDate()} ${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear()}`;
+      savedAgo = formatSavedDate(ts)?.replace(/^Saved\s+/i, '') || null;
     }
   }
 
@@ -153,19 +165,13 @@ function QuestionRow({ q, index, onView, onUnsave }) {
         }
       }}
     >
-      <button
-        className="sq-bookmark-btn"
-        onClick={e => { e.stopPropagation(); onUnsave(q.questionId); }}
-        title="Remove bookmark"
-        aria-label="Remove bookmark"
-      >
-        <BookmarkIcon filled size={15} />
-      </button>
-      {q.topic && (
+      <div className="sq-card-head">
         <div className="sq-tags-row">
-          <span className="sq-topic-tag">{q.topic}</span>
+          {q.subject && <span className="sq-subject-dot">{getDisplaySubject(q.subject, q.collection)}</span>}
+          {q.topic && <span className="sq-topic-inline">{q.topic}</span>}
         </div>
-      )}
+        {savedAgo && <span className="sq-card-age">{savedAgo}</span>}
+      </div>
       <p className="sq-question-text">{q.question}</p>
       <div className="sq-footer">
         <span className="sq-meta">
@@ -188,6 +194,14 @@ function QuestionRow({ q, index, onView, onUnsave }) {
           }} />
         </div>
       )}
+      <button
+        className="sq-bookmark-btn"
+        onClick={e => { e.stopPropagation(); onUnsave(q.questionId); }}
+        title="Remove bookmark"
+        aria-label="Remove bookmark"
+      >
+        <BookmarkIcon filled size={15} />
+      </button>
     </article>
   );
 }
@@ -493,6 +507,8 @@ export default function HistorySavedPage() {
   const [loading, setLoading]         = useState(true);
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeMode, setActiveMode] = useState('All');
+  const [activeTopic, setActiveTopic] = useState('All');
+  const [subjectMeta, setSubjectMeta] = useState({});
   const [revisionIdx, setRevisionIdx] = useState(null); // null = list, number = revision overlay
   const [searchQuery, setSearchQuery]   = useState('');
   const [sortOrder, setSortOrder]       = useState('newest');
@@ -534,6 +550,18 @@ export default function HistorySavedPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, isLoggedIn]);
 
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/topics?includeSubjectMeta=true')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!alive || !data?.subjectMeta) return;
+        setSubjectMeta(data.subjectMeta);
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
   // â"€â"€ Load revised IDs â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   useEffect(() => {
     try {
@@ -568,7 +596,7 @@ export default function HistorySavedPage() {
   }
 
   // â"€â"€ Reset visible count when filters/search/sort change â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
-  useEffect(() => { setVisibleCount(20); }, [searchQuery, activeFilter, sortOrder, questions]);
+  useEffect(() => { setVisibleCount(20); }, [searchQuery, activeFilter, activeTopic, sortOrder, questions]);
 
   // â"€â"€ Infinite scroll sentinel â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   useEffect(() => {
@@ -617,19 +645,18 @@ export default function HistorySavedPage() {
       (q.topic    || '').toLowerCase().includes(sq)
     );
   }
-  if (activeMode === 'Recent') {
-    // Recent keeps the full pool and only changes sorting/display mode.
-  } else if (activeFilter === 'Unrevised') {
+  if (activeFilter === 'Unrevised') {
     filtered = filtered.filter(q => !revisedIds.has(q.questionId));
   } else if (activeFilter === 'Wrong') {
     filtered = filtered.filter(q => q.userAnswer && q.userAnswer !== q.correctOption);
-  } else if (activeFilter !== 'All' && activeMode !== 'Topic') {
+  } else if (activeFilter !== 'All') {
     filtered = filtered.filter(q => q.subject === activeFilter);
-  } else if (activeFilter !== 'All' && activeMode === 'Topic') {
-    filtered = filtered.filter(q => q.topic === activeFilter);
+  }
+  if (activeTopic !== 'All') {
+    filtered = filtered.filter(q => (q.topic || 'Mixed Topic') === activeTopic);
   }
 
-  if (activeMode === 'Recent' || sortOrder === 'newest') {
+  if (sortOrder === 'newest') {
     filtered.sort((a, b) => new Date(b.savedAt || b.createdAt || 0) - new Date(a.savedAt || a.createdAt || 0));
   } else if (sortOrder === 'oldest') {
     filtered.sort((a, b) => new Date(a.savedAt || a.createdAt || 0) - new Date(b.savedAt || b.createdAt || 0));
@@ -657,67 +684,89 @@ export default function HistorySavedPage() {
 
   const topicGroups = useMemo(() => {
     const map = new Map();
-    questions.forEach(q => {
-      const topic = q.topic || 'Mixed Topic';
-      const subject = q.subject || 'Saved Questions';
-      const item = map.get(topic) || { name: topic, subject, count: 0 };
-      item.count += 1;
-      map.set(topic, item);
-    });
-    return Array.from(map.values()).sort((a, b) => b.count - a.count);
-  }, [questions]);
+    questions
+      .filter(q => activeFilter === 'All' || q.subject === activeFilter)
+      .forEach(q => {
+        const topic = q.topic || 'Mixed Topic';
+        map.set(topic, (map.get(topic) || 0) + 1);
+      });
+    return Array.from(map.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [questions, activeFilter]);
 
   function showOverview(mode = activeMode) {
-    return mode === 'All' || mode === 'By Subject' || mode === 'By Topic';
-  }
-
-  function handleModeSelect(mode) {
-    setActiveMode(mode);
-    setActiveFilter('All');
-    if (mode === 'Recent') setSortOrder('newest');
+    return mode === 'All';
   }
 
   function openSubject(name) {
     setActiveMode('Subject');
     setActiveFilter(name);
+    setActiveTopic('All');
+    setShowCTA(false);
+    setRevisionIdx(null);
   }
 
-  function openTopic(name) {
-    setActiveMode('Topic');
+  function selectSubject(name) {
     setActiveFilter(name);
+    setActiveTopic('All');
+    setRevisionIdx(null);
+  }
+
+  function selectTopic(name) {
+    setActiveTopic(name);
+    setRevisionIdx(null);
+  }
+
+  function handleSavedBack() {
+    if (!showOverview()) {
+      setActiveMode('All');
+      setActiveFilter('All');
+      setActiveTopic('All');
+      setRevisionIdx(null);
+      return;
+    }
+    router.push('/history');
   }
 
   const savedStyles = `
-    .sq-topbar{height:58px;position:sticky;top:0;z-index:50;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:0 12px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--ssc-border-soft);border-radius:0 0 22px 22px;box-shadow:0 10px 30px rgba(16,32,51,.08)}
-    .sq-topbar-back{width:36px;height:36px;border:0;background:transparent;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-    .sq-topbar-title{font-size:15px;font-weight:900;color:var(--ssc-text-primary);text-align:center;margin:0;line-height:1}
-    .sq-topbar-spacer{width:36px;height:36px}
-    .sq-chips-row{display:flex;gap:8px;overflow-x:auto;padding:0 12px 10px;scrollbar-width:none;-ms-overflow-style:none}
-    .sq-chips-row::-webkit-scrollbar{display:none}
-    .sq-chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:11px;font-weight:800;padding:7px 13px;white-space:nowrap;flex-shrink:0;cursor:pointer;box-shadow:0 4px 12px rgba(16,32,51,.04)}
-    .sq-chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white}
-    .sq-summary-card{display:flex;align-items:center;gap:14px;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);border:1px solid #BDEDEA;border-radius:16px;padding:15px 16px;margin:6px 12px 12px;box-shadow:var(--ssc-shadow-card)}
+    .sq-detail-filters{padding:12px 10px 8px}
+    .sq-filter-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding:0 0 8px}
+    .sq-filter-row::-webkit-scrollbar{display:none}
+    .sq-filter-chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:7px 12px;white-space:nowrap;flex:0 0 auto;box-shadow:0 5px 12px rgba(16,32,51,.04)}
+    .sq-filter-chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:#fff}
+    .sq-control-row{display:flex;align-items:center;justify-content:space-between;padding:2px 0 0}
+    .sq-mini-select{height:30px;border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:0 11px;outline:none}
+    .sq-select-btn{height:30px;border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-primary);font-size:10px;font-weight:900;padding:0 14px}
+    .sq-summary-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);border:1px solid #BDEDEA;border-radius:16px;padding:15px 16px;margin:12px 12px;box-shadow:var(--ssc-shadow-card)}
+    .sq-summary-top{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
     .sq-summary-icon{width:42px;height:42px;border-radius:13px;background:#E8F8F6;border:1px solid rgba(14,165,164,0.20);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-    .sq-summary-heading{font-size:11px;font-weight:900;color:var(--ssc-text-primary);margin:0 0 3px;line-height:1.2}
     .sq-summary-count{font-size:24px;font-weight:1000;color:var(--ssc-teal);line-height:1;font-family:var(--font-display);margin:0}
     .sq-summary-label{font-size:11px;color:var(--ssc-text-secondary);font-weight:800;margin:3px 0 0}
+    .sq-summary-cta{width:50%;max-width:180px;min-width:132px;height:42px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:#fff;font-size:13px;font-weight:1000;font-family:inherit;box-shadow:var(--ssc-shadow-cta);cursor:pointer;white-space:nowrap;flex-shrink:0}
     .sq-subject-row{display:flex;align-items:center;gap:12px;background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:14px;padding:10px 12px;margin-bottom:8px;box-shadow:0 8px 20px rgba(16,32,51,.06);cursor:pointer}
     .sq-subject-row:active{transform:scale(.99)}
     .sq-subject-icon{width:34px;height:34px;border-radius:11px;border:1px solid rgba(14,165,164,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .sq-subject-img{width:22px;height:22px;object-fit:contain;display:block}
+    .sq-subject-sheet-icon{font-size:18px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
     .sq-subject-copy{min-width:0;flex:1}
     .sq-subject-name{display:block;font-size:12px;font-weight:1000;color:var(--ssc-text-primary);line-height:1.2}
     .sq-subject-subtitle{display:block;margin-top:3px;font-size:10px;font-weight:800;color:var(--ssc-text-secondary);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .sq-subject-count{font-size:12px;font-weight:1000;color:var(--ssc-teal);margin-right:2px}
     .sq-sort-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
     .sq-sort-select{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:12px;padding:8px 12px;font-size:12px;color:var(--ssc-text-secondary);font-weight:600;outline:none;font-family:inherit;cursor:pointer}
-    .sq-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;padding:14px 16px;margin-bottom:10px;position:relative;box-shadow:var(--ssc-shadow-card);cursor:pointer}.sq-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}
-    .sq-bookmark-btn{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:12px;background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,0.18);display:flex;align-items:center;justify-content:center;cursor:pointer}
-    .sq-tags-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;padding-right:40px}
-    .sq-topic-tag{font-size:11px;font-weight:700;color:#FF6A00;background:rgba(255,106,0,0.10);border-radius:99px;padding:2px 9px}
-    .sq-question-text{font-size:14px;font-weight:700;color:var(--ssc-text-primary);line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin:0 0 10px}
+    .sq-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:12px;padding:9px 10px 8px;margin-bottom:9px;position:relative;box-shadow:0 8px 18px rgba(16,32,51,.05);cursor:pointer}.sq-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}
+    .sq-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;padding-right:22px}
+    .sq-bookmark-btn{position:absolute;top:32px;right:9px;width:24px;height:24px;border-radius:8px;background:transparent;border:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
+    .sq-tags-row{display:flex;gap:4px;align-items:center;min-width:0;overflow:hidden}
+    .sq-subject-dot{font-size:9px;font-weight:1000;color:var(--ssc-teal);white-space:nowrap}
+    .sq-subject-dot:after{content:' •';color:var(--ssc-text-muted);font-weight:900}
+    .sq-topic-inline{font-size:9px;font-weight:900;color:var(--ssc-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sq-card-age{font-size:9px;font-weight:800;color:var(--ssc-text-secondary);white-space:nowrap}
+    .sq-question-text{font-size:11px;font-weight:900;color:var(--ssc-text-primary);line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin:0 24px 9px 0}
     .sq-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.sq-footer-right{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto}
-    .sq-meta{font-size:11px;color:var(--ssc-text-muted)}
-    .sq-progress-track{height:4px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden}
+    .sq-meta{font-size:9px;color:var(--ssc-text-muted);font-weight:800}
+    .sq-progress-track{height:3px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden;margin-right:2px}
     .sq-progress-fill{height:100%;border-radius:99px}
     .sq-empty-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:16px;padding:32px 16px;text-align:center}
   `;
@@ -727,7 +776,7 @@ export default function HistorySavedPage() {
     return (
       <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-24">
         <style suppressHydrationWarning>{savedStyles}</style>
-        <SavedTopBar onBack={() => router.push('/history')} />
+        <HistoryTopBar title="Saved Questions" badge="HISTORY" icon={<SavedHeaderIcon />} showBack onBack={handleSavedBack} />
         <div className="px-4">
           <Loader card size="md" label="Fetching your saved questions..." />
         </div>
@@ -740,7 +789,7 @@ export default function HistorySavedPage() {
       <Head><title>Saved Questions - SSC GK Score Booster</title></Head>
       <style suppressHydrationWarning>{savedStyles}</style>
       <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-24">
-        <SavedTopBar onBack={() => router.push('/history')} />
+        <HistoryTopBar title="Saved Questions" badge="HISTORY" icon={<SavedHeaderIcon />} showBack onBack={handleSavedBack} />
 
         {/* Guest sign-in banner */}
         {isGuest && questions.length > 0 && (
@@ -843,46 +892,38 @@ export default function HistorySavedPage() {
                 ) : (
           <>
             <div className="sq-summary-card">
-              <div className="sq-summary-icon">
-                <BookmarkIcon filled size={22} />
+              <div className="sq-summary-top">
+                <div className="sq-summary-icon">
+                  <BookmarkIcon filled size={22} />
+                </div>
+                <div className="min-w-0">
+                  <p className="sq-summary-count">{questions.length}</p>
+                  <p className="sq-summary-label">Questions saved</p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="sq-summary-heading font-display">Your Saved Questions</p>
-                <p className="sq-summary-count">{questions.length}</p>
-                <p className="sq-summary-label">Questions saved</p>
-              </div>
-            </div>
-
-            <div className="sq-chips-row">
-              {['All', 'By Subject', 'By Topic', 'Recent'].map(label => (
-                <button
-                  key={label}
-                  className={`sq-chip ${activeMode === label ? 'active' : ''}`}
-                  onClick={() => handleModeSelect(label)}
-                >
-                  {label}
-                </button>
-              ))}
+              <button type="button" className="sq-summary-cta" onClick={() => startPractice(questions)}>
+                Practice all {questions.length}
+              </button>
             </div>
 
             {showOverview() ? (
               <div className="px-3">
-                {(activeMode === 'By Topic' ? topicGroups : subjectGroups).map(item => {
-                  const subjectName = activeMode === 'By Topic' ? item.subject : item.name;
+                {subjectGroups.map(item => {
+                  const subjectName = item.name;
                   const meta = getSubjectMeta(subjectName);
                   return (
                   <div
                     key={item.name}
                     className="sq-subject-row"
-                    onClick={() => activeMode === 'By Topic' ? openTopic(item.name) : openSubject(item.name)}
+                    onClick={() => openSubject(item.name)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={e => e.key === 'Enter' && (activeMode === 'By Topic' ? openTopic(item.name) : openSubject(item.name))}
+                    onKeyDown={e => e.key === 'Enter' && openSubject(item.name)}
                   >
-                    <SubjectIcon subject={subjectName} />
+                    <SubjectIcon subject={subjectName} sheetIcon={subjectMeta[subjectName]?.icon} />
                     <div className="sq-subject-copy">
                       <span className="sq-subject-name">{item.name}</span>
-                      <span className="sq-subject-subtitle">{activeMode === 'By Topic' ? subjectName : meta.subtitle}</span>
+                      <span className="sq-subject-subtitle">{meta.subtitle}</span>
                     </div>
                     <span className="sq-subject-count">{item.count}</span>
                     <ChevronSVG />
@@ -891,14 +932,51 @@ export default function HistorySavedPage() {
                 })}
               </div>
             ) : (
-              <div className="px-4" style={{ paddingBottom: filtered.length > 0 ? 96 : 16 }}>
-                {/* Sort row */}
-                <div className="sq-sort-row">
-                  <span style={{ fontSize: 12, color: 'var(--ssc-text-secondary)', fontWeight: 500 }}>
-                    {activeFilter === 'All' ? `${filtered.length} saved question${filtered.length !== 1 ? 's' : ''}` : `${activeFilter} - ${filtered.length} question${filtered.length !== 1 ? 's' : ''}`}
-                  </span>
+              <div className="px-3" style={{ paddingBottom: filtered.length > 0 ? 96 : 16 }}>
+                <div className="sq-detail-filters">
+                  <div className="sq-filter-row" aria-label="Saved question subjects">
+                    <button
+                      type="button"
+                      className={`sq-filter-chip ${activeFilter === 'All' ? 'active' : ''}`}
+                      onClick={() => selectSubject('All')}
+                    >
+                      All ({questions.length})
+                    </button>
+                    {subjectGroups.map(item => (
+                      <button
+                        type="button"
+                        key={item.name}
+                        className={`sq-filter-chip ${activeFilter === item.name ? 'active' : ''}`}
+                        onClick={() => selectSubject(item.name)}
+                      >
+                        {item.name} ({item.count})
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="sq-filter-row" aria-label="Saved question topics">
+                    <button
+                      type="button"
+                      className={`sq-filter-chip ${activeTopic === 'All' ? 'active' : ''}`}
+                      onClick={() => selectTopic('All')}
+                    >
+                      All Topics
+                    </button>
+                    {topicGroups.map(item => (
+                      <button
+                        type="button"
+                        key={item.name}
+                        className={`sq-filter-chip ${activeTopic === item.name ? 'active' : ''}`}
+                        onClick={() => selectTopic(item.name)}
+                      >
+                        {item.name} ({item.count})
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="sq-control-row">
                   <select
-                    className="sq-sort-select"
+                    className="sq-mini-select"
                     value={sortOrder}
                     onChange={e => setSortOrder(e.target.value)}
                   >
@@ -907,6 +985,8 @@ export default function HistorySavedPage() {
                     <option value="subject">Subject-wise</option>
                     <option value="wrong">Wrong First</option>
                   </select>
+                    <button type="button" className="sq-select-btn">Select</button>
+                  </div>
                 </div>
 
                 {/* Question list */}
