@@ -15,8 +15,10 @@ import {
 } from '@/lib/mentorCopy';
 import { getUserCacheScope } from '@/lib/userCacheScope';
 import { isMentorSnapshotFresh, fetchMentorPlan, fetchMentorRefresh } from '@/lib/data/mentorData';
+import mentorQuizLaunch from '@/lib/mentorQuizLaunchContext.cjs';
 
 const QUESTION_COUNTS = [10, 25, 50];
+const { resolveMentorQuizLaunchContext, isMentorQuizLaunchableTask } = mentorQuizLaunch;
 
 const GoogleSVG = () => (
   <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -959,94 +961,144 @@ export default function MentorPage() {
   }
 
   function handlePrimary(task) {
-    if (isRepeatedMistakesPracticeTask(task)) {
-      launchRepeatedMistakesPractice(task).catch(err => {
-        setError(err.message || 'Repeated mistakes practice start nahi ho payi.');
-        setBusyTaskId('');
-      });
+    if (!isMentorQuizLaunchableTask(task)) {
+      if (task.taskType === 'confidence_check') {
+        setConfidenceTask(task);
+        return;
+      }
+      if (task.taskType === 'coverage_check') {
+        setCoverageTask(task);
+        return;
+      }
+      if (task.taskType === 'feedback_task') {
+        setBlockerTask(task);
+        return;
+      }
+      setConfirmTask(task);
       return;
     }
-    if (task.taskType === 'practice_task') {
+    if (task.taskType === 'practice_task' && !isRepeatedMistakesPracticeTask(task)) {
       setPracticeTask(task);
       return;
     }
     if (task.taskType === 'revision_task') {
-      setConfirmTask(task);
+      setPracticeTask(task);
       return;
     }
-    if (task.taskType === 'mistake_recovery_task') {
-      runTaskAction(task, 'launch_practice').catch(() => {});
-      router.push('/history/mistakes');
-      return;
-    }
-    if (task.taskType === 'confidence_check') {
-      setConfidenceTask(task);
-      return;
-    }
-    if (task.taskType === 'coverage_check') {
-      setCoverageTask(task);
-      return;
-    }
-    if (task.taskType === 'feedback_task') {
-      setBlockerTask(task);
-      return;
-    }
-    setConfirmTask(task);
+    launchMentorQuizTask(task).catch(err => {
+      setError(err.message || 'Practice start nahi ho payi.');
+      setBusyTaskId('');
+    });
   }
 
   function isRepeatedMistakesPracticeTask(task) {
     return task?.reason === 'recent_mistakes' || task?.ctaRoute === '/history/mistakes';
   }
 
-  async function launchRepeatedMistakesPractice(task) {
-    setBusyTaskId(task.taskId);
-    const count = Number(task.questionCount || 25);
-    const planId = task.planId || snapshot?.plan?.planId || '';
-    const mentorContext = {
+  function buildMentorReturnContext(context) {
+    return {
       sourcePage: 'mentor',
       sourceScreen: 'mentor_plan',
-      sourceTaskId: task.taskId,
-      planId,
-      returnUrl: '/mentor',
-      subject: task.subject || '',
-      topic: task.topic || '',
-      questionCount: count,
+      sourceTaskId: context.taskId,
+      planId: context.planId,
+      returnUrl: context.returnUrl || '/mentor',
+      subject: context.subject,
+      topic: context.topic,
+      mode: context.mode,
+      questionSource: context.questionSource,
+      questionCount: context.questionCount,
+      collection: context.collection,
+      locked: true,
     };
-    sessionStorage.setItem('ssc_mentor_return_context', JSON.stringify(mentorContext));
-    await runTaskAction(task, 'launch_practice', String(count));
+  }
 
-    if (guestMode && !email) {
-      router.push('/history/mistakes');
-      return;
+  function getHistoryFilterValue(value) {
+    const normalized = String(value || '').trim();
+    if (!normalized || normalized === 'All' || normalized === 'Mixed GK' || normalized === 'Mixed Topic' || normalized === 'Repeated Mistakes') return '';
+    return normalized;
+  }
+
+  async function fetchMentorPracticeQuestions(context) {
+    const res = await fetch(`/api/questions?subject=${encodeURIComponent(context.subject)}&topic=${encodeURIComponent(context.topic)}&collection=${encodeURIComponent(context.collection || 'PYQ')}`);
+    const data = await res.json().catch(() => ({}));
+    const questions = Array.isArray(data.questions) ? data.questions : [];
+    if (!res.ok || !questions.length) {
+      throw new Error('No questions found for this topic.');
     }
+    return questions;
+  }
 
+  async function fetchMentorMistakeQuestions(context) {
     const res = await fetch('/api/history/reattempt-filtered', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        subject: '',
-        topic: '',
+        subject: getHistoryFilterValue(context.subject),
+        topic: getHistoryFilterValue(context.topic),
         answerStatus: 'wrong_skipped',
-        questionHistory: 'repeated',
-        limit: count,
+        questionHistory: context.questionSource === 'repeated_mistakes' ? 'repeated' : 'all',
+        limit: context.questionCount,
       }),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.success) throw new Error(data.error || 'Repeated mistakes practice start nahi ho payi.');
-    sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
-      questions: data.data.questions,
-      quizMode: data.data.quizMode,
-      subject: 'History',
-      topic: 'Repeated Mistakes',
-      sourceCollection: 'general',
-    }));
+    if (!res.ok || !data.success || !data.data?.questions?.length) {
+      throw new Error('No mistake questions found for this topic. Try normal practice instead.');
+    }
+    return data.data;
+  }
+
+  function resolveLaunchContext(task, questionCount) {
+    const context = resolveMentorQuizLaunchContext(task, {
+      planId: task.planId || snapshot?.plan?.planId || '',
+      questionCount,
+      returnUrl: '/mentor',
+    });
+    if (!context.ok) throw new Error(context.error || 'Mentor task quiz context missing.');
+    return context;
+  }
+
+  async function launchMentorQuizTask(task, selectedCount) {
+    setBusyTaskId(task.taskId);
+    const context = resolveLaunchContext(task, selectedCount);
+    const mentorContext = buildMentorReturnContext(context);
+    sessionStorage.setItem('ssc_mentor_return_context', JSON.stringify(mentorContext));
+
+    if (context.questionSource === 'repeated_mistakes' || context.questionSource === 'history_wrong') {
+      const historyData = await fetchMentorMistakeQuestions(context);
+      await runTaskAction(task, 'launch_practice', String(context.questionCount));
+      sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
+        questions: historyData.questions,
+        quizMode: historyData.quizMode || context.mode,
+        subject: context.subject,
+        topic: context.topic,
+        sourceCollection: historyData.sourceCollection || 'general',
+        returnUrl: '/mentor',
+      }));
+      const params = new URLSearchParams({
+        mode: 'history',
+        count: String(historyData.questionCount || context.questionCount),
+        sourcePage: 'mentor',
+        sourceScreen: 'mentor_plan',
+        sourceTaskId: context.taskId,
+        planId: context.planId,
+        returnUrl: '/mentor',
+      });
+      router.push(`/quiz?${params.toString()}`);
+      return;
+    }
+
+    await fetchMentorPracticeQuestions(context);
+    await runTaskAction(task, 'launch_practice', String(context.questionCount));
     const params = new URLSearchParams({
-      mode: 'history',
-      count: String(data.data.questionCount || count),
+      subject: context.subject,
+      topic: context.topic,
+      count: String(context.questionCount),
+      collection: context.collection || 'PYQ',
+      mode: context.mode,
       sourcePage: 'mentor',
       sourceScreen: 'mentor_plan',
-      sourceTaskId: task.taskId,
-      planId,
+      sourceTaskId: context.taskId,
+      planId: context.planId,
       returnUrl: '/mentor',
     });
     router.push(`/quiz?${params.toString()}`);
@@ -1055,36 +1107,9 @@ export default function MentorPage() {
   async function launchPractice(count) {
     const task = practiceTask;
     if (!task) return;
-    setBusyTaskId(task.taskId);
     try {
-      await runTaskAction(task, 'launch_practice', String(count));
-      const subject = task.subject || task.subjectId || task.subjectName || '';
-      const topic = task.topic || task.topicName || '';
-      const planId = task.planId || snapshot?.plan?.planId || '';
-      const mentorContext = {
-        sourcePage: 'mentor',
-        sourceScreen: 'mentor_plan',
-        sourceTaskId: task.taskId,
-        planId,
-        returnUrl: '/mentor',
-        subject,
-        topic,
-        collection: 'PYQ',
-        questionCount: count,
-      };
-      sessionStorage.setItem('ssc_mentor_return_context', JSON.stringify(mentorContext));
-      const params = new URLSearchParams({
-        subject,
-        topic,
-        count: String(count),
-        collection: 'PYQ',
-        sourcePage: 'mentor',
-        sourceScreen: 'mentor_plan',
-        sourceTaskId: task.taskId,
-        planId,
-        returnUrl: '/mentor',
-      });
-      router.push(`/quiz?${params.toString()}`);
+      await launchMentorQuizTask(task, count);
+      setPracticeTask(null);
     } catch (err) {
       setError(err.message || 'Practice start nahi ho payi.');
       setBusyTaskId('');

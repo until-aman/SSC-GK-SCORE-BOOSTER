@@ -619,7 +619,7 @@ export default function AnalysisPage() {
         <WhatsAppBell />
       </div>
 
-      <div style={{ minHeight: '100vh', background: 'var(--ssc-bg)', padding: '20px 16px 100px', boxSizing: 'border-box' }}>
+      <div style={{ minHeight: '100vh', background: 'transparent', padding: '20px 16px 100px', boxSizing: 'border-box' }}>
 
         {/* ── Section 2: Your Quiz Activity Card (REAL DATA) ──────────── */}
         {activity === null ? (
@@ -651,7 +651,7 @@ export default function AnalysisPage() {
         ) : (
           <>
             {/* Activity card */}
-            <div style={{ ...card, padding: '16px 18px' }}>
+            {false && <div style={{ ...card, padding: '16px 18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                 <div style={{ position: 'relative', flexShrink: 0 }}>
                   {session?.user?.image ? (
@@ -703,7 +703,7 @@ export default function AnalysisPage() {
                   </div>
                 )}
               </div>
-            </div>
+            </div>}
 
             {/* ── Section 3: Analysis Teaser + Single Gate ──────────── */}
             {!revealed && (
