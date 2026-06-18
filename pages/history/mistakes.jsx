@@ -1,13 +1,10 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
 import Loader from '@/components/ui/Loader';
-import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
-import { readCache, writeCache } from '@/lib/clientCache';
-import { buildUserScopedKey, getUserCacheScope } from '@/lib/userCacheScope';
+import { getUserCacheScope } from '@/lib/userCacheScope';
 import { getHistoryQuestions, normalizeHistoryQuery } from '@/lib/data/historyClientData';
 import { toggleSavedQuestion } from '@/lib/data/savedData';
 
@@ -21,8 +18,6 @@ const RepeatedMistakesIcon = (
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 const OPTION_KEYS = ['optionA', 'optionB', 'optionC', 'optionD'];
-const REPEATED_MISTAKES_CACHE_TTL = CACHE_TTL.EIGHT_HOURS;
-
 const SUBJECT_META = {
   Polity: { subtitle: 'Constitution • Govt', accent: '#14B8A6', bg: '#E8F8F6', glyph: 'bookmark' },
   Economics: { subtitle: 'Banking • Budget', accent: '#8B5CF6', bg: '#F3F0FF', glyph: 'chart' },
@@ -117,12 +112,38 @@ function formatDuration(seconds) {
   return remaining ? `${minutes}m ${remaining}s` : `${minutes} min`;
 }
 
-function getRepeatedMistakesCacheKey(scope) {
-  return buildUserScopedKey(CACHE_KEYS.HISTORY_REPEATED_MISTAKES, scope || 'guest');
-}
-
 function getQuestionTimeSpent(item) {
   return Number(item.timeSpentSeconds || item.timeTakenSeconds || item.totalTimeTakenSeconds || 0);
+}
+
+function formatPercent(value) {
+  const rounded = Math.round(Number(value) * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
+function getDistributedPercentages(counts = []) {
+  const total = counts.reduce((sum, count) => sum + count, 0);
+  if (!total) return counts.map(() => ({ value: 0, label: '0' }));
+
+  const rawTenths = counts.map(count => (count / total) * 1000);
+  const flooredTenths = rawTenths.map(Math.floor);
+  let remainingTenths = 1000 - flooredTenths.reduce((sum, value) => sum + value, 0);
+
+  const order = rawTenths
+    .map((value, index) => ({ index, remainder: value - flooredTenths[index] }))
+    .sort((a, b) => b.remainder - a.remainder || b.index - a.index);
+
+  for (let i = 0; i < remainingTenths; i += 1) {
+    flooredTenths[order[i % order.length].index] += 1;
+  }
+
+  return flooredTenths.map(value => {
+    const percentage = value / 10;
+    return {
+      value: percentage,
+      label: formatPercent(percentage),
+    };
+  });
 }
 
 function getAttemptBreakdown(item) {
@@ -130,15 +151,18 @@ function getAttemptBreakdown(item) {
   const wrongCount = Number(item.wrongCount) || 0;
   const skippedCount = Number(item.skippedCount) || 0;
   const totalAttempts = correctCount + wrongCount + skippedCount;
-  const pct = count => totalAttempts > 0 ? Math.round((count / totalAttempts) * 100) : 0;
+  const [correctPct, wrongPct, skippedPct] = getDistributedPercentages([correctCount, wrongCount, skippedCount]);
   return {
     correctCount,
     wrongCount,
     skippedCount,
     totalAttempts,
-    correctPct: pct(correctCount),
-    wrongPct: pct(wrongCount),
-    skippedPct: pct(skippedCount),
+    correctPct: correctPct.value,
+    wrongPct: wrongPct.value,
+    skippedPct: skippedPct.value,
+    correctPctLabel: correctPct.label,
+    wrongPctLabel: wrongPct.label,
+    skippedPctLabel: skippedPct.label,
   };
 }
 
@@ -162,15 +186,15 @@ function AttemptStatsRow({ stats, includeTime, timeSpent, className = '' }) {
         <>
           <span className="rm-stat-block rm-stat-correct">
             <span className="rm-stat-value">✓ {stats.correctCount}</span>
-            <span className="rm-stat-label">Correct ({stats.correctPct}%)</span>
+            <span className="rm-stat-label">Correct ({stats.correctPctLabel}%)</span>
           </span>
           <span className="rm-stat-block rm-stat-wrong">
             <span className="rm-stat-value">× {stats.wrongCount}</span>
-            <span className="rm-stat-label">Wrong ({stats.wrongPct}%)</span>
+            <span className="rm-stat-label">Wrong ({stats.wrongPctLabel}%)</span>
           </span>
           <span className="rm-stat-block rm-stat-skipped">
             <span className="rm-stat-value">○ {stats.skippedCount}</span>
-            <span className="rm-stat-label">Skipped ({stats.skippedPct}%)</span>
+            <span className="rm-stat-label">Skipped ({stats.skippedPctLabel}%)</span>
           </span>
         </>
       )}
@@ -551,92 +575,67 @@ function MistakeReviewCard({ questions, startIndex, onClose, onToggleSave }) {
 }
 
 export default function RepeatedMistakesPage() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const cacheScope = getUserCacheScope(session);
   const router = useRouter();
   const [mistakes, setMistakes] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [cacheChecked, setCacheChecked] = useState(false);
-  const [cacheMessage, setCacheMessage] = useState('');
+  const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState('');
   const [questionSubject, setQuestionSubject] = useState('');
   const [questionTopic, setQuestionTopic] = useState('');
+  const [showQuestionList, setShowQuestionList] = useState(false);
   const [sortOrder, setSortOrder] = useState('newest');
   const [reviewIndex, setReviewIndex] = useState(null);
   const subjectFilterRefs = useRef({});
 
-  const loadRepeatedMistakes = useCallback(async ({ forceRefresh = false, silent = false } = {}) => {
-    if (status === 'loading') return;
+  useEffect(() => {
+    let ignore = false;
 
-    const cacheKey = getRepeatedMistakesCacheKey(cacheScope);
-    const cached = readCache(cacheKey, REPEATED_MISTAKES_CACHE_TTL);
-
-    if (!forceRefresh && cached?.data?.questions) {
-      setMistakes(cached.data.questions);
-      setCacheMessage('');
-      setLoading(false);
-      setCacheChecked(true);
+    async function loadRepeatedMistakes() {
+      setLoading(true);
       setError('');
-      if (cached.isFresh) {
-        return;
-      }
-    }
+      try {
+        const allQuestions = [];
+        let page = 1;
+        let hasMore = true;
 
-    if (!silent) {
-      if (cached?.data?.questions) {
-        setMistakes(cached.data.questions);
-      } else {
-        setLoading(true);
-      }
-    }
-    setError('');
-    setCacheMessage('');
+        while (hasMore) {
+          const query = normalizeHistoryQuery({
+            answerStatus: 'wrong_skipped',
+            questionHistory: 'repeated',
+            limit: 50,
+            page,
+          });
+          const res = await getHistoryQuestions({ scope: cacheScope, query });
+          const json = res?.data;
+          if (!json?.success) {
+            throw new Error(json?.error || 'Failed to load repeated mistakes');
+          }
 
-    try {
-      const allQuestions = [];
-      let page = 1;
-      let hasMore = true;
-
-      while (hasMore) {
-        const query = normalizeHistoryQuery({
-          status: 'wrong_skipped',
-          questionHistory: 'repeated',
-          limit: 50,
-          page,
-        });
-        const res = await getHistoryQuestions({ scope: cacheScope, query, forceRefresh });
-        const json = res?.data;
-        if (!json?.success) {
-          throw new Error(json?.error || 'Failed to load repeated mistakes');
+          allQuestions.push(...(json.data?.questions || []));
+          hasMore = Boolean(json.data?.hasMore);
+          page += 1;
         }
 
-        allQuestions.push(...(json.data?.questions || []));
-        hasMore = Boolean(json.data?.hasMore);
-        page += 1;
+        if (!ignore) setMistakes(allQuestions);
+      } catch (err) {
+        if (!ignore) {
+          setMistakes([]);
+          setError(err.message || 'Failed to load repeated mistakes');
+        }
+      } finally {
+        if (!ignore) setLoading(false);
       }
-
-      const data = { questions: allQuestions };
-      writeCache(cacheKey, data, { ttlMs: REPEATED_MISTAKES_CACHE_TTL, source: 'history_questions' });
-      setMistakes(allQuestions);
-      setCacheMessage('');
-    } catch (err) {
-      if (cached?.data?.questions) {
-        setMistakes(cached.data.questions);
-        setCacheMessage("Couldn't refresh right now. Showing saved data.");
-      } else {
-        setMistakes([]);
-        setError(err.message || 'Failed to load repeated mistakes');
-      }
-    } finally {
-      setLoading(false);
-      setCacheChecked(true);
     }
-  }, [cacheScope, status]);
 
-  useEffect(() => {
     loadRepeatedMistakes();
-  }, [loadRepeatedMistakes]);
+
+    return () => {
+      ignore = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setQuestionTopic('');
@@ -656,11 +655,11 @@ export default function RepeatedMistakesPage() {
   }, [mistakes, questionSubject]);
 
   useEffect(() => {
-    if (!questionSubject) return;
-    const activeButton = subjectFilterRefs.current[questionSubject];
+    if (!showQuestionList) return;
+    const activeButton = subjectFilterRefs.current[questionSubject || 'All'];
     if (!activeButton) return;
     activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }, [questionSubject, subjects]);
+  }, [questionSubject, showQuestionList, subjects]);
 
   const filteredMistakes = useMemo(() => {
     const filtered = mistakes.filter(item => {
@@ -682,6 +681,18 @@ export default function RepeatedMistakesPage() {
     });
   }, [mistakes, questionSubject, questionTopic, sortOrder]);
   const practiceCount = filteredMistakes.length;
+
+  function openQuestionList(subject = '') {
+    setQuestionSubject(subject);
+    setShowQuestionList(true);
+  }
+
+  function closeQuestionList() {
+    setShowQuestionList(false);
+    setQuestionSubject('');
+    setQuestionTopic('');
+    setReviewIndex(null);
+  }
 
   async function startPractice(payload) {
     if (starting) return;
@@ -741,7 +752,7 @@ export default function RepeatedMistakesPage() {
   }
 
   const styles = `
-    .history-shell{padding:16px 12px 20px}
+    .history-shell{padding:14px 12px 20px}
     .history-shell.filtered{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
     .intro-block{margin-bottom:12px}.intro-subtitle{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:0}
     .history-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
@@ -750,14 +761,14 @@ export default function RepeatedMistakesPage() {
     .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;min-height:40px}.primary-btn{border:0;background:linear-gradient(135deg,#ff7a1a,#ff4d00);color:white;box-shadow:var(--ssc-shadow-cta)}.secondary-btn{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-teal)}.primary-btn:disabled,.secondary-btn:disabled{opacity:.55;cursor:default;box-shadow:none}
     .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}.divider{height:1px;background:var(--ssc-border-soft);margin:12px 0}.question-expanded{overflow:hidden;margin-top:12px;padding:11px;border:1px solid var(--ssc-border-soft);border-radius:14px;background:var(--ssc-surface-soft)}.expanded-block{margin-bottom:10px}.expanded-label{color:var(--ssc-text-muted);font-size:10px;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px}.expanded-question{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.48;margin:0}.expanded-attempt{color:var(--ssc-text-muted);font-size:11px;font-weight:800;margin:9px 0 0}.answer-detail-grid{display:grid;gap:8px}.answer-detail{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface);border-radius:12px;padding:9px 10px}.answer-detail span{display:block;color:var(--ssc-text-muted);font-size:10px;font-weight:900;margin-bottom:4px}.answer-detail b{display:block;font-size:12px;line-height:1.4}.answer-detail.correct{background:var(--ssc-success-soft);border-color:rgba(18,184,134,.28)}.answer-detail.wrong{background:var(--ssc-danger-soft);border-color:rgba(239,68,68,.28)}.answer-detail.correct b{color:var(--ssc-success)}.answer-detail.wrong b{color:var(--ssc-danger)}.answer-detail.skipped b{color:var(--ssc-text-secondary)}
     .mistake-filter-group{margin-bottom:16px}.mistake-filter-group .chip-row{padding-bottom:0}.mistake-filter-label{display:block;margin:0 0 10px 2px;color:var(--ssc-text-primary);font-size:12px;font-weight:900;line-height:1}.active-filter-summary{margin:-2px 2px 14px;color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.4}
-    .rm-summary-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);border:1px solid #BDEDEA;border-radius:16px;padding:15px 16px;margin:12px 0 0;box-shadow:var(--ssc-shadow-card)}
+    .rm-summary-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);border:1px solid #BDEDEA;border-radius:16px;padding:15px 16px;margin:0;box-shadow:var(--ssc-shadow-card)}
     .rm-summary-top{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
     .rm-summary-icon{width:42px;height:42px;border-radius:13px;background:#E8F8F6;border:1px solid rgba(14,165,164,0.20);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
     .rm-summary-count{font-size:24px;font-weight:1000;color:var(--ssc-teal);line-height:1;font-family:var(--font-display);margin:0}
     .rm-summary-label{font-size:11px;color:var(--ssc-text-secondary);font-weight:800;margin:3px 0 0}
     .rm-summary-cta{width:50%;max-width:180px;min-width:132px;height:42px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:#fff;font-size:13px;font-weight:1000;font-family:inherit;box-shadow:var(--ssc-shadow-cta);cursor:pointer;white-space:nowrap;flex-shrink:0}
     .rm-summary-cta:disabled{opacity:.62;cursor:default;box-shadow:none}
-    .rm-detail-filters{padding:16px 0 10px}
+    .rm-detail-filters{padding:14px 0 10px}
     .rm-cache-message{margin:0 0 10px;color:var(--ssc-text-secondary);font-size:11px;font-weight:800;text-align:right}
     .rm-filter-label{font-size:12px;font-weight:1000;color:var(--ssc-text-primary);margin:4px 0 10px}
     .rm-control-row{display:flex;align-items:flex-start;justify-content:flex-start;flex-direction:column;padding:2px 0 0;margin-bottom:8px}
@@ -810,18 +821,22 @@ export default function RepeatedMistakesPage() {
   return (
     <div
       className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)]"
-      style={{ paddingBottom: !questionSubject && !loading && !error ? 20 : 112 }}
+      style={{ paddingBottom: !showQuestionList && !loading && !error ? 20 : 112 }}
     >
       <Head><title>Repeated Mistakes - SSC GK Score Booster</title></Head>
       <style suppressHydrationWarning>{styles}</style>
-      <HistoryTopBar title="Repeated Mistakes" icon={RepeatedMistakesIcon} showBack />
-      <main className={`history-shell ${questionSubject ? 'filtered' : ''}`}>
-        {cacheMessage && <p className="rm-cache-message">{cacheMessage}</p>}
+      <HistoryTopBar
+        title="Repeated Mistakes"
+        icon={RepeatedMistakesIcon}
+        showBack
+        onBack={showQuestionList ? closeQuestionList : null}
+      />
+      <main className={`history-shell ${showQuestionList ? 'filtered' : ''}`}>
         {loading ? <Loader card size="md" label="Loading mistakes..." /> : error ? (
-          <EmptyPanel title="Couldn't load repeated mistakes." body={error} action="Retry" onClick={() => loadRepeatedMistakes({ forceRefresh: true })} />
-        ) : !cacheChecked && status === 'loading' ? null : !cacheChecked ? null : (
+          <EmptyPanel title="Couldn't load repeated mistakes." body={error} action="Retry" onClick={() => router.reload()} />
+        ) : (
           <>
-            {!questionSubject ? (
+            {!showQuestionList ? (
               <>
                 {/* Summary card */}
                 <div className="rm-summary-card">
@@ -858,10 +873,10 @@ export default function RepeatedMistakesPage() {
                       <div
                         key={subj.name}
                         className="rm-subject-row"
-                        onClick={() => setQuestionSubject(subj.name)}
+                        onClick={() => openQuestionList(subj.name)}
                         role="button"
                         tabIndex={0}
-                        onKeyDown={e => e.key === 'Enter' && setQuestionSubject(subj.name)}
+                        onKeyDown={e => e.key === 'Enter' && openQuestionList(subj.name)}
                       >
                         <SubjectIcon subject={subj.name} />
                         <div className="rm-subject-copy">
@@ -918,7 +933,7 @@ export default function RepeatedMistakesPage() {
                       type="button"
                       ref={el => { subjectFilterRefs.current.All = el; }}
                       className={`chip ${!questionSubject ? 'active' : ''}`}
-                      onClick={() => setQuestionSubject('')}
+                      onClick={() => openQuestionList('')}
                     >
                       All ({mistakes.length})
                     </button>
