@@ -647,13 +647,6 @@ export default function RepeatedMistakesPage() {
     setReviewIndex(null);
   }, [questionTopic]);
 
-  useEffect(() => {
-    if (!questionSubject) return;
-    const activeButton = subjectFilterRefs.current[questionSubject];
-    if (!activeButton) return;
-    activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }, [questionSubject, subjects]);
-
   const subjects = useMemo(() => buildCountOptions(mistakes, 'subject'), [mistakes]);
   const topics = useMemo(() => {
     const source = questionSubject
@@ -661,6 +654,13 @@ export default function RepeatedMistakesPage() {
       : mistakes;
     return buildCountOptions(source, 'topic');
   }, [mistakes, questionSubject]);
+
+  useEffect(() => {
+    if (!questionSubject) return;
+    const activeButton = subjectFilterRefs.current[questionSubject];
+    if (!activeButton) return;
+    activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, [questionSubject, subjects]);
 
   const filteredMistakes = useMemo(() => {
     const filtered = mistakes.filter(item => {
