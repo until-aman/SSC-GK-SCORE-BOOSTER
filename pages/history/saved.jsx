@@ -133,17 +133,6 @@ function SubjectIcon({ subject, sheetIcon = '' }) {
 }
 
 function QuestionRow({ q, index, onView, onUnsave }) {
-  const correctCount = Number(q.correctCount) || 0;
-  const wrongCount = Number(q.wrongCount) || 0;
-  const skippedCount = Number(q.skippedCount) || 0;
-  const totalAttempts = correctCount + wrongCount + skippedCount;
-  let correctPct = null;
-  if (totalAttempts > 0) {
-    correctPct = Math.round((correctCount / totalAttempts) * 100);
-  } else if (q.userAnswer) {
-    correctPct = q.userAnswer === q.correctOption ? 100 : 0;
-  }
-
   const ts = q.savedAt || q.createdAt;
   let lastPracticed = null;
   if (ts) {
@@ -179,7 +168,7 @@ function QuestionRow({ q, index, onView, onUnsave }) {
           title="Remove bookmark"
           aria-label="Remove bookmark"
         >
-          <BookmarkIcon filled size={14} />
+          <BookmarkIcon filled size={18} />
         </button>
       </div>
       <p className="sq-question-text">{q.question}</p>
@@ -188,29 +177,9 @@ function QuestionRow({ q, index, onView, onUnsave }) {
           {lastPracticed ? `Last Practiced: ${lastPracticed}` : 'Not practiced yet'}
         </span>
         <span className="sq-footer-right">
-          {correctPct !== null && (
-            <span style={{ fontSize: 11, fontWeight: 700, color: correctPct >= 50 ? 'var(--ssc-success)' : 'var(--ssc-danger)' }}>
-              Correct: {correctPct}%
-            </span>
-          )}
           <ChevronSVG />
         </span>
       </div>
-      {correctPct !== null && (
-        <>
-          <div className="sq-progress-track">
-            <div className="sq-progress-fill" style={{
-              width: `${correctPct}%`,
-              background: correctPct >= 50 ? 'var(--ssc-success)' : 'var(--ssc-danger)',
-            }} />
-          </div>
-          <div className="sq-attempt-stats">
-            <span className="sq-stat-correct">Correct {correctCount}x</span>
-            <span className="sq-stat-wrong">Wrong {wrongCount}x</span>
-            <span className="sq-stat-skipped">Skipped {skippedCount}x</span>
-          </div>
-        </>
-      )}
     </article>
   );
 }
@@ -704,7 +673,7 @@ export default function HistorySavedPage() {
     .sq-topic-inline{max-width:72%;flex:0 1 auto}
     .sq-subject-dot{color:var(--ssc-teal);background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.14)}
     .sq-topic-inline{color:var(--ssc-orange);background:var(--ssc-orange-soft);border:1px solid rgba(255,106,0,.14)}
-    .sq-card-bookmark-btn{height:22px;width:28px;border:0;background:transparent;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;color:var(--ssc-teal);margin-top:0}
+    .sq-card-bookmark-btn{height:22px;width:22px;border:0;background:transparent;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;color:var(--ssc-teal);margin-top:0}
     .sq-status-pill{display:inline-flex;align-items:center;justify-content:center;min-height:21px;border-radius:999px;border:1px solid;padding:0 8px;font-size:9px;font-weight:1000;white-space:nowrap}
     .sq-status-pill.amber{color:var(--ssc-warning);background:var(--ssc-warning-soft);border-color:rgba(245,158,11,.30)}
     .sq-status-pill.red{color:var(--ssc-danger);background:var(--ssc-danger-soft);border-color:rgba(239,68,68,.30)}
