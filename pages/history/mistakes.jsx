@@ -791,7 +791,7 @@ export default function RepeatedMistakesPage() {
     .rm-subject-tag{max-width:36%;flex:0 1 auto;color:var(--ssc-teal);background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.14)}
     .rm-topic-tag{max-width:72%;flex:0 1 auto;color:var(--ssc-orange);background:var(--ssc-orange-soft);border:1px solid rgba(255,106,0,.14)}
     .rm-repeat-pill{font-size:11px;font-weight:900;color:var(--ssc-danger);background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.20);border-radius:99px;padding:3px 10px;white-space:nowrap;flex-shrink:0}
-    .rm-question-text{font-size:11px;font-weight:900;color:var(--ssc-text-primary);line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin:0 24px 9px 0}
+    .rm-question-text{font-size:11px;font-weight:900;color:var(--ssc-text-primary);line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;margin:0 24px 9px 0}
     .rm-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
     .rm-footer-copy{min-width:0;flex:1}
     .rm-open-icon{display:inline-flex;height:24px;width:24px;align-items:center;justify-content:center;border-radius:999px;border:0;background:transparent;color:var(--ssc-text-secondary);font-size:14px;font-weight:900;flex:0 0 auto}
