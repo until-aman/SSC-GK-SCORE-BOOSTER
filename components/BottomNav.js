@@ -112,20 +112,20 @@ export default function BottomNav() {
         <div style={{
           maxWidth: '430px',
           margin: '0 auto',
-          padding: '8px 20px calc(7px + env(safe-area-inset-bottom))',
+          padding: '8px 12px calc(7px + env(safe-area-inset-bottom))',
           position: 'relative',
           zIndex: 51,
         }}>
           <div style={{
             background: '#FFFFFF',
             border: '1px solid #DDE8F0',
-            borderRadius: '28px',
-            padding: '8px 12px',
+            borderRadius: '30px',
+            padding: '9px 10px',
             display: 'flex',
             justifyContent: 'space-around',
             alignItems: 'center',
             width: '100%',
-            boxShadow: '0 16px 40px rgba(16, 32, 51, 0.12)',
+            boxShadow: '0 -12px 28px rgba(240, 249, 248, 0.96), 0 16px 40px rgba(16, 32, 51, 0.14)',
           }}>
             {items.map(({ Icon, route, label }) => {
               const active = route === '/history' ? path === route || path.startsWith('/history/') : path === route;

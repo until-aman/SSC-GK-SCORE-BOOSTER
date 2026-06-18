@@ -336,6 +336,7 @@ function calculateResults(questions, answers) {
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 const OPTION_KEYS   = ['optionA', 'optionB', 'optionC', 'optionD'];
 const ACTIVE_QUIZ_SESSION_KEY = 'ssc_active_quiz_session';
+const ACTIVE_QUIZ_RELOAD_PENDING_KEY = 'ssc_active_quiz_reload_pending';
 const QUIZ_SESSION_EXPIRY_MS = 60 * 60 * 1000;
 const QUESTION_DURATION_SECONDS = 30;
 const VALID_SOURCE_SCREENS = new Set(['dashboard', 'analysis', 'saved', 'history', 'daily_challenge', 'mentor_plan', 'unknown']);
@@ -392,12 +393,45 @@ function clearActiveQuizSession() {
   try {
     localStorage.removeItem(ACTIVE_QUIZ_SESSION_KEY);
   } catch {}
+  clearActiveQuizReloadPending();
 }
 
 function touchActiveQuizSession() {
   const session = readActiveQuizSession();
   if (!session || session.status !== 'in_progress') return;
   writeActiveQuizSession({ ...session, lastActivityAt: Date.now() });
+}
+
+function markActiveQuizReloadPending(session) {
+  if (typeof window === 'undefined' || !session || session.status !== 'in_progress') return;
+  try {
+    sessionStorage.setItem(ACTIVE_QUIZ_RELOAD_PENDING_KEY, JSON.stringify({
+      quizSessionId: session.quizSessionId || '',
+      markedAt: Date.now(),
+      path: window.location.pathname,
+    }));
+  } catch {}
+}
+
+function consumeActiveQuizReloadPending(session) {
+  if (typeof window === 'undefined' || !session) return false;
+  try {
+    const raw = sessionStorage.getItem(ACTIVE_QUIZ_RELOAD_PENDING_KEY);
+    if (!raw) return false;
+    sessionStorage.removeItem(ACTIVE_QUIZ_RELOAD_PENDING_KEY);
+    const marker = JSON.parse(raw);
+    if (!marker?.markedAt || Date.now() - Number(marker.markedAt) > 5 * 60 * 1000) return false;
+    if (marker.quizSessionId && session.quizSessionId && marker.quizSessionId !== session.quizSessionId) return false;
+    return true;
+  } catch {
+    try { sessionStorage.removeItem(ACTIVE_QUIZ_RELOAD_PENDING_KEY); } catch {}
+    return false;
+  }
+}
+
+function clearActiveQuizReloadPending() {
+  if (typeof window === 'undefined') return;
+  try { sessionStorage.removeItem(ACTIVE_QUIZ_RELOAD_PENDING_KEY); } catch {}
 }
 
 function wasPageReload() {
@@ -578,8 +612,9 @@ export default function Quiz() {
 
   useEffect(() => {
     if (!router.isReady) return;
+    if (!recoveryChecked) return;
     if (!isSavedMode && !isHistoryMode && mode !== 'daily' && (!subject || !topic || !questionCount)) router.replace('/dashboard');
-  }, [router.isReady, subject, topic, questionCount, isSavedMode, isHistoryMode, mode, router]);
+  }, [router.isReady, recoveryChecked, subject, topic, questionCount, isSavedMode, isHistoryMode, mode, router]);
 
   useEffect(() => {
     if (!router.isReady || recoveryChecked) return;
@@ -611,7 +646,8 @@ export default function Quiz() {
       return;
     }
 
-    const shouldUseLeavePrompt = wasPageReload() || isHistoryQuizSession(session);
+    const wasInterruptedReload = consumeActiveQuizReloadPending(session);
+    const shouldUseLeavePrompt = wasPageReload() || wasInterruptedReload || isHistoryQuizSession(session);
     setRecoveryPrompt({ type: shouldUseLeavePrompt ? 'reload_exit' : 'resume', session });
     setLoading(false);
   }, [router.isReady, recoveryChecked]);
@@ -1096,19 +1132,10 @@ export default function Quiz() {
       if (allowQuizExitRef.current) return;
       const session = activeSessionRef.current || readActiveQuizSession();
       if (session?.status === 'in_progress') {
-        writeActiveQuizSession({ ...session, lastActivityAt: Date.now() });
+        const nextSession = { ...session, lastActivityAt: Date.now() };
+        writeActiveQuizSession(nextSession);
+        markActiveQuizReloadPending(nextSession);
       }
-      event.preventDefault();
-      event.returnValue = '';
-    };
-
-    const handleRefreshShortcut = (event) => {
-      const key = String(event.key || '').toLowerCase();
-      const isRefreshShortcut = event.key === 'F5' || ((event.ctrlKey || event.metaKey) && key === 'r');
-      if (!isRefreshShortcut || allowQuizExitRef.current) return;
-      event.preventDefault();
-      event.stopPropagation();
-      requestQuizExit(currentQuizUrl);
     };
 
     const handleRouteChangeStart = (url) => {
@@ -1129,14 +1156,12 @@ export default function Quiz() {
 
     window.history.pushState({ quizGuard: true }, '', currentQuizUrl);
     window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('keydown', handleRefreshShortcut, true);
     window.addEventListener('popstate', handlePopState, true);
     router.events.on('routeChangeStart', handleRouteChangeStart);
     router.beforePopState(({ as }) => requestQuizExit(as || '/dashboard'));
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('keydown', handleRefreshShortcut, true);
       window.removeEventListener('popstate', handlePopState, true);
       router.events.off('routeChangeStart', handleRouteChangeStart);
       router.beforePopState(() => true);

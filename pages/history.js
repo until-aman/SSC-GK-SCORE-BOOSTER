@@ -162,10 +162,125 @@ const HistoryHeaderIcon = () => (
   </svg>
 );
 
+const HistorySpotlightIllustration = () => (
+  <svg width="70" height="48" viewBox="0 0 70 48" fill="none" aria-hidden="true">
+    <path d="M17 31h38l-4 12H21L17 31Z" fill="#F9B857" opacity=".92" />
+    <path d="M21 17h26l10 14H17l4-14Z" fill="#FFE2A8" />
+    <path d="M33 9h21a3 3 0 0 1 3 3v21H30V12a3 3 0 0 1 3-3Z" fill="#F8FFFF" stroke="#7BDCD4" strokeWidth="1.6" />
+    <path d="M38 15h11M38 21h14M38 27h8" stroke="#8DA0B6" strokeWidth="1.8" strokeLinecap="round" />
+    <circle cx="30" cy="7" r="2" fill="#FF8A2A" />
+    <circle cx="62" cy="18" r="2" fill="#20BDB5" />
+    <path d="M10 24c3-3 6-3 9 0" stroke="#BDEDEA" strokeWidth="2" strokeLinecap="round" />
+    <path d="M47 6c2-3 5-4 8-2" stroke="#FFE2A8" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
+function HistorySpotlightCard() {
+  return (
+    <section className="history-spotlight-card" aria-label="History summary">
+      <div className="min-w-0 flex-1">
+        <h2 className="history-spotlight-title font-display">Track, review and improve every day.</h2>
+        <p className="history-spotlight-body">All your practice data in one place.</p>
+      </div>
+      <div className="history-spotlight-art">
+        <HistorySpotlightIllustration />
+      </div>
+    </section>
+  );
+}
+
+function HistoryActionPill() {
+  const labels = ['Review', 'Revise', 'Re-attempt', 'Track'];
+  return (
+    <div className="history-action-pill" aria-label="History actions">
+      {labels.map((label, index) => (
+        <span key={label} className="history-action-pill-item">
+          {label}
+          {index < labels.length - 1 ? <span className="history-action-pill-dot" aria-hidden="true">•</span> : null}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 const SHARED_STYLES = `
-  .history-intro { margin-bottom: 20px; }
-  .history-intro-title { font-size: 22px; font-weight: 900; color: ${TEXT_PRI}; margin: 0 0 4px; line-height: 1.2; }
-  .history-intro-body { font-size: 13px; color: ${TEXT_SEC}; margin: 0; line-height: 1.5; }
+  .history-spotlight-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 76px;
+    margin-bottom: 12px;
+    padding: 12px 12px 12px 14px;
+    border: 1px solid #BDEDEA;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #F6FFFD 0%, #ECFBF8 100%);
+    box-shadow: var(--ssc-shadow-card);
+    overflow: hidden;
+  }
+  .history-spotlight-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ssc-teal);
+    background: #FFFFFF;
+    border: 1px solid #D7F3F0;
+    flex-shrink: 0;
+  }
+  .history-spotlight-title {
+    font-size: 13px;
+    font-weight: 900;
+    color: ${TEXT_PRI};
+    margin: 0;
+    line-height: 1.25;
+  }
+  .history-spotlight-body {
+    font-size: 11px;
+    font-weight: 700;
+    color: ${TEXT_SEC};
+    margin: 4px 0 0;
+    line-height: 1.35;
+  }
+  .history-spotlight-art {
+    width: 70px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: -2px;
+  }
+  .history-action-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 38px;
+    margin-bottom: 14px;
+    padding: 8px 14px;
+    border: 1px solid ${BORDER};
+    border-radius: 16px;
+    background: rgba(255,255,255,0.92);
+    box-shadow: var(--ssc-shadow-card);
+    color: ${TEXT_SEC};
+    overflow: hidden;
+  }
+  .history-action-pill-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .history-action-pill-dot {
+    color: ${TEXT_MUT};
+    font-size: 11px;
+    line-height: 1;
+  }
   .history-list-card {
     background: ${BG_CARD};
     border: 1px solid ${BORDER};
@@ -367,11 +482,7 @@ function HistoryGuestState() {
         </div>
 
         <div className="history-guest-content">
-
-          <div className="history-intro">
-            <h2 className="history-intro-title font-display">Review &amp; Improve</h2>
-            <p className="history-intro-body">Choose what you want to review today</p>
-          </div>
+          <HistorySpotlightCard />
 
           <section className="history-list-card mb-5">
             {historyFeatures.map(feature => (
@@ -495,12 +606,8 @@ export default function HistoryPage() {
 
         <HistoryTopBar title="History" badge="PRACTICE ARCHIVE" icon={<HistoryHeaderIcon />} />
 
-        <main className="px-4 pt-[22px]">
-          <div className="history-intro">
-            <h2 className="history-intro-title font-display">Review &amp; Improve</h2>
-            <p className="history-intro-body">Choose what you want to review today</p>
-          </div>
-
+        <main className="px-4 pt-[14px]">
+          <HistorySpotlightCard />
           <section className="history-list-card">
             {historyFeatures.map(feature => (
               <button key={feature.title} type="button" className="history-feature-row" onClick={() => router.push(feature.route)}>

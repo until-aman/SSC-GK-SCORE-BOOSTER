@@ -13,10 +13,14 @@ const BackIcon = (
   </svg>
 );
 
-export default function HistoryTopBar({ title, badge = 'HISTORY', icon = DEFAULT_ICON, backHref = '/history', showBack = false, rightAction = null }) {
+export default function HistoryTopBar({ title, badge = 'HISTORY', icon = DEFAULT_ICON, backHref = '/history', showBack = false, rightAction = null, onBack = null }) {
   const router = useRouter();
 
   function handleBack() {
+    if (typeof onBack === 'function') {
+      onBack();
+      return;
+    }
     if (!showBack) {
       router.push(backHref);
       return;

@@ -1,4 +1,4 @@
-import { getTopicsBySubject, VALID_SUBJECTS } from '@/lib/sheets';
+import { getMasterSubjects, getSheetsClient, getTopicsBySubject, VALID_SUBJECTS } from '@/lib/sheets';
 import { getOrLoadServerCache } from '@/lib/server/serverCache';
 
 const TOPICS_TTL_MS = 12 * 60 * 60 * 1000; // 12h — catalog metadata changes rarely
@@ -13,14 +13,41 @@ function deriveSubjectCounts(allTopics) {
   return counts;
 }
 
+function normalizeMasterSubjects(rows = []) {
+  return rows.reduce((acc, row) => {
+    const subjectName = row.SubjectName || row.SubjectId;
+    if (!subjectName) return acc;
+    const meta = {
+      subjectId: row.SubjectId || subjectName,
+      subjectName,
+      displayOrder: Number(row.DisplayOrder) || 99,
+      icon: row.Icon || '',
+      shortName: row.ShortName || subjectName,
+    };
+    [subjectName, row.SubjectId, row.ShortName].filter(Boolean).forEach(key => {
+      acc[key] = meta;
+    });
+    return acc;
+  }, {});
+}
+
+async function loadSubjectMeta() {
+  return getOrLoadServerCache(
+    'master-subjects:active',
+    TOPICS_TTL_MS,
+    async () => normalizeMasterSubjects(await getMasterSubjects(await getSheetsClient())),
+  );
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { subject, collection = 'general', includeCounts } = req.query;
+    const { subject, collection = 'general', includeCounts, includeSubjectMeta } = req.query;
     const wantCounts = includeCounts === 'true' || !subject;
+    const subjectMeta = includeSubjectMeta === 'true' ? await loadSubjectMeta() : undefined;
 
     if (subject && !wantCounts) {
       // Single-subject request: one read, no counts loop. Server-cached per subject.
@@ -29,7 +56,7 @@ export default async function handler(req, res) {
         TOPICS_TTL_MS,
         () => getTopicsBySubject(subject, collection),
       );
-      return res.status(200).json({ topics, subjectCounts: {} });
+      return res.status(200).json({ topics, subjectCounts: {}, ...(subjectMeta ? { subjectMeta } : {}) });
     }
 
     // Counts requested (or no subject filter). getTopicsBySubject(undefined)
@@ -46,7 +73,7 @@ export default async function handler(req, res) {
     const topics = subject ? { [subject]: allTopics[subject] || {} } : allTopics;
 
     if (process.env.NODE_ENV !== 'production') console.debug('[apidiag] {"kind":"public-cache","event":"topics-derived-single-read"}');
-    return res.status(200).json({ topics, subjectCounts });
+    return res.status(200).json({ topics, subjectCounts, ...(subjectMeta ? { subjectMeta } : {}) });
   } catch (err) {
     console.error('Topics API error:', err);
     return res.status(500).json({ error: 'Failed to read data' });

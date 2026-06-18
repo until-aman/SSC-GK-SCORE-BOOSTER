@@ -14,6 +14,8 @@
 ## Modal behavior
 
 - [x] Browser reload detection added.
+- [x] Active reload `sessionStorage` marker added.
+- [x] Native `beforeunload` confirmation removed from the refresh path.
 - [x] Active unfinished quiz detection uses existing persisted quiz session.
 - [x] Refresh recovery shows `Leave quiz?`.
 - [x] Attempted count displays even at `0 / N attempted`.
@@ -21,6 +23,7 @@
 - [x] `Continue Quiz` restores stored session.
 - [x] `End & See Result` uses stored attempt result logic.
 - [x] No generic restart path added.
+- [x] Setup/dashboard fallback redirect waits for recovery check.
 
 ## Safety
 
@@ -35,5 +38,12 @@
 ## Validation
 
 - [x] `npm run test:quiz-refresh-leave-modal`
+- [x] `npm run test:mentor-quiz-launch`
 - [x] `npm run lint`
 - [x] `npm run build`
+
+## Production verification
+
+- [x] Previous refresh fix was merged in PR #105.
+- [x] Previous refresh fix exists on `main`.
+- [x] GitHub deployments show Production successfully deployed `56a61f7cd82cb145015f74edd9ca428d729efe16`, which contains PR #105.
