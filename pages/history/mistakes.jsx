@@ -1,10 +1,14 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
 import Loader from '@/components/ui/Loader';
-import { getUserCacheScope } from '@/lib/userCacheScope';
+import RefreshStatus from '@/components/ui/RefreshStatus';
+import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
+import { readCache, writeCache } from '@/lib/clientCache';
+import { buildUserScopedKey, getUserCacheScope } from '@/lib/userCacheScope';
 import { getHistoryQuestions, normalizeHistoryQuery } from '@/lib/data/historyClientData';
 import { toggleSavedQuestion } from '@/lib/data/savedData';
 
@@ -18,6 +22,7 @@ const RepeatedMistakesIcon = (
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 const OPTION_KEYS = ['optionA', 'optionB', 'optionC', 'optionD'];
+const REPEATED_MISTAKES_CACHE_TTL = CACHE_TTL.EIGHT_HOURS;
 
 const SUBJECT_META = {
   Polity: { subtitle: 'Constitution • Govt', accent: '#14B8A6', bg: '#E8F8F6', glyph: 'bookmark' },
@@ -113,8 +118,56 @@ function formatDuration(seconds) {
   return remaining ? `${minutes}m ${remaining}s` : `${minutes} min`;
 }
 
+function getRepeatedMistakesCacheKey(scope) {
+  return buildUserScopedKey(CACHE_KEYS.HISTORY_REPEATED_MISTAKES, scope || 'guest');
+}
+
 function getQuestionTimeSpent(item) {
   return Number(item.timeSpentSeconds || item.timeTakenSeconds || item.totalTimeTakenSeconds || 0);
+}
+
+function getAttemptBreakdown(item) {
+  const correctCount = Number(item.correctCount) || 0;
+  const wrongCount = Number(item.wrongCount) || 0;
+  const skippedCount = Number(item.skippedCount) || 0;
+  const totalAttempts = correctCount + wrongCount + skippedCount;
+  const pct = count => totalAttempts > 0 ? Math.round((count / totalAttempts) * 100) : 0;
+  return {
+    correctCount,
+    wrongCount,
+    skippedCount,
+    totalAttempts,
+    correctPct: pct(correctCount),
+    wrongPct: pct(wrongCount),
+    skippedPct: pct(skippedCount),
+  };
+}
+
+function AttemptSegmentBar({ stats }) {
+  if (!stats?.totalAttempts) return null;
+  return (
+    <div className="rm-segment-track">
+      {stats.correctPct > 0 && <span className="rm-segment-fill correct" style={{ width: `${stats.correctPct}%` }} />}
+      {stats.wrongPct > 0 && <span className="rm-segment-fill wrong" style={{ width: `${stats.wrongPct}%` }} />}
+      {stats.skippedPct > 0 && <span className="rm-segment-fill skipped" style={{ width: `${stats.skippedPct}%` }} />}
+    </div>
+  );
+}
+
+function AttemptStatsRow({ stats, includeTime, timeSpent, className = '' }) {
+  if (!stats?.totalAttempts && !timeSpent) return null;
+  return (
+    <div className={`rm-attempt-stats ${className}`}>
+      {includeTime && timeSpent && <span className="rm-stat-time">Time {timeSpent}</span>}
+      {stats?.totalAttempts > 0 && (
+        <>
+          <span className="rm-stat-correct">Correct {stats.correctCount}x ({stats.correctPct}%)</span>
+          <span className="rm-stat-wrong">Wrong {stats.wrongCount}x ({stats.wrongPct}%)</span>
+          <span className="rm-stat-skipped">Skipped {stats.skippedCount}x ({stats.skippedPct}%)</span>
+        </>
+      )}
+    </div>
+  );
 }
 
 function byCountThenName(a, b) {
@@ -152,11 +205,7 @@ function ChevronSVG() {
 }
 
 function QuestionCard({ item, onView, onToggleSave }) {
-  const correctCount = Number(item.correctCount) || 0;
-  const wrongCount = Number(item.wrongCount) || 0;
-  const skippedCount = Number(item.skippedCount) || 0;
-  const totalAttempts = correctCount + wrongCount + skippedCount;
-  const correctPct = totalAttempts > 0 ? Math.round(correctCount / totalAttempts * 100) : null;
+  const attemptStats = getAttemptBreakdown(item);
   const lastPracticed = formatDate(item.lastAttemptedAt);
   const timeSpent = formatDuration(getQuestionTimeSpent(item));
 
@@ -193,28 +242,12 @@ function QuestionCard({ item, onView, onToggleSave }) {
       <div className="rm-footer">
         <div className="rm-footer-copy">
           <span className="rm-meta">Last Practiced: {lastPracticed}</span>
-          {correctPct !== null && (
-            <span className="rm-correct-label"> &middot; Correct: {correctPct}%</span>
-          )}
         </div>
         <span className="rm-open-icon" aria-hidden="true"><ChevronSVG /></span>
       </div>
 
-      {correctPct !== null && (
-        <div className="sq-progress-track" style={{ marginTop: 8 }}>
-          <div className="sq-progress-fill" style={{
-            width: `${correctPct}%`,
-            background: correctPct >= 50 ? 'var(--ssc-success)' : 'var(--ssc-danger)',
-          }} />
-        </div>
-      )}
-
-      <div className="rm-attempt-stats">
-        {timeSpent && <span className="rm-stat-time">Time {timeSpent}</span>}
-        <span className="rm-stat-correct">Correct {correctCount}x</span>
-        <span className="rm-stat-wrong">Wrong {wrongCount}x</span>
-        <span className="rm-stat-skipped">Skipped {skippedCount}x</span>
-      </div>
+      <AttemptSegmentBar stats={attemptStats} />
+      <AttemptStatsRow stats={attemptStats} includeTime timeSpent={timeSpent} />
     </article>
   );
 }
@@ -238,11 +271,8 @@ function MistakeReviewCard({ questions, startIndex, onClose, onToggleSave }) {
   if (!questions.length || !q) return null;
 
   const total = questions.length;
-  const correctCount = Number(q.correctCount) || 0;
-  const wrongCount = Number(q.wrongCount) || 0;
-  const skippedCount = Number(q.skippedCount) || 0;
-  const totalAttempts = correctCount + wrongCount + skippedCount;
-  const correctPct = totalAttempts > 0 ? Math.round(correctCount / totalAttempts * 100) : null;
+  const attemptStats = getAttemptBreakdown(q);
+  const timeSpent = formatDuration(getQuestionTimeSpent(q));
   const lastPracticed = formatFullDate(q.lastAttemptedAt);
 
   function goNext() {
@@ -342,23 +372,14 @@ function MistakeReviewCard({ questions, startIndex, onClose, onToggleSave }) {
           {q.question || q.questionPreview}
         </p>
 
-        {correctPct !== null && (
+        {attemptStats.totalAttempts > 0 && (
           <div style={{ margin: '0 0 18px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 7 }}>
-              <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--ssc-text-muted)' }}>Performance</span>
-              <span style={{ fontSize: 11, fontWeight: 1000, color: correctPct >= 50 ? 'var(--ssc-success)' : 'var(--ssc-danger)' }}>Correct: {correctPct}%</span>
+            <div className="rm-performance-head">
+              <span>Performance</span>
+              <b>Correct: {attemptStats.correctPct}%</b>
             </div>
-            <div className="sq-progress-track">
-              <div className="sq-progress-fill" style={{
-                width: `${correctPct}%`,
-                background: correctPct >= 50 ? 'var(--ssc-success)' : 'var(--ssc-danger)',
-              }} />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8, flexWrap: 'wrap', fontSize: 10, fontWeight: 900 }}>
-              <span style={{ color: 'var(--ssc-success)' }}>Correct {correctCount}x</span>
-              <span style={{ color: 'var(--ssc-danger)' }}>Wrong {wrongCount}x</span>
-              <span style={{ color: 'var(--ssc-warning)' }}>Skipped {skippedCount}x</span>
-            </div>
+            <AttemptSegmentBar stats={attemptStats} />
+            <AttemptStatsRow stats={attemptStats} includeTime timeSpent={timeSpent} className="detail" />
           </div>
         )}
 
@@ -533,60 +554,89 @@ export default function RepeatedMistakesPage() {
   const router = useRouter();
   const [mistakes, setMistakes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState(null);
+  const [cacheMessage, setCacheMessage] = useState('');
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState('');
   const [questionSubject, setQuestionSubject] = useState('');
   const [questionTopic, setQuestionTopic] = useState('');
   const [sortOrder, setSortOrder] = useState('newest');
   const [reviewIndex, setReviewIndex] = useState(null);
+  const subjectFilterRefs = useRef({});
 
-  useEffect(() => {
-    let ignore = false;
+  const loadRepeatedMistakes = useCallback(async ({ forceRefresh = false, silent = false } = {}) => {
+    const cacheKey = getRepeatedMistakesCacheKey(cacheScope);
+    const cached = readCache(cacheKey, REPEATED_MISTAKES_CACHE_TTL);
 
-    async function loadRepeatedMistakes() {
-      setLoading(true);
+    if (!forceRefresh && cached?.data?.questions) {
+      setMistakes(cached.data.questions);
+      setUpdatedAt(cached.timestamp);
+      setCacheMessage(cached.isFresh ? '' : 'Showing saved data. Tap refresh for latest.');
+      setLoading(false);
       setError('');
-      try {
-        const allQuestions = [];
-        let page = 1;
-        let hasMore = true;
-
-        while (hasMore) {
-          const query = normalizeHistoryQuery({
-            answerStatus: 'wrong_skipped',
-            questionHistory: 'repeated',
-            limit: 50,
-            page,
-          });
-          const res = await getHistoryQuestions({ scope: cacheScope, query });
-          const json = res?.data;
-          if (!json?.success) {
-            throw new Error(json?.error || 'Failed to load repeated mistakes');
-          }
-
-          allQuestions.push(...(json.data?.questions || []));
-          hasMore = Boolean(json.data?.hasMore);
-          page += 1;
-        }
-
-        if (!ignore) setMistakes(allQuestions);
-      } catch (err) {
-        if (!ignore) {
-          setMistakes([]);
-          setError(err.message || 'Failed to load repeated mistakes');
-        }
-      } finally {
-        if (!ignore) setLoading(false);
-      }
+      return;
     }
 
-    loadRepeatedMistakes();
+    if (!silent) {
+      if (cached?.data?.questions) {
+        setMistakes(cached.data.questions);
+        setUpdatedAt(cached.timestamp);
+      } else {
+        setLoading(true);
+      }
+    }
+    setRefreshing(forceRefresh);
+    setError('');
+    setCacheMessage('');
 
-    return () => {
-      ignore = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    try {
+      const allQuestions = [];
+      let page = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const query = normalizeHistoryQuery({
+          status: 'wrong_skipped',
+          questionHistory: 'repeated',
+          limit: 50,
+          page,
+        });
+        const res = await getHistoryQuestions({ scope: cacheScope, query, forceRefresh });
+        const json = res?.data;
+        if (!json?.success) {
+          throw new Error(json?.error || 'Failed to load repeated mistakes');
+        }
+
+        allQuestions.push(...(json.data?.questions || []));
+        hasMore = Boolean(json.data?.hasMore);
+        page += 1;
+      }
+
+      const data = { questions: allQuestions };
+      writeCache(cacheKey, data, { ttlMs: REPEATED_MISTAKES_CACHE_TTL, source: 'history_questions' });
+      const freshCache = readCache(cacheKey, REPEATED_MISTAKES_CACHE_TTL);
+      setMistakes(allQuestions);
+      setUpdatedAt(freshCache?.timestamp || Date.now());
+      setCacheMessage('');
+    } catch (err) {
+      if (cached?.data?.questions) {
+        setMistakes(cached.data.questions);
+        setUpdatedAt(cached.timestamp);
+        setCacheMessage("Couldn't refresh right now. Showing saved data.");
+      } else {
+        setMistakes([]);
+        setError(err.message || 'Failed to load repeated mistakes');
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [cacheScope]);
+
+  useEffect(() => {
+    loadRepeatedMistakes();
+  }, [loadRepeatedMistakes]);
 
   useEffect(() => {
     setQuestionTopic('');
@@ -596,6 +646,13 @@ export default function RepeatedMistakesPage() {
   useEffect(() => {
     setReviewIndex(null);
   }, [questionTopic]);
+
+  useEffect(() => {
+    if (!questionSubject) return;
+    const activeButton = subjectFilterRefs.current[questionSubject];
+    if (!activeButton) return;
+    activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, [questionSubject, subjects]);
 
   const subjects = useMemo(() => buildCountOptions(mistakes, 'subject'), [mistakes]);
   const topics = useMemo(() => {
@@ -614,6 +671,13 @@ export default function RepeatedMistakesPage() {
     return filtered.sort((a, b) => {
       const aTime = new Date(a.lastAttemptedAt || 0).getTime();
       const bTime = new Date(b.lastAttemptedAt || 0).getTime();
+      if (sortOrder === 'most_repeated') {
+        const aStats = getAttemptBreakdown(a);
+        const bStats = getAttemptBreakdown(b);
+        return bStats.wrongCount - aStats.wrongCount
+          || bStats.totalAttempts - aStats.totalAttempts
+          || bTime - aTime;
+      }
       return sortOrder === 'oldest' ? aTime - bTime : bTime - aTime;
     });
   }, [mistakes, questionSubject, questionTopic, sortOrder]);
@@ -677,7 +741,8 @@ export default function RepeatedMistakesPage() {
   }
 
   const styles = `
-    .history-shell{padding:16px 12px calc(104px + env(safe-area-inset-bottom))}
+    .history-shell{padding:16px 12px 20px}
+    .history-shell.filtered{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
     .intro-block{margin-bottom:12px}.intro-subtitle{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:0}
     .history-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
     .question-card{padding:12px 14px}.question-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.question-kicker{color:var(--ssc-teal);font-size:11px;font-weight:900;margin:0;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.question-badge{font-size:10px;padding:4px 8px;max-width:132px;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.question-preview{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.38;margin:9px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.question-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;padding:8px 0 0;border-top:1px solid var(--ssc-border-soft);font-size:12px;font-weight:900;white-space:nowrap}.question-stat-row span+span:before{content:'';margin:0}.question-actions{display:grid;grid-template-columns:1fr .72fr 40px;gap:8px;margin-top:11px;align-items:center}.save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);display:flex;align-items:center;justify-content:center;transition:transform .12s ease,background .12s ease,border-color .12s ease}.save-icon-btn:active{transform:scale(.92)}.save-icon-btn.saved{border-color:rgba(14,165,164,.34);background:var(--ssc-teal-soft)}
@@ -685,7 +750,7 @@ export default function RepeatedMistakesPage() {
     .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;min-height:40px}.primary-btn{border:0;background:linear-gradient(135deg,#ff7a1a,#ff4d00);color:white;box-shadow:var(--ssc-shadow-cta)}.secondary-btn{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-teal)}.primary-btn:disabled,.secondary-btn:disabled{opacity:.55;cursor:default;box-shadow:none}
     .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}.divider{height:1px;background:var(--ssc-border-soft);margin:12px 0}.question-expanded{overflow:hidden;margin-top:12px;padding:11px;border:1px solid var(--ssc-border-soft);border-radius:14px;background:var(--ssc-surface-soft)}.expanded-block{margin-bottom:10px}.expanded-label{color:var(--ssc-text-muted);font-size:10px;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px}.expanded-question{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.48;margin:0}.expanded-attempt{color:var(--ssc-text-muted);font-size:11px;font-weight:800;margin:9px 0 0}.answer-detail-grid{display:grid;gap:8px}.answer-detail{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface);border-radius:12px;padding:9px 10px}.answer-detail span{display:block;color:var(--ssc-text-muted);font-size:10px;font-weight:900;margin-bottom:4px}.answer-detail b{display:block;font-size:12px;line-height:1.4}.answer-detail.correct{background:var(--ssc-success-soft);border-color:rgba(18,184,134,.28)}.answer-detail.wrong{background:var(--ssc-danger-soft);border-color:rgba(239,68,68,.28)}.answer-detail.correct b{color:var(--ssc-success)}.answer-detail.wrong b{color:var(--ssc-danger)}.answer-detail.skipped b{color:var(--ssc-text-secondary)}
     .mistake-filter-group{margin-bottom:16px}.mistake-filter-group .chip-row{padding-bottom:0}.mistake-filter-label{display:block;margin:0 0 10px 2px;color:var(--ssc-text-primary);font-size:12px;font-weight:900;line-height:1}.active-filter-summary{margin:-2px 2px 14px;color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.4}
-    .rm-summary-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);border:1px solid #BDEDEA;border-radius:16px;padding:15px 16px;margin:12px 0 18px;box-shadow:var(--ssc-shadow-card)}
+    .rm-summary-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);border:1px solid #BDEDEA;border-radius:16px;padding:15px 16px;margin:12px 0 0;box-shadow:var(--ssc-shadow-card)}
     .rm-summary-top{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
     .rm-summary-icon{width:42px;height:42px;border-radius:13px;background:#E8F8F6;border:1px solid rgba(14,165,164,0.20);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
     .rm-summary-count{font-size:24px;font-weight:1000;color:var(--ssc-teal);line-height:1;font-family:var(--font-display);margin:0}
@@ -693,6 +758,8 @@ export default function RepeatedMistakesPage() {
     .rm-summary-cta{width:50%;max-width:180px;min-width:132px;height:42px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:#fff;font-size:13px;font-weight:1000;font-family:inherit;box-shadow:var(--ssc-shadow-cta);cursor:pointer;white-space:nowrap;flex-shrink:0}
     .rm-summary-cta:disabled{opacity:.62;cursor:default;box-shadow:none}
     .rm-detail-filters{padding:0 0 12px}
+    .rm-refresh-row{display:flex;justify-content:flex-end;margin:-2px 0 10px;min-height:18px}
+    .rm-cache-message{margin:0 0 10px;color:var(--ssc-text-secondary);font-size:11px;font-weight:800;text-align:right}
     .rm-filter-label{font-size:12px;font-weight:1000;color:var(--ssc-text-primary);margin:4px 0 10px}
     .rm-control-row{display:flex;align-items:flex-start;justify-content:flex-start;flex-direction:column;padding:2px 0 0;margin-bottom:20px}
     .rm-sort-group{display:flex;align-items:flex-start;flex-direction:column;gap:0}
@@ -700,6 +767,7 @@ export default function RepeatedMistakesPage() {
     .rm-sort-pills{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding:0 0 2px;max-width:100%}
     .rm-sort-pills::-webkit-scrollbar{display:none}
     .rm-subject-row{display:flex;align-items:center;gap:12px;background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:14px;padding:10px 12px;margin-bottom:8px;box-shadow:0 8px 20px rgba(16,32,51,.06);cursor:pointer}
+    .rm-overview-list{padding-top:14px}
     .rm-subject-row:active{transform:scale(.99)}
     .rm-subject-icon{width:34px;height:34px;border-radius:11px;border:1px solid rgba(14,165,164,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}
     .rm-subject-copy{min-width:0;flex:1}
@@ -722,7 +790,15 @@ export default function RepeatedMistakesPage() {
     .rm-card-bookmark-btn{height:22px;width:28px;border:0;background:transparent;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;color:var(--ssc-teal);margin-top:0}
     .sq-progress-track{height:3px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden;margin-right:2px}
     .sq-progress-fill{height:100%;border-radius:99px}
+    .rm-performance-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;font-size:11px;font-weight:900;color:var(--ssc-text-muted)}
+    .rm-performance-head b{font-size:11px;font-weight:1000;color:var(--ssc-danger)}
+    .rm-segment-track{height:3px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden;margin:8px 2px 0 0;display:flex}
+    .rm-segment-fill{height:100%;display:block;flex:0 0 auto}
+    .rm-segment-fill.correct{background:var(--ssc-success)}
+    .rm-segment-fill.wrong{background:var(--ssc-danger)}
+    .rm-segment-fill.skipped{background:var(--ssc-border-soft)}
     .rm-attempt-stats{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:9px;font-weight:900;white-space:nowrap;overflow:hidden}
+    .rm-attempt-stats.detail{font-size:10px;gap:12px;flex-wrap:wrap;white-space:normal;overflow:visible;margin-top:9px}
     .rm-stat-time{color:var(--ssc-text-secondary)}
     .rm-stat-correct{color:var(--ssc-success)}
     .rm-stat-wrong{color:var(--ssc-danger)}
@@ -730,13 +806,32 @@ export default function RepeatedMistakesPage() {
   `;
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-28">
+    <div
+      className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)]"
+      style={{ paddingBottom: !questionSubject && !loading && !error ? 20 : 112 }}
+    >
       <Head><title>Repeated Mistakes - SSC GK Score Booster</title></Head>
       <style suppressHydrationWarning>{styles}</style>
       <HistoryTopBar title="Repeated Mistakes" icon={RepeatedMistakesIcon} showBack />
-      <main className="history-shell">
+      <main className={`history-shell ${questionSubject ? 'filtered' : ''}`}>
+        {(updatedAt || refreshing || mistakes.length > 0) && (
+          <div className="rm-refresh-row">
+            <RefreshStatus
+              updatedAt={updatedAt}
+              isRefreshing={refreshing}
+              onRefresh={() => loadRepeatedMistakes({ forceRefresh: true })}
+              refreshText={
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10" />
+                  <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
+                </svg>
+              }
+            />
+          </div>
+        )}
+        {cacheMessage && <p className="rm-cache-message">{cacheMessage}</p>}
         {loading ? <Loader card size="md" label="Loading mistakes..." /> : error ? (
-          <EmptyPanel title="Couldn't load repeated mistakes." body={error} action="Retry" onClick={() => router.reload()} />
+          <EmptyPanel title="Couldn't load repeated mistakes." body={error} action="Retry" onClick={() => loadRepeatedMistakes({ forceRefresh: true })} />
         ) : (
           <>
             {!questionSubject ? (
@@ -769,27 +864,29 @@ export default function RepeatedMistakesPage() {
                 </div>
 
                 {/* Subject category rows */}
-                {subjects.map(subj => {
-                  const meta = getSubjectMeta(subj.name);
-                  return (
-                    <div
-                      key={subj.name}
-                      className="rm-subject-row"
-                      onClick={() => setQuestionSubject(subj.name)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={e => e.key === 'Enter' && setQuestionSubject(subj.name)}
-                    >
-                      <SubjectIcon subject={subj.name} />
-                      <div className="rm-subject-copy">
-                        <span className="rm-subject-name">{subj.name}</span>
-                        <span className="rm-subject-subtitle">{meta.subtitle}</span>
+                <div className="rm-overview-list">
+                  {subjects.map(subj => {
+                    const meta = getSubjectMeta(subj.name);
+                    return (
+                      <div
+                        key={subj.name}
+                        className="rm-subject-row"
+                        onClick={() => setQuestionSubject(subj.name)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={e => e.key === 'Enter' && setQuestionSubject(subj.name)}
+                      >
+                        <SubjectIcon subject={subj.name} />
+                        <div className="rm-subject-copy">
+                          <span className="rm-subject-name">{subj.name}</span>
+                          <span className="rm-subject-subtitle">{meta.subtitle}</span>
+                        </div>
+                        <span className="rm-subject-count">{subj.count}</span>
+                        <ChevronSVG />
                       </div>
-                      <span className="rm-subject-count">{subj.count}</span>
-                      <ChevronSVG />
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
 
                 {mistakes.length === 0 && (
                   <EmptyPanel
@@ -832,6 +929,7 @@ export default function RepeatedMistakesPage() {
                   <div className="chip-row" aria-label="Repeated mistake subjects">
                     <button
                       type="button"
+                      ref={el => { subjectFilterRefs.current.All = el; }}
                       className={`chip ${!questionSubject ? 'active' : ''}`}
                       onClick={() => setQuestionSubject('')}
                     >
@@ -841,6 +939,7 @@ export default function RepeatedMistakesPage() {
                       <button
                         key={item.name}
                         type="button"
+                        ref={el => { subjectFilterRefs.current[item.name] = el; }}
                         className={`chip ${questionSubject === item.name ? 'active' : ''}`}
                         onClick={() => setQuestionSubject(item.name)}
                       >
@@ -877,6 +976,7 @@ export default function RepeatedMistakesPage() {
                         {[
                           ['newest', 'Recent First'],
                           ['oldest', 'Oldest First'],
+                          ['most_repeated', 'Most Repeated'],
                         ].map(([value, label]) => (
                           <button
                             key={value}
