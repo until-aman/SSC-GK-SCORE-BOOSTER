@@ -1,107 +1,216 @@
-# SSC GK Quiz App
+# SSC-GK Score Booster
 
-A **mobile-first, web-only SSC GK quiz application** built with Next.js 14. Users (SSC exam aspirants in India) can take timed multiple-choice quizzes on subjects like Polity, History, Geography, etc. Questions come exclusively from a Google Sheet. An AI (Gemini 1.5 Flash) acts as a mentor — it explains answers and gives performance feedback, but never generates questions.
+A comprehensive GK practice, revision, history, mistake-tracking, and analysis platform for SSC exam students. Built with Next.js 14, it offers a complete learning ecosystem with AI mentorship, gamification, and detailed performance analytics.
 
-## Features
+## Overview
 
-- **8 Subjects**: Polity, Geography, Economics, History, Physics, Chemistry, Biology, Current Affairs
-- **Google Sheets Backend**: Questions and scores stored in Google Sheets
-- **AI Mentor**: Gemini 1.5 Flash explains wrong answers, gives tips for skipped questions, and provides performance summaries
-- **Google Sign In**: Track scores and appear on the global leaderboard
-- **Guest Mode**: Play without signing in (scores won't be saved)
-- **Timed Quiz**: 20-second countdown per question with visual timer
-- **SSC Scoring**: +2 correct, -0.5 incorrect, 0 skipped
-- **Global Leaderboard**: Ranked by total score, accuracy, and questions attempted
+SSC-GK Score Booster is a mobile-first web application designed specifically for SSC (Staff Selection Commission) exam aspirants in India. The platform provides timed multiple-choice quizzes across 8 subjects, featuring an AI mentor that explains answers and provides personalized feedback. All questions are sourced from a Google Sheet database, ensuring up-to-date and exam-relevant content.
+
+## Product Vision
+
+This is a GK practice, revision, history, mistake-tracking, and analysis platform for SSC exam students. The application combines traditional quiz-based learning with modern AI mentorship to create a personalized study experience that helps students improve their scores through consistent practice, mistake analysis, and targeted preparation.
+
+## Core Features
+
+* GK quiz practice
+* Subject/topic-based quizzes
+* Daily challenge
+* SSC PYQ practice
+* Quiz result and review
+* Quiz history
+* Saved questions
+* Coins/gamification
+* Leaderboard/community
+* Mentor/analysis flows
+* Google login/guest mode
+* AI explanations or AI mentor
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 14 (Pages Router) |
-| Styling | Tailwind CSS |
-| Auth | NextAuth.js v4 with Google OAuth |
-| Database | Google Sheets (via googleapis) |
-| AI Mentor | Gemini 1.5 Flash REST API |
-| Deployment | Vercel (free tier) |
+* Next.js
+* React
+* Tailwind CSS
+* NextAuth
+* Google Sheets API
+* Vercel deployment
 
-## Setup Instructions
+## App Architecture
 
-### 1. Create a Google Sheet
+| Folder | Purpose |
+|--------|---------|
+| pages | Main application routes (landing, quiz, dashboard, mentor, history, etc.) |
+| pages/api | API endpoints for data fetching, mutations, and integrations |
+| components | Reusable React components (UI primitives, cards, buttons, etc.) |
+| lib | Server-side logic, services, utilities, and business logic |
+| lib/data | Data fetching functions for questions, scores, mentor, etc. |
+| lib/mentor | Mentor-specific logic, task management, and AI integration |
+| lib/mentorCopy | Pre-written mentor messages and conversation flows |
+| styles | Global CSS (globals.css) |
+| scripts | Test scripts for mentor functionality |
 
-1. Go to [Google Sheets](https://sheets.google.com)
-2. Create a new spreadsheet
-3. Add **3 tabs** named exactly: `Questions`, `Scores`, `Feedback`
-4. In the **Questions** tab, add these headers in Row 1:
-   - A: ID | B: Subject | C: Topic | D: Question | E: OptionA | F: OptionB | G: OptionC | H: OptionD | I: CorrectOption | J: Explanation
-5. In the **Scores** tab, add these headers in Row 1:
-   - A: timestamp | B: email | C: name | D: correctAnswers | E: incorrectAnswers | F: skipped | G: totalQuestions | H: rawScore | I: subject | J: topic
+## Main User Flows
 
-### 2. Enable Google APIs
+### 1. Guest user flow
+* Access landing page with guest sign-in option
+* Start quizzes without authentication
+* Limited features (scores not saved, no history)
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Create a new project (or use existing)
-3. Enable **Google Sheets API** and **Google Drive API**
+### 2. Signed-in user flow
+* Full access to all features
+* Scores and progress saved to Google Sheets
+* Personalized mentor plan and analysis
+* Coins, streak, and leaderboard tracking
 
-### 3. Create Google OAuth Credentials
+### 3. Quiz start flow
+* From dashboard: Daily challenge or subject selection
+* From mentor: Task-based practice recommendations
+* From history: Re-attempt previous quizzes
+* From saved: Review bookmarked questions
 
-1. Go to APIs & Services → Credentials → Create OAuth 2.0 Client ID
-2. Application type: **Web application**
-3. Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
-4. Copy the **Client ID** and **Client Secret**
+### 4. Quiz attempt flow
+* 20-second timer per question with visual countdown
+* Real-time answer submission
+* Immediate feedback with explanation
+* Score calculation (+2/-0.5/0)
 
-### 4. Create a Service Account
+### 5. Quiz completion/result flow
+* Results page with detailed breakdown
+* AI mentor explanations for wrong answers
+* Performance insights and recommendations
+* Options to save for later review
 
-1. Go to IAM & Admin → Service Accounts → Create Service Account
-2. Give it any name (e.g. "ssc-quiz-sheets")
-3. Click the service account → Keys tab → Add Key → JSON
-4. Download the JSON key file
-5. Open the JSON file, copy the entire contents, minify to one line (use [jsonformatter.org/json-minify](https://jsonformatter.org/json-minify))
-6. **Share your Google Sheet** with the service account email (found in the JSON as `client_email`) — give it **Editor** access
+### 6. History/review flow
+* Quiz history with performance metrics
+* Repeated mistakes analysis
+* Saved questions management
+* Coins and streak tracking
 
-### 5. Get a Gemini API Key
+### 7. Saved questions flow
+* Bookmark questions for later practice
+* Create custom question banks
+* Cross-device synchronization
 
-1. Go to [aistudio.google.com](https://aistudio.google.com)
-2. Click "Get API Key" → Create API Key
+### 8. Dashboard flow
+* Main hub with stats and quick actions
+* Daily challenge showcase
+* Subject performance overview
+* Recent activity feed
 
-### 6. Configure Environment
+### 9. Mentor/analysis flow
+* Personalized daily task plan
+* Subject and topic recommendations
+* Performance analysis and insights
+* Confidence and coverage checks
 
-1. Open `.env.local` in the project root
-2. Fill in all values:
+## API Overview
 
-```
-GOOGLE_CLIENT_ID=your_client_id
-GOOGLE_CLIENT_SECRET=your_client_secret
-NEXTAUTH_SECRET=your_random_secret
-NEXTAUTH_URL=http://localhost:3000
-GOOGLE_SHEET_ID=your_sheet_id
-GOOGLE_SERVICE_ACCOUNT_KEY={"type":"service_account",...}
-GEMINI_API_KEY=your_gemini_key
-```
+| API Route | Purpose | Reads/Writes | Data Source |
+|-----------|---------|--------------|-------------|
+| /api/questions | Fetch questions by subject/topic | Read | Google Sheets |
+| /api/score | Submit quiz results | Write | Google Sheets |
+| /api/score-history | Save quiz history | Write | Google Sheets |
+| /api/saved-questions | Manage saved questions | Read/Write | Google Sheets |
+| /api/mentor/plan | Fetch mentor task plan | Read | Google Sheets |
+| /api/mentor/task-action | Complete mentor tasks | Write | Google Sheets |
+| /api/leaderboard | Get weekly leaderboard | Read | Google Sheets |
+| /api/daily-challenge | Get daily challenge questions | Read | Google Sheets |
+| /api/analysis-activity | Get user activity data | Read | Google Sheets |
+| /api/ai/explain | Get AI explanations | Read | Gemini API |
+| /api/ai/tip | Get AI tips | Read | Gemini API |
 
-> To generate `NEXTAUTH_SECRET`, run: `openssl rand -base64 32`
+## Data Storage
 
-### 7. Run the App
+* Google Sheets tabs: `Questions`, `Scores`, `Feedback`
+* localStorage/sessionStorage: Guest session data and quiz state
+* Auth/session data: User profiles and preferences
 
-```bash
-npm install
-npm run dev
-```
+## Environment Variables
 
-Open [http://localhost:3000](http://localhost:3000)
+| Variable | Purpose |
+|----------|---------|
+| GOOGLE_CLIENT_ID | Google OAuth Client ID |
+| GOOGLE_CLIENT_SECRET | Google OAuth Client Secret |
+| NEXTAUTH_SECRET | NextAuth secret key |
+| NEXTAUTH_URL | NextAuth base URL |
+| GOOGLE_SHEET_ID | Google Sheet ID for data |
+| GOOGLE_SERVICE_ACCOUNT_KEY | Service account JSON key |
+| GEMINI_API_KEY | Gemini AI API key |
 
-## Vercel Deployment
+## Local Setup
 
-1. Go to [vercel.com](https://vercel.com) → Import your project folder
-2. Add all 6 environment variables in the Vercel dashboard
-3. Change `NEXTAUTH_URL` to your Vercel domain (e.g. `https://ssc-quiz.vercel.app`)
-4. Add the Vercel domain to your Google OAuth authorized redirect URIs
+1. Clone repo
+2. Install dependencies
+3. Add environment variables
+4. Run development server
+5. Open localhost
 
-## Scoring Rules
+## Scripts
 
-- ✅ Correct answer: **+2 marks**
-- ❌ Incorrect answer: **-0.5 marks**
-- ⏭️ Skipped: **0 marks**
+| Command | Purpose |
+|---------|---------|
+| dev | Run Next.js development server |
+| build | Build for production |
+| start | Start production server |
+| lint | Run ESLint |
+| test:mentor-repo | Test mentor repository |
+| test:mentor-plan-day | Test mentor plan generation |
+| test:mentor-state-machine | Test mentor task state machine |
+| test:mentor-rollover | Test mentor daily rollover |
+| test:mentor-sheets | Test mentor sheets migration |
+| test:mentor-sheets-writer | Test mentor sheets writer |
+| test:mentor-sheets-retry | Test mentor sheets retry logic |
+| test:mentor-background-rollover | Test mentor background rollover |
+| test:mentor-mutation-service | Test mentor mutation service |
+| test:mentor-read-overlay | Test mentor read overlay |
+| test:mentor-v2-postpone | Test mentor v2 postpone |
+| test:mentor-v2-cohort | Test mentor v2 cohort |
+| mentor:v2-monitor | Monitor mentor v2 mutations |
+| mentor:sheets-migration:dry-run | Dry run mentor sheets migration |
+| mentor:sheets-migration:write-plan | Write mentor sheets migration plan |
+| mentor:sheets-migration:apply | Apply mentor sheets migration |
+| test:mentor-pending-surfacing | Test mentor pending surfacing |
+| test:mentor-v2-resume | Test mentor v2 resume |
+| test:mentor-pending-ui | Test mentor pending UI |
+| test:mentor-v2-complete-design | Test mentor v2 complete design |
+| test:mentor-v2-complete | Test mentor v2 complete |
+| test:mentor-route-readiness | Test mentor route readiness |
+| test:mentor-monitor-alerts | Test mentor monitor alerts |
+| test:mentor-allow-all | Test mentor allow all |
+| test:mentor-monitor-workflow | Test mentor monitor workflow |
+| test:mentor-cron-monitor | Test mentor cron monitor |
+| test:quiz-refresh-leave-modal | Test quiz refresh leave modal |
+| test:mentor-quiz-launch | Test mentor quiz launch |
+| test:mentor-rollover-dry-run | Test mentor rollover dry run |
+| test:mentor-rollover-write | Test mentor rollover write |
 
-## License
+## Current Product Priorities
 
-MIT
+* make flows more reliable
+* improve quiz refresh/back behavior
+* unify UI across tabs
+* reduce duplicate API calls
+* improve mobile-first premium design
+* strengthen history, saved questions, analysis, and mentor flows
+
+## Notes for Future Contributors / AI Coding Agents
+
+* Understand the repo before editing.
+* Do not change Google Sheets schema casually.
+* Do not rename API routes casually.
+* Keep quiz state, history writes, coins, and auth flows stable.
+* Make small targeted changes.
+* After every change, list files changed and manual testing steps.
+
+## Manual Testing Checklist
+
+* Start quiz as guest
+* Start quiz as signed-in user
+* Submit quiz
+* Review result
+* Refresh during quiz
+* Press back during quiz
+* Check history
+* Save/unsave question
+* Open dashboard
+* Open analysis/mentor if present
+* Check mobile layout
