@@ -251,14 +251,14 @@ function QuizCard({ session, onReview, onPractice }) {
               Practice Mistakes
             </button>
             <button type="button" className="secondary-btn quiz-review-btn" onClick={() => onReview(session)}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: 5, verticalAlign: 'middle' }}><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: 5, verticalAlign: 'middle' }} aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
               Review Quiz
             </button>
           </>
         ) : (
           <>
             <button type="button" className="secondary-btn" onClick={() => onReview(session)}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: 5, verticalAlign: 'middle' }}><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: 5, verticalAlign: 'middle' }} aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
               Review Quiz
             </button>
             <button type="button" className="secondary-btn" disabled>Practice Mistakes</button>
@@ -960,10 +960,11 @@ export default function HistoryPage() {
     .intro-subtitle{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:0 0 16px}
     .summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 16px}
     .stat-card,.history-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;box-shadow:var(--ssc-shadow-card)}
-    .stat-card{padding:14px 12px;display:flex;flex-direction:column;gap:4px}
-    .stat-card-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:6px}
-    .stat-card strong{display:block;color:var(--ssc-text-primary);font-size:22px;line-height:1;font-weight:900}
-    .stat-card span{display:block;color:var(--ssc-text-secondary);font-size:11px;margin-top:2px;font-weight:700}
+    .stat-card{padding:12px;display:flex;align-items:center;gap:10px;min-height:66px}
+    .stat-card-icon{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+    .stat-card-copy{min-width:0}
+    .stat-card strong{display:block;color:var(--ssc-text-primary);font-size:21px;line-height:1;font-weight:900}
+    .stat-card span{display:block;color:var(--ssc-text-secondary);font-size:11px;margin-top:4px;font-weight:800;white-space:nowrap}
     .history-card{padding:16px;margin-bottom:12px}
     .history-card .text-white{color:var(--ssc-text-primary)}
     .history-card .text-slate-300,.history-card .text-slate-400,.history-card .text-slate-500{color:var(--ssc-text-secondary)}
@@ -985,9 +986,9 @@ export default function HistoryPage() {
 
     .question-card{padding:12px 14px;cursor:pointer}.question-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}.question-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.question-kicker{color:var(--ssc-teal);background:var(--ssc-teal-soft);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;margin:0;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.question-badge{font-size:10px;padding:4px 8px;max-width:132px;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.question-chevron{display:inline-flex;height:24px;width:24px;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-text-secondary);font-size:18px;font-weight:900}.question-preview{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.38;margin:9px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.question-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;padding:8px 0 0;border-top:1px solid var(--ssc-border-soft);font-size:12px;font-weight:900;white-space:nowrap}.question-stat-row .text-red-300{color:var(--ssc-danger)}.question-stat-row .text-slate-400{color:var(--ssc-text-muted)}.question-stat-row span+span:before{content:'';margin:0}.question-actions{display:flex;justify-content:flex-end;margin-top:11px;align-items:center}.save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);display:flex;align-items:center;justify-content:center;transition:transform .12s ease,background .12s ease,border-color .12s ease}.save-icon-btn:active{transform:scale(.92)}.save-icon-btn.saved{border-color:rgba(14,165,164,.36);background:var(--ssc-teal-soft)}
 
-    .mode-selector{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 0 2px;margin-bottom:14px;scrollbar-width:none;-ms-overflow-style:none}.mode-selector::-webkit-scrollbar{display:none}.mode-selector button{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-family:inherit;font-size:13px;font-weight:800;height:42px;min-width:116px;padding:0 14px;white-space:nowrap;flex:0 0 116px;cursor:pointer;text-align:center}.mode-selector button.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 5px 16px rgba(14,165,164,.18)}
+    .mode-selector{display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;padding:4px;margin:0 0 12px;background:rgba(255,255,255,.72);border:1px solid var(--ssc-border-soft);border-radius:12px;box-shadow:0 6px 18px rgba(16,32,51,.05);scrollbar-width:none;-ms-overflow-style:none}.mode-selector::-webkit-scrollbar{display:none}.mode-selector button{border:0;border-radius:9px;background:transparent;color:var(--ssc-text-secondary);font-family:inherit;font-size:10px;font-weight:900;padding:7px 12px;white-space:nowrap;flex:0 0 auto;cursor:pointer;text-align:center}.mode-selector button.active{background:var(--ssc-teal);color:white;box-shadow:0 6px 14px rgba(14,165,164,.18)}
 
-    .chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin-left:-16px;margin-right:-16px;padding:0 16px 14px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.filter-chip-row{margin-bottom:0;padding-bottom:14px}.quiz-filter-chip-row{margin:0;padding:0 8px 0 0;flex:1}.sheet-chip-row{margin-left:0;margin-right:0;padding:0 0 4px;flex-wrap:wrap}.chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:800;min-height:36px;padding:0 14px;white-space:nowrap;text-transform:capitalize;flex:0 0 auto;cursor:pointer}.chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 5px 16px rgba(14,165,164,.14)}
+    .chip-row{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;margin-left:-16px;margin-right:-16px;padding:0 16px 14px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.filter-chip-row{margin-bottom:0;padding-bottom:10px}.quiz-filter-chip-row{margin:0;padding:0 8px 0 0;flex:1}.sheet-chip-row{margin-left:0;margin-right:0;padding:0 0 4px;flex-wrap:wrap}.chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:rgba(255,255,255,.82);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:6px 11px;white-space:nowrap;text-transform:capitalize;flex:0 0 auto;cursor:pointer;box-shadow:0 4px 10px rgba(16,32,51,.035)}.chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 6px 14px rgba(14,165,164,.16)}
 
     .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;min-height:40px}
     .primary-btn{border:0;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;box-shadow:var(--ssc-shadow-cta)}
@@ -1013,8 +1014,12 @@ export default function HistoryPage() {
     .empty-state-cta{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:14px;padding:13px 22px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:var(--ssc-shadow-cta)}
 
     .filter-trigger-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-    .filter-trigger-btn{display:flex;align-items:center;gap:6px;border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:800;height:36px;padding:0 12px;cursor:pointer;font-family:inherit}
+    .filter-trigger-btn{display:flex;align-items:center;gap:5px;border:1px solid var(--ssc-border-soft);border-radius:999px;background:rgba(255,255,255,.82);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:6px 11px;cursor:pointer;font-family:inherit;box-shadow:0 4px 10px rgba(16,32,51,.035)}
     .filter-trigger-btn.has-filters{border-color:var(--ssc-teal);color:var(--ssc-teal);background:var(--ssc-teal-soft)}
+    .history-refresh-btn{width:42px;height:42px;border-radius:999px;border:1px solid #BFEAE5;background:#ECFDFB;color:#0EA5A4;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 20px rgba(14,165,164,.10);transition:background .16s ease,border-color .16s ease,color .16s ease,transform .12s ease}
+    .history-refresh-btn:hover{background:#DDF8F4;border-color:#8EDCD4;color:#0D9488}
+    .history-refresh-btn:active{transform:scale(.96)}
+    .history-refresh-btn:focus-visible{outline:3px solid rgba(14,165,164,.24);outline-offset:2px}
 
     @media(max-width:380px){.mode-long{display:none}}@media(min-width:381px){.mode-short{display:none}}
   `;
@@ -1033,11 +1038,12 @@ export default function HistoryPage() {
             <button
               type="button"
               onClick={() => { loadSummary(); loadQuizzes(quizExpanded ? 10 : 3, quickFilter, appliedCustomRange); }}
-              style={{ width: 36, height: 36, borderRadius: 999, border: '1px solid var(--ssc-border-soft)', background: 'var(--ssc-surface-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              className="history-refresh-btn"
               aria-label="Refresh quiz history"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-secondary)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
               </svg>
             </button>
           }
@@ -1074,31 +1080,19 @@ export default function HistoryPage() {
                   <div className="stat-card-icon" style={{ background: 'var(--ssc-teal-soft)' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
                   </div>
-                  <strong className="font-display"><CountUp value={summary?.totalQuizzes || 0} /></strong>
-                  <span>Attempts</span>
+                  <div className="stat-card-copy">
+                    <strong className="font-display"><CountUp value={summary?.totalQuizzes || 0} /></strong>
+                    <span>Attempts</span>
+                  </div>
                 </div>
                 <div className="stat-card">
                   <div className="stat-card-icon" style={{ background: 'rgba(246,179,49,0.14)' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-coin)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
                   </div>
-                  <strong className="font-display"><CountUp value={summary?.totalQuestions || 0} /></strong>
-                  <span>Questions</span>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-card-icon" style={{ background: 'var(--ssc-success-soft)' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-success)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  <div className="stat-card-copy">
+                    <strong className="font-display"><CountUp value={summary?.totalQuestions || 0} /></strong>
+                    <span>Questions</span>
                   </div>
-                  <strong className="font-display"><CountUp value={summary?.savedCount || 0} /></strong>
-                  <span>Saved Qs</span>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-card-icon" style={{ background: 'var(--ssc-danger-soft)' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-                  </div>
-                  <strong className="font-display">
-                    <CountUp value={(quizData.sessions || []).filter(s => s.badgeTone === 'red' || s.badgeTone === 'orange').length} />
-                  </strong>
-                  <span>Weak Recent</span>
                 </div>
               </section>
 
@@ -1119,14 +1113,6 @@ export default function HistoryPage() {
                         <button key={filter.key} type="button" className={`chip ${quickFilter === filter.key ? 'active' : ''}`} onClick={() => handleQuickFilter(filter.key)}>{filter.label}</button>
                       ))}
                     </div>
-                    <button
-                      type="button"
-                      className={`filter-trigger-btn ${Object.values(advancedFilters).some(v => v && v !== 'all' && v !== '') ? 'has-filters' : ''}`}
-                      onClick={() => setSheetOpen(true)}
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                      Filters
-                    </button>
                   </div>
                   {quickFilter === 'custom' && customRangeSummary && <p className="custom-range-summary">{customRangeSummary}</p>}
                   {quizLoading ? <Loader card size="sm" label="Loading quizzes..." /> : filteredQuizzes.length ? filteredQuizzes.map(item => (
