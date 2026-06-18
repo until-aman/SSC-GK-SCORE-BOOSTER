@@ -524,14 +524,6 @@ export default function HistorySavedPage() {
   // â"€â"€ Reset visible count when filters/search/sort change â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   useEffect(() => { setVisibleCount(20); }, [searchQuery, activeFilter, activeTopic, sortOrder, questions]);
 
-  useEffect(() => {
-    if (activeMode === 'All') return;
-    const key = activeFilter || 'All';
-    const activeButton = subjectFilterRefs.current[key];
-    if (!activeButton) return;
-    activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }, [activeFilter, activeMode, subjectGroups]);
-
   // â"€â"€ Infinite scroll sentinel â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   useEffect(() => {
     const el = sentinelRef.current;
@@ -629,6 +621,14 @@ export default function HistorySavedPage() {
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
   }, [questions, activeFilter]);
+
+  useEffect(() => {
+    if (activeMode === 'All') return;
+    const key = activeFilter || 'All';
+    const activeButton = subjectFilterRefs.current[key];
+    if (!activeButton) return;
+    activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, [activeFilter, activeMode, subjectGroups]);
 
   function showOverview(mode = activeMode) {
     return mode === 'All';
