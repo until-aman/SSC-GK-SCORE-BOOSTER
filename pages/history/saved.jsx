@@ -132,22 +132,11 @@ function SubjectIcon({ subject, sheetIcon = '' }) {
   );
 }
 
-function getSavedQuestionStatus({ correctCount = 0, wrongCount = 0, skippedCount = 0 }) {
-  if (skippedCount >= 2 && skippedCount >= wrongCount) {
-    return { label: 'Often Skipped', tone: 'blue' };
-  }
-  if (correctCount === 0 && wrongCount + skippedCount > 0) {
-    return { label: 'Never Correct', tone: 'red' };
-  }
-  return { label: 'Needs Revision', tone: 'amber' };
-}
-
 function QuestionRow({ q, index, onView, onUnsave }) {
   const correctCount = Number(q.correctCount) || 0;
   const wrongCount = Number(q.wrongCount) || 0;
   const skippedCount = Number(q.skippedCount) || 0;
   const totalAttempts = correctCount + wrongCount + skippedCount;
-  const status = getSavedQuestionStatus({ correctCount, wrongCount, skippedCount });
   let correctPct = null;
   if (totalAttempts > 0) {
     correctPct = Math.round((correctCount / totalAttempts) * 100);
@@ -184,9 +173,14 @@ function QuestionRow({ q, index, onView, onUnsave }) {
             {q.topic && <span className="sq-topic-inline">{q.topic}</span>}
           </div>
         </div>
-        <div className="sq-card-status-stack">
-          <span className={`sq-status-pill ${status.tone}`}>{status.label}</span>
-        </div>
+        <button
+          className="sq-card-bookmark-btn"
+          onClick={e => { e.stopPropagation(); onUnsave(q.questionId); }}
+          title="Remove bookmark"
+          aria-label="Remove bookmark"
+        >
+          <BookmarkIcon filled size={14} />
+        </button>
       </div>
       <p className="sq-question-text">{q.question}</p>
       <div className="sq-footer">
@@ -217,14 +211,6 @@ function QuestionRow({ q, index, onView, onUnsave }) {
           </div>
         </>
       )}
-      <button
-        className="sq-bookmark-btn"
-        onClick={e => { e.stopPropagation(); onUnsave(q.questionId); }}
-        title="Remove bookmark"
-        aria-label="Remove bookmark"
-      >
-        <BookmarkIcon filled size={15} />
-      </button>
     </article>
   );
 }
@@ -251,9 +237,6 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
   if (!questions.length) return null;
   if (!q) return null;
   const total = questions.length;
-  const correctCount = Number(q.correctCount) || 0;
-  const wrongCount = Number(q.wrongCount) || (q.userAnswer && q.userAnswer !== q.correctOption ? 1 : 0);
-  const skippedCount = Number(q.skippedCount) || 0;
   const ts = q.lastPracticedAt || q.savedAt || q.createdAt;
   let lastPracticed = null;
   if (ts) {
@@ -419,11 +402,6 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           </div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 11, fontWeight: 900, color: 'var(--ssc-text-secondary)' }}>
-          {wrongCount > 0 && <span style={{ color: 'var(--ssc-danger)' }}>Wrong {wrongCount}x</span>}
-          <span>Skipped {skippedCount}x</span>
-          {correctCount > 0 && <span style={{ color: 'var(--ssc-success)' }}>Correct {correctCount}x</span>}
-        </div>
         <p style={{ margin: '8px 0 0', fontSize: 11, fontWeight: 800, color: 'var(--ssc-text-muted)' }}>
           Last Practiced: {lastPracticed || 'Not practiced yet'}
         </p>
@@ -698,12 +676,11 @@ export default function HistorySavedPage() {
     .sq-filter-label{font-size:12px;font-weight:1000;color:var(--ssc-text-primary);margin:4px 0 10px}
     .sq-filter-chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:7px 12px;white-space:nowrap;flex:0 0 auto;box-shadow:0 5px 12px rgba(16,32,51,.04)}
     .sq-filter-chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:#fff}
-    .sq-control-row{display:flex;align-items:flex-start;justify-content:flex-start;flex-direction:column;padding:2px 0 0;margin-bottom:12px}
+    .sq-control-row{display:flex;align-items:flex-start;justify-content:flex-start;flex-direction:column;padding:2px 0 0;margin-bottom:8px}
     .sq-sort-group{display:flex;align-items:flex-start;flex-direction:column;gap:0}
     .sq-sort-label{font-size:12px;font-weight:1000;color:var(--ssc-text-primary);white-space:nowrap;margin:4px 0 10px}
-    .sq-select-wrap{position:relative;display:inline-flex;align-items:center}
-    .sq-select-wrap:after{content:'';position:absolute;right:16px;width:7px;height:7px;border-right:2px solid var(--ssc-text-secondary);border-bottom:2px solid var(--ssc-text-secondary);transform:rotate(45deg) translateY(-2px);pointer-events:none}
-    .sq-mini-select{height:32px;border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:0 38px 0 13px;outline:none;appearance:none;-webkit-appearance:none;line-height:32px}
+    .sq-sort-pills{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding:0 0 2px;max-width:100%}
+    .sq-sort-pills::-webkit-scrollbar{display:none}
     .sq-summary-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);border:1px solid #BDEDEA;border-radius:16px;padding:15px 16px;margin:12px 0 0;box-shadow:var(--ssc-shadow-card)}
     .sq-summary-top{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
     .sq-summary-icon{width:42px;height:42px;border-radius:13px;background:#E8F8F6;border:1px solid rgba(14,165,164,0.20);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
@@ -724,14 +701,13 @@ export default function HistorySavedPage() {
     .sq-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:12px;padding:9px 10px 8px;margin:0 0 9px;position:relative;box-shadow:0 8px 18px rgba(16,32,51,.05);cursor:pointer}.sq-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}
     .sq-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px;padding-right:0}
     .sq-card-head-main{display:flex;align-items:flex-start;gap:8px;min-width:0;flex:1}
-    .sq-bookmark-btn{position:absolute;top:47px;right:9px;width:24px;height:24px;border-radius:8px;background:transparent;border:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
     .sq-tags-row{display:flex;gap:7px;align-items:center;min-width:0;overflow:hidden;flex:1;flex-wrap:nowrap}
     .sq-subject-dot,.sq-topic-inline{display:inline-flex;align-items:center;height:22px;border-radius:999px;padding:0 9px;font-size:10px;font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .sq-subject-dot{max-width:36%;flex:0 1 auto}
-    .sq-topic-inline{max-width:64%;flex:1 1 auto}
+    .sq-topic-inline{max-width:72%;flex:0 1 auto}
     .sq-subject-dot{color:var(--ssc-teal);background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.14)}
     .sq-topic-inline{color:var(--ssc-orange);background:var(--ssc-orange-soft);border:1px solid rgba(255,106,0,.14)}
-    .sq-card-status-stack{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;max-width:118px}
+    .sq-card-bookmark-btn{height:22px;width:28px;border:0;background:transparent;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;color:var(--ssc-teal);margin-top:0}
     .sq-status-pill{display:inline-flex;align-items:center;justify-content:center;min-height:21px;border-radius:999px;border:1px solid;padding:0 8px;font-size:9px;font-weight:1000;white-space:nowrap}
     .sq-status-pill.amber{color:var(--ssc-warning);background:var(--ssc-warning-soft);border-color:rgba(245,158,11,.30)}
     .sq-status-pill.red{color:var(--ssc-danger);background:var(--ssc-danger-soft);border-color:rgba(239,68,68,.30)}
@@ -957,18 +933,21 @@ export default function HistorySavedPage() {
                   <div className="sq-control-row">
                     <div className="sq-sort-group">
                       <span className="sq-sort-label">Sort by</span>
-                      <span className="sq-select-wrap">
-                        <select
-                          className="sq-mini-select"
-                          value={sortOrder}
-                          onChange={e => setSortOrder(e.target.value)}
-                        >
-                          <option value="newest">Recent First</option>
-                          <option value="oldest">Oldest First</option>
-                          <option value="subject">Subject-wise</option>
-                          <option value="wrong">Wrong First</option>
-                        </select>
-                      </span>
+                      <div className="sq-sort-pills" aria-label="Sort saved questions">
+                        {[
+                          ['newest', 'Recent First'],
+                          ['oldest', 'Oldest First'],
+                        ].map(([value, label]) => (
+                          <button
+                            key={value}
+                            type="button"
+                            className={`sq-filter-chip ${sortOrder === value ? 'active' : ''}`}
+                            onClick={() => setSortOrder(value)}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
