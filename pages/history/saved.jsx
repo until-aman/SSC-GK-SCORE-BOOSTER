@@ -822,7 +822,7 @@ export default function HistorySavedPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="sq-summary-count">{visiblePracticePool.length}</p>
-                    <p className="sq-summary-label">Questions saved</p>
+                    <p className="sq-summary-label">Questions</p>
                   </div>
                 </div>
                 <button type="button" className="sq-summary-cta" onClick={() => startPractice(visiblePracticePool)}>

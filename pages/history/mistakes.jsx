@@ -850,7 +850,7 @@ export default function RepeatedMistakesPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="rm-summary-count">{mistakes.length}</p>
-                      <p className="rm-summary-label">Repeated mistakes</p>
+                      <p className="rm-summary-label">Mistakes</p>
                     </div>
                   </div>
                   {mistakes.length > 0 && (
@@ -912,7 +912,7 @@ export default function RepeatedMistakesPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="rm-summary-count">{filteredMistakes.length}</p>
-                      <p className="rm-summary-label">Repeated mistakes</p>
+                      <p className="rm-summary-label">Mistakes</p>
                     </div>
                   </div>
                   {practiceCount > 0 && (
