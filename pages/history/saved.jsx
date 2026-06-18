@@ -282,8 +282,12 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           </div>
         )}
 
-        <p style={{ color: 'var(--ssc-text-primary)', fontSize: 14, fontWeight: 1000, margin: '0 0 18px', lineHeight: 1.48 }}>
+        <p style={{ color: 'var(--ssc-text-primary)', fontSize: 14, fontWeight: 1000, margin: '0 0 10px', lineHeight: 1.48 }}>
           {q.question}
+        </p>
+
+        <p style={{ margin: '0 0 18px', fontSize: 11, fontWeight: 800, color: 'var(--ssc-text-muted)' }}>
+          Last Practiced: {lastPracticed || 'Not practiced yet'}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: revealed ? 18 : 20 }}>
@@ -359,9 +363,6 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           </div>
         )}
 
-        <p style={{ margin: '8px 0 0', fontSize: 11, fontWeight: 800, color: 'var(--ssc-text-muted)' }}>
-          Last Practiced: {lastPracticed || 'Not practiced yet'}
-        </p>
       </div>
 
       <div style={{
