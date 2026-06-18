@@ -61,17 +61,17 @@ function SavedHeaderIcon() {
 }
 
 const SUBJECT_META = {
-  Polity: { subtitle: 'Constitution - Govt', accent: '#14B8A6', bg: '#E8F8F6', glyph: 'bookmark' },
-  Economics: { subtitle: 'Banking - Budget', accent: '#8B5CF6', bg: '#F3F0FF', glyph: 'chart' },
-  Geography: { subtitle: 'Maps - Climate', accent: '#0EA5E9', bg: '#E8F5FF', glyph: 'globe' },
+  Polity: { subtitle: 'Constitution • Govt', accent: '#14B8A6', bg: '#E8F8F6', glyph: 'bookmark' },
+  Economics: { subtitle: 'Banking • Budget', accent: '#8B5CF6', bg: '#F3F0FF', glyph: 'chart' },
+  Geography: { subtitle: 'Maps • Climate', accent: '#0EA5E9', bg: '#E8F5FF', glyph: 'globe' },
   'Current Affairs': { subtitle: 'Latest GK', accent: '#FF5C8A', bg: '#FFF0F4', glyph: 'paper' },
-  'Static GK': { subtitle: 'Awards - Books', accent: '#10B981', bg: '#EAFBF3', glyph: 'book' },
-  Physics: { subtitle: 'Motion - Energy', accent: '#2563EB', bg: '#EAF1FF', glyph: 'atom' },
-  Chemistry: { subtitle: 'Elements - Reactions', accent: '#14B8A6', bg: '#E8F8F6', glyph: 'flask' },
-  Biology: { subtitle: 'Human Body - Life', accent: '#16A34A', bg: '#EAFBF0', glyph: 'leaf' },
-  'Ancient History': { subtitle: 'Vedic - Empires', accent: '#D97706', bg: '#FFF7E6', glyph: 'pillar' },
-  'Medieval History': { subtitle: 'Sultanate - Mughals', accent: '#DC2626', bg: '#FEECEC', glyph: 'fort' },
-  'Modern History': { subtitle: 'Freedom - Reforms', accent: '#8B5CF6', bg: '#F3F0FF', glyph: 'flag' },
+  'Static GK': { subtitle: 'Awards • Books', accent: '#10B981', bg: '#EAFBF3', glyph: 'book' },
+  Physics: { subtitle: 'Motion • Energy', accent: '#2563EB', bg: '#EAF1FF', glyph: 'atom' },
+  Chemistry: { subtitle: 'Elements • Reactions', accent: '#14B8A6', bg: '#E8F8F6', glyph: 'flask' },
+  Biology: { subtitle: 'Human Body • Life', accent: '#16A34A', bg: '#EAFBF0', glyph: 'leaf' },
+  'Ancient History': { subtitle: 'Vedic • Empires', accent: '#D97706', bg: '#FFF7E6', glyph: 'pillar' },
+  'Medieval History': { subtitle: 'Sultanate • Mughals', accent: '#DC2626', bg: '#FEECEC', glyph: 'fort' },
+  'Modern History': { subtitle: 'Freedom • Reforms', accent: '#8B5CF6', bg: '#F3F0FF', glyph: 'flag' },
   Mixed: { subtitle: 'All Subjects', accent: '#9333EA', bg: '#F5F3FF', glyph: 'target' },
 };
 
@@ -299,9 +299,9 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 96px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '18px 16px 104px' }}>
         {(q.subject || q.topic) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 16, flexWrap: 'wrap' }}>
             {q.subject && (
               <span style={{ fontSize: 10, fontWeight: 1000, color: 'var(--ssc-teal)', background: 'var(--ssc-teal-soft)', borderRadius: 999, padding: '4px 8px', lineHeight: 1, border: '1px solid rgba(14,165,164,.14)' }}>
                 {getDisplaySubject(q.subject, q.collection)}
@@ -313,11 +313,11 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           </div>
         )}
 
-        <p style={{ color: 'var(--ssc-text-primary)', fontSize: 14, fontWeight: 1000, margin: '0 0 16px', lineHeight: 1.45 }}>
+        <p style={{ color: 'var(--ssc-text-primary)', fontSize: 14, fontWeight: 1000, margin: '0 0 18px', lineHeight: 1.48 }}>
           {q.question}
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: revealed ? 18 : 20 }}>
           {OPTION_LABELS.map((label, i) => {
             const text       = q[OPTION_KEYS[i]];
             if (!text) return null;
@@ -375,25 +375,13 @@ function RevisionCard({ questions, startIndex, onClose, onUnsave, onReveal }) {
           })}
         </div>
 
-        {revealed && selectedOption && (
-          <p style={{
-            textAlign: 'center',
-            margin: '2px 0 14px',
-            fontSize: 12,
-            fontWeight: 1000,
-            color: selectedOption === q.correctOption ? 'var(--ssc-success)' : 'var(--ssc-danger)',
-          }}>
-            {selectedOption === q.correctOption ? 'Correct! Well done' : `Incorrect - correct answer is ${q.correctOption}`}
-          </p>
-        )}
-
         {revealed && (
           <div style={{
             background: 'linear-gradient(180deg,#F4FFFF 0%,#ECFAFB 100%)',
             border: '1px solid rgba(14,165,164,0.20)',
             borderRadius: 13,
             padding: '13px 14px',
-            marginBottom: 14,
+            marginBottom: 16,
           }}>
             <p style={{ margin: '0 0 7px', fontSize: 12, fontWeight: 1000, color: 'var(--ssc-teal)' }}>Explanation:</p>
             <p style={{ margin: 0, fontSize: 13, lineHeight: 1.58, fontWeight: 700, color: 'var(--ssc-text-secondary)' }}>
@@ -469,6 +457,7 @@ export default function HistorySavedPage() {
   const [revisedIds, setRevisedIds]     = useState(new Set());
   const [visibleCount, setVisibleCount] = useState(20);
   const sentinelRef = useRef(null);
+  const subjectFilterRefs = useRef({});
 
   const isLoggedIn = status === 'authenticated';
   const isGuest    = status === 'unauthenticated';
@@ -534,6 +523,14 @@ export default function HistorySavedPage() {
 
   // â"€â"€ Reset visible count when filters/search/sort change â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   useEffect(() => { setVisibleCount(20); }, [searchQuery, activeFilter, activeTopic, sortOrder, questions]);
+
+  useEffect(() => {
+    if (activeMode === 'All') return;
+    const key = activeFilter || 'All';
+    const activeButton = subjectFilterRefs.current[key];
+    if (!activeButton) return;
+    activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, [activeFilter, activeMode, subjectGroups]);
 
   // â"€â"€ Infinite scroll sentinel â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   useEffect(() => {
@@ -741,7 +738,10 @@ export default function HistorySavedPage() {
     <>
       <Head><title>Saved Questions - SSC GK Score Booster</title></Head>
       <style suppressHydrationWarning>{savedStyles}</style>
-      <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-24">
+      <div
+        className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)]"
+        style={{ paddingBottom: questions.length > 0 && showOverview() ? 20 : 96 }}
+      >
         <HistoryTopBar title="Saved Questions" badge="HISTORY" icon={<SavedHeaderIcon />} showBack onBack={handleSavedBack} />
 
         {/* Guest sign-in banner */}
@@ -892,6 +892,7 @@ export default function HistorySavedPage() {
                   <div className="sq-filter-row" aria-label="Saved question subjects">
                     <button
                       type="button"
+                      ref={el => { subjectFilterRefs.current.All = el; }}
                       className={`sq-filter-chip ${activeFilter === 'All' ? 'active' : ''}`}
                       onClick={() => selectSubject('All')}
                     >
@@ -901,6 +902,7 @@ export default function HistorySavedPage() {
                       <button
                         type="button"
                         key={item.name}
+                        ref={el => { subjectFilterRefs.current[item.name] = el; }}
                         className={`sq-filter-chip ${activeFilter === item.name ? 'active' : ''}`}
                         onClick={() => selectSubject(item.name)}
                       >
