@@ -381,8 +381,7 @@ function MistakeReviewCard({ questions, startIndex, onClose, onToggleSave }) {
         {attemptStats.totalAttempts > 0 && (
           <div style={{ margin: '0 0 18px' }}>
             <div className="rm-performance-head">
-              <span>Performance</span>
-              <b>Correct: {attemptStats.correctPct}%</b>
+              <span>Last Practiced: {lastPracticed || 'Not practiced yet'}</span>
             </div>
             <AttemptSegmentBar stats={attemptStats} />
             <AttemptStatsRow stats={attemptStats} className="detail" />
@@ -492,9 +491,6 @@ function MistakeReviewCard({ questions, startIndex, onClose, onToggleSave }) {
           </div>
         )}
 
-        <p style={{ margin: '8px 0 0', fontSize: 11, fontWeight: 800, color: 'var(--ssc-text-muted)' }}>
-          Last Practiced: {lastPracticed || 'Not practiced yet'}
-        </p>
       </div>
 
       <div style={{
@@ -761,10 +757,10 @@ export default function RepeatedMistakesPage() {
     .rm-summary-label{font-size:11px;color:var(--ssc-text-secondary);font-weight:800;margin:3px 0 0}
     .rm-summary-cta{width:50%;max-width:180px;min-width:132px;height:42px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:#fff;font-size:13px;font-weight:1000;font-family:inherit;box-shadow:var(--ssc-shadow-cta);cursor:pointer;white-space:nowrap;flex-shrink:0}
     .rm-summary-cta:disabled{opacity:.62;cursor:default;box-shadow:none}
-    .rm-detail-filters{padding:0 0 12px}
+    .rm-detail-filters{padding:16px 0 10px}
     .rm-cache-message{margin:0 0 10px;color:var(--ssc-text-secondary);font-size:11px;font-weight:800;text-align:right}
     .rm-filter-label{font-size:12px;font-weight:1000;color:var(--ssc-text-primary);margin:4px 0 10px}
-    .rm-control-row{display:flex;align-items:flex-start;justify-content:flex-start;flex-direction:column;padding:2px 0 0;margin-bottom:20px}
+    .rm-control-row{display:flex;align-items:flex-start;justify-content:flex-start;flex-direction:column;padding:2px 0 0;margin-bottom:8px}
     .rm-sort-group{display:flex;align-items:flex-start;flex-direction:column;gap:0}
     .rm-sort-label{font-size:12px;font-weight:1000;color:var(--ssc-text-primary);white-space:nowrap;margin:4px 0 10px}
     .rm-sort-pills{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding:0 0 2px;max-width:100%}
@@ -793,8 +789,7 @@ export default function RepeatedMistakesPage() {
     .rm-card-bookmark-btn{height:22px;width:28px;border:0;background:transparent;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;color:var(--ssc-teal);margin-top:0}
     .sq-progress-track{height:3px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden;margin-right:2px}
     .sq-progress-fill{height:100%;border-radius:99px}
-    .rm-performance-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;font-size:11px;font-weight:900;color:var(--ssc-text-muted)}
-    .rm-performance-head b{font-size:11px;font-weight:1000;color:var(--ssc-danger)}
+    .rm-performance-head{display:flex;align-items:center;justify-content:flex-start;gap:10px;margin-bottom:7px;font-size:11px;font-weight:900;color:var(--ssc-text-muted)}
     .rm-segment-track{height:3px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden;margin:8px 2px 0 0;display:flex}
     .rm-segment-fill{height:100%;display:block;flex:0 0 auto}
     .rm-segment-fill.correct{background:var(--ssc-success)}
