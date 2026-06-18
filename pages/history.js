@@ -32,7 +32,7 @@ const ChevronSVG = () => (
 const historyFeatures = [
   {
     title: 'Quiz History',
-    body: 'View all your quiz attempts and performance',
+    body: 'Quiz attempts and scores',
     route: '/history/quizzes',
     unlockTitle: 'Unlock Quiz History',
     unlockBody: 'Sign in to review your attempted quizzes and re-attempt mistakes.',
@@ -50,7 +50,7 @@ const historyFeatures = [
   },
   {
     title: 'Saved Questions',
-    body: "Questions you've saved for later practice",
+    body: 'Saved questions for revision',
     route: '/history/saved',
     unlockTitle: 'Unlock Saved Questions',
     unlockBody: 'Sign in to revise your bookmarked questions across devices.',
@@ -65,7 +65,7 @@ const historyFeatures = [
   },
   {
     title: 'Repeated Mistakes',
-    body: 'Focus on questions you get wrong repeatedly',
+    body: 'Questions you get wrong often',
     route: '/history/mistakes',
     unlockTitle: 'Unlock Repeated Mistakes',
     unlockBody: 'Sign in to see questions you got wrong multiple times and practice them again.',
@@ -118,7 +118,7 @@ const historyFeatures = [
   },
   {
     title: 'Reports',
-    body: 'Detailed performance reports & insights',
+    body: 'Performance reports and insights',
     route: '/analysis',
     unlockTitle: 'Unlock Reports',
     unlockBody: 'Sign in to view your GK analysis, weak areas, and weekly reports.',
@@ -318,6 +318,9 @@ const SHARED_STYLES = `
     color: ${TEXT_SEC};
     margin-top: 3px;
     line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 `;
 
