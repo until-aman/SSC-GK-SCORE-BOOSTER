@@ -102,6 +102,83 @@ function formatFullDateTime(value) {
   return `${day} ${month} ${year}, ${h12}:${minutes} ${ampm}`;
 }
 
+function formatPercent(value) {
+  const rounded = Math.round(Number(value) * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
+function getDistributedPercentages(counts = []) {
+  const total = counts.reduce((sum, count) => sum + count, 0);
+  if (!total) return counts.map(() => ({ value: 0, label: '0' }));
+
+  const rawTenths = counts.map(count => (count / total) * 1000);
+  const flooredTenths = rawTenths.map(Math.floor);
+  let remainingTenths = 1000 - flooredTenths.reduce((sum, value) => sum + value, 0);
+  const order = rawTenths
+    .map((value, index) => ({ index, remainder: value - flooredTenths[index] }))
+    .sort((a, b) => b.remainder - a.remainder || b.index - a.index);
+
+  for (let i = 0; i < remainingTenths; i += 1) {
+    flooredTenths[order[i % order.length].index] += 1;
+  }
+
+  return flooredTenths.map(value => {
+    const percentage = value / 10;
+    return { value: percentage, label: formatPercent(percentage) };
+  });
+}
+
+function getAttemptBreakdown(item) {
+  const correctCount = Number(item.correctCount) || 0;
+  const wrongCount = Number(item.wrongCount) || 0;
+  const skippedCount = Number(item.skippedCount) || 0;
+  const totalAttempts = correctCount + wrongCount + skippedCount;
+  const [correctPct, wrongPct, skippedPct] = getDistributedPercentages([correctCount, wrongCount, skippedCount]);
+  return {
+    correctCount,
+    wrongCount,
+    skippedCount,
+    totalAttempts,
+    correctPct: correctPct.value,
+    wrongPct: wrongPct.value,
+    skippedPct: skippedPct.value,
+    correctPctLabel: correctPct.label,
+    wrongPctLabel: wrongPct.label,
+    skippedPctLabel: skippedPct.label,
+  };
+}
+
+function AttemptSegmentBar({ stats }) {
+  if (!stats?.totalAttempts) return null;
+  return (
+    <div className="rm-segment-track">
+      {stats.correctPct > 0 && <span className="rm-segment-fill correct" style={{ width: `${stats.correctPct}%` }} />}
+      {stats.wrongPct > 0 && <span className="rm-segment-fill wrong" style={{ width: `${stats.wrongPct}%` }} />}
+      {stats.skippedPct > 0 && <span className="rm-segment-fill skipped" style={{ width: `${stats.skippedPct}%` }} />}
+    </div>
+  );
+}
+
+function AttemptStatsRow({ stats }) {
+  if (!stats?.totalAttempts) return null;
+  return (
+    <div className="rm-attempt-stats">
+      <span className="rm-stat-block rm-stat-correct">
+        <span className="rm-stat-value">✓ {stats.correctCount}</span>
+        <span className="rm-stat-label">Correct ({stats.correctPctLabel}%)</span>
+      </span>
+      <span className="rm-stat-block rm-stat-wrong">
+        <span className="rm-stat-value">× {stats.wrongCount}</span>
+        <span className="rm-stat-label">Wrong ({stats.wrongPctLabel}%)</span>
+      </span>
+      <span className="rm-stat-block rm-stat-skipped">
+        <span className="rm-stat-value">○ {stats.skippedCount}</span>
+        <span className="rm-stat-label">Skipped ({stats.skippedPctLabel}%)</span>
+      </span>
+    </div>
+  );
+}
+
 function formatRangeDate(value) {
   if (!value) return '';
   const date = new Date(`${value}T00:00:00`);
@@ -124,6 +201,14 @@ function EmptyPanel({ title, body, action, onClick }) {
       <p className="text-sm mt-1 mb-4" style={{ color: 'var(--ssc-text-secondary)' }}>{body}</p>
       {action && <button type="button" className="primary-btn" onClick={onClick}>{action}</button>}
     </section>
+  );
+}
+
+function ChevronSVG() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18l6-6-6-6" />
+    </svg>
   );
 }
 
@@ -390,31 +475,10 @@ function StatEntityCard({ item, type, onPractice, onReview }) {
 function QuestionCard({ item, isOpen, onToggleOpen, aiCache, setAiCache, onToggleSave }) {
   const cache = aiCache[item.questionId] || { official: item.explanation || '', ai: null, loading: false };
   const statusText = item.lastAttemptStatus === 'skipped' ? 'Skipped' : item.lastAttemptStatus === 'correct' ? 'Correct' : 'Wrong';
-  const correctCount = Number(item.correctCount) || 0;
-  const wrongCount = Number(item.wrongCount) || 0;
-  const skippedCount = Number(item.skippedCount) || 0;
+  const attemptStats = getAttemptBreakdown(item);
   const lastAnswerText = item.lastUserAnswer ? optionText(item, item.lastUserAnswer) : '';
   const correctAnswerText = item.correctOption ? optionText(item, item.correctOption) : '';
   const lastAnswerTone = !item.lastUserAnswer ? 'skipped' : item.lastUserAnswer === item.correctOption ? 'correct' : 'wrong';
-  let smartTag = 'Needs Revision';
-  let tagTone = TONES.amber;
-  if (wrongCount >= 2 && correctCount === 0) {
-    smartTag = 'Never Correct';
-    tagTone = TONES.red;
-  } else if (wrongCount >= 2) {
-    smartTag = 'Repeated Mistake';
-    tagTone = TONES.red;
-  } else if (skippedCount >= 2) {
-    smartTag = 'Often Skipped';
-    tagTone = TONES.blue;
-  } else if (correctCount > 0 && wrongCount > 0) {
-    smartTag = 'Improving';
-    tagTone = TONES.amber;
-  } else if (correctCount >= 2 && item.lastAttemptStatus === 'correct') {
-    smartTag = 'Mastered';
-    tagTone = TONES.green;
-  }
-
   async function getAIExplanation() {
     if (cache.ai || cache.loading) return;
     setAiCache(prev => ({ ...prev, [item.questionId]: { ...cache, loading: true } }));
@@ -435,7 +499,7 @@ function QuestionCard({ item, isOpen, onToggleOpen, aiCache, setAiCache, onToggl
 
   return (
     <article
-      className={`history-card question-card ${isOpen ? 'open' : ''}`}
+      className={`rm-card ${isOpen ? 'open' : ''}`}
       role="button"
       tabIndex={0}
       onClick={onToggleOpen}
@@ -446,20 +510,27 @@ function QuestionCard({ item, isOpen, onToggleOpen, aiCache, setAiCache, onToggl
         }
       }}
     >
-      <div className="question-top-row">
-        <p className="question-kicker">{item.subject} &middot; {item.topic}</p>
-        <div className="flex items-center gap-2">
-          <span className="tone-pill question-badge" style={{ color: tagTone[0], background: tagTone[1], borderColor: `${tagTone[0]}55` }}>{smartTag}</span>
-          <span className="question-chevron" aria-hidden="true">{isOpen ? '⌃' : '›'}</span>
+      <div className="rm-card-head">
+        <div className="rm-tags">
+          {item.subject && <span className="rm-subject-tag">{item.subject}</span>}
+          {item.topic && <span className="rm-topic-tag">{item.topic}</span>}
         </div>
+        <button type="button" className={`rm-card-bookmark-btn ${item.isSaved ? 'saved' : ''}`} onClick={event => { event.stopPropagation(); onToggleSave(item); }} aria-label={item.isSaved ? 'Remove bookmark' : 'Save question'} title={item.isSaved ? 'Saved' : 'Save'}>
+          <BookmarkIcon filled={item.isSaved} />
+        </button>
       </div>
 
-      <p className="question-preview font-display">{item.questionPreview || item.question}</p>
+      <p className="rm-question-text">{item.questionPreview || item.question}</p>
 
-      <div className="question-stat-row">
-        <span className="text-red-300">Wrong {wrongCount}x</span>
-        <span className="text-slate-400">Skipped {skippedCount}x</span>
+      <div className="rm-footer">
+        <div className="rm-footer-copy">
+          <span className="rm-meta">Last Practiced: {formatDate(item.lastAttemptedAt)}</span>
+        </div>
+        <span className="rm-open-icon" aria-hidden="true"><ChevronSVG /></span>
       </div>
+
+      <AttemptSegmentBar stats={attemptStats} />
+      <AttemptStatsRow stats={attemptStats} />
 
       {isOpen && (
         <div className="question-expanded" onClick={event => event.stopPropagation()}>
@@ -487,12 +558,6 @@ function QuestionCard({ item, isOpen, onToggleOpen, aiCache, setAiCache, onToggl
           </button>
         </div>
       )}
-
-      <div className="question-actions">
-        <button type="button" className={`save-icon-btn ${item.isSaved ? 'saved' : ''}`} onClick={event => { event.stopPropagation(); onToggleSave(item); }} aria-label={item.isSaved ? 'Remove bookmark' : 'Save question'} title={item.isSaved ? 'Saved' : 'Save'}>
-          <BookmarkIcon filled={item.isSaved} />
-        </button>
-      </div>
     </article>
   );
 }
@@ -962,9 +1027,9 @@ export default function HistoryPage() {
     .stat-card,.history-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;box-shadow:var(--ssc-shadow-card)}
     .stat-card{padding:12px;display:flex;align-items:center;gap:10px;min-height:66px}
     .stat-card-icon{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-    .stat-card-copy{min-width:0}
+    .stat-card-copy{min-width:0;display:grid;gap:1px}
     .stat-card strong{display:block;color:var(--ssc-text-primary);font-size:21px;line-height:1;font-weight:900}
-    .stat-card span{display:block;color:var(--ssc-text-secondary);font-size:11px;margin-top:4px;font-weight:800;white-space:nowrap}
+    .stat-card span{display:block;color:var(--ssc-text-secondary);font-size:11px;margin-top:0;font-weight:800;white-space:nowrap}
     .history-card{padding:16px;margin-bottom:12px}
     .history-card .text-white{color:var(--ssc-text-primary)}
     .history-card .text-slate-300,.history-card .text-slate-400,.history-card .text-slate-500{color:var(--ssc-text-secondary)}
@@ -985,8 +1050,12 @@ export default function HistoryPage() {
     .entity-card{padding:14px 15px}.entity-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.entity-title{color:var(--ssc-text-primary);font-size:15px;font-weight:900;line-height:1.3;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.entity-subtitle{color:var(--ssc-text-muted);font-size:11px;font-weight:800;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.entity-accuracy{text-align:right;flex:0 0 auto}.entity-accuracy p{font-size:24px;line-height:1;font-weight:900;margin:0 0 5px}.entity-badge{font-size:10px;padding:4px 8px;flex:0 0 auto}.entity-meta{display:flex;flex-direction:column;gap:4px;margin-top:11px;color:var(--ssc-text-secondary);font-size:12px;font-weight:700}.entity-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;font-size:13px;font-weight:900}.entity-stat-row .text-emerald-300{color:var(--ssc-success)}.entity-stat-row .text-red-300{color:var(--ssc-danger)}.entity-stat-row .text-amber-300{color:var(--ssc-warning)}.subject-entity-card,.topic-entity-card{padding:13px 15px}.subject-entity-card .entity-top,.topic-entity-card .entity-top{align-items:flex-start}.subject-entity-card .entity-title{-webkit-line-clamp:1}.topic-entity-card .entity-title{-webkit-line-clamp:2}.topic-subject-line{color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.35;margin:8px 0 0}.subject-meta-line{color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.45;margin:8px 0 0}.subject-stat-row{justify-content:space-between;gap:8px;margin-top:13px;padding:10px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft);white-space:nowrap}.subject-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
 
     .question-card{padding:12px 14px;cursor:pointer}.question-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}.question-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.question-kicker{color:var(--ssc-teal);background:var(--ssc-teal-soft);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;margin:0;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.question-badge{font-size:10px;padding:4px 8px;max-width:132px;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.question-chevron{display:inline-flex;height:24px;width:24px;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-text-secondary);font-size:18px;font-weight:900}.question-preview{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.38;margin:9px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.question-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;padding:8px 0 0;border-top:1px solid var(--ssc-border-soft);font-size:12px;font-weight:900;white-space:nowrap}.question-stat-row .text-red-300{color:var(--ssc-danger)}.question-stat-row .text-slate-400{color:var(--ssc-text-muted)}.question-stat-row span+span:before{content:'';margin:0}.question-actions{display:flex;justify-content:flex-end;margin-top:11px;align-items:center}.save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);display:flex;align-items:center;justify-content:center;transition:transform .12s ease,background .12s ease,border-color .12s ease}.save-icon-btn:active{transform:scale(.92)}.save-icon-btn.saved{border-color:rgba(14,165,164,.36);background:var(--ssc-teal-soft)}
+    .mistake-summary-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,.82fr);align-items:center;gap:14px;margin:0 0 14px;padding:16px 18px;border-radius:18px;border:1px solid rgba(20,184,166,.25);background:linear-gradient(135deg,#F0FFFC 0%,#FFFFFF 100%);box-shadow:var(--ssc-shadow-card)}
+    .mistake-summary-copy{display:flex;align-items:center;gap:13px;min-width:0}.mistake-summary-icon{width:42px;height:42px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;color:var(--ssc-teal);background:var(--ssc-teal-soft);border:1px solid rgba(20,184,166,.24);flex:0 0 auto}.mistake-summary-count{color:var(--ssc-teal);font-size:27px;font-weight:1000;line-height:1;margin:0}.mistake-summary-label{color:var(--ssc-text-secondary);font-size:12px;font-weight:900;line-height:1.25;margin:4px 0 0;text-transform:capitalize}.mistake-summary-cta{height:48px;border:0;border-radius:15px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;font-family:inherit;font-size:14px;font-weight:1000;box-shadow:var(--ssc-shadow-cta);cursor:pointer;white-space:nowrap}
+    .rm-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;box-shadow:var(--ssc-shadow-card);padding:12px 14px;margin-bottom:12px;cursor:pointer}.rm-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}.rm-card.open{cursor:default}.rm-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px}.rm-tags{display:flex;align-items:center;gap:7px;min-width:0;overflow:hidden}.rm-subject-tag,.rm-topic-tag{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;font-size:10px;font-weight:1000;line-height:1.1;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.rm-subject-tag{color:var(--ssc-teal);background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.16)}.rm-topic-tag{color:var(--ssc-orange);background:var(--ssc-orange-soft);border:1px solid rgba(255,106,0,.16)}.rm-card-bookmark-btn{width:26px;height:26px;border:0;border-radius:8px;background:transparent;color:var(--ssc-text-muted);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer}.rm-card-bookmark-btn svg{width:18px;height:18px}.rm-card-bookmark-btn.saved svg{fill:var(--ssc-teal);stroke:var(--ssc-teal)}.rm-question-text{font-size:13px;font-weight:900;color:var(--ssc-text-primary);line-height:1.38;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin:0 22px 11px 0}.rm-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}.rm-footer-copy{min-width:0;display:flex;align-items:center;gap:8px}.rm-meta{font-size:11px;font-weight:900;color:var(--ssc-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rm-open-icon{width:24px;height:24px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;color:var(--ssc-text-muted);flex:0 0 auto}.rm-segment-track{height:4px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden;display:flex;width:100%}.rm-segment-fill{height:100%;display:block}.rm-segment-fill.correct{background:var(--ssc-success)}.rm-segment-fill.wrong{background:var(--ssc-danger)}.rm-segment-fill.skipped{background:var(--ssc-border-soft)}.rm-attempt-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:0;margin-top:7px;font-size:9px;font-weight:900;white-space:nowrap;overflow:hidden;width:100%;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft);padding:7px 0 6px}.rm-stat-block{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;min-width:0;border-left:1px solid var(--ssc-border-soft)}.rm-stat-block:first-child{border-left:0}.rm-stat-value{font-size:14px;font-weight:1000;line-height:1}.rm-stat-label{font-size:9px;font-weight:900;line-height:1.1;color:var(--ssc-text-muted);overflow:hidden;text-overflow:ellipsis;max-width:100%}.rm-stat-correct .rm-stat-value{color:var(--ssc-success)}.rm-stat-wrong .rm-stat-value{color:var(--ssc-danger)}.rm-stat-skipped .rm-stat-value{color:var(--ssc-text-muted)}
+    @media (max-width:380px){.mistake-summary-card{grid-template-columns:1fr;gap:12px}.mistake-summary-cta{width:100%}.rm-stat-label{font-size:8px}}
 
-    .mode-selector{display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;padding:4px;margin:0 0 12px;background:rgba(255,255,255,.72);border:1px solid var(--ssc-border-soft);border-radius:12px;box-shadow:0 6px 18px rgba(16,32,51,.05);scrollbar-width:none;-ms-overflow-style:none}.mode-selector::-webkit-scrollbar{display:none}.mode-selector button{border:0;border-radius:9px;background:transparent;color:var(--ssc-text-secondary);font-family:inherit;font-size:10px;font-weight:900;padding:7px 12px;white-space:nowrap;flex:0 0 auto;cursor:pointer;text-align:center}.mode-selector button.active{background:var(--ssc-teal);color:white;box-shadow:0 6px 14px rgba(14,165,164,.18)}
+    .mode-selector{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px;margin:0 0 12px;background:rgba(255,255,255,.72);border:1px solid var(--ssc-border-soft);border-radius:12px;box-shadow:0 6px 18px rgba(16,32,51,.05)}.mode-selector button{min-width:0;border:0;border-radius:9px;background:transparent;color:var(--ssc-text-secondary);font-family:inherit;font-size:10px;font-weight:900;padding:7px 4px;white-space:nowrap;cursor:pointer;text-align:center;overflow:hidden;text-overflow:ellipsis}.mode-selector button.active{background:var(--ssc-teal);color:white;box-shadow:0 6px 14px rgba(14,165,164,.18)}
 
     .chip-row{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;margin-left:-16px;margin-right:-16px;padding:0 16px 14px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.filter-chip-row{margin-bottom:0;padding-bottom:10px}.quiz-filter-chip-row{margin:0;padding:0 8px 0 0;flex:1}.sheet-chip-row{margin-left:0;margin-right:0;padding:0 0 4px;flex-wrap:wrap}.chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:rgba(255,255,255,.82);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:6px 11px;white-space:nowrap;text-transform:capitalize;flex:0 0 auto;cursor:pointer;box-shadow:0 4px 10px rgba(16,32,51,.035)}.chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 6px 14px rgba(14,165,164,.16)}
 
@@ -995,7 +1064,7 @@ export default function HistoryPage() {
     .secondary-btn{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-teal)}
     .primary-btn:disabled,.secondary-btn:disabled{opacity:1;cursor:default;box-shadow:none;background:var(--ssc-disabled-bg);color:var(--ssc-disabled-text);border-color:var(--ssc-border-soft)}
 
-    .section-title{color:var(--ssc-text-primary);font-size:17px;font-weight:900;line-height:1.25;margin:0 0 12px}.section-subtitle{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:5px 0 12px}.filter-heading{color:var(--ssc-text-primary);font-size:17px;font-weight:900;line-height:1.25;margin:0 0 10px}.topic-result-title{margin:2px 0 14px}
+    .section-subtitle{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:5px 0 12px}.history-filter-title{color:var(--ssc-text-primary);font-size:17px;font-weight:1000;line-height:1.2;margin:0 0 10px;letter-spacing:0}.topic-result-title{margin:2px 0 10px}
 
     .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}
     .divider{height:1px;background:var(--ssc-border-soft);margin:12px 0}
@@ -1005,7 +1074,7 @@ export default function HistoryPage() {
 
     .date-modal-backdrop{position:fixed;inset:0;z-index:90;background:var(--ssc-overlay);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:18px}.date-modal-card{width:min(100%,420px);background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:22px;padding:20px;box-shadow:var(--ssc-shadow-float)}.date-modal-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}.date-modal-top h2{color:var(--ssc-text-primary);font-size:20px;font-weight:900;line-height:1.2;margin:0}.date-modal-top p{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:7px 0 0;font-weight:700}.date-close-btn{height:34px;width:34px;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-text-secondary);font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center}.date-field-group{display:grid;gap:8px;margin-bottom:14px}.date-field-group label{color:var(--ssc-text-secondary);font-size:12px;font-weight:900}.date-field-group input{width:100%;height:46px;border-radius:14px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-text-primary);padding:0 12px;font-family:inherit;font-size:14px;font-weight:800;color-scheme:light}.date-field-group input::-webkit-calendar-picker-indicator{opacity:.8}.date-error{color:var(--ssc-danger);font-size:12px;font-weight:800;line-height:1.35;margin:0 0 14px}.date-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}.custom-range-summary{color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.4;margin:-3px 2px 13px}
 
-    .mistake-filter-group{margin-bottom:0}.mistake-filter-label{display:block;margin:0 0 10px;color:var(--ssc-text-primary);font-size:17px;font-weight:900;line-height:1.25}.active-filter-summary{margin:0 2px 14px;color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.4}
+    .quiz-filter-group{margin:0 0 14px}.mistake-filter-group{margin-bottom:12px}.active-filter-summary{margin:0 2px 14px;color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.4}
 
     .empty-state-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:32px 24px;text-align:center;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
     .empty-state-icon{width:64px;height:64px;border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;background:var(--ssc-teal-soft)}
@@ -1082,7 +1151,7 @@ export default function HistoryPage() {
                   </div>
                   <div className="stat-card-copy">
                     <strong className="font-display"><CountUp value={summary?.totalQuizzes || 0} /></strong>
-                    <span>Attempts</span>
+                    <span>Quizzes</span>
                   </div>
                 </div>
                 <div className="stat-card">
@@ -1107,7 +1176,8 @@ export default function HistoryPage() {
 
               {activeMode === 'quiz' && (
                 <>
-                  <div className="filter-trigger-row">
+                  <div className="quiz-filter-group">
+                    <p className="history-filter-title font-display">Select a period</p>
                     <div className="chip-row filter-chip-row quiz-filter-chip-row">
                       {QUICK_FILTERS.map(filter => (
                         <button key={filter.key} type="button" className={`chip ${quickFilter === filter.key ? 'active' : ''}`} onClick={() => handleQuickFilter(filter.key)}>{filter.label}</button>
@@ -1144,7 +1214,7 @@ export default function HistoryPage() {
 
               {activeMode === 'subject' && (
                 <section>
-                  <h2 className="filter-heading font-display">Select a subject</h2>
+                  <h2 className="history-filter-title font-display">Select a subject</h2>
                   {subjectsLoading ? <Loader card size="sm" label="Loading subjects..." /> : subjects?.length ? (
                     <>
                       <div className="chip-row filter-chip-row">
@@ -1161,13 +1231,13 @@ export default function HistoryPage() {
 
               {activeMode === 'topic' && (
                 <section>
-                  <h2 className="filter-heading font-display">Select a subject</h2>
+                  <h2 className="history-filter-title font-display">Select a subject</h2>
                   <div className="chip-row filter-chip-row">
                     {(subjects || []).map(item => <button key={item.subject} type="button" className={`chip ${selectedSubject === item.subject ? 'active' : ''}`} onClick={() => setSelectedSubject(item.subject)}>{item.subject}</button>)}
                   </div>
                   {!selectedSubject ? <EmptyPanel title="Select a subject to see topics." body="Choose a subject above to see attempted topics." /> : topicsLoading ? <Loader card size="sm" label="Loading topics..." /> : topics.length ? (
                     <>
-                      <h2 className="section-title topic-result-title font-display">Select a topic</h2>
+                      <h2 className="history-filter-title topic-result-title font-display">Select a topic</h2>
                       <div>{topics.map(item => <StatEntityCard key={item.topic} item={item} type="topic" onPractice={topic => openPracticeModal({ subject: topic.subject, topic: topic.topic, count: topic.wrongCount + topic.skippedCount })} onReview={topic => router.push(`/history/questions?subject=${encodeURIComponent(topic.subject)}&topic=${encodeURIComponent(topic.topic)}`)} />)}</div>
                     </>
                   ) : <EmptyPanel title={`No topics attempted in ${selectedSubject} yet.`} body={`Start a ${selectedSubject} quiz to build topic history.`} action={`Practice ${selectedSubject} →`} onClick={() => router.push('/dashboard')} />}
@@ -1177,13 +1247,13 @@ export default function HistoryPage() {
               {activeMode === 'mistakes' && (
                 <section>
                   <div className="mistake-filter-group">
-                    <p className="mistake-filter-label font-display">Select a mistake type</p>
+                    <p className="history-filter-title font-display">Select a mistake type</p>
                     <div className="chip-row filter-chip-row">
                       {QUESTION_TYPES.map(type => <button key={type.key} type="button" className={`chip ${questionType === type.key ? 'active' : ''}`} onClick={() => setQuestionType(type.key)}>{type.label}</button>)}
                     </div>
                   </div>
                   <div className="mistake-filter-group">
-                    <p className="mistake-filter-label font-display">Select a subject</p>
+                    <p className="history-filter-title font-display">Select a subject</p>
                     <div className="chip-row filter-chip-row">
                       <button type="button" className={`chip ${!questionSubject ? 'active' : ''}`} onClick={() => setQuestionSubject('')}>All</button>
                       {questionSubjects.map(item => <button key={item.subject} type="button" className={`chip ${questionSubject === item.subject ? 'active' : ''}`} onClick={() => setQuestionSubject(item.subject)}>{item.subject}</button>)}
@@ -1192,9 +1262,21 @@ export default function HistoryPage() {
                   <p className="active-filter-summary">Showing: {activeMistakeSummary}</p>
                   {questionsLoading ? <Loader card size="sm" label="Loading questions..." /> : (
                     <>
-                      <div className="history-card">
-                        <p className="font-display font-black text-white">{practiceCount} {summaryPhrase} found</p>
-                        {practiceCount > 0 && <button type="button" className="primary-btn mt-3 w-full" onClick={() => openPracticeModal({ subject: questionSubject, count: practiceCount, answerStatus: questionType === 'repeated' || questionType === 'never_correct' ? 'wrong_skipped' : questionType, questionHistory: questionType === 'repeated' ? 'repeated' : questionType === 'never_correct' ? 'never_correct' : 'all' })}>Practice All {practiceCount}</button>}
+                      <div className="mistake-summary-card">
+                        <div className="mistake-summary-copy">
+                          <span className="mistake-summary-icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 9v4" />
+                              <path d="M12 17h.01" />
+                              <path d="M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z" />
+                            </svg>
+                          </span>
+                          <div className="min-w-0">
+                            <p className="mistake-summary-count">{practiceCount}</p>
+                            <p className="mistake-summary-label">{summaryPhrase}</p>
+                          </div>
+                        </div>
+                        {practiceCount > 0 && <button type="button" className="mistake-summary-cta" onClick={() => openPracticeModal({ subject: questionSubject, count: practiceCount, answerStatus: questionType === 'repeated' || questionType === 'never_correct' ? 'wrong_skipped' : questionType, questionHistory: questionType === 'repeated' ? 'repeated' : questionType === 'never_correct' ? 'never_correct' : 'all' })}>Practice all {practiceCount}</button>}
                       </div>
                       {questionsData?.questions?.length ? questionsData.questions.map(item => <QuestionCard key={item.questionId} item={item} isOpen={expandedQuestionId === item.questionId} onToggleOpen={() => setExpandedQuestionId(current => current === item.questionId ? '' : item.questionId)} aiCache={aiCache} setAiCache={setAiCache} onToggleSave={toggleSave} />) : <EmptyPanel title={`No ${questionType.replace('_', ' ')} questions found.`} body="Practice more to build this list." action="Practice More →" onClick={() => router.push('/dashboard')} />}
                     </>
