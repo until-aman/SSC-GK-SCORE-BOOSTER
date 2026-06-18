@@ -5,7 +5,6 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
 import Loader from '@/components/ui/Loader';
-import RefreshStatus from '@/components/ui/RefreshStatus';
 import { CACHE_KEYS, CACHE_TTL } from '@/lib/cachePolicy';
 import { readCache, writeCache } from '@/lib/clientCache';
 import { buildUserScopedKey, getUserCacheScope } from '@/lib/userCacheScope';
@@ -161,9 +160,18 @@ function AttemptStatsRow({ stats, includeTime, timeSpent, className = '' }) {
       {includeTime && timeSpent && <span className="rm-stat-time">Time {timeSpent}</span>}
       {stats?.totalAttempts > 0 && (
         <>
-          <span className="rm-stat-correct">Correct {stats.correctCount}x ({stats.correctPct}%)</span>
-          <span className="rm-stat-wrong">Wrong {stats.wrongCount}x ({stats.wrongPct}%)</span>
-          <span className="rm-stat-skipped">Skipped {stats.skippedCount}x ({stats.skippedPct}%)</span>
+          <span className="rm-stat-block rm-stat-correct">
+            <span className="rm-stat-value">✓ {stats.correctCount}</span>
+            <span className="rm-stat-label">Correct ({stats.correctPct}%)</span>
+          </span>
+          <span className="rm-stat-block rm-stat-wrong">
+            <span className="rm-stat-value">× {stats.wrongCount}</span>
+            <span className="rm-stat-label">Wrong ({stats.wrongPct}%)</span>
+          </span>
+          <span className="rm-stat-block rm-stat-skipped">
+            <span className="rm-stat-value">○ {stats.skippedCount}</span>
+            <span className="rm-stat-label">Skipped ({stats.skippedPct}%)</span>
+          </span>
         </>
       )}
     </div>
@@ -207,7 +215,6 @@ function ChevronSVG() {
 function QuestionCard({ item, onView, onToggleSave }) {
   const attemptStats = getAttemptBreakdown(item);
   const lastPracticed = formatDate(item.lastAttemptedAt);
-  const timeSpent = formatDuration(getQuestionTimeSpent(item));
 
   return (
     <article
@@ -247,7 +254,7 @@ function QuestionCard({ item, onView, onToggleSave }) {
       </div>
 
       <AttemptSegmentBar stats={attemptStats} />
-      <AttemptStatsRow stats={attemptStats} includeTime timeSpent={timeSpent} />
+      <AttemptStatsRow stats={attemptStats} />
     </article>
   );
 }
@@ -272,7 +279,6 @@ function MistakeReviewCard({ questions, startIndex, onClose, onToggleSave }) {
 
   const total = questions.length;
   const attemptStats = getAttemptBreakdown(q);
-  const timeSpent = formatDuration(getQuestionTimeSpent(q));
   const lastPracticed = formatFullDate(q.lastAttemptedAt);
 
   function goNext() {
@@ -379,7 +385,7 @@ function MistakeReviewCard({ questions, startIndex, onClose, onToggleSave }) {
               <b>Correct: {attemptStats.correctPct}%</b>
             </div>
             <AttemptSegmentBar stats={attemptStats} />
-            <AttemptStatsRow stats={attemptStats} includeTime timeSpent={timeSpent} className="detail" />
+            <AttemptStatsRow stats={attemptStats} className="detail" />
           </div>
         )}
 
@@ -549,13 +555,12 @@ function MistakeReviewCard({ questions, startIndex, onClose, onToggleSave }) {
 }
 
 export default function RepeatedMistakesPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const cacheScope = getUserCacheScope(session);
   const router = useRouter();
   const [mistakes, setMistakes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [updatedAt, setUpdatedAt] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [cacheChecked, setCacheChecked] = useState(false);
   const [cacheMessage, setCacheMessage] = useState('');
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState('');
@@ -566,27 +571,29 @@ export default function RepeatedMistakesPage() {
   const subjectFilterRefs = useRef({});
 
   const loadRepeatedMistakes = useCallback(async ({ forceRefresh = false, silent = false } = {}) => {
+    if (status === 'loading') return;
+
     const cacheKey = getRepeatedMistakesCacheKey(cacheScope);
     const cached = readCache(cacheKey, REPEATED_MISTAKES_CACHE_TTL);
 
     if (!forceRefresh && cached?.data?.questions) {
       setMistakes(cached.data.questions);
-      setUpdatedAt(cached.timestamp);
-      setCacheMessage(cached.isFresh ? '' : 'Showing saved data. Tap refresh for latest.');
+      setCacheMessage('');
       setLoading(false);
+      setCacheChecked(true);
       setError('');
-      return;
+      if (cached.isFresh) {
+        return;
+      }
     }
 
     if (!silent) {
       if (cached?.data?.questions) {
         setMistakes(cached.data.questions);
-        setUpdatedAt(cached.timestamp);
       } else {
         setLoading(true);
       }
     }
-    setRefreshing(forceRefresh);
     setError('');
     setCacheMessage('');
 
@@ -615,14 +622,11 @@ export default function RepeatedMistakesPage() {
 
       const data = { questions: allQuestions };
       writeCache(cacheKey, data, { ttlMs: REPEATED_MISTAKES_CACHE_TTL, source: 'history_questions' });
-      const freshCache = readCache(cacheKey, REPEATED_MISTAKES_CACHE_TTL);
       setMistakes(allQuestions);
-      setUpdatedAt(freshCache?.timestamp || Date.now());
       setCacheMessage('');
     } catch (err) {
       if (cached?.data?.questions) {
         setMistakes(cached.data.questions);
-        setUpdatedAt(cached.timestamp);
         setCacheMessage("Couldn't refresh right now. Showing saved data.");
       } else {
         setMistakes([]);
@@ -630,9 +634,9 @@ export default function RepeatedMistakesPage() {
       }
     } finally {
       setLoading(false);
-      setRefreshing(false);
+      setCacheChecked(true);
     }
-  }, [cacheScope]);
+  }, [cacheScope, status]);
 
   useEffect(() => {
     loadRepeatedMistakes();
@@ -758,7 +762,6 @@ export default function RepeatedMistakesPage() {
     .rm-summary-cta{width:50%;max-width:180px;min-width:132px;height:42px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:#fff;font-size:13px;font-weight:1000;font-family:inherit;box-shadow:var(--ssc-shadow-cta);cursor:pointer;white-space:nowrap;flex-shrink:0}
     .rm-summary-cta:disabled{opacity:.62;cursor:default;box-shadow:none}
     .rm-detail-filters{padding:0 0 12px}
-    .rm-refresh-row{display:flex;justify-content:flex-end;margin:-2px 0 10px;min-height:18px}
     .rm-cache-message{margin:0 0 10px;color:var(--ssc-text-secondary);font-size:11px;font-weight:800;text-align:right}
     .rm-filter-label{font-size:12px;font-weight:1000;color:var(--ssc-text-primary);margin:4px 0 10px}
     .rm-control-row{display:flex;align-items:flex-start;justify-content:flex-start;flex-direction:column;padding:2px 0 0;margin-bottom:20px}
@@ -797,12 +800,16 @@ export default function RepeatedMistakesPage() {
     .rm-segment-fill.correct{background:var(--ssc-success)}
     .rm-segment-fill.wrong{background:var(--ssc-danger)}
     .rm-segment-fill.skipped{background:var(--ssc-border-soft)}
-    .rm-attempt-stats{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:9px;font-weight:900;white-space:nowrap;overflow:hidden}
-    .rm-attempt-stats.detail{font-size:10px;gap:12px;flex-wrap:wrap;white-space:normal;overflow:visible;margin-top:9px}
+    .rm-attempt-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:0;margin-top:7px;font-size:9px;font-weight:900;white-space:nowrap;overflow:hidden;width:100%;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft);padding:7px 0 6px}
+    .rm-attempt-stats.detail{font-size:10px;white-space:nowrap;overflow:hidden;margin-top:9px}
     .rm-stat-time{color:var(--ssc-text-secondary)}
-    .rm-stat-correct{color:var(--ssc-success)}
-    .rm-stat-wrong{color:var(--ssc-danger)}
-    .rm-stat-skipped{color:var(--ssc-warning)}
+    .rm-stat-block{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;min-width:0;border-left:1px solid var(--ssc-border-soft)}
+    .rm-stat-block:first-child{border-left:0}
+    .rm-stat-value{font-size:14px;font-weight:1000;line-height:1}
+    .rm-stat-label{font-size:9px;font-weight:900;line-height:1.1;color:var(--ssc-text-muted);overflow:hidden;text-overflow:ellipsis;max-width:100%}
+    .rm-stat-correct .rm-stat-value{color:var(--ssc-success)}
+    .rm-stat-wrong .rm-stat-value{color:var(--ssc-danger)}
+    .rm-stat-skipped .rm-stat-value{color:var(--ssc-text-muted)}
   `;
 
   return (
@@ -814,25 +821,10 @@ export default function RepeatedMistakesPage() {
       <style suppressHydrationWarning>{styles}</style>
       <HistoryTopBar title="Repeated Mistakes" icon={RepeatedMistakesIcon} showBack />
       <main className={`history-shell ${questionSubject ? 'filtered' : ''}`}>
-        {(updatedAt || refreshing || mistakes.length > 0) && (
-          <div className="rm-refresh-row">
-            <RefreshStatus
-              updatedAt={updatedAt}
-              isRefreshing={refreshing}
-              onRefresh={() => loadRepeatedMistakes({ forceRefresh: true })}
-              refreshText={
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="23 4 23 10 17 10" />
-                  <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
-                </svg>
-              }
-            />
-          </div>
-        )}
         {cacheMessage && <p className="rm-cache-message">{cacheMessage}</p>}
         {loading ? <Loader card size="md" label="Loading mistakes..." /> : error ? (
           <EmptyPanel title="Couldn't load repeated mistakes." body={error} action="Retry" onClick={() => loadRepeatedMistakes({ forceRefresh: true })} />
-        ) : (
+        ) : !cacheChecked && status === 'loading' ? null : !cacheChecked ? null : (
           <>
             {!questionSubject ? (
               <>
