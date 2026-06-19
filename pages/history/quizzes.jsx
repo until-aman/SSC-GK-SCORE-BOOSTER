@@ -527,7 +527,7 @@ function QuestionCard({ item, isOpen, onToggleOpen, aiCache, setAiCache, onToggl
         </button>
       </div>
 
-      <p className="rm-question-text">{item.questionPreview || item.question}</p>
+      <p className="rm-question-text">{item.question || item.questionPreview}</p>
 
       <div className="rm-footer">
         <div className="rm-footer-copy">
@@ -571,8 +571,7 @@ function QuestionCard({ item, isOpen, onToggleOpen, aiCache, setAiCache, onToggl
 
 function HistoryMistakeReviewCard({ questions, startIndex, onClose, onToggleSave }) {
   const [idx, setIdx] = useState(startIndex);
-  const [revealed, setRevealed] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(null);
+  const [showExplanation, setShowExplanation] = useState(false);
   const touchStartX = useRef(null);
   const q = questions[idx];
 
@@ -581,8 +580,7 @@ function HistoryMistakeReviewCard({ questions, startIndex, onClose, onToggleSave
   }, [questions.length, idx]);
 
   useEffect(() => {
-    setRevealed(false);
-    setSelectedOption(null);
+    setShowExplanation(false);
   }, [idx]);
 
   if (!questions.length || !q) return null;
@@ -590,6 +588,8 @@ function HistoryMistakeReviewCard({ questions, startIndex, onClose, onToggleSave
   const total = questions.length;
   const attemptStats = getAttemptBreakdown(q);
   const lastPracticed = formatFullDate(q.lastAttemptedAt);
+  const rawLastChosenOption = q.lastUserAnswer || q.userAnswer || q.selectedOption || '';
+  const lastChosenOption = OPTION_LABELS.includes(rawLastChosenOption) ? rawLastChosenOption : '';
 
   function goNext() {
     if (idx < total - 1) setIdx(current => current + 1);
@@ -661,12 +661,12 @@ function HistoryMistakeReviewCard({ questions, startIndex, onClose, onToggleSave
           </div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: revealed ? 18 : 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
           {OPTION_LABELS.map((label, i) => {
             const text = q[OPTION_KEYS[i]];
             if (!text) return null;
-            const isCorrect = revealed && label === q.correctOption;
-            const isWrong = revealed && selectedOption === label && label !== q.correctOption;
+            const isCorrect = label === q.correctOption;
+            const isLastChosenWrong = lastChosenOption === label && label !== q.correctOption;
 
             let rowBg = '#FFFFFF';
             let rowBorder = 'var(--ssc-border-soft)';
@@ -682,7 +682,7 @@ function HistoryMistakeReviewCard({ questions, startIndex, onClose, onToggleSave
               markerBg = '#DDFBF0';
               markerColor = 'var(--ssc-success)';
               markerBorder = 'rgba(18,184,134,0.28)';
-            } else if (isWrong) {
+            } else if (isLastChosenWrong) {
               rowBg = 'var(--ssc-danger-soft)';
               rowBorder = 'rgba(239,68,68,0.38)';
               textColor = 'var(--ssc-danger)';
@@ -692,17 +692,27 @@ function HistoryMistakeReviewCard({ questions, startIndex, onClose, onToggleSave
             }
 
             return (
-              <button key={label} type="button" onClick={() => { if (revealed) return; setSelectedOption(label); setRevealed(true); }} style={{ display: 'flex', alignItems: 'center', gap: 12, borderRadius: 12, padding: '12px 13px', width: '100%', textAlign: 'left', background: rowBg, border: `1px solid ${rowBorder}`, cursor: revealed ? 'default' : 'pointer' }}>
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, borderRadius: 12, padding: '12px 13px', width: '100%', textAlign: 'left', background: rowBg, border: `1px solid ${rowBorder}` }}>
                 <span style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 1000, background: markerBg, color: markerColor, border: `1px solid ${markerBorder}` }}>{label}</span>
-                <span style={{ fontSize: 13, lineHeight: 1.4, color: textColor, fontWeight: (isCorrect || isWrong) ? 900 : 700, flex: 1 }}>{text}</span>
+                <span style={{ fontSize: 13, lineHeight: 1.4, color: textColor, fontWeight: (isCorrect || isLastChosenWrong) ? 900 : 700, flex: 1 }}>{text}</span>
                 {isCorrect && <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-success)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
-                {isWrong && <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-danger)" strokeWidth="2.6" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>}
-              </button>
+                {isLastChosenWrong && <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-danger)" strokeWidth="2.6" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>}
+              </div>
             );
           })}
         </div>
 
-        {revealed && (
+        {!showExplanation && (
+          <button
+            type="button"
+            onClick={() => setShowExplanation(true)}
+            style={{ width: '100%', minHeight: 44, borderRadius: 13, border: '1px solid rgba(14,165,164,0.28)', background: 'var(--ssc-surface-soft)', color: 'var(--ssc-teal)', fontFamily: 'inherit', fontSize: 13, fontWeight: 1000, marginBottom: 16, cursor: 'pointer' }}
+          >
+            View Explanation
+          </button>
+        )}
+
+        {showExplanation && (
           <div style={{ background: 'linear-gradient(180deg,#F4FFFF 0%,#ECFAFB 100%)', border: '1px solid rgba(14,165,164,0.20)', borderRadius: 13, padding: '13px 14px', marginBottom: 16 }}>
             <p style={{ margin: '0 0 7px', fontSize: 12, fontWeight: 1000, color: 'var(--ssc-teal)' }}>Explanation:</p>
             <p style={{ margin: 0, fontSize: 13, lineHeight: 1.58, fontWeight: 700, color: 'var(--ssc-text-secondary)' }}>
@@ -1215,15 +1225,15 @@ export default function HistoryPage() {
     .entity-card{padding:14px 15px}.entity-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.entity-title{color:var(--ssc-text-primary);font-size:15px;font-weight:900;line-height:1.3;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.entity-subtitle{color:var(--ssc-text-muted);font-size:11px;font-weight:800;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.entity-accuracy{text-align:right;flex:0 0 auto}.entity-accuracy p{font-size:24px;line-height:1;font-weight:900;margin:0 0 5px}.entity-badge{font-size:10px;padding:4px 8px;flex:0 0 auto}.entity-meta{display:flex;flex-direction:column;gap:4px;margin-top:11px;color:var(--ssc-text-secondary);font-size:12px;font-weight:700}.entity-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;font-size:13px;font-weight:900}.entity-stat-row .text-emerald-300{color:var(--ssc-success)}.entity-stat-row .text-red-300{color:var(--ssc-danger)}.entity-stat-row .text-amber-300{color:var(--ssc-warning)}.subject-entity-card,.topic-entity-card{padding:13px 15px}.subject-entity-card .entity-top,.topic-entity-card .entity-top{align-items:flex-start}.subject-entity-card .entity-title{-webkit-line-clamp:1}.topic-entity-card .entity-title{-webkit-line-clamp:2}.topic-subject-line{color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.35;margin:8px 0 0}.subject-meta-line{color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.45;margin:8px 0 0}.subject-stat-row{justify-content:space-between;gap:8px;margin-top:13px;padding:10px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft);white-space:nowrap}.subject-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
 
     .question-card{padding:12px 14px;cursor:pointer}.question-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}.question-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.question-kicker{color:var(--ssc-teal);background:var(--ssc-teal-soft);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;margin:0;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.question-badge{font-size:10px;padding:4px 8px;max-width:132px;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.question-chevron{display:inline-flex;height:24px;width:24px;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-text-secondary);font-size:18px;font-weight:900}.question-preview{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.38;margin:9px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.question-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;padding:8px 0 0;border-top:1px solid var(--ssc-border-soft);font-size:12px;font-weight:900;white-space:nowrap}.question-stat-row .text-red-300{color:var(--ssc-danger)}.question-stat-row .text-slate-400{color:var(--ssc-text-muted)}.question-stat-row span+span:before{content:'';margin:0}.question-actions{display:flex;justify-content:flex-end;margin-top:11px;align-items:center}.save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);display:flex;align-items:center;justify-content:center;transition:transform .12s ease,background .12s ease,border-color .12s ease}.save-icon-btn:active{transform:scale(.92)}.save-icon-btn.saved{border-color:rgba(14,165,164,.36);background:var(--ssc-teal-soft)}
-    .mistake-summary-card{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;padding:15px 16px;border-radius:16px;border:1px solid #BDEDEA;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);box-shadow:var(--ssc-shadow-card)}
-    .mistake-summary-copy{display:flex;align-items:center;min-width:0}.mistake-summary-count{color:var(--ssc-teal);font-family:var(--font-display);font-size:24px;font-weight:1000;line-height:1;margin:0}.mistake-summary-label{color:var(--ssc-text-secondary);font-size:11px;font-weight:800;line-height:1.25;margin:3px 0 0;text-transform:capitalize}.mistake-summary-cta{width:50%;max-width:180px;min-width:132px;height:42px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;font-family:inherit;font-size:13px;font-weight:1000;box-shadow:var(--ssc-shadow-cta);cursor:pointer;white-space:nowrap;flex-shrink:0}
+    .mistake-summary-card{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin:0 0 14px;padding:15px 16px;border-radius:16px;border:1px solid #BDEDEA;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);box-shadow:var(--ssc-shadow-card)}
+    .mistake-summary-title{color:var(--ssc-text-secondary);font-size:12px;font-weight:900;line-height:1.35;margin:0}.mistake-summary-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.mistake-summary-copy{display:flex;align-items:center;min-width:0}.mistake-summary-count{color:var(--ssc-teal);font-family:var(--font-display);font-size:24px;font-weight:1000;line-height:1;margin:0}.mistake-summary-label{color:var(--ssc-text-secondary);font-size:11px;font-weight:800;line-height:1.25;margin:3px 0 0;text-transform:capitalize}.mistake-summary-cta{width:50%;max-width:180px;min-width:132px;height:42px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;font-family:inherit;font-size:13px;font-weight:1000;box-shadow:var(--ssc-shadow-cta);cursor:pointer;white-space:nowrap;flex-shrink:0}
     .rm-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;box-shadow:var(--ssc-shadow-card);padding:12px 14px;margin-bottom:12px;cursor:pointer}.rm-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}.rm-card.open{cursor:default}.rm-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px}.rm-tags{display:flex;align-items:center;gap:7px;min-width:0;overflow:hidden}.rm-subject-tag,.rm-topic-tag{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;font-size:10px;font-weight:1000;line-height:1.1;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.rm-subject-tag{color:var(--ssc-teal);background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.16)}.rm-topic-tag{color:var(--ssc-orange);background:var(--ssc-orange-soft);border:1px solid rgba(255,106,0,.16)}.rm-card-bookmark-btn{width:26px;height:26px;border:0;border-radius:8px;background:transparent;color:var(--ssc-text-muted);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer}.rm-card-bookmark-btn svg{width:18px;height:18px}.rm-card-bookmark-btn.saved svg{fill:var(--ssc-teal);stroke:var(--ssc-teal)}.rm-question-text{font-size:13px;font-weight:900;color:var(--ssc-text-primary);line-height:1.38;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;margin:0 22px 11px 0}.rm-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}.rm-footer-copy{min-width:0;display:flex;align-items:center;gap:8px}.rm-meta{font-size:11px;font-weight:900;color:var(--ssc-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rm-open-icon{width:24px;height:24px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;color:var(--ssc-text-muted);flex:0 0 auto}.rm-segment-track{height:4px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden;display:flex;width:100%}.rm-segment-fill{height:100%;display:block}.rm-segment-fill.correct{background:var(--ssc-success)}.rm-segment-fill.wrong{background:var(--ssc-danger)}.rm-segment-fill.skipped{background:var(--ssc-border-soft)}.rm-attempt-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:0;margin-top:7px;font-size:9px;font-weight:900;white-space:nowrap;overflow:hidden;width:100%;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft);padding:7px 0 6px}.rm-stat-block{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;min-width:0;border-left:1px solid var(--ssc-border-soft)}.rm-stat-block:first-child{border-left:0}.rm-stat-value{font-size:14px;font-weight:1000;line-height:1}.rm-stat-label{font-size:9px;font-weight:900;line-height:1.1;color:var(--ssc-text-muted);overflow:hidden;text-overflow:ellipsis;max-width:100%}.rm-stat-correct .rm-stat-value{color:var(--ssc-success)}.rm-stat-wrong .rm-stat-value{color:var(--ssc-danger)}.rm-stat-skipped .rm-stat-value{color:var(--ssc-text-muted)}
     .rm-performance-head{display:flex;align-items:center;justify-content:flex-start;gap:10px;margin-bottom:7px;font-size:11px;font-weight:900;color:var(--ssc-text-muted)}
     @media (max-width:380px){.mistake-summary-card{grid-template-columns:1fr;gap:12px}.mistake-summary-cta{width:100%}.rm-stat-label{font-size:8px}}
 
-    .mode-selector{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin:0 0 14px;padding:0 0 2px;scrollbar-width:none;-ms-overflow-style:none}.mode-selector::-webkit-scrollbar{display:none}.mode-selector button{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-family:inherit;font-size:10px;font-weight:900;padding:7px 12px;white-space:nowrap;flex:0 0 auto;cursor:pointer;text-align:center;box-shadow:0 5px 12px rgba(16,32,51,.04)}.mode-selector button.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 8px 18px rgba(14,165,164,.16)}
+    .mode-selector{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:0 0 14px;padding:4px;background:rgba(255,255,255,.72);border:1px solid var(--ssc-border-soft);border-radius:12px;box-shadow:0 6px 18px rgba(16,32,51,.05)}.mode-selector button{min-width:0;border:0;border-radius:9px;background:transparent;color:var(--ssc-text-secondary);font-family:inherit;font-size:10px;font-weight:900;padding:7px 4px;white-space:nowrap;cursor:pointer;text-align:center;overflow:hidden;text-overflow:ellipsis}.mode-selector button.active{background:var(--ssc-teal);color:white;box-shadow:0 6px 14px rgba(14,165,164,.18)}
 
-    .chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin-left:-16px;margin-right:-16px;padding:0 16px 14px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.filter-chip-row{margin-bottom:0;padding-bottom:10px}.mistake-chip-row{margin-left:0;margin-right:0;padding:0 0 2px}.quiz-filter-chip-row{margin:0;padding:0 8px 0 0;flex:1}.sheet-chip-row{margin-left:0;margin-right:0;padding:0 0 4px;flex-wrap:wrap}.chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:7px 12px;white-space:nowrap;text-transform:capitalize;flex:0 0 auto;cursor:pointer;box-shadow:0 5px 12px rgba(16,32,51,.04)}.chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 8px 18px rgba(14,165,164,.16)}
+    .chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin-left:-16px;margin-right:-16px;padding:0 16px 14px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.filter-chip-row{margin-bottom:0;padding-bottom:10px}.history-chip-row,.mistake-chip-row,.quiz-filter-chip-row{margin-left:0;margin-right:0;padding:0 0 2px;flex:none}.sheet-chip-row{margin-left:0;margin-right:0;padding:0 0 4px;flex-wrap:wrap}.chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:7px 12px;white-space:nowrap;text-transform:capitalize;flex:0 0 auto;cursor:pointer;box-shadow:0 5px 12px rgba(16,32,51,.04)}.chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 8px 18px rgba(14,165,164,.16)}
 
     .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;min-height:40px}
     .primary-btn{border:0;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;box-shadow:var(--ssc-shadow-cta)}
@@ -1344,7 +1354,7 @@ export default function HistoryPage() {
                 <>
                   <div className="quiz-filter-group">
                     <p className="history-filter-title font-display">Select a period</p>
-                    <div className="chip-row filter-chip-row quiz-filter-chip-row">
+                    <div className="chip-row filter-chip-row history-chip-row">
                       {QUICK_FILTERS.map(filter => (
                         <button key={filter.key} type="button" className={`chip ${quickFilter === filter.key ? 'active' : ''}`} onClick={() => handleQuickFilter(filter.key)}>{filter.label}</button>
                       ))}
@@ -1383,7 +1393,7 @@ export default function HistoryPage() {
                   <h2 className="history-filter-title font-display">Select a subject</h2>
                   {subjectsLoading ? <Loader card size="sm" label="Loading subjects..." /> : subjects?.length ? (
                     <>
-                      <div className="chip-row filter-chip-row">
+                      <div className="chip-row filter-chip-row history-chip-row">
                         <button type="button" className={`chip ${!subjectFilter ? 'active' : ''}`} onClick={() => setSubjectFilter('')}>All</button>
                         {subjects.map(item => <button key={item.subject} type="button" className={`chip ${subjectFilter === item.subject ? 'active' : ''}`} onClick={() => setSubjectFilter(item.subject)}>{item.subject}</button>)}
                       </div>
@@ -1398,7 +1408,7 @@ export default function HistoryPage() {
               {activeMode === 'topic' && (
                 <section>
                   <h2 className="history-filter-title font-display">Select a subject</h2>
-                  <div className="chip-row filter-chip-row">
+                  <div className="chip-row filter-chip-row history-chip-row">
                     {(subjects || []).map(item => <button key={item.subject} type="button" className={`chip ${selectedSubject === item.subject ? 'active' : ''}`} onClick={() => setSelectedSubject(item.subject)}>{item.subject}</button>)}
                   </div>
                   {!selectedSubject ? <EmptyPanel title="Select a subject to see topics." body="Choose a subject above to see attempted topics." /> : topicsLoading ? <Loader card size="sm" label="Loading topics..." /> : topics.length ? (
@@ -1425,17 +1435,19 @@ export default function HistoryPage() {
                       {questionSubjects.map(item => <button key={item.subject} type="button" className={`chip ${questionSubject === item.subject ? 'active' : ''}`} onClick={() => setQuestionSubject(item.subject)}>{item.subject}</button>)}
                     </div>
                   </div>
-                  <p className="active-filter-summary">Showing: {activeMistakeSummary}</p>
                   {questionsLoading ? <Loader card size="sm" label="Loading questions..." /> : (
                     <>
                       <div className="mistake-summary-card">
-                        <div className="mistake-summary-copy">
-                          <div className="min-w-0">
-                            <p className="mistake-summary-count">{practiceCount}</p>
-                            <p className="mistake-summary-label">{summaryPhrase}</p>
+                        <p className="mistake-summary-title">Showing: {activeMistakeSummary}</p>
+                        <div className="mistake-summary-row">
+                          <div className="mistake-summary-copy">
+                            <div className="min-w-0">
+                              <p className="mistake-summary-count">{practiceCount}</p>
+                              <p className="mistake-summary-label">{summaryPhrase}</p>
+                            </div>
                           </div>
+                          {practiceCount > 0 && <button type="button" className="mistake-summary-cta" onClick={() => openPracticeModal({ subject: questionSubject, count: practiceCount, answerStatus: questionType === 'repeated' || questionType === 'never_correct' ? 'wrong_skipped' : questionType, questionHistory: questionType === 'repeated' ? 'repeated' : questionType === 'never_correct' ? 'never_correct' : 'all' })}>Practice all {practiceCount}</button>}
                         </div>
-                        {practiceCount > 0 && <button type="button" className="mistake-summary-cta" onClick={() => openPracticeModal({ subject: questionSubject, count: practiceCount, answerStatus: questionType === 'repeated' || questionType === 'never_correct' ? 'wrong_skipped' : questionType, questionHistory: questionType === 'repeated' ? 'repeated' : questionType === 'never_correct' ? 'never_correct' : 'all' })}>Practice all {practiceCount}</button>}
                       </div>
                       {visibleMistakeQuestions.length ? visibleMistakeQuestions.map((item, index) => <QuestionCard key={item.questionId} item={item} isOpen={false} onToggleOpen={() => setReviewIndex(index)} aiCache={aiCache} setAiCache={setAiCache} onToggleSave={toggleSave} />) : <EmptyPanel title={`No ${questionType.replace('_', ' ')} questions found.`} body="Practice more to build this list." action="Practice More →" onClick={() => router.push('/dashboard')} />}
                     </>
