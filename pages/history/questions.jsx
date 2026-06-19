@@ -88,7 +88,10 @@ function QuestionReviewCard({ item, aiCache, setAiCache, onToggleSave }) {
       }}
     >
       <div className="question-card-top">
-        <p className="question-kicker">{item.subject} &middot; {item.topic}</p>
+        <div className="question-tag-row">
+          {item.subject && <span className="subject-tag">{item.subject}</span>}
+          {item.topic && <span className="topic-tag">{item.topic}</span>}
+        </div>
         <div className="flex items-center gap-2">
           <span className="tone-pill question-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{item.masteryLabel}</span>
           <span className="question-chevron" aria-hidden="true">{open ? '⌃' : '›'}</span>
@@ -167,7 +170,6 @@ export default function HistoryQuestionsPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
-  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [page, setPage] = useState(1);
   const [aiCache, setAiCache] = useState({});
 
@@ -219,20 +221,8 @@ export default function HistoryQuestionsPage() {
     return allQuestions.filter(item => item.wrongCount > 0 || item.skippedCount > 0);
   }, [activeFilter, allQuestions]);
   const practiceSetLabel = activeFilter === 'skipped' ? 'Skipped' : 'Mistakes';
-  const safeActiveQuestionIndex = filtered.length ? Math.min(activeQuestionIndex, filtered.length - 1) : 0;
-  const activeQuestion = filtered[safeActiveQuestionIndex] || null;
   const reviewNoun = activeFilter === 'all' ? 'questions' : `question${filtered.length !== 1 ? 's' : ''}`;
   const reviewSummary = `Reviewing ${filtered.length} ${FILTER_COPY[activeFilter]} ${reviewNoun}`;
-
-  useEffect(() => {
-    setActiveQuestionIndex(0);
-  }, [activeFilter, data?.questions]);
-
-  useEffect(() => {
-    if (activeQuestionIndex > 0 && activeQuestionIndex >= filtered.length) {
-      setActiveQuestionIndex(Math.max(filtered.length - 1, 0));
-    }
-  }, [activeQuestionIndex, filtered.length]);
 
   function startQuestionSet(questions, quizMode, topicLabel) {
     if (!questions.length) return;
@@ -301,16 +291,15 @@ export default function HistoryQuestionsPage() {
           .summary-stat.correct{color:var(--ssc-teal)}
           .summary-stat.wrong{color:#DC2626}
           .summary-stat.skipped{color:var(--ssc-text-muted)}
-          .carousel-shell{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:13px 14px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
-          .carousel-progress{margin-bottom:12px}
-          .carousel-progress strong{display:block;color:var(--ssc-text-primary);font-size:14px;font-weight:900;line-height:1.2}
-          .carousel-progress span{display:block;color:var(--ssc-text-muted);font-size:12px;font-weight:700;margin-top:4px}
-          .carousel-nav{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-          .question-review-card{padding:14px 15px}
+          .question-review-list{display:grid;gap:10px}
+          .question-review-card{padding:12px 13px;margin-bottom:0;border-radius:14px}
           .question-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-          .question-kicker{color:var(--ssc-teal);font-size:11px;font-weight:800;line-height:1.35;margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+          .question-tag-row{display:flex;gap:7px;align-items:center;min-width:0;overflow:hidden;flex:1}
+          .subject-tag,.topic-tag{display:inline-flex;align-items:center;height:22px;border-radius:999px;padding:0 9px;font-size:10px;font-weight:1000;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+          .subject-tag{max-width:40%;color:var(--ssc-teal);background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.14)}
+          .topic-tag{max-width:72%;color:var(--ssc-orange);background:var(--ssc-orange-soft);border:1px solid rgba(255,106,0,.14)}
           .question-badge{font-size:10px;padding:4px 8px;max-width:132px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 0 auto}
-          .question-review-text{color:var(--ssc-text-primary);font-size:15px;font-weight:800;line-height:1.5;margin:13px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical}
+          .question-review-text{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.38;margin:10px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical}
           .question-review-text.open{-webkit-line-clamp:unset;display:block}
           .read-more-btn{border:0;background:transparent;color:var(--ssc-teal);font-size:12px;font-weight:800;padding:8px 0 0;cursor:pointer;font-family:inherit}
           .question-history-stats{display:flex;align-items:center;justify-content:space-between;gap:8px;row-gap:7px;flex-wrap:wrap;margin-top:14px;padding:11px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft);font-size:12px;font-weight:800}
@@ -328,10 +317,10 @@ export default function HistoryQuestionsPage() {
           .secondary-btn{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface);color:var(--ssc-teal)}
           .primary-btn:disabled,.secondary-btn:disabled{opacity:.45;cursor:default;box-shadow:none}
           .chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:700;padding:7px 14px;white-space:nowrap;text-transform:capitalize;cursor:pointer;font-family:inherit}
-          .chip.active{background:linear-gradient(135deg,#FF8A1F,#FF5A00);border-color:transparent;color:white}
-          .filter-chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 16px 8px;margin:0 -16px;scrollbar-width:none;-ms-overflow-style:none}
+          .chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 8px 18px rgba(14,165,164,.16)}
+          .filter-chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 0 10px;margin:0;scrollbar-width:none;-ms-overflow-style:none}
           .filter-chip-row::-webkit-scrollbar{display:none}
-          .review-filter-summary{color:var(--ssc-text-muted);font-size:12px;font-weight:700;line-height:1.4;margin:0 0 12px 2px}
+          .review-filter-summary{color:var(--ssc-text-primary);font-size:12px;font-weight:1000;line-height:1.4;margin:0 0 12px 2px}
           .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900}
           .open-detail-panel{margin-top:14px;padding:12px;border:1px solid var(--ssc-border-soft);border-radius:16px;background:rgba(248,250,252,1)}
           .detail-section{margin-bottom:10px}
@@ -373,19 +362,13 @@ export default function HistoryQuestionsPage() {
               </section>
               <div className="filter-chip-row">{FILTERS.map(filter => <button key={filter} type="button" className={`chip ${activeFilter === filter ? 'active' : ''}`} onClick={() => setActiveFilter(filter)}>{FILTER_LABELS[filter]} ({filterCounts[filter] ?? 0})</button>)}</div>
               <p className="review-filter-summary">{reviewSummary}</p>
-              {activeQuestion ? (
+              {filtered.length ? (
                 <>
-                  <section className="carousel-shell">
-                    <div className="carousel-progress">
-                      <strong className="font-display">Question {safeActiveQuestionIndex + 1} of {filtered.length}</strong>
-                      <span>Use Previous and Next to review one question at a time</span>
-                    </div>
-                    <div className="carousel-nav">
-                      <button type="button" className="secondary-btn" disabled={safeActiveQuestionIndex === 0} onClick={() => setActiveQuestionIndex(index => Math.max(index - 1, 0))}>&#8592; Previous</button>
-                      <button type="button" className="secondary-btn" disabled={safeActiveQuestionIndex >= filtered.length - 1} onClick={() => setActiveQuestionIndex(index => Math.min(index + 1, filtered.length - 1))}>Next &#8594;</button>
-                    </div>
-                  </section>
-                  <QuestionReviewCard key={activeQuestion.questionId} item={activeQuestion} aiCache={aiCache} setAiCache={setAiCache} onToggleSave={toggleSave} />
+                  <div className="question-review-list">
+                    {filtered.map(item => (
+                      <QuestionReviewCard key={item.questionId} item={item} aiCache={aiCache} setAiCache={setAiCache} onToggleSave={toggleSave} />
+                    ))}
+                  </div>
                   <section className="bottom-action-card">
                     <button type="button" className="primary-btn" disabled={!practiceSet.length} onClick={() => startQuestionSet(practiceSet, activeFilter === 'skipped' ? 'reattempt_skipped' : 'reattempt_mistakes', activeFilter === 'skipped' ? 'Skipped Practice' : 'Mistake Practice')}>Practice {practiceSet.length} {practiceSetLabel}</button>
                   </section>

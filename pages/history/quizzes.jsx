@@ -345,13 +345,13 @@ function QuizCard({ session, onReview, onPractice }) {
               Practice Again
             </button>
             <button type="button" className="secondary-btn quiz-review-btn" onClick={() => onReview(session)}>
-              Review Quiz
+              Review Questions
             </button>
           </>
         ) : (
           <>
             <button type="button" className="secondary-btn" onClick={() => onReview(session)}>
-              Review Quiz
+              Review Questions
             </button>
             <button type="button" className="secondary-btn" disabled>Practice Again</button>
           </>
@@ -422,11 +422,11 @@ function StatEntityCard({ item, type, onPractice, onReview }) {
           {hasMistakes ? (
             <>
               <button type="button" className="primary-btn" onClick={() => onPractice(item)}>Practice Again</button>
-              <button type="button" className="secondary-btn" onClick={() => onReview(item)}>Review</button>
+              <button type="button" className="secondary-btn" onClick={() => onReview(item)}>Review Questions</button>
             </>
           ) : (
             <>
-              <button type="button" className="primary-btn" onClick={() => onReview(item)}>Review</button>
+              <button type="button" className="primary-btn" onClick={() => onReview(item)}>Review Questions</button>
               <button type="button" className="secondary-btn" disabled>Practice Again</button>
             </>
           )}
@@ -467,11 +467,11 @@ function StatEntityCard({ item, type, onPractice, onReview }) {
         {hasMistakes ? (
           <>
             <button type="button" className="primary-btn" onClick={() => onPractice(item)}>Practice Again</button>
-            <button type="button" className="secondary-btn" onClick={() => onReview(item)}>{type === 'topic' ? 'Review' : 'Review Questions'}</button>
+            <button type="button" className="secondary-btn" onClick={() => onReview(item)}>Review Questions</button>
           </>
         ) : (
           <>
-            <button type="button" className="primary-btn" onClick={() => onReview(item)}>{type === 'topic' ? 'Review' : 'Review Questions'}</button>
+            <button type="button" className="primary-btn" onClick={() => onReview(item)}>Review Questions</button>
             <button type="button" className="secondary-btn" disabled>Practice Again</button>
           </>
         )}
