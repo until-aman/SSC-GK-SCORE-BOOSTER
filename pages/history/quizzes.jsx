@@ -386,13 +386,13 @@ function StatEntityCard({ item, type, onPractice, onReview }) {
         <div className="subject-action-row">
           {hasMistakes ? (
             <>
-              <button type="button" className="primary-btn" onClick={() => onPractice(item)}>Practice Mistakes</button>
+              <button type="button" className="primary-btn" onClick={() => onPractice(item)}>Practice Again</button>
               <button type="button" className="secondary-btn" onClick={() => onReview(item)}>Review Questions</button>
             </>
           ) : (
             <>
               <button type="button" className="primary-btn" onClick={() => onReview(item)}>Review Questions</button>
-              <button type="button" className="secondary-btn" disabled>Practice Mistakes</button>
+              <button type="button" className="secondary-btn" disabled>Practice Again</button>
             </>
           )}
         </div>
@@ -421,13 +421,13 @@ function StatEntityCard({ item, type, onPractice, onReview }) {
         <div className="subject-action-row">
           {hasMistakes ? (
             <>
-              <button type="button" className="primary-btn" onClick={() => onPractice(item)}>Practice Mistakes</button>
+              <button type="button" className="primary-btn" onClick={() => onPractice(item)}>Practice Again</button>
               <button type="button" className="secondary-btn" onClick={() => onReview(item)}>Review</button>
             </>
           ) : (
             <>
               <button type="button" className="primary-btn" onClick={() => onReview(item)}>Review</button>
-              <button type="button" className="secondary-btn" disabled>Practice Mistakes</button>
+              <button type="button" className="secondary-btn" disabled>Practice Again</button>
             </>
           )}
         </div>
@@ -466,13 +466,13 @@ function StatEntityCard({ item, type, onPractice, onReview }) {
       <div className="grid grid-cols-2 gap-2 mt-4">
         {hasMistakes ? (
           <>
-            <button type="button" className="primary-btn" onClick={() => onPractice(item)}>Practice Mistakes</button>
+            <button type="button" className="primary-btn" onClick={() => onPractice(item)}>Practice Again</button>
             <button type="button" className="secondary-btn" onClick={() => onReview(item)}>{type === 'topic' ? 'Review' : 'Review Questions'}</button>
           </>
         ) : (
           <>
             <button type="button" className="primary-btn" onClick={() => onReview(item)}>{type === 'topic' ? 'Review' : 'Review Questions'}</button>
-            <button type="button" className="secondary-btn" disabled>Practice Mistakes</button>
+            <button type="button" className="secondary-btn" disabled>Practice Again</button>
           </>
         )}
       </div>
@@ -1226,7 +1226,7 @@ export default function HistoryPage() {
 
     .question-card{padding:12px 14px;cursor:pointer}.question-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}.question-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.question-kicker{color:var(--ssc-teal);background:var(--ssc-teal-soft);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;margin:0;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.question-badge{font-size:10px;padding:4px 8px;max-width:132px;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.question-chevron{display:inline-flex;height:24px;width:24px;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-text-secondary);font-size:18px;font-weight:900}.question-preview{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.38;margin:9px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.question-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;padding:8px 0 0;border-top:1px solid var(--ssc-border-soft);font-size:12px;font-weight:900;white-space:nowrap}.question-stat-row .text-red-300{color:var(--ssc-danger)}.question-stat-row .text-slate-400{color:var(--ssc-text-muted)}.question-stat-row span+span:before{content:'';margin:0}.question-actions{display:flex;justify-content:flex-end;margin-top:11px;align-items:center}.save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);display:flex;align-items:center;justify-content:center;transition:transform .12s ease,background .12s ease,border-color .12s ease}.save-icon-btn:active{transform:scale(.92)}.save-icon-btn.saved{border-color:rgba(14,165,164,.36);background:var(--ssc-teal-soft)}
     .mistake-summary-card{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin:0 0 14px;padding:15px 16px;border-radius:16px;border:1px solid #BDEDEA;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);box-shadow:var(--ssc-shadow-card)}
-    .mistake-summary-title{color:var(--ssc-text-secondary);font-size:12px;font-weight:900;line-height:1.35;margin:0}.mistake-summary-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.mistake-summary-copy{display:flex;align-items:center;min-width:0}.mistake-summary-count{color:var(--ssc-teal);font-family:var(--font-display);font-size:24px;font-weight:1000;line-height:1;margin:0}.mistake-summary-label{color:var(--ssc-text-secondary);font-size:11px;font-weight:800;line-height:1.25;margin:3px 0 0;text-transform:capitalize}.mistake-summary-cta{width:50%;max-width:180px;min-width:132px;height:42px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;font-family:inherit;font-size:13px;font-weight:1000;box-shadow:var(--ssc-shadow-cta);cursor:pointer;white-space:nowrap;flex-shrink:0}
+    .mistake-summary-title{color:var(--ssc-text-primary);font-size:12px;font-weight:1000;line-height:1.35;margin:0}.mistake-summary-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.mistake-summary-copy{display:flex;align-items:center;min-width:0}.mistake-summary-count{color:var(--ssc-teal);font-family:var(--font-display);font-size:24px;font-weight:1000;line-height:1;margin:0}.mistake-summary-label{color:var(--ssc-text-secondary);font-size:11px;font-weight:800;line-height:1.25;margin:3px 0 0;text-transform:capitalize}.mistake-summary-cta{width:50%;max-width:180px;min-width:132px;height:42px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;font-family:inherit;font-size:13px;font-weight:1000;box-shadow:var(--ssc-shadow-cta);cursor:pointer;white-space:nowrap;flex-shrink:0}
     .rm-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;box-shadow:var(--ssc-shadow-card);padding:12px 14px;margin-bottom:12px;cursor:pointer}.rm-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}.rm-card.open{cursor:default}.rm-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px}.rm-tags{display:flex;align-items:center;gap:7px;min-width:0;overflow:hidden}.rm-subject-tag,.rm-topic-tag{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;font-size:10px;font-weight:1000;line-height:1.1;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.rm-subject-tag{color:var(--ssc-teal);background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.16)}.rm-topic-tag{color:var(--ssc-orange);background:var(--ssc-orange-soft);border:1px solid rgba(255,106,0,.16)}.rm-card-bookmark-btn{width:26px;height:26px;border:0;border-radius:8px;background:transparent;color:var(--ssc-text-muted);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer}.rm-card-bookmark-btn svg{width:18px;height:18px}.rm-card-bookmark-btn.saved svg{fill:var(--ssc-teal);stroke:var(--ssc-teal)}.rm-question-text{font-size:13px;font-weight:900;color:var(--ssc-text-primary);line-height:1.38;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;margin:0 22px 11px 0}.rm-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}.rm-footer-copy{min-width:0;display:flex;align-items:center;gap:8px}.rm-meta{font-size:11px;font-weight:900;color:var(--ssc-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rm-open-icon{width:24px;height:24px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;color:var(--ssc-text-muted);flex:0 0 auto}.rm-segment-track{height:4px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden;display:flex;width:100%}.rm-segment-fill{height:100%;display:block}.rm-segment-fill.correct{background:var(--ssc-success)}.rm-segment-fill.wrong{background:var(--ssc-danger)}.rm-segment-fill.skipped{background:var(--ssc-border-soft)}.rm-attempt-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:0;margin-top:7px;font-size:9px;font-weight:900;white-space:nowrap;overflow:hidden;width:100%;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft);padding:7px 0 6px}.rm-stat-block{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;min-width:0;border-left:1px solid var(--ssc-border-soft)}.rm-stat-block:first-child{border-left:0}.rm-stat-value{font-size:14px;font-weight:1000;line-height:1}.rm-stat-label{font-size:9px;font-weight:900;line-height:1.1;color:var(--ssc-text-muted);overflow:hidden;text-overflow:ellipsis;max-width:100%}.rm-stat-correct .rm-stat-value{color:var(--ssc-success)}.rm-stat-wrong .rm-stat-value{color:var(--ssc-danger)}.rm-stat-skipped .rm-stat-value{color:var(--ssc-text-muted)}
     .rm-performance-head{display:flex;align-items:center;justify-content:flex-start;gap:10px;margin-bottom:7px;font-size:11px;font-weight:900;color:var(--ssc-text-muted)}
     @media (max-width:380px){.mistake-summary-card{grid-template-columns:1fr;gap:12px}.mistake-summary-cta{width:100%}.rm-stat-label{font-size:8px}}
@@ -1240,7 +1240,7 @@ export default function HistoryPage() {
     .secondary-btn{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-teal)}
     .primary-btn:disabled,.secondary-btn:disabled{opacity:1;cursor:default;box-shadow:none;background:var(--ssc-disabled-bg);color:var(--ssc-disabled-text);border-color:var(--ssc-border-soft)}
 
-    .section-subtitle{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:5px 0 12px}.history-filter-title{color:var(--ssc-text-primary);font-family:inherit;font-size:12px;font-weight:1000;line-height:1;margin:4px 0 10px;letter-spacing:0}.topic-result-title{margin:4px 0 10px}
+    .section-subtitle{color:var(--ssc-text-secondary);font-size:13px;line-height:1.45;margin:5px 0 12px}.history-filter-title{color:var(--ssc-text-primary);font-family:inherit;font-size:12px;font-weight:1000;line-height:1;margin:4px 0 10px;letter-spacing:0}.topic-result-title{margin:12px 0 10px}.history-filter-results{margin-top:12px}
 
     .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}
     .divider{height:1px;background:var(--ssc-border-soft);margin:12px 0}
@@ -1397,9 +1397,11 @@ export default function HistoryPage() {
                         <button type="button" className={`chip ${!subjectFilter ? 'active' : ''}`} onClick={() => setSubjectFilter('')}>All</button>
                         {subjects.map(item => <button key={item.subject} type="button" className={`chip ${subjectFilter === item.subject ? 'active' : ''}`} onClick={() => setSubjectFilter(item.subject)}>{item.subject}</button>)}
                       </div>
-                      {filteredSubjects.map(item => (
-                        <StatEntityCard key={item.subject} item={item} type="subject" onPractice={subject => openPracticeModal({ subject: subject.subject, count: subject.wrongCount + subject.skippedCount })} onReview={subject => router.push(`/history/questions?subject=${encodeURIComponent(subject.subject)}`)} />
-                      ))}
+                      <div className="history-filter-results">
+                        {filteredSubjects.map(item => (
+                          <StatEntityCard key={item.subject} item={item} type="subject" onPractice={subject => openPracticeModal({ subject: subject.subject, count: subject.wrongCount + subject.skippedCount })} onReview={subject => router.push(`/history/questions?subject=${encodeURIComponent(subject.subject)}`)} />
+                        ))}
+                      </div>
                     </>
                   ) : <EmptyPanel title="No attempted subjects yet." body="Start a quiz to build your subject-wise history." action="Start Practice →" onClick={() => router.push('/dashboard')} />}
                 </section>
@@ -1414,7 +1416,7 @@ export default function HistoryPage() {
                   {!selectedSubject ? <EmptyPanel title="Select a subject to see topics." body="Choose a subject above to see attempted topics." /> : topicsLoading ? <Loader card size="sm" label="Loading topics..." /> : topics.length ? (
                     <>
                       <h2 className="history-filter-title topic-result-title font-display">Select a topic</h2>
-                      <div>{topics.map(item => <StatEntityCard key={item.topic} item={item} type="topic" onPractice={topic => openPracticeModal({ subject: topic.subject, topic: topic.topic, count: topic.wrongCount + topic.skippedCount })} onReview={topic => router.push(`/history/questions?subject=${encodeURIComponent(topic.subject)}&topic=${encodeURIComponent(topic.topic)}`)} />)}</div>
+                      <div className="history-filter-results">{topics.map(item => <StatEntityCard key={item.topic} item={item} type="topic" onPractice={topic => openPracticeModal({ subject: topic.subject, topic: topic.topic, count: topic.wrongCount + topic.skippedCount })} onReview={topic => router.push(`/history/questions?subject=${encodeURIComponent(topic.subject)}&topic=${encodeURIComponent(topic.topic)}`)} />)}</div>
                     </>
                   ) : <EmptyPanel title={`No topics attempted in ${selectedSubject} yet.`} body={`Start a ${selectedSubject} quiz to build topic history.`} action={`Practice ${selectedSubject} →`} onClick={() => router.push('/dashboard')} />}
                 </section>
@@ -1438,7 +1440,7 @@ export default function HistoryPage() {
                   {questionsLoading ? <Loader card size="sm" label="Loading questions..." /> : (
                     <>
                       <div className="mistake-summary-card">
-                        <p className="mistake-summary-title">Showing: {activeMistakeSummary}</p>
+                        <p className="mistake-summary-title">Showing {activeMistakeSummary}</p>
                         <div className="mistake-summary-row">
                           <div className="mistake-summary-copy">
                             <div className="min-w-0">
