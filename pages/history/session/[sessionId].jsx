@@ -469,6 +469,11 @@ export default function SessionReviewPage() {
           .review-action-row .secondary-btn:only-child{grid-column:1 / -1}
           .filter-chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 0 10px;margin:0;scrollbar-width:none;-ms-overflow-style:none}
           .filter-chip-row::-webkit-scrollbar{display:none}
+          .review-summary-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:16px;padding:14px 16px;margin:0 0 12px;box-shadow:var(--ssc-shadow-card)}
+          .review-summary-copy{min-width:0;flex:1}
+          .review-summary-label{margin:0;color:var(--ssc-text-muted);font-size:12px;font-weight:800}
+          .review-summary-count{margin:4px 0 0;color:var(--ssc-text-primary);font-size:24px;font-weight:900;line-height:1}
+          .review-summary-cta{min-width:148px;white-space:nowrap;}
           .review-filter-summary{color:var(--ssc-text-primary);font-size:12px;font-weight:1000;line-height:1.4;margin:0 0 12px 2px}
           .session-summary{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:22px;padding:16px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
           .session-title{color:var(--ssc-text-primary);font-size:17px;line-height:1.25;font-weight:900;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
@@ -520,6 +525,20 @@ export default function SessionReviewPage() {
 
         <div className="filter-chip-row">
           {FILTERS.map(filter => <button key={filter} onClick={() => setActiveFilter(filter)} className={`chip ${activeFilter === filter ? 'active' : ''}`}>{filter} ({filterCounts[filter] ?? 0})</button>)}
+        </div>
+        <div className="review-summary-card">
+          <div className="review-summary-copy">
+            <p className="review-summary-label">Showing {filterLabel} questions</p>
+            <p className="review-summary-count">{filtered.length}</p>
+          </div>
+          <button
+            type="button"
+            className="primary-btn review-summary-cta"
+            disabled={!filtered.length || starting}
+            onClick={() => startReattempt('session_mistakes')}
+          >
+            Practice all {filtered.length}
+          </button>
         </div>
         <p className="review-filter-summary">{reviewSummary}</p>
 
