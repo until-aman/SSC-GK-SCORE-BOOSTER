@@ -268,7 +268,7 @@ function QuestionCard({ item, onView, onToggleSave }) {
         </button>
       </div>
 
-      <p className="rm-question-text">{item.questionPreview || item.question}</p>
+      <p className="rm-question-text">{item.question || item.questionPreview}</p>
 
       <div className="rm-footer">
         <div className="rm-footer-copy">
