@@ -41,6 +41,92 @@ function formatTime(seconds) {
   return mins ? `${mins}m ${secs}s` : `${secs}s`;
 }
 
+function formatPercent(value) {
+  const rounded = Math.round(Number(value) * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
+function getDistributedPercentages(counts = []) {
+  const total = counts.reduce((sum, count) => sum + count, 0);
+  if (!total) return counts.map(() => ({ value: 0, label: '0' }));
+
+  const rawTenths = counts.map(count => (count / total) * 1000);
+  const flooredTenths = rawTenths.map(Math.floor);
+  let remainingTenths = 1000 - flooredTenths.reduce((sum, value) => sum + value, 0);
+
+  const order = rawTenths
+    .map((value, index) => ({ index, remainder: value - flooredTenths[index] }))
+    .sort((a, b) => b.remainder - a.remainder || a.index - b.index);
+
+  for (let i = 0; i < remainingTenths; i += 1) {
+    flooredTenths[order[i % order.length].index] += 1;
+  }
+
+  return flooredTenths.map(value => {
+    const percentage = value / 10;
+    return {
+      value: percentage,
+      label: formatPercent(percentage),
+    };
+  });
+}
+
+function getAttemptBreakdown(item) {
+  const correctCount = Number(item.stats?.correctCount || item.correctCount || 0);
+  const wrongCount = Number(item.stats?.wrongCount || item.wrongCount || 0);
+  const skippedCount = Number(item.stats?.skippedCount || item.skippedCount || 0);
+  const totalAttempts = correctCount + wrongCount + skippedCount;
+  const [correctPct, wrongPct, skippedPct] = getDistributedPercentages([correctCount, wrongCount, skippedCount]);
+  return {
+    correctCount,
+    wrongCount,
+    skippedCount,
+    totalAttempts,
+    correctPct: correctPct.value,
+    wrongPct: wrongPct.value,
+    skippedPct: skippedPct.value,
+    correctPctLabel: correctPct.label,
+    wrongPctLabel: wrongPct.label,
+    skippedPctLabel: skippedPct.label,
+  };
+}
+
+function AttemptSegmentBar({ stats }) {
+  if (!stats?.totalAttempts) return null;
+  return (
+    <div className="rm-segment-track">
+      {stats.correctPct > 0 && <span className="rm-segment-fill correct" style={{ width: `${stats.correctPct}%` }} />}
+      {stats.wrongPct > 0 && <span className="rm-segment-fill wrong" style={{ width: `${stats.wrongPct}%` }} />}
+      {stats.skippedPct > 0 && <span className="rm-segment-fill skipped" style={{ width: `${stats.skippedPct}%` }} />}
+    </div>
+  );
+}
+
+function AttemptStatsRow({ stats, includeTime, timeSpent, className = '' }) {
+  if (!stats?.totalAttempts && !timeSpent) return null;
+  return (
+    <div className={`rm-attempt-stats ${className}`}>
+      {includeTime && timeSpent && <span className="rm-stat-time">Time {timeSpent}</span>}
+      {stats?.totalAttempts > 0 && (
+        <>
+          <span className="rm-stat-block rm-stat-correct">
+            <span className="rm-stat-value">✓ {stats.correctCount}</span>
+            <span className="rm-stat-label">Correct ({stats.correctPctLabel}%)</span>
+          </span>
+          <span className="rm-stat-block rm-stat-wrong">
+            <span className="rm-stat-value">× {stats.wrongCount}</span>
+            <span className="rm-stat-label">Wrong ({stats.wrongPctLabel}%)</span>
+          </span>
+          <span className="rm-stat-block rm-stat-skipped">
+            <span className="rm-stat-value">○ {stats.skippedCount}</span>
+            <span className="rm-stat-label">Skipped ({stats.skippedPctLabel}%)</span>
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
 function optionText(question, option) {
   if (!option) return '';
   return question[`option${option}`] || '';
@@ -71,16 +157,6 @@ function QuestionCard({ item, session, onToggleSave }) {
   const [cache, setCache] = useState(null);
   const tone = TONES[item.masteryTone] || TONES.grey;
 
-  // AI CALL RULES FOR HISTORY TAB
-  // 1. NEVER call AI automatically on any page load
-  // 2. NEVER call AI for all questions when review screen opens
-  // 3. NEVER call AI for correct answers (no explanation needed by default)
-  // 4. ONLY call AI when user explicitly taps "Get AI Explanation" button
-  // 5. ALWAYS check component state cache before calling AI
-  // 6. ALWAYS show official sheet explanation first if it exists
-  // 7. ALWAYS fall back to official explanation silently if AI fails
-  // 8. CACHE AI response in component state (key: questionId)
-  //    so repeated taps on same question never call API twice
   function handleShowExplanation() {
     setExpanded(value => !value);
     if (cache) return;
@@ -106,67 +182,70 @@ function QuestionCard({ item, session, onToggleSave }) {
     }
   }
 
+  const attemptStats = getAttemptBreakdown(item);
+  const timeSpent = item.timeTakenSeconds ? `${item.timeTakenSeconds}s taken` : `Q${item.questionNumber}`;
+  const lastPracticed = formatDate(item.lastAttemptedAt || item.lastPracticedAt);
+
   return (
-    <div className="review-card session-question-card">
-      <div className="review-question-top">
-        <div className="review-question-meta session-card-tags">
-          {(item.subject || session?.subject) && <span className="subject-tag">{item.subject || session.subject}</span>}
-          {(item.topic || session?.topic) && <span className="topic-tag">{item.topic || session.topic}</span>}
+    <article className="rm-card session-question-card">
+      <div className="rm-card-head">
+        <div className="rm-tags">
+          {(item.subject || session?.subject) && <span className="rm-subject-tag">{item.subject || session.subject}</span>}
+          {(item.topic || session?.topic) && <span className="rm-topic-tag">{item.topic || session.topic}</span>}
         </div>
-        <button type="button" onClick={() => onToggleSave(item)} className={`save-btn ${item.isSaved ? 'saved' : ''}`} aria-label={item.isSaved ? 'Remove bookmark' : 'Save question'} title={item.isSaved ? 'Saved' : 'Save'}>
+        <button
+          type="button"
+          className={`rm-card-bookmark-btn ${item.isSaved ? 'saved' : ''}`}
+          onClick={e => { e.stopPropagation(); onToggleSave(item); }}
+          aria-label={item.isSaved ? 'Remove bookmark' : 'Save question'}
+        >
           <BookmarkIcon filled={item.isSaved} />
         </button>
       </div>
 
-      <p className={`review-question-text font-display ${questionExpanded ? 'open' : ''}`}>{item.question}</p>
+      <p className={`rm-question-text ${questionExpanded ? 'open' : ''}`}>{item.question}</p>
       {item.question?.length > 220 && (
         <button type="button" className="read-more-btn" onClick={() => setQuestionExpanded(value => !value)}>{questionExpanded ? 'Show less' : 'Read more'}</button>
       )}
 
-      <div className="review-history-row">
-        <div>
-          <p>{item.timeTakenSeconds ? `${item.timeTakenSeconds}s taken` : `Q${item.questionNumber}`}</p>
-          <strong>&#10003; {item.stats.correctCount} Correct &nbsp; &times; {item.stats.wrongCount} Wrong &nbsp; &#9675; {item.stats.skippedCount} Skipped</strong>
+      <div className="rm-footer">
+        <div className="rm-footer-copy">
+          <span className="rm-meta">{timeSpent}</span>
         </div>
-        <span className="mastery" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}44` }}>{item.masteryLabel}</span>
+        <span className="rm-open-icon" aria-hidden="true">›</span>
       </div>
+
+      <AttemptSegmentBar stats={attemptStats} />
+      <AttemptStatsRow stats={attemptStats} />
 
       <div className="review-action-row">
         <button onClick={handleShowExplanation} className="secondary-btn">{expanded ? 'Hide Explanation' : '📖 Show Explanation'}</button>
       </div>
 
       {expanded && cache && (
-        <div className="explain-box">
-          <div className="answer-compare">
-            <div className={`answer-row ${item.isSkipped ? 'skipped' : item.isCorrect ? 'correct' : 'wrong'}`}>
-              <span className="answer-label">Your Answer</span>
-              <div className="answer-value">
-                <b>{item.isSkipped ? 'Skipped' : `${optionText(item, item.userAnswer) || item.userAnswer || '-'}${item.userAnswer ? ` (Option ${item.userAnswer})` : ''}`}</b>
-                {!item.isSkipped && (item.isCorrect ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                ))}
-              </div>
+        <div className="question-expanded">
+          <div className="expanded-block">
+            <p className="expanded-label">Your answer</p>
+            <p className="expanded-question">{item.isSkipped ? 'Skipped' : `${optionText(item, item.userAnswer) || item.userAnswer || '-'}${item.userAnswer ? ` (Option ${item.userAnswer})` : ''}`}</p>
+          </div>
+          <div className="answer-detail-grid">
+            <div className={`answer-detail ${item.isSkipped ? 'skipped' : item.isCorrect ? 'correct' : 'wrong'}`}>
+              <span>Your response</span>
+              <b>{item.isSkipped ? 'Skipped' : `${optionText(item, item.userAnswer) || item.userAnswer || '-'}`}</b>
             </div>
-            <div className="answer-row correct">
-              <span className="answer-label">Correct Answer</span>
-              <div className="answer-value">
-                <b>{optionText(item, item.correctOption) || item.correctOption} (Option {item.correctOption})</b>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
+            <div className="answer-detail correct">
+              <span>Correct answer</span>
+              <b>{optionText(item, item.correctOption) || item.correctOption}</b>
             </div>
           </div>
-          <p className="explain-title">Explanation</p>
-          {cache.official ? (
-            <p style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', lineHeight: 1.58, margin: 0 }}>{cache.official}</p>
-          ) : (
-            <p style={{ fontSize: 13, color: 'var(--ssc-text-muted)', lineHeight: 1.55 }}>No official explanation available.</p>
-          )}
+          <p className="expanded-label">Explanation</p>
+          <p className="expanded-question" style={{ fontSize: 13, lineHeight: 1.55, margin: 0, color: cache.official ? 'var(--ssc-text-secondary)' : 'var(--ssc-text-muted)' }}>
+            {cache.official || 'No official explanation available.'}
+          </p>
           {cache.ai && (
-            <div style={{ marginTop: 10, padding: 11, background: 'rgba(139,92,246,0.07)', border: '1px solid rgba(139,92,246,0.18)', borderRadius: 12 }}>
-              <p style={{ fontSize: 11, fontWeight: 900, color: '#7C3AED', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 7px' }}>✦ AI Explanation</p>
-              <p style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', lineHeight: 1.55, margin: 0 }}>{cache.ai}</p>
+            <div className="answer-detail correct" style={{ marginTop: 10, background: 'rgba(139,92,246,0.07)', borderColor: 'rgba(139,92,246,0.18)' }}>
+              <span style={{ color: '#7C3AED', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.04em' }}>AI Explanation</span>
+              <b style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', fontWeight: 500, marginTop: 6 }}>{cache.ai}</b>
             </div>
           )}
           {cache.loading ? (
@@ -176,7 +255,7 @@ function QuestionCard({ item, session, onToggleSave }) {
           )}
         </div>
       )}
-    </div>
+    </article>
   );
 }
 
@@ -366,47 +445,53 @@ export default function SessionReviewPage() {
           ${REVIEW_QUESTION_CARD_STYLES}
           .session-question-list{display:grid;gap:10px}
           .session-question-card{border-radius:14px;padding:12px 13px;margin-bottom:0}
-          .primary-btn{border:0;border-radius:14px;background:linear-gradient(135deg,#FF8A1F,#FF5A00);color:white;font-size:13px;font-weight:800;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(255,107,22,0.25)}
-          .secondary-btn{border:1px solid var(--ssc-border-soft);border-radius:14px;background:var(--ssc-surface);color:var(--ssc-teal);font-size:13px;font-weight:800;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit}
-          .primary-btn:disabled,.secondary-btn:disabled{opacity:.45;cursor:default;box-shadow:none}
-          .chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:700;padding:7px 14px;white-space:nowrap;font-family:inherit;cursor:pointer}
+          .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;min-height:40px}
+          .primary-btn{border:0;background:linear-gradient(135deg,#ff7a1a,#ff4d00);color:white;box-shadow:var(--ssc-shadow-cta)}
+          .secondary-btn{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-teal)}
+          .primary-btn:disabled,.secondary-btn:disabled{opacity:.55;cursor:default;box-shadow:none}
+          .chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:7px 12px;white-space:nowrap;text-transform:none;flex:0 0 auto;box-shadow:0 5px 12px rgba(16,32,51,.04)}
           .chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 8px 18px rgba(14,165,164,.16)}
-          .status{border-radius:999px;padding:3px 9px;font-size:11px;font-weight:800;border:1px solid}
-          .status.wrong{background:rgba(239,68,68,0.10);color:#DC2626;border-color:rgba(239,68,68,0.22)}
-          .status.skipped{background:rgba(245,158,11,0.10);color:#D97706;border-color:rgba(245,158,11,0.22)}
-          .status.correct{background:rgba(20,184,166,0.10);color:var(--ssc-teal);border-color:rgba(20,184,166,0.22)}
-          .save-btn{height:34px;width:34px;border:1px solid var(--ssc-border-soft);background:rgba(248,250,252,1);border-radius:999px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer}
-          .save-btn.saved{border-color:rgba(20,184,166,0.40);background:rgba(20,184,166,0.12)}
-          .mastery{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900}
-          .explain-box{background:rgba(14,165,164,0.06);border:1px solid rgba(14,165,164,0.18);border-radius:14px;padding:13px;margin-top:12px}
-          .explain-title{color:var(--ssc-teal);font-size:11px;font-weight:900;margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em}
-          .review-question-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
-          .review-question-meta{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden}
-          .session-card-tags{flex:1;gap:7px}
-          .subject-tag,.topic-tag{display:inline-flex;align-items:center;height:22px;border-radius:999px;padding:0 9px;font-size:10px;font-weight:1000;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-          .subject-tag{max-width:40%;color:var(--ssc-teal);background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.14)}
-          .topic-tag{max-width:72%;color:var(--ssc-orange);background:var(--ssc-orange-soft);border:1px solid rgba(255,106,0,.14)}
-          .review-question-number{color:var(--ssc-text-muted);font-size:13px;font-weight:900}
-          .review-time{color:var(--ssc-text-muted);font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-          .review-question-text{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.38;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical}
-          .review-question-text.open{-webkit-line-clamp:unset;display:block}
-          .read-more-btn{border:0;background:transparent;color:var(--ssc-teal);font-size:12px;font-weight:800;padding:8px 0 0;cursor:pointer;font-family:inherit}
-          .answer-compare{display:grid;gap:8px;margin:0 0 13px}
-          .answer-row{border-radius:13px;padding:10px 12px}
-          .answer-row .answer-label{display:block;color:var(--ssc-text-muted);font-size:11px;font-weight:700;margin-bottom:5px}
-          .answer-row .answer-value{display:flex;align-items:center;justify-content:space-between;gap:8px}
-          .answer-row .answer-value b{font-size:13px;line-height:1.45;flex:1}
-          .answer-row.wrong{background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.18)}
-          .answer-row.wrong .answer-value b{color:#DC2626}
-          .answer-row.correct{background:rgba(20,184,166,0.07);border:1px solid rgba(20,184,166,0.18)}
-          .answer-row.correct .answer-value b{color:var(--ssc-teal)}
-          .answer-row.skipped{background:rgba(148,163,184,0.08);border:1px solid rgba(148,163,184,0.18)}
-          .answer-row.skipped .answer-value b{color:var(--ssc-text-muted)}
-          .review-history-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:10px;padding:9px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft)}
-          .review-history-row div{min-width:0}
-          .review-history-row p{color:var(--ssc-text-muted);font-size:11px;font-weight:700;margin:0 0 5px}
-          .review-history-row strong{display:block;color:var(--ssc-text-secondary);font-size:12px;line-height:1.4}
-          .review-history-row .mastery{flex:0 0 auto;font-size:10px;padding:4px 8px;max-width:122px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+          .question-expanded{overflow:hidden;margin-top:12px;padding:11px;border:1px solid var(--ssc-border-soft);border-radius:14px;background:var(--ssc-surface-soft)}
+          .expanded-block{margin-bottom:10px}
+          .expanded-label{color:var(--ssc-text-muted);font-size:10px;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px}
+          .expanded-question{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.48;margin:0}
+          .expanded-attempt{color:var(--ssc-text-muted);font-size:11px;font-weight:800;margin:9px 0 0}
+          .answer-detail-grid{display:grid;gap:8px}
+          .answer-detail{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface);border-radius:12px;padding:9px 10px}
+          .answer-detail span{display:block;color:var(--ssc-text-muted);font-size:10px;font-weight:900;margin-bottom:4px}
+          .answer-detail b{display:block;font-size:12px;line-height:1.4}
+          .answer-detail.correct{background:var(--ssc-success-soft);border-color:rgba(18,184,134,.28)}
+          .answer-detail.wrong{background:var(--ssc-danger-soft);border-color:rgba(239,68,68,.28)}
+          .answer-detail.skipped b{color:var(--ssc-text-secondary)}
+          .rm-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:12px;padding:9px 10px 8px;margin:0 0 9px;position:relative;box-shadow:0 8px 18px rgba(16,32,51,.05);cursor:pointer}
+          .rm-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}
+          .rm-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px;padding-right:0}
+          .rm-tags{display:flex;gap:7px;align-items:center;min-width:0;overflow:hidden;flex:1;flex-wrap:nowrap}
+          .rm-subject-tag,.rm-topic-tag{display:inline-flex;align-items:center;height:22px;border-radius:999px;padding:0 9px;font-size:10px;font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+          .rm-subject-tag{max-width:36%;flex:0 1 auto;color:var(--ssc-teal);background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.14)}
+          .rm-topic-tag{max-width:72%;flex:0 1 auto;color:var(--ssc-orange);background:var(--ssc-orange-soft);border:1px solid rgba(255,106,0,.14)}
+          .rm-question-text{font-size:11px;font-weight:900;color:var(--ssc-text-primary);line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;margin:0 24px 9px 0}
+          .rm-question-text.open{-webkit-line-clamp:unset;display:block}
+          .rm-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+          .rm-footer-copy{min-width:0;flex:1}
+          .rm-open-icon{display:inline-flex;height:24px;width:24px;align-items:center;justify-content:center;border-radius:999px;border:0;background:transparent;color:var(--ssc-text-secondary);font-size:14px;font-weight:900;flex:0 0 auto}
+          .rm-meta{font-size:9px;color:var(--ssc-text-muted);font-weight:800}
+          .rm-card-bookmark-btn{height:22px;width:28px;border:0;background:transparent;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;color:var(--ssc-teal);margin-top:0}
+          .rm-segment-track{height:3px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden;margin:8px 2px 0 0;display:flex}
+          .rm-segment-fill{height:100%;display:block;flex:0 0 auto}
+          .rm-segment-fill.correct{background:var(--ssc-success)}
+          .rm-segment-fill.wrong{background:var(--ssc-danger)}
+          .rm-segment-fill.skipped{background:var(--ssc-border-soft)}
+          .rm-attempt-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:0;margin-top:7px;font-size:9px;font-weight:900;white-space:nowrap;overflow:hidden;width:100%;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft);padding:7px 0 6px}
+          .rm-attempt-stats.detail{font-size:10px;white-space:nowrap;overflow:hidden;margin-top:9px}
+          .rm-stat-time{color:var(--ssc-text-secondary)}
+          .rm-stat-block{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;min-width:0;border-left:1px solid var(--ssc-border-soft)}
+          .rm-stat-block:first-child{border-left:0}
+          .rm-stat-value{font-size:14px;font-weight:1000;line-height:1}
+          .rm-stat-label{font-size:9px;font-weight:900;line-height:1.1;color:var(--ssc-text-muted);overflow:hidden;text-overflow:ellipsis;max-width:100%}
+          .rm-stat-correct .rm-stat-value{color:var(--ssc-success)}
+          .rm-stat-wrong .rm-stat-value{color:var(--ssc-danger)}
+          .rm-stat-skipped .rm-stat-value{color:var(--ssc-text-muted)}
           .review-action-row{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
           .review-action-row .secondary-btn:only-child{grid-column:1 / -1}
           .filter-chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 0 10px;margin:0;scrollbar-width:none;-ms-overflow-style:none}
