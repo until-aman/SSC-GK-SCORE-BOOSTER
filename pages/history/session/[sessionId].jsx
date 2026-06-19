@@ -64,12 +64,11 @@ function BookmarkIcon({ filled }) {
   );
 }
 
-function QuestionCard({ item, onToggleSave }) {
+function QuestionCard({ item, session, onToggleSave }) {
   const [expanded, setExpanded] = useState(false);
   const [questionExpanded, setQuestionExpanded] = useState(false);
   const [cache, setCache] = useState(null);
   const tone = TONES[item.masteryTone] || TONES.grey;
-  const status = item.isSkipped ? 'Skipped' : item.isCorrect ? 'Correct' : 'Wrong';
 
   // AI CALL RULES FOR HISTORY TAB
   // 1. NEVER call AI automatically on any page load
@@ -107,12 +106,11 @@ function QuestionCard({ item, onToggleSave }) {
   }
 
   return (
-    <div className="review-card">
+    <div className="review-card session-question-card">
       <div className="review-question-top">
-        <div className="review-question-meta">
-          <span className="review-question-number">Q{item.questionNumber}</span>
-          <span className={`status ${status.toLowerCase()}`}>{status}</span>
-          {item.timeTakenSeconds ? <span className="review-time">{item.timeTakenSeconds}s taken</span> : null}
+        <div className="review-question-meta session-card-tags">
+          {(item.subject || session?.subject) && <span className="subject-tag">{item.subject || session.subject}</span>}
+          {(item.topic || session?.topic) && <span className="topic-tag">{item.topic || session.topic}</span>}
         </div>
         <button type="button" onClick={() => onToggleSave(item)} className={`save-btn ${item.isSaved ? 'saved' : ''}`} aria-label={item.isSaved ? 'Remove bookmark' : 'Save question'} title={item.isSaved ? 'Saved' : 'Save'}>
           <BookmarkIcon filled={item.isSaved} />
@@ -124,31 +122,10 @@ function QuestionCard({ item, onToggleSave }) {
         <button type="button" className="read-more-btn" onClick={() => setQuestionExpanded(value => !value)}>{questionExpanded ? 'Show less' : 'Read more'}</button>
       )}
 
-      <div className="answer-compare">
-        <div className={`answer-row ${item.isSkipped ? 'skipped' : item.isCorrect ? 'correct' : 'wrong'}`}>
-          <span className="answer-label">Your Answer</span>
-          <div className="answer-value">
-            <b>{item.isSkipped ? 'Skipped' : `${optionText(item, item.userAnswer) || item.userAnswer || '-'}${item.userAnswer ? ` (Option ${item.userAnswer})` : ''}`}</b>
-            {!item.isSkipped && (item.isCorrect ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            ))}
-          </div>
-        </div>
-        <div className="answer-row correct">
-          <span className="answer-label">Correct Answer</span>
-          <div className="answer-value">
-            <b>{optionText(item, item.correctOption) || item.correctOption} (Option {item.correctOption})</b>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-        </div>
-      </div>
-
       <div className="review-history-row">
         <div>
-          <p>Your history on this question</p>
-          <strong>&#10003; Correct {item.stats.correctCount}x &middot; &times; Wrong {item.stats.wrongCount}x &middot; &#9675; Skipped {item.stats.skippedCount}x</strong>
+          <p>{item.timeTakenSeconds ? `${item.timeTakenSeconds}s taken` : `Q${item.questionNumber}`}</p>
+          <strong>&#10003; {item.stats.correctCount} Correct &nbsp; &times; {item.stats.wrongCount} Wrong &nbsp; &#9675; {item.stats.skippedCount} Skipped</strong>
         </div>
         <span className="mastery" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}44` }}>{item.masteryLabel}</span>
       </div>
@@ -159,6 +136,26 @@ function QuestionCard({ item, onToggleSave }) {
 
       {expanded && cache && (
         <div className="explain-box">
+          <div className="answer-compare">
+            <div className={`answer-row ${item.isSkipped ? 'skipped' : item.isCorrect ? 'correct' : 'wrong'}`}>
+              <span className="answer-label">Your Answer</span>
+              <div className="answer-value">
+                <b>{item.isSkipped ? 'Skipped' : `${optionText(item, item.userAnswer) || item.userAnswer || '-'}${item.userAnswer ? ` (Option ${item.userAnswer})` : ''}`}</b>
+                {!item.isSkipped && (item.isCorrect ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                ))}
+              </div>
+            </div>
+            <div className="answer-row correct">
+              <span className="answer-label">Correct Answer</span>
+              <div className="answer-value">
+                <b>{optionText(item, item.correctOption) || item.correctOption} (Option {item.correctOption})</b>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+          </div>
           <p className="explain-title">Explanation</p>
           {cache.official ? (
             <p style={{ fontSize: 13, color: 'var(--ssc-text-secondary)', lineHeight: 1.58, margin: 0 }}>{cache.official}</p>
@@ -191,7 +188,6 @@ export default function SessionReviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('Wrong + Skipped');
-  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [starting, setStarting] = useState(false);
 
   const loadSession = useCallback(async function loadSession() {
@@ -233,20 +229,8 @@ export default function SessionReviewPage() {
     Correct: answers.filter(item => item.isCorrect).length,
     Saved: answers.filter(item => item.isSaved).length,
   }), [answers]);
-  const safeActiveQuestionIndex = filtered.length ? Math.min(activeQuestionIndex, filtered.length - 1) : 0;
-  const activeQuestion = filtered[safeActiveQuestionIndex] || null;
   const filterLabel = activeFilter === 'Wrong + Skipped' ? 'wrong/skipped' : activeFilter.toLowerCase();
   const reviewSummary = `Reviewing ${filtered.length} ${filterLabel} question${filtered.length !== 1 ? 's' : ''}`;
-
-  useEffect(() => {
-    setActiveQuestionIndex(0);
-  }, [activeFilter, answers]);
-
-  useEffect(() => {
-    if (activeQuestionIndex > 0 && activeQuestionIndex >= filtered.length) {
-      setActiveQuestionIndex(Math.max(filtered.length - 1, 0));
-    }
-  }, [activeQuestionIndex, filtered.length]);
 
   async function toggleSave(item) {
     setData(prev => ({
@@ -354,11 +338,13 @@ export default function SessionReviewPage() {
       <div className="min-h-screen bg-[var(--ssc-bg)] review-page-shell">
         <style>{`
           .review-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
+          .session-question-list{display:grid;gap:10px}
+          .session-question-card{border-radius:14px;padding:12px 13px;margin-bottom:0}
           .primary-btn{border:0;border-radius:14px;background:linear-gradient(135deg,#FF8A1F,#FF5A00);color:white;font-size:13px;font-weight:800;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(255,107,22,0.25)}
           .secondary-btn{border:1px solid var(--ssc-border-soft);border-radius:14px;background:var(--ssc-surface);color:var(--ssc-teal);font-size:13px;font-weight:800;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit}
           .primary-btn:disabled,.secondary-btn:disabled{opacity:.45;cursor:default;box-shadow:none}
           .chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:12px;font-weight:700;padding:7px 14px;white-space:nowrap;font-family:inherit;cursor:pointer}
-          .chip.active{background:linear-gradient(135deg,#FF8A1F,#FF5A00);border-color:transparent;color:white}
+          .chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 8px 18px rgba(14,165,164,.16)}
           .status{border-radius:999px;padding:3px 9px;font-size:11px;font-weight:800;border:1px solid}
           .status.wrong{background:rgba(239,68,68,0.10);color:#DC2626;border-color:rgba(239,68,68,0.22)}
           .status.skipped{background:rgba(245,158,11,0.10);color:#D97706;border-color:rgba(245,158,11,0.22)}
@@ -368,14 +354,18 @@ export default function SessionReviewPage() {
           .mastery{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900}
           .explain-box{background:rgba(14,165,164,0.06);border:1px solid rgba(14,165,164,0.18);border-radius:14px;padding:13px;margin-top:12px}
           .explain-title{color:var(--ssc-teal);font-size:11px;font-weight:900;margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em}
-          .review-question-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}
+          .review-question-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
           .review-question-meta{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden}
+          .session-card-tags{flex:1;gap:7px}
+          .subject-tag,.topic-tag{display:inline-flex;align-items:center;height:22px;border-radius:999px;padding:0 9px;font-size:10px;font-weight:1000;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+          .subject-tag{max-width:40%;color:var(--ssc-teal);background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.14)}
+          .topic-tag{max-width:72%;color:var(--ssc-orange);background:var(--ssc-orange-soft);border:1px solid rgba(255,106,0,.14)}
           .review-question-number{color:var(--ssc-text-muted);font-size:13px;font-weight:900}
           .review-time{color:var(--ssc-text-muted);font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-          .review-question-text{color:var(--ssc-text-primary);font-size:14px;font-weight:800;line-height:1.48;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical}
+          .review-question-text{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.38;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical}
           .review-question-text.open{-webkit-line-clamp:unset;display:block}
           .read-more-btn{border:0;background:transparent;color:var(--ssc-teal);font-size:12px;font-weight:800;padding:8px 0 0;cursor:pointer;font-family:inherit}
-          .answer-compare{display:grid;gap:8px;margin-top:13px}
+          .answer-compare{display:grid;gap:8px;margin:0 0 13px}
           .answer-row{border-radius:13px;padding:10px 12px}
           .answer-row .answer-label{display:block;color:var(--ssc-text-muted);font-size:11px;font-weight:700;margin-bottom:5px}
           .answer-row .answer-value{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -386,16 +376,16 @@ export default function SessionReviewPage() {
           .answer-row.correct .answer-value b{color:var(--ssc-teal)}
           .answer-row.skipped{background:rgba(148,163,184,0.08);border:1px solid rgba(148,163,184,0.18)}
           .answer-row.skipped .answer-value b{color:var(--ssc-text-muted)}
-          .review-history-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:13px;padding:11px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft)}
+          .review-history-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:10px;padding:9px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft)}
           .review-history-row div{min-width:0}
           .review-history-row p{color:var(--ssc-text-muted);font-size:11px;font-weight:700;margin:0 0 5px}
           .review-history-row strong{display:block;color:var(--ssc-text-secondary);font-size:12px;line-height:1.4}
           .review-history-row .mastery{flex:0 0 auto;font-size:10px;padding:4px 8px;max-width:122px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-          .review-action-row{display:grid;grid-template-columns:1fr;gap:8px;margin-top:13px}
+          .review-action-row{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
           .review-action-row .secondary-btn:only-child{grid-column:1 / -1}
-          .filter-chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 16px 8px;margin:0 -16px;scrollbar-width:none;-ms-overflow-style:none}
+          .filter-chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 0 10px;margin:0;scrollbar-width:none;-ms-overflow-style:none}
           .filter-chip-row::-webkit-scrollbar{display:none}
-          .review-filter-summary{color:var(--ssc-text-muted);font-size:12px;font-weight:700;line-height:1.4;margin:0 0 12px 2px}
+          .review-filter-summary{color:var(--ssc-text-primary);font-size:12px;font-weight:1000;line-height:1.4;margin:0 0 12px 2px}
           .session-summary{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:22px;padding:16px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
           .session-title{color:var(--ssc-text-primary);font-size:17px;line-height:1.25;font-weight:900;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
           .session-date{color:var(--ssc-text-muted);font-size:12px;font-weight:700;margin:4px 0 0}
@@ -450,21 +440,11 @@ export default function SessionReviewPage() {
         <p className="review-filter-summary">{reviewSummary}</p>
 
         {filtered.length ? (
-          <>
-            <section className="carousel-shell">
-              <div className="carousel-progress">
-                <div>
-                  <strong className="font-display">Question {safeActiveQuestionIndex + 1} of {filtered.length}</strong>
-                  <span>Use Previous and Next to review one question at a time</span>
-                </div>
-              </div>
-              <div className="carousel-nav">
-                <button type="button" className="secondary-btn" disabled={safeActiveQuestionIndex === 0} onClick={() => setActiveQuestionIndex(index => Math.max(index - 1, 0))}>&#8592; Previous</button>
-                <button type="button" className="secondary-btn" disabled={safeActiveQuestionIndex >= filtered.length - 1} onClick={() => setActiveQuestionIndex(index => Math.min(index + 1, filtered.length - 1))}>Next &#8594;</button>
-              </div>
-            </section>
-            <QuestionCard key={activeQuestion.questionId} item={activeQuestion} onToggleSave={toggleSave} />
-          </>
+          <div className="session-question-list">
+            {filtered.map(item => (
+              <QuestionCard key={item.questionId} item={item} session={session} onToggleSave={toggleSave} />
+            ))}
+          </div>
         ) : (
           <div className="review-card text-center">
             <p className="font-display font-black text-[var(--ssc-text-primary)] mb-1">No questions found in this filter.</p>
