@@ -8,6 +8,7 @@ import { getUserCacheScope } from '@/lib/userCacheScope';
 import { getHistoryQuestions, normalizeHistoryQuery } from '@/lib/data/historyClientData';
 import { toggleSavedQuestion } from '@/lib/data/savedData';
 import { getAIExplanation as getAIExplanationHelper } from '@/lib/data/aiData';
+import { REVIEW_QUESTION_CARD_STYLES, ReviewQuestionCard as SharedReviewQuestionCard, ReviewQuestionDetailOverlay } from '@/components/history/ReviewQuestionCard';
 
 const FILTERS = ['all', 'wrong', 'skipped', 'correct', 'saved'];
 const FILTER_COPY = {
@@ -171,7 +172,7 @@ export default function HistoryQuestionsPage() {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
   const [page, setPage] = useState(1);
-  const [aiCache, setAiCache] = useState({});
+  const [reviewIndex, setReviewIndex] = useState(null);
 
   const queryTitle = [router.query.subject, router.query.topic].filter(Boolean).join(' · ') || 'Attempted Questions';
 
@@ -222,7 +223,12 @@ export default function HistoryQuestionsPage() {
   }, [activeFilter, allQuestions]);
   const practiceSetLabel = activeFilter === 'skipped' ? 'Skipped' : 'Mistakes';
   const reviewNoun = activeFilter === 'all' ? 'questions' : `question${filtered.length !== 1 ? 's' : ''}`;
-  const reviewSummary = `Reviewing ${filtered.length} ${FILTER_COPY[activeFilter]} ${reviewNoun}`;
+  const reviewSummary = `Showing ${FILTER_COPY[activeFilter]} ${reviewNoun}`;
+  const reviewSummaryLabel = activeFilter === 'wrong' ? 'Wrong Questions'
+    : activeFilter === 'skipped' ? 'Skipped Questions'
+      : activeFilter === 'correct' ? 'Correct Questions'
+        : activeFilter === 'saved' ? 'Saved Questions'
+          : 'Questions';
 
   function startQuestionSet(questions, quizMode, topicLabel) {
     if (!questions.length) return;
@@ -284,6 +290,7 @@ export default function HistoryQuestionsPage() {
       <div className="min-h-screen bg-[var(--ssc-bg)] pb-28">
         <style>{`
           .history-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
+          ${REVIEW_QUESTION_CARD_STYLES}
           .review-summary-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:15px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
           .summary-total{font-family:var(--font-display);font-size:22px;font-weight:950;line-height:1;color:var(--ssc-text-primary)}
           .summary-label{font-size:12px;font-weight:700;color:var(--ssc-text-muted);margin-top:4px}
@@ -320,7 +327,12 @@ export default function HistoryQuestionsPage() {
           .chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 8px 18px rgba(14,165,164,.16)}
           .filter-chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 0 10px;margin:0;scrollbar-width:none;-ms-overflow-style:none}
           .filter-chip-row::-webkit-scrollbar{display:none}
-          .review-filter-summary{color:var(--ssc-text-primary);font-size:12px;font-weight:1000;line-height:1.4;margin:0 0 12px 2px}
+          .review-filter-summary-card{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin:0 0 14px;padding:15px 16px;border-radius:16px;border:1px solid #BDEDEA;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);box-shadow:var(--ssc-shadow-card)}
+          .review-filter-summary-title{color:var(--ssc-text-primary);font-size:12px;font-weight:1000;line-height:1.35;margin:0}
+          .review-filter-summary-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+          .review-filter-summary-count{color:var(--ssc-teal);font-family:var(--font-display);font-size:24px;font-weight:1000;line-height:1;margin:0}
+          .review-filter-summary-label{color:var(--ssc-text-secondary);font-size:11px;font-weight:800;line-height:1.25;margin:3px 0 0}
+          .review-filter-summary-cta{width:50%;max-width:180px;min-width:132px;height:42px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;font-family:inherit;font-size:13px;font-weight:1000;box-shadow:var(--ssc-shadow-cta);cursor:pointer;white-space:nowrap;flex-shrink:0}
           .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900}
           .open-detail-panel{margin-top:14px;padding:12px;border:1px solid var(--ssc-border-soft);border-radius:16px;background:rgba(248,250,252,1)}
           .detail-section{margin-bottom:10px}
@@ -361,12 +373,29 @@ export default function HistoryQuestionsPage() {
                 </div>
               </section>
               <div className="filter-chip-row">{FILTERS.map(filter => <button key={filter} type="button" className={`chip ${activeFilter === filter ? 'active' : ''}`} onClick={() => setActiveFilter(filter)}>{FILTER_LABELS[filter]} ({filterCounts[filter] ?? 0})</button>)}</div>
-              <p className="review-filter-summary">{reviewSummary}</p>
+              <section className="review-filter-summary-card">
+                <p className="review-filter-summary-title">{reviewSummary}</p>
+                <div className="review-filter-summary-row">
+                  <div>
+                    <p className="review-filter-summary-count">{filtered.length}</p>
+                    <p className="review-filter-summary-label">{reviewSummaryLabel}</p>
+                  </div>
+                  {filtered.length > 0 && (
+                    <button
+                      type="button"
+                      className="review-filter-summary-cta"
+                      onClick={() => startQuestionSet(filtered, activeFilter === 'skipped' ? 'reattempt_skipped' : 'reattempt_mistakes', reviewSummaryLabel)}
+                    >
+                      Practice all {filtered.length}
+                    </button>
+                  )}
+                </div>
+              </section>
               {filtered.length ? (
                 <>
                   <div className="question-review-list">
-                    {filtered.map(item => (
-                      <QuestionReviewCard key={item.questionId} item={item} aiCache={aiCache} setAiCache={setAiCache} onToggleSave={toggleSave} />
+                    {filtered.map((item, index) => (
+                      <SharedReviewQuestionCard key={item.questionId} item={item} onView={() => setReviewIndex(index)} onToggleSave={toggleSave} />
                     ))}
                   </div>
                   <section className="bottom-action-card">
@@ -382,6 +411,14 @@ export default function HistoryQuestionsPage() {
             </>
           )}
         </main>
+        {reviewIndex !== null && filtered.length > 0 && (
+          <ReviewQuestionDetailOverlay
+            questions={filtered}
+            startIndex={reviewIndex}
+            onClose={() => setReviewIndex(null)}
+            onToggleSave={toggleSave}
+          />
+        )}
       </div>
     </>
   );

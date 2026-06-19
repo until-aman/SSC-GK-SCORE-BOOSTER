@@ -762,6 +762,9 @@ export default function RepeatedMistakesPage() {
     .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}.divider{height:1px;background:var(--ssc-border-soft);margin:12px 0}.question-expanded{overflow:hidden;margin-top:12px;padding:11px;border:1px solid var(--ssc-border-soft);border-radius:14px;background:var(--ssc-surface-soft)}.expanded-block{margin-bottom:10px}.expanded-label{color:var(--ssc-text-muted);font-size:10px;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px}.expanded-question{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.48;margin:0}.expanded-attempt{color:var(--ssc-text-muted);font-size:11px;font-weight:800;margin:9px 0 0}.answer-detail-grid{display:grid;gap:8px}.answer-detail{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface);border-radius:12px;padding:9px 10px}.answer-detail span{display:block;color:var(--ssc-text-muted);font-size:10px;font-weight:900;margin-bottom:4px}.answer-detail b{display:block;font-size:12px;line-height:1.4}.answer-detail.correct{background:var(--ssc-success-soft);border-color:rgba(18,184,134,.28)}.answer-detail.wrong{background:var(--ssc-danger-soft);border-color:rgba(239,68,68,.28)}.answer-detail.correct b{color:var(--ssc-success)}.answer-detail.wrong b{color:var(--ssc-danger)}.answer-detail.skipped b{color:var(--ssc-text-secondary)}
     .mistake-filter-group{margin-bottom:16px}.mistake-filter-group .chip-row{padding-bottom:0}.mistake-filter-label{display:block;margin:0 0 10px 2px;color:var(--ssc-text-primary);font-size:12px;font-weight:900;line-height:1}.active-filter-summary{margin:-2px 2px 14px;color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.4}
     .rm-summary-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);border:1px solid #BDEDEA;border-radius:16px;padding:15px 16px;margin:0;box-shadow:var(--ssc-shadow-card)}
+    .rm-summary-card.filtered{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin:0 0 14px}
+    .rm-summary-title{color:var(--ssc-text-primary);font-size:12px;font-weight:1000;line-height:1.35;margin:0}
+    .rm-summary-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .rm-summary-top{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
     .rm-summary-icon{width:42px;height:42px;border-radius:13px;background:#E8F8F6;border:1px solid rgba(14,165,164,0.20);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
     .rm-summary-count{font-size:24px;font-weight:1000;color:var(--ssc-teal);line-height:1;font-family:var(--font-display);margin:0}
@@ -901,32 +904,6 @@ export default function RepeatedMistakesPage() {
               </>
             ) : (
               <>
-                <div className="rm-summary-card">
-                  <div className="rm-summary-top">
-                    <div className="rm-summary-icon">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 9v4" />
-                        <path d="M12 17h.01" />
-                        <path d="M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z" />
-                      </svg>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="rm-summary-count">{filteredMistakes.length}</p>
-                      <p className="rm-summary-label">Mistakes</p>
-                    </div>
-                  </div>
-                  {practiceCount > 0 && (
-                    <button
-                      type="button"
-                      className="rm-summary-cta"
-                      disabled={starting}
-                      onClick={() => startPractice({})}
-                    >
-                      {starting ? 'Starting...' : `Practice all ${practiceCount}`}
-                    </button>
-                  )}
-                </div>
-
                 <div className="rm-detail-filters">
                   <div className="chip-row" aria-label="Repeated mistake subjects">
                     <button
@@ -991,6 +968,26 @@ export default function RepeatedMistakesPage() {
                         ))}
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                <div className="rm-summary-card filtered">
+                  <p className="rm-summary-title">Showing repeated mistakes in {questionSubject || 'All subjects'}</p>
+                  <div className="rm-summary-row">
+                    <div className="min-w-0">
+                      <p className="rm-summary-count">{filteredMistakes.length}</p>
+                      <p className="rm-summary-label">Mistakes</p>
+                    </div>
+                    {practiceCount > 0 && (
+                      <button
+                        type="button"
+                        className="rm-summary-cta"
+                        disabled={starting}
+                        onClick={() => startPractice({})}
+                      >
+                        {starting ? 'Starting...' : `Practice all ${practiceCount}`}
+                      </button>
+                    )}
                   </div>
                 </div>
 

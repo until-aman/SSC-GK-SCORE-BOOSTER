@@ -8,6 +8,7 @@ import { getUserCacheScope } from '@/lib/userCacheScope';
 import { getHistorySession } from '@/lib/data/historyClientData';
 import { toggleSavedQuestion } from '@/lib/data/savedData';
 import { getAIExplanation as getAIExplanationHelper } from '@/lib/data/aiData';
+import { REVIEW_QUESTION_CARD_STYLES, ReviewQuestionCard as SharedReviewQuestionCard, ReviewQuestionDetailOverlay } from '@/components/history/ReviewQuestionCard';
 
 const FILTERS = ['Wrong + Skipped', 'Wrong', 'Skipped', 'Correct', 'Saved'];
 const TONES = {
@@ -268,6 +269,7 @@ export default function SessionReviewPage() {
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('Wrong + Skipped');
   const [starting, setStarting] = useState(false);
+  const [reviewIndex, setReviewIndex] = useState(null);
 
   const loadSession = useCallback(async function loadSession() {
     if (!sessionId) return;
@@ -309,7 +311,8 @@ export default function SessionReviewPage() {
     Saved: answers.filter(item => item.isSaved).length,
   }), [answers]);
   const filterLabel = activeFilter === 'Wrong + Skipped' ? 'wrong/skipped' : activeFilter.toLowerCase();
-  const reviewSummary = `Reviewing ${filtered.length} ${filterLabel} question${filtered.length !== 1 ? 's' : ''}`;
+  const reviewSummary = `Showing ${filterLabel} question${filtered.length !== 1 ? 's' : ''}`;
+  const reviewSummaryLabel = activeFilter === 'Wrong + Skipped' ? 'Wrong/Skipped Questions' : `${activeFilter} Questions`;
 
   async function toggleSave(item) {
     setData(prev => ({
@@ -368,11 +371,28 @@ export default function SessionReviewPage() {
     }
   }
 
+  function startFilteredReviewSet(questions) {
+    if (!questions.length) return;
+    setStarting(true);
+    const returnUrl = router.asPath || `/history/session/${session?.sessionId || router.query.sessionId || ''}`;
+    sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
+      questions,
+      quizMode: 'reattempt_mistakes',
+      parentSessionId: session.sessionId,
+      attemptNumber: (session.attemptNumber || 1) + 1,
+      subject: session.subject,
+      topic: session.topic,
+      sourceCollection: session.sourceCollection,
+      returnUrl,
+    }));
+    router.push(`/quiz?mode=history&count=${questions.length}&sourceScreen=history&returnUrl=${encodeURIComponent(returnUrl)}`);
+  }
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-[var(--ssc-bg)] pb-24">
-        <Head><title>Review Session - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
+        <Head><title>Question Review - SSC GK Score Booster</title></Head>
+        <HistoryTopBar title="Question Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
         <main className="px-4 pt-5">
           <Loader card size="md" label="Loading review..." />
         </main>
@@ -383,8 +403,8 @@ export default function SessionReviewPage() {
   if (status === 'unauthenticated') {
     return (
       <div className="min-h-screen bg-[var(--ssc-bg)] pb-24">
-        <Head><title>Review Session - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
+        <Head><title>Question Review - SSC GK Score Booster</title></Head>
+        <HistoryTopBar title="Question Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
         <main className="px-4 pt-5">
           <p className="font-display font-bold text-[var(--ssc-text-primary)] mb-2">Sign in to see your history.</p>
           <button className="primary-btn" onClick={() => router.push('/api/auth/signin')}>Continue with Google</button>
@@ -396,8 +416,8 @@ export default function SessionReviewPage() {
   if (error || !session) {
     return (
       <div className="min-h-screen bg-[var(--ssc-bg)] pb-24">
-        <Head><title>Review Session - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
+        <Head><title>Question Review - SSC GK Score Booster</title></Head>
+        <HistoryTopBar title="Question Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
         <main className="px-4 pt-5">
           <div className="review-card text-center">
             <p className="font-display font-bold text-[var(--ssc-text-primary)]">This session is no longer available.</p>
@@ -410,12 +430,19 @@ export default function SessionReviewPage() {
 
   const mistakes = session.incorrect + session.skipped;
   const scoreColor = Number(session.score) < 0 ? '#DC2626' : Number(session.score) > 0 ? 'var(--ssc-orange-deep)' : 'var(--ssc-text-muted)';
+  const maxScore = session.maxScore || session.questionCount * 2;
+  const sessionBadge = session.badge || (mistakes > 0 ? 'Weak Attempt' : 'Completed');
+  const sessionBadgeTone = mistakes > 0
+    ? ['#DC2626', 'var(--ssc-danger-soft)']
+    : ['var(--ssc-teal)', 'var(--ssc-teal-soft)'];
 
   return (
     <>
-      <Head><title>Review Session - SSC GK Score Booster</title></Head>
+      <Head><title>Question Review - SSC GK Score Booster</title></Head>
       <div className="min-h-screen bg-[var(--ssc-bg)] review-page-shell">
         <style>{`
+          .review-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
+          ${REVIEW_QUESTION_CARD_STYLES}
           .session-question-list{display:grid;gap:10px}
           .session-question-card{border-radius:14px;padding:12px 13px;margin-bottom:0}
           .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;min-height:40px}
@@ -469,20 +496,21 @@ export default function SessionReviewPage() {
           .review-action-row .secondary-btn:only-child{grid-column:1 / -1}
           .filter-chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 0 10px;margin:0;scrollbar-width:none;-ms-overflow-style:none}
           .filter-chip-row::-webkit-scrollbar{display:none}
-          .review-summary-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:16px;padding:14px 16px;margin:0 0 12px;box-shadow:var(--ssc-shadow-card)}
-          .review-summary-copy{min-width:0;flex:1}
-          .review-summary-label{margin:0;color:var(--ssc-text-muted);font-size:12px;font-weight:800}
-          .review-summary-count{margin:4px 0 0;color:var(--ssc-text-primary);font-size:24px;font-weight:900;line-height:1}
-          .review-summary-cta{min-width:148px;white-space:nowrap;}
-          .review-filter-summary{color:var(--ssc-text-primary);font-size:12px;font-weight:1000;line-height:1.4;margin:0 0 12px 2px}
-          .session-summary{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:22px;padding:16px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
-          .session-title{color:var(--ssc-text-primary);font-size:17px;line-height:1.25;font-weight:900;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-          .session-date{color:var(--ssc-text-muted);font-size:12px;font-weight:700;margin:4px 0 0}
-          .session-score-row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-top:15px}
-          .session-score strong{display:block;font-size:26px;line-height:1;font-weight:900}
-          .session-score span{display:block;color:var(--ssc-text-muted);font-size:11px;font-weight:700;margin-top:6px}
-          .session-time{color:var(--ssc-text-muted);font-size:11px;font-weight:700;text-align:right}
-          .session-stat-row{display:flex;align-items:center;justify-content:space-between;gap:8px;row-gap:7px;flex-wrap:wrap;margin-top:13px;padding:10px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft);font-size:13px;font-weight:800}
+          .review-filter-summary-card{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin:0 0 14px;padding:15px 16px;border-radius:16px;border:1px solid #BDEDEA;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);box-shadow:var(--ssc-shadow-card)}
+          .review-filter-summary-title{color:var(--ssc-text-primary);font-size:12px;font-weight:1000;line-height:1.35;margin:0}
+          .review-filter-summary-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+          .review-filter-summary-count{color:var(--ssc-teal);font-family:var(--font-display);font-size:24px;font-weight:1000;line-height:1;margin:0}
+          .review-filter-summary-label{color:var(--ssc-text-secondary);font-size:11px;font-weight:800;line-height:1.25;margin:3px 0 0}
+          .review-filter-summary-cta{width:50%;max-width:180px;min-width:132px;height:42px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;font-family:inherit;font-size:13px;font-weight:1000;box-shadow:var(--ssc-shadow-cta);cursor:pointer;white-space:nowrap;flex-shrink:0}
+          .session-summary{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
+          .session-title{color:var(--ssc-text-primary);font-size:15px;font-weight:900;line-height:1.28;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+          .session-date{color:var(--ssc-text-muted);font-size:11px;font-weight:800;line-height:1.35;margin:5px 0 0}
+          .session-badge{font-size:11px;padding:6px 10px;white-space:nowrap;flex:0 0 auto}
+          .session-stat-grid{display:grid;grid-template-columns:minmax(56px,1fr) 1px minmax(42px,.72fr) 1px minmax(42px,.72fr) 1px minmax(42px,.72fr) 1px minmax(42px,.72fr);align-items:center;gap:7px;margin-top:14px;padding:11px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft)}
+          .session-stat{text-align:center;min-width:0}.session-stat:first-child{text-align:left}
+          .session-stat-value{display:block;color:var(--ssc-text-primary);font-size:15px;font-weight:1000;line-height:1.1;white-space:nowrap}
+          .session-stat-label{display:block;color:var(--ssc-text-muted);font-size:10px;font-weight:800;line-height:1.1;margin-top:4px}
+          .session-stat-divider{height:36px;width:1px;background:var(--ssc-border-soft)}
           .session-insight{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.24);border-radius:16px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px}
           .carousel-shell{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:13px 14px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
           .carousel-progress{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
@@ -495,26 +523,47 @@ export default function SessionReviewPage() {
           .session-action-inner{display:grid;grid-template-columns:1fr;gap:8px;border-radius:18px;padding:8px;background:rgba(255,255,255,0.96);border:1px solid var(--ssc-border-soft);box-shadow:0 16px 38px rgba(16,32,51,0.12);backdrop-filter:blur(12px)}
           .session-action-inner .primary-btn{box-shadow:0 4px 14px rgba(255,90,0,0.24)}
         `}</style>
-        <HistoryTopBar title="Quiz Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
+        <HistoryTopBar title="Question Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
         <main className="px-4 pt-5">
         <section className="session-summary">
-          <h1 className="session-title font-display">{session.subject} &middot; {session.topic}</h1>
-          <p className="session-date">Attempted {formatDate(session.completedAt)}</p>
-
-          <div className="session-score-row">
-            <div className="session-score">
-              <strong className="font-display" style={{ color: scoreColor }}>{session.score} / {session.questionCount * 2}</strong>
-              <span>Score</span>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <h1 className="session-title font-display">{session.subject} &middot; {session.topic}</h1>
+              <p className="session-date">{session.questionCount} Questions &middot; {formatDate(session.completedAt)}</p>
             </div>
-            {session.timeSpentSeconds ? <p className="session-time">Time: {formatTime(session.timeSpentSeconds)}</p> : null}
+            <span
+              className="tone-pill session-badge"
+              style={{ color: sessionBadgeTone[0], background: sessionBadgeTone[1], borderColor: `${sessionBadgeTone[0]}33` }}
+            >
+              {sessionBadge}
+            </span>
           </div>
 
-          <div className="session-stat-row">
-            <span style={{ color: 'var(--ssc-text-secondary)' }}>{session.questionCount} Qs</span>
-            <span style={{ color: 'var(--ssc-teal)', fontWeight: 800 }}>&#10003; {session.correct}</span>
-            <span style={{ color: '#DC2626', fontWeight: 800 }}>&times; {session.incorrect}</span>
-            <span style={{ color: 'var(--ssc-text-muted)' }}>&#9675; {session.skipped}</span>
-            {Number(session.coinsEarned) ? <span style={{ color: '#F59E0B', fontWeight: 800 }}>+{session.coinsEarned} coins</span> : null}
+          <div className="session-stat-grid">
+            <div className="session-stat">
+              <strong className="font-display session-stat-value" style={{ color: scoreColor }}>{session.score}/{maxScore}</strong>
+              <span className="session-stat-label">Score</span>
+            </div>
+            <div className="session-stat-divider" />
+            <div className="session-stat">
+              <strong className="font-display session-stat-value" style={{ color: 'var(--ssc-coin)' }}>{Number(session.coinsEarned) || 0}</strong>
+              <span className="session-stat-label">Coins</span>
+            </div>
+            <div className="session-stat-divider" />
+            <div className="session-stat">
+              <strong className="font-display session-stat-value" style={{ color: 'var(--ssc-success)' }}>&#10003; {session.correct}</strong>
+              <span className="session-stat-label">Correct</span>
+            </div>
+            <div className="session-stat-divider" />
+            <div className="session-stat">
+              <strong className="font-display session-stat-value" style={{ color: 'var(--ssc-danger)' }}>&times; {session.incorrect}</strong>
+              <span className="session-stat-label">Wrong</span>
+            </div>
+            <div className="session-stat-divider" />
+            <div className="session-stat">
+              <strong className="font-display session-stat-value" style={{ color: 'var(--ssc-text-muted)' }}>&#9675; {session.skipped}</strong>
+              <span className="session-stat-label">Skipped</span>
+            </div>
           </div>
         </section>
 
@@ -526,26 +575,35 @@ export default function SessionReviewPage() {
         <div className="filter-chip-row">
           {FILTERS.map(filter => <button key={filter} onClick={() => setActiveFilter(filter)} className={`chip ${activeFilter === filter ? 'active' : ''}`}>{filter} ({filterCounts[filter] ?? 0})</button>)}
         </div>
-        <div className="review-summary-card">
-          <div className="review-summary-copy">
-            <p className="review-summary-label">Showing {filterLabel} questions</p>
-            <p className="review-summary-count">{filtered.length}</p>
+        <section className="review-filter-summary-card">
+          <p className="review-filter-summary-title">{reviewSummary}</p>
+          <div className="review-filter-summary-row">
+            <div>
+              <p className="review-filter-summary-count">{filtered.length}</p>
+              <p className="review-filter-summary-label">{reviewSummaryLabel}</p>
+            </div>
+            {filtered.length > 0 && (
+              <button
+                type="button"
+                className="review-filter-summary-cta"
+                disabled={starting}
+                onClick={() => startFilteredReviewSet(filtered)}
+              >
+                Practice all {filtered.length}
+              </button>
+            )}
           </div>
-          <button
-            type="button"
-            className="primary-btn review-summary-cta"
-            disabled={!filtered.length || starting}
-            onClick={() => startReattempt('session_mistakes')}
-          >
-            Practice all {filtered.length}
-          </button>
-        </div>
-        <p className="review-filter-summary">{reviewSummary}</p>
+        </section>
 
         {filtered.length ? (
           <div className="session-question-list">
-            {filtered.map(item => (
-              <QuestionCard key={item.questionId} item={item} session={session} onToggleSave={toggleSave} />
+            {filtered.map((item, index) => (
+              <SharedReviewQuestionCard
+                key={item.questionId}
+                item={{ ...item, subject: item.subject || session.subject, topic: item.topic || session.topic }}
+                onView={() => setReviewIndex(index)}
+                onToggleSave={toggleSave}
+              />
             ))}
           </div>
         ) : (
@@ -563,6 +621,14 @@ export default function SessionReviewPage() {
             <button disabled={starting} className="primary-btn" onClick={() => startReattempt('session_mistakes')}>Practice {mistakes} Mistakes →</button>
           </div>
         </div>
+      )}
+      {reviewIndex !== null && filtered.length > 0 && (
+        <ReviewQuestionDetailOverlay
+          questions={filtered.map(item => ({ ...item, subject: item.subject || session.subject, topic: item.topic || session.topic }))}
+          startIndex={reviewIndex}
+          onClose={() => setReviewIndex(null)}
+          onToggleSave={toggleSave}
+        />
       )}
     </>
   );
