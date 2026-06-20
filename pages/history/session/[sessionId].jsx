@@ -348,6 +348,9 @@ export default function SessionReviewPage() {
   const [activeFilter, setActiveFilter] = useState('Wrong + Skipped');
   const [starting, setStarting] = useState(false);
   const [reviewIndex, setReviewIndex] = useState(null);
+  const backHref = typeof router.query.returnUrl === 'string' && router.query.returnUrl.startsWith('/history')
+    ? router.query.returnUrl
+    : '/history/quizzes';
 
   const loadSession = useCallback(async function loadSession() {
     if (!sessionId) return;
@@ -431,7 +434,7 @@ export default function SessionReviewPage() {
     return (
       <div className="min-h-screen bg-[var(--ssc-bg)] pb-24">
         <Head><title>Question Review - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Question Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
+        <HistoryTopBar title="Question Review" icon={QuizReviewIcon} backHref={backHref} showBack badge="HISTORY" onBack={() => router.push(backHref)} />
         <main className="px-4 pt-5">
           <Loader card size="md" label="Loading review..." />
         </main>
@@ -443,7 +446,7 @@ export default function SessionReviewPage() {
     return (
       <div className="min-h-screen bg-[var(--ssc-bg)] pb-24">
         <Head><title>Question Review - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Question Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
+        <HistoryTopBar title="Question Review" icon={QuizReviewIcon} backHref={backHref} showBack badge="HISTORY" onBack={() => router.push(backHref)} />
         <main className="px-4 pt-5">
           <p className="font-display font-bold text-[var(--ssc-text-primary)] mb-2">Sign in to see your history.</p>
           <button className="primary-btn" onClick={() => router.push('/api/auth/signin')}>Continue with Google</button>
@@ -456,11 +459,11 @@ export default function SessionReviewPage() {
     return (
       <div className="min-h-screen bg-[var(--ssc-bg)] pb-24">
         <Head><title>Question Review - SSC GK Score Booster</title></Head>
-        <HistoryTopBar title="Question Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
+        <HistoryTopBar title="Question Review" icon={QuizReviewIcon} backHref={backHref} showBack badge="HISTORY" onBack={() => router.push(backHref)} />
         <main className="px-4 pt-5">
           <div className="review-card text-center">
             <p className="font-display font-bold text-[var(--ssc-text-primary)]">This session is no longer available.</p>
-            <button className="primary-btn mt-4" onClick={() => router.push('/history')}>Back to History</button>
+            <button className="primary-btn mt-4" onClick={() => router.push(backHref)}>Back to History</button>
           </div>
         </main>
       </div>
@@ -570,7 +573,7 @@ export default function SessionReviewPage() {
           .carousel-nav button:disabled{opacity:.45;cursor:default}
           .review-page-shell{padding-bottom:calc(190px + env(safe-area-inset-bottom))}
         `}</style>
-        <HistoryTopBar title="Question Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
+        <HistoryTopBar title="Question Review" icon={QuizReviewIcon} backHref={backHref} showBack badge="HISTORY" onBack={() => router.push(backHref)} />
         <main className="px-4 pt-5">
         <section className="history-card quiz-card">
           <div className="flex items-start justify-between gap-3">

@@ -235,10 +235,15 @@ export default function HistoryQuestionsPage() {
 
   const queryTitle = [router.query.subject, router.query.topic].filter(Boolean).join(' · ') || 'Attempted Questions';
 
+  const backHref = typeof router.query.returnUrl === 'string' && router.query.returnUrl.startsWith('/history')
+    ? router.query.returnUrl
+    : '/history/quizzes';
+
   const loadQuestions = useCallback(async function loadQuestions(nextPage = 1, append = false) {
     setLoading(true);
     try {
-      const query = normalizeHistoryQuery({ ...router.query, page: nextPage, limit: 50 });
+      const { returnUrl, ...historyQuery } = router.query;
+      const query = normalizeHistoryQuery({ ...historyQuery, page: nextPage, limit: 50 });
       const res = await getHistoryQuestions({ scope: cacheScope, query });
       const json = res?.data;
       if (!json?.success) throw new Error(json?.error || 'Failed');
@@ -411,7 +416,7 @@ export default function HistoryQuestionsPage() {
           .option-row.wrong{border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.07);color:#DC2626}
           .divider{height:1px;background:var(--ssc-border-soft);margin:12px 0}
         `}</style>
-        <HistoryTopBar title="Question Review" showBack badge="HISTORY" />
+        <HistoryTopBar title="Question Review" showBack badge="HISTORY" backHref={backHref} onBack={() => router.push(backHref)} />
         <main className="px-4 pt-5">
           <header className="mb-4">
             <h1 className="font-display text-xl font-black text-[var(--ssc-text-primary)]">{queryTitle}</h1>
