@@ -218,12 +218,24 @@ function buildCountOptions(items, keyName) {
     .sort(byCountThenName);
 }
 
-function EmptyPanel({ title, body, action, onClick }) {
+function EmptyPanel({ title, body, action, onClick, secondaryAction, onSecondaryClick }) {
   return (
-    <section className="history-card text-center">
-      <p className="font-display font-black text-[var(--ssc-text-primary)]">{title}</p>
-      <p className="mt-1 mb-4 text-sm text-[var(--ssc-text-secondary)]">{body}</p>
-      {action ? <button type="button" className="primary-btn" onClick={onClick}>{action}</button> : null}
+    <section className="empty-state-card">
+      <div className="empty-state-icon" aria-hidden="true">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M20 20l-3.2-3.2" />
+          <path d="M8.5 11h5" />
+        </svg>
+      </div>
+      <p className="empty-state-title font-display">{title}</p>
+      <p className="empty-state-body">{body}</p>
+      {(secondaryAction || action) ? (
+        <div className={`empty-state-actions ${secondaryAction && action ? '' : 'single'}`}>
+          {secondaryAction ? <button type="button" className="empty-state-secondary" onClick={onSecondaryClick}>{secondaryAction}</button> : null}
+          {action ? <button type="button" className="empty-state-cta" onClick={onClick}>{action}</button> : null}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -759,9 +771,21 @@ export default function RepeatedMistakesPage() {
     .question-card{padding:12px 14px}.question-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.question-kicker{color:var(--ssc-teal);font-size:11px;font-weight:900;margin:0;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.question-badge{font-size:10px;padding:4px 8px;max-width:132px;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.question-preview{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.38;margin:9px 0 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.question-stat-row{display:flex;align-items:center;gap:14px;margin-top:10px;padding:8px 0 0;border-top:1px solid var(--ssc-border-soft);font-size:12px;font-weight:900;white-space:nowrap}.question-stat-row span+span:before{content:'';margin:0}.question-actions{display:grid;grid-template-columns:1fr .72fr 40px;gap:8px;margin-top:11px;align-items:center}.save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);display:flex;align-items:center;justify-content:center;transition:transform .12s ease,background .12s ease,border-color .12s ease}.save-icon-btn:active{transform:scale(.92)}.save-icon-btn.saved{border-color:rgba(14,165,164,.34);background:var(--ssc-teal-soft)}
     .chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 0 10px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:7px 12px;white-space:nowrap;text-transform:none;flex:0 0 auto;box-shadow:0 5px 12px rgba(16,32,51,.04)}.chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 8px 18px rgba(14,165,164,.16)}
     .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:900;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit;min-height:40px}.primary-btn{border:0;background:linear-gradient(135deg,#ff7a1a,#ff4d00);color:white;box-shadow:var(--ssc-shadow-cta)}.secondary-btn{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface-soft);color:var(--ssc-teal)}.primary-btn:disabled,.secondary-btn:disabled{opacity:.55;cursor:default;box-shadow:none}
+    .empty-state-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:22px;padding:30px 24px;text-align:center;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
+    .empty-state-icon{width:62px;height:62px;border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.16)}
+    .empty-state-title{color:var(--ssc-text-primary);font-size:17px;font-weight:900;margin:0 0 8px}
+    .empty-state-body{color:var(--ssc-text-secondary);font-size:13px;line-height:1.5;margin:0 0 20px}
+    .empty-state-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .empty-state-actions.single{display:flex;justify-content:center}.empty-state-actions.single .empty-state-cta,.empty-state-actions.single .empty-state-secondary{min-width:180px}
+    .empty-state-cta,.empty-state-secondary{display:inline-flex;align-items:center;justify-content:center;border-radius:14px;padding:12px 16px;min-height:42px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit}
+    .empty-state-cta{border:0;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;box-shadow:var(--ssc-shadow-cta)}
+    .empty-state-secondary{border:1px solid rgba(14,165,164,.28);background:var(--ssc-surface-soft);color:var(--ssc-teal)}
     .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}.divider{height:1px;background:var(--ssc-border-soft);margin:12px 0}.question-expanded{overflow:hidden;margin-top:12px;padding:11px;border:1px solid var(--ssc-border-soft);border-radius:14px;background:var(--ssc-surface-soft)}.expanded-block{margin-bottom:10px}.expanded-label{color:var(--ssc-text-muted);font-size:10px;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px}.expanded-question{color:var(--ssc-text-primary);font-size:13px;font-weight:900;line-height:1.48;margin:0}.expanded-attempt{color:var(--ssc-text-muted);font-size:11px;font-weight:800;margin:9px 0 0}.answer-detail-grid{display:grid;gap:8px}.answer-detail{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface);border-radius:12px;padding:9px 10px}.answer-detail span{display:block;color:var(--ssc-text-muted);font-size:10px;font-weight:900;margin-bottom:4px}.answer-detail b{display:block;font-size:12px;line-height:1.4}.answer-detail.correct{background:var(--ssc-success-soft);border-color:rgba(18,184,134,.28)}.answer-detail.wrong{background:var(--ssc-danger-soft);border-color:rgba(239,68,68,.28)}.answer-detail.correct b{color:var(--ssc-success)}.answer-detail.wrong b{color:var(--ssc-danger)}.answer-detail.skipped b{color:var(--ssc-text-secondary)}
     .mistake-filter-group{margin-bottom:16px}.mistake-filter-group .chip-row{padding-bottom:0}.mistake-filter-label{display:block;margin:0 0 10px 2px;color:var(--ssc-text-primary);font-size:12px;font-weight:900;line-height:1}.active-filter-summary{margin:-2px 2px 14px;color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.4}
     .rm-summary-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(180deg,#F6FFFD 0%,#EAFBF7 100%);border:1px solid #BDEDEA;border-radius:16px;padding:15px 16px;margin:0;box-shadow:var(--ssc-shadow-card)}
+    .rm-summary-card.filtered{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin:0 0 14px}
+    .rm-summary-title{color:var(--ssc-text-primary);font-size:12px;font-weight:1000;line-height:1.35;margin:0}
+    .rm-summary-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .rm-summary-top{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
     .rm-summary-icon{width:42px;height:42px;border-radius:13px;background:#E8F8F6;border:1px solid rgba(14,165,164,0.20);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
     .rm-summary-count{font-size:24px;font-weight:1000;color:var(--ssc-teal);line-height:1;font-family:var(--font-display);margin:0}
@@ -901,32 +925,6 @@ export default function RepeatedMistakesPage() {
               </>
             ) : (
               <>
-                <div className="rm-summary-card">
-                  <div className="rm-summary-top">
-                    <div className="rm-summary-icon">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 9v4" />
-                        <path d="M12 17h.01" />
-                        <path d="M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z" />
-                      </svg>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="rm-summary-count">{filteredMistakes.length}</p>
-                      <p className="rm-summary-label">Mistakes</p>
-                    </div>
-                  </div>
-                  {practiceCount > 0 && (
-                    <button
-                      type="button"
-                      className="rm-summary-cta"
-                      disabled={starting}
-                      onClick={() => startPractice({})}
-                    >
-                      {starting ? 'Starting...' : `Practice all ${practiceCount}`}
-                    </button>
-                  )}
-                </div>
-
                 <div className="rm-detail-filters">
                   <div className="chip-row" aria-label="Repeated mistake subjects">
                     <button
@@ -994,6 +992,26 @@ export default function RepeatedMistakesPage() {
                   </div>
                 </div>
 
+                <div className="rm-summary-card filtered">
+                  <p className="rm-summary-title">Showing repeated mistakes in {questionSubject || 'All subjects'}</p>
+                  <div className="rm-summary-row">
+                    <div className="min-w-0">
+                      <p className="rm-summary-count">{filteredMistakes.length}</p>
+                      <p className="rm-summary-label">Mistakes</p>
+                    </div>
+                    {practiceCount > 0 && (
+                      <button
+                        type="button"
+                        className="rm-summary-cta"
+                        disabled={starting}
+                        onClick={() => startPractice({})}
+                      >
+                        {starting ? 'Starting...' : `Practice all ${practiceCount}`}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
                 {/* Question cards */}
                 {filteredMistakes.length ? filteredMistakes.map((item, index) => (
                   <QuestionCard
@@ -1004,10 +1022,13 @@ export default function RepeatedMistakesPage() {
                   />
                 )) : (
                   <EmptyPanel
-                    title="No repeated questions found."
-                    body="Practice more to build this list."
-                    action="Practice More"
-                    onClick={() => router.push('/dashboard')}
+                    title="No questions found"
+                    body="Try another filter or review all questions."
+                    secondaryAction="View All Questions"
+                    onSecondaryClick={() => {
+                      setQuestionSubject('');
+                      setQuestionTopic('');
+                    }}
                   />
                 )}
                 {reviewIndex !== null && filteredMistakes.length > 0 && (
