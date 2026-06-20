@@ -10,7 +10,29 @@ import { toggleSavedQuestion } from '@/lib/data/savedData';
 import { getAIExplanation as getAIExplanationHelper } from '@/lib/data/aiData';
 import { REVIEW_QUESTION_CARD_STYLES, ReviewQuestionCard as SharedReviewQuestionCard, ReviewQuestionDetailOverlay } from '@/components/history/ReviewQuestionCard';
 
-const FILTERS = ['Wrong + Skipped', 'Wrong', 'Skipped', 'Correct', 'Saved'];
+const FILTERS = ['All', 'Wrong + Skipped', 'Wrong', 'Skipped', 'Correct', 'Saved'];
+const EMPTY_STATE_COPY = {
+  correct: {
+    title: 'No correct questions yet',
+    body: 'You have not answered any question correctly in this filter. Review all questions or practice this set again.',
+  },
+  wrong: {
+    title: 'No wrong questions found',
+    body: 'Good job. You have no wrong answers in this filter. Try another filter to review more questions.',
+  },
+  skipped: {
+    title: 'No skipped questions found',
+    body: 'You did not skip any question in this filter. Try wrong or all questions instead.',
+  },
+  saved: {
+    title: 'No saved questions yet',
+    body: 'Save important questions while reviewing. They will appear here for quick revision.',
+  },
+  all: {
+    title: 'No questions found',
+    body: 'Try another filter or review all questions.',
+  },
+};
 const TONES = {
   red:    ['#B91C1C', 'rgba(239,68,68,0.10)'],
   amber:  ['#B45309', 'rgba(245,158,11,0.10)'],
@@ -27,11 +49,67 @@ const QuizReviewIcon = (
   </svg>
 );
 
+function emptyCopyKey(filter) {
+  if (filter === 'Wrong + Skipped') return 'wrong';
+  return String(filter || 'all').toLowerCase();
+}
+
+function EmptyStateIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="M20 20l-3.5-3.5" />
+      <path d="M8.5 11h5" />
+    </svg>
+  );
+}
+
+function FilterEmptyState({ activeFilter, canPractice, onViewAll, onPractice }) {
+  const copyKey = emptyCopyKey(activeFilter);
+  const copy = EMPTY_STATE_COPY[copyKey] || EMPTY_STATE_COPY.all;
+  const showViewAll = activeFilter !== 'All';
+  const actionClass = showViewAll && canPractice ? 'review-empty-actions two' : 'review-empty-actions';
+  return (
+    <section className="review-empty-state" aria-live="polite">
+      <div className="review-empty-icon"><EmptyStateIcon /></div>
+      <h2 className="review-empty-title font-display">{copy.title}</h2>
+      <p className="review-empty-body">{copy.body}</p>
+      {(showViewAll || canPractice) && (
+        <div className={actionClass}>
+          {showViewAll && (
+            <button type="button" className="review-empty-secondary" onClick={onViewAll}>
+              View All Questions
+            </button>
+          )}
+          {canPractice && (
+            <button type="button" className="review-empty-primary" onClick={onPractice}>
+              Practice Again
+            </button>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function formatDate(value) {
   if (!value) return 'Recently';
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return 'Recently';
   return date.toLocaleString([], { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+}
+
+function formatFullDateTime(value) {
+  if (!value) return 'Recently';
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return 'Recently';
+  return date.toLocaleString([], {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }
 
 function formatTime(seconds) {
@@ -296,6 +374,7 @@ export default function SessionReviewPage() {
   const session = data?.session;
   const answers = useMemo(() => data?.answers || [], [data?.answers]);
   const filtered = useMemo(() => {
+    if (activeFilter === 'All') return answers;
     if (activeFilter === 'Wrong + Skipped') return answers.filter(item => !item.isCorrect);
     if (activeFilter === 'Wrong') return answers.filter(item => !item.isCorrect && !item.isSkipped);
     if (activeFilter === 'Skipped') return answers.filter(item => item.isSkipped);
@@ -304,6 +383,7 @@ export default function SessionReviewPage() {
     return answers;
   }, [answers, activeFilter]);
   const filterCounts = useMemo(() => ({
+    All: answers.length,
     'Wrong + Skipped': answers.filter(item => !item.isCorrect).length,
     Wrong: answers.filter(item => !item.isCorrect && !item.isSkipped).length,
     Skipped: answers.filter(item => item.isSkipped).length,
@@ -312,7 +392,7 @@ export default function SessionReviewPage() {
   }), [answers]);
   const filterLabel = activeFilter === 'Wrong + Skipped' ? 'wrong/skipped' : activeFilter.toLowerCase();
   const reviewSummary = `Showing ${filterLabel} question${filtered.length !== 1 ? 's' : ''}`;
-  const reviewSummaryLabel = activeFilter === 'Wrong + Skipped' ? 'Wrong/Skipped Questions' : `${activeFilter} Questions`;
+  const reviewSummaryLabel = activeFilter === 'Wrong + Skipped' ? 'Wrong/Skipped Questions' : activeFilter === 'All' ? 'Questions' : `${activeFilter} Questions`;
 
   async function toggleSave(item) {
     setData(prev => ({
@@ -327,47 +407,6 @@ export default function SessionReviewPage() {
         ...prev,
         answers: prev.answers.map(answer => answer.questionId === item.questionId ? { ...answer, isSaved: item.isSaved } : answer),
       }));
-    }
-  }
-
-  async function startReattempt(sourceType, poolItem = null) {
-    setStarting(true);
-    const returnUrl = router.asPath || `/history/session/${session?.sessionId || router.query.sessionId || ''}`;
-    try {
-      if (poolItem) {
-        sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
-          questions: [poolItem],
-          quizMode: 'reattempt_mistakes',
-          parentSessionId: session.sessionId,
-          attemptNumber: (session.attemptNumber || 1) + 1,
-          subject: session.subject,
-          topic: session.topic,
-          sourceCollection: session.sourceCollection,
-          returnUrl,
-        }));
-        router.push(`/quiz?mode=history&count=1&sourceScreen=history&returnUrl=${encodeURIComponent(returnUrl)}`);
-        return;
-      }
-      const res = await fetch('/api/history/reattempt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceType, sessionId: session.sessionId }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) throw new Error(json.error || 'Failed');
-      sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
-        questions: json.data.questions,
-        quizMode: json.data.quizMode,
-        parentSessionId: json.data.parentSessionId,
-        attemptNumber: (session.attemptNumber || 1) + 1,
-        subject: json.data.subject,
-        topic: json.data.topic,
-        sourceCollection: json.data.sourceCollection,
-        returnUrl,
-      }));
-      router.push(`/quiz?mode=history&count=${json.data.questionCount}&sourceScreen=history&returnUrl=${encodeURIComponent(returnUrl)}`);
-    } catch {
-      setStarting(false);
     }
   }
 
@@ -502,15 +541,26 @@ export default function SessionReviewPage() {
           .review-filter-summary-count{color:var(--ssc-teal);font-family:var(--font-display);font-size:24px;font-weight:1000;line-height:1;margin:0}
           .review-filter-summary-label{color:var(--ssc-text-secondary);font-size:11px;font-weight:800;line-height:1.25;margin:3px 0 0}
           .review-filter-summary-cta{width:50%;max-width:180px;min-width:132px;height:42px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;font-family:inherit;font-size:13px;font-weight:1000;box-shadow:var(--ssc-shadow-cta);cursor:pointer;white-space:nowrap;flex-shrink:0}
-          .session-summary{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
-          .session-title{color:var(--ssc-text-primary);font-size:15px;font-weight:900;line-height:1.28;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-          .session-date{color:var(--ssc-text-muted);font-size:11px;font-weight:800;line-height:1.35;margin:5px 0 0}
-          .session-badge{font-size:11px;padding:6px 10px;white-space:nowrap;flex:0 0 auto}
-          .session-stat-grid{display:grid;grid-template-columns:minmax(56px,1fr) 1px minmax(42px,.72fr) 1px minmax(42px,.72fr) 1px minmax(42px,.72fr) 1px minmax(42px,.72fr);align-items:center;gap:7px;margin-top:14px;padding:11px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft)}
-          .session-stat{text-align:center;min-width:0}.session-stat:first-child{text-align:left}
-          .session-stat-value{display:block;color:var(--ssc-text-primary);font-size:15px;font-weight:1000;line-height:1.1;white-space:nowrap}
-          .session-stat-label{display:block;color:var(--ssc-text-muted);font-size:10px;font-weight:800;line-height:1.1;margin-top:4px}
-          .session-stat-divider{height:36px;width:1px;background:var(--ssc-border-soft)}
+          .review-empty-state{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:22px;box-shadow:var(--ssc-shadow-card);padding:26px 20px;margin:0 0 14px;text-align:center}
+          .review-empty-icon{width:58px;height:58px;border-radius:18px;background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.14);display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+          .review-empty-title{color:var(--ssc-text-primary);font-size:17px;font-weight:1000;line-height:1.2;margin:0 0 9px}
+          .review-empty-body{color:var(--ssc-text-secondary);font-size:13px;font-weight:700;line-height:1.55;margin:0 auto 18px;max-width:310px}
+          .review-empty-actions{display:grid;grid-template-columns:1fr;gap:10px}
+          .review-empty-actions.two{grid-template-columns:1fr 1fr}
+          .review-empty-primary,.review-empty-secondary{height:44px;border-radius:14px;font-family:inherit;font-size:13px;font-weight:1000;cursor:pointer}
+          .review-empty-primary{border:0;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;box-shadow:var(--ssc-shadow-cta)}
+          .review-empty-secondary{border:1px solid rgba(14,165,164,.28);background:var(--ssc-surface-soft);color:var(--ssc-teal)}
+          .history-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;box-shadow:var(--ssc-shadow-card);padding:16px;margin-bottom:12px}
+          .quiz-card{padding:16px;margin-bottom:12px;border-radius:18px}
+          .quiz-title{color:var(--ssc-text-primary);font-size:15px;font-weight:900;line-height:1.3;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+          .quiz-date{color:var(--ssc-text-muted);font-size:11px;font-weight:700;margin-top:5px;line-height:1.4}
+          .quiz-badge{max-width:130px;overflow:hidden;text-overflow:ellipsis;font-size:10px;padding:5px 9px;border-radius:999px}
+          .quiz-stats-row{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:14px;padding:12px 0;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft)}
+          .quiz-stat{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;flex:1}
+          .quiz-stat-value{font-size:15px;line-height:1;font-weight:900;color:var(--ssc-text-primary);white-space:nowrap}
+          .quiz-stat-label{font-size:10px;font-weight:700;color:var(--ssc-text-muted);white-space:nowrap}
+          .quiz-stat-divider{width:1px;height:28px;background:var(--ssc-border-soft);flex-shrink:0}
+          .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;white-space:nowrap}
           .session-insight{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.24);border-radius:16px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px}
           .carousel-shell{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:13px 14px;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
           .carousel-progress{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
@@ -519,50 +569,47 @@ export default function SessionReviewPage() {
           .carousel-nav{display:grid;grid-template-columns:1fr 1fr;gap:8px}
           .carousel-nav button:disabled{opacity:.45;cursor:default}
           .review-page-shell{padding-bottom:calc(190px + env(safe-area-inset-bottom))}
-          .session-action-bar{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);width:100%;max-width:430px;z-index:60;padding:0 16px 10px;background:linear-gradient(to top,var(--ssc-bg) 68%,transparent)}
-          .session-action-inner{display:grid;grid-template-columns:1fr;gap:8px;border-radius:18px;padding:8px;background:rgba(255,255,255,0.96);border:1px solid var(--ssc-border-soft);box-shadow:0 16px 38px rgba(16,32,51,0.12);backdrop-filter:blur(12px)}
-          .session-action-inner .primary-btn{box-shadow:0 4px 14px rgba(255,90,0,0.24)}
         `}</style>
         <HistoryTopBar title="Question Review" icon={QuizReviewIcon} backHref="/history/quizzes" showBack badge="HISTORY" />
         <main className="px-4 pt-5">
-        <section className="session-summary">
+        <section className="history-card quiz-card">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <h1 className="session-title font-display">{session.subject} &middot; {session.topic}</h1>
-              <p className="session-date">{session.questionCount} Questions &middot; {formatDate(session.completedAt)}</p>
+              <h1 className="quiz-title font-display">{session.subject} &ndash; {session.topic}</h1>
+              <p className="quiz-date">{session.questionCount} Questions &middot; {formatFullDateTime(session.completedAt)}</p>
             </div>
             <span
-              className="tone-pill session-badge"
+              className="tone-pill quiz-badge"
               style={{ color: sessionBadgeTone[0], background: sessionBadgeTone[1], borderColor: `${sessionBadgeTone[0]}33` }}
             >
               {sessionBadge}
             </span>
           </div>
 
-          <div className="session-stat-grid">
-            <div className="session-stat">
-              <strong className="font-display session-stat-value" style={{ color: scoreColor }}>{session.score}/{maxScore}</strong>
-              <span className="session-stat-label">Score</span>
+          <div className="quiz-stats-row">
+            <div className="quiz-stat">
+              <strong className="font-display quiz-stat-value" style={{ color: scoreColor }}>{session.score}/{maxScore}</strong>
+              <span className="quiz-stat-label">Score</span>
             </div>
-            <div className="session-stat-divider" />
-            <div className="session-stat">
-              <strong className="font-display session-stat-value" style={{ color: 'var(--ssc-coin)' }}>{Number(session.coinsEarned) || 0}</strong>
-              <span className="session-stat-label">Coins</span>
+            <div className="quiz-stat-divider" />
+            <div className="quiz-stat">
+              <strong className="font-display quiz-stat-value" style={{ color: 'var(--ssc-coin)' }}>&#129689; {Number(session.coinsEarned) || 0}</strong>
+              <span className="quiz-stat-label">Coins</span>
             </div>
-            <div className="session-stat-divider" />
-            <div className="session-stat">
-              <strong className="font-display session-stat-value" style={{ color: 'var(--ssc-success)' }}>&#10003; {session.correct}</strong>
-              <span className="session-stat-label">Correct</span>
+            <div className="quiz-stat-divider" />
+            <div className="quiz-stat">
+              <strong className="font-display quiz-stat-value" style={{ color: 'var(--ssc-success)' }}>&#10003; {session.correct}</strong>
+              <span className="quiz-stat-label">Correct</span>
             </div>
-            <div className="session-stat-divider" />
-            <div className="session-stat">
-              <strong className="font-display session-stat-value" style={{ color: 'var(--ssc-danger)' }}>&times; {session.incorrect}</strong>
-              <span className="session-stat-label">Wrong</span>
+            <div className="quiz-stat-divider" />
+            <div className="quiz-stat">
+              <strong className="font-display quiz-stat-value" style={{ color: 'var(--ssc-danger)' }}>&times; {session.incorrect}</strong>
+              <span className="quiz-stat-label">Wrong</span>
             </div>
-            <div className="session-stat-divider" />
-            <div className="session-stat">
-              <strong className="font-display session-stat-value" style={{ color: 'var(--ssc-text-muted)' }}>&#9675; {session.skipped}</strong>
-              <span className="session-stat-label">Skipped</span>
+            <div className="quiz-stat-divider" />
+            <div className="quiz-stat">
+              <strong className="font-display quiz-stat-value" style={{ color: 'var(--ssc-text-muted)' }}>&#9675; {session.skipped}</strong>
+              <span className="quiz-stat-label">Skipped</span>
             </div>
           </div>
         </section>
@@ -600,31 +647,36 @@ export default function SessionReviewPage() {
             {filtered.map((item, index) => (
               <SharedReviewQuestionCard
                 key={item.questionId}
-                item={{ ...item, subject: item.subject || session.subject, topic: item.topic || session.topic }}
+                item={{
+                  ...item,
+                  subject: item.subject || session.subject,
+                  topic: item.topic || session.topic,
+                  completedAt: item.completedAt || item.lastAttemptedAt || session.completedAt,
+                }}
                 onView={() => setReviewIndex(index)}
                 onToggleSave={toggleSave}
               />
             ))}
           </div>
         ) : (
-          <div className="review-card text-center">
-            <p className="font-display font-black text-[var(--ssc-text-primary)] mb-1">No questions found in this filter.</p>
-            <p className="text-[var(--ssc-text-muted)]">Try another filter.</p>
-          </div>
+          <FilterEmptyState
+            activeFilter={activeFilter}
+            canPractice={answers.length > 0}
+            onViewAll={() => setActiveFilter('All')}
+            onPractice={() => startFilteredReviewSet(answers)}
+          />
         )}
         </main>
       </div>
 
-      {mistakes > 0 && (
-        <div className="session-action-bar">
-          <div className="session-action-inner">
-            <button disabled={starting} className="primary-btn" onClick={() => startReattempt('session_mistakes')}>Practice {mistakes} Mistakes →</button>
-          </div>
-        </div>
-      )}
       {reviewIndex !== null && filtered.length > 0 && (
         <ReviewQuestionDetailOverlay
-          questions={filtered.map(item => ({ ...item, subject: item.subject || session.subject, topic: item.topic || session.topic }))}
+          questions={filtered.map(item => ({
+            ...item,
+            subject: item.subject || session.subject,
+            topic: item.topic || session.topic,
+            completedAt: item.completedAt || item.lastAttemptedAt || session.completedAt,
+          }))}
           startIndex={reviewIndex}
           onClose={() => setReviewIndex(null)}
           onToggleSave={toggleSave}
