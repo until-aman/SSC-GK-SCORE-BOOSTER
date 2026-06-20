@@ -3,7 +3,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
-import Loader from '@/components/ui/Loader';
+import SmartHistoryLoader from '@/components/ui/SmartHistoryLoader';
 import { getUserCacheScope } from '@/lib/userCacheScope';
 import { getHistoryQuestions, normalizeHistoryQuery } from '@/lib/data/historyClientData';
 import { toggleSavedQuestion } from '@/lib/data/savedData';
@@ -832,7 +832,7 @@ export default function RepeatedMistakesPage() {
         onBack={showQuestionList ? closeQuestionList : null}
       />
       <main className={`history-shell ${showQuestionList ? 'filtered' : ''}`}>
-        {loading ? <Loader card size="md" label="Loading mistakes..." /> : error ? (
+        {loading ? <SmartHistoryLoader variant="repeated-mistakes" subject={questionSubject} /> : error ? (
           <EmptyPanel title="Couldn't load repeated mistakes." body={error} action="Retry" onClick={() => router.reload()} />
         ) : (
           <>

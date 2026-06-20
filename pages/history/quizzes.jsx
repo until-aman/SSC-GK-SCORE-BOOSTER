@@ -9,7 +9,7 @@ import { getAIExplanation as getAIExplanationHelper } from '@/lib/data/aiData';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
 import GoogleSignInCard from '@/components/GoogleSignInCard';
-import Loader from '@/components/ui/Loader';
+import SmartHistoryLoader from '@/components/ui/SmartHistoryLoader';
 
 const MODES = [
   { key: 'quiz', label: 'Quiz-wise', shortLabel: 'Quizzes' },
@@ -1297,7 +1297,12 @@ export default function HistoryPage() {
           <p className="intro-subtitle">Review your attempts, identify weak areas, fix mistakes.</p>
 
           {status === 'loading' || summaryLoading ? (
-            <Loader card size="md" label="Loading quiz history..." />
+            <SmartHistoryLoader
+              variant="quiz-history"
+              filter={activeMode === 'mistakes' ? questionType : undefined}
+              subject={activeMode === 'subject' ? subjectFilter : activeMode === 'topic' ? selectedSubject : ''}
+              timeRange={['7d', '30d', 'custom'].includes(quickFilter) ? quickFilter : ''}
+            />
           ) : isGuest ? (
             <GoogleSignInCard title="Your quiz history is waiting" subtitle="Sign in to review attempted questions and mistakes." buttonText="Continue with Google" callbackUrl="/history" />
           ) : summaryError ? (
@@ -1361,7 +1366,7 @@ export default function HistoryPage() {
                     </div>
                   </div>
                   {quickFilter === 'custom' && customRangeSummary && <p className="custom-range-summary">{customRangeSummary}</p>}
-                  {quizLoading ? <Loader card size="sm" label="Loading quizzes..." /> : filteredQuizzes.length ? filteredQuizzes.map(item => (
+                  {quizLoading ? <SmartHistoryLoader variant="quiz-history" filter={quickFilter === 'all' ? undefined : quickFilter} timeRange={['7d', '30d', 'custom'].includes(quickFilter) ? quickFilter : ''} compact className="py-4" /> : filteredQuizzes.length ? filteredQuizzes.map(item => (
                     <QuizCard key={item.sessionId} session={item} onReview={session => router.push(`/history/session/${session.sessionId}`)} onPractice={session => startSessionPractice(session)} />
                   )) : quickFilter === 'custom' ? (
                     <EmptyPanel title="No quizzes in this range." body="Try different dates or reset the filter." action="Reset Date Filter" onClick={resetDateFilter} />
@@ -1391,7 +1396,7 @@ export default function HistoryPage() {
               {activeMode === 'subject' && (
                 <section>
                   <h2 className="history-filter-title font-display">Select a subject</h2>
-                  {subjectsLoading ? <Loader card size="sm" label="Loading subjects..." /> : subjects?.length ? (
+                  {subjectsLoading ? <SmartHistoryLoader variant="subject-history" compact className="py-4" /> : subjects?.length ? (
                     <>
                       <div className="chip-row filter-chip-row history-chip-row">
                         <button type="button" className={`chip ${!subjectFilter ? 'active' : ''}`} onClick={() => setSubjectFilter('')}>All</button>
@@ -1413,7 +1418,7 @@ export default function HistoryPage() {
                   <div className="chip-row filter-chip-row history-chip-row">
                     {(subjects || []).map(item => <button key={item.subject} type="button" className={`chip ${selectedSubject === item.subject ? 'active' : ''}`} onClick={() => setSelectedSubject(item.subject)}>{item.subject}</button>)}
                   </div>
-                  {!selectedSubject ? <EmptyPanel title="Select a subject to see topics." body="Choose a subject above to see attempted topics." /> : topicsLoading ? <Loader card size="sm" label="Loading topics..." /> : topics.length ? (
+                  {!selectedSubject ? <EmptyPanel title="Select a subject to see topics." body="Choose a subject above to see attempted topics." /> : topicsLoading ? <SmartHistoryLoader variant="topic-history" subject={selectedSubject} compact className="py-4" /> : topics.length ? (
                     <>
                       <h2 className="history-filter-title topic-result-title font-display">Select a topic</h2>
                       <div className="history-filter-results">{topics.map(item => <StatEntityCard key={item.topic} item={item} type="topic" onPractice={topic => openPracticeModal({ subject: topic.subject, topic: topic.topic, count: topic.wrongCount + topic.skippedCount })} onReview={topic => router.push(`/history/questions?subject=${encodeURIComponent(topic.subject)}&topic=${encodeURIComponent(topic.topic)}`)} />)}</div>
@@ -1437,7 +1442,7 @@ export default function HistoryPage() {
                       {questionSubjects.map(item => <button key={item.subject} type="button" className={`chip ${questionSubject === item.subject ? 'active' : ''}`} onClick={() => setQuestionSubject(item.subject)}>{item.subject}</button>)}
                     </div>
                   </div>
-                  {questionsLoading ? <Loader card size="sm" label="Loading questions..." /> : (
+                  {questionsLoading ? <SmartHistoryLoader variant="repeated-mistakes" filter={questionType} subject={questionSubject} compact className="py-4" /> : (
                     <>
                       <div className="mistake-summary-card">
                         <p className="mistake-summary-title">Showing {activeMistakeSummary}</p>

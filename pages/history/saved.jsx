@@ -5,7 +5,7 @@ import Head from 'next/head';
 
 import GoogleSignInCard from '@/components/GoogleSignInCard';
 import HistoryTopBar from '@/components/HistoryTopBar';
-import Loader from '@/components/ui/Loader';
+import SmartHistoryLoader from '@/components/ui/SmartHistoryLoader';
 import { getSavedQuestions, unsaveQuestion } from '@/lib/data/savedData';
 import { getUserCacheScope } from '@/lib/userCacheScope';
 
@@ -698,7 +698,7 @@ export default function HistorySavedPage() {
         <style suppressHydrationWarning>{savedStyles}</style>
         <HistoryTopBar title="Saved Questions" badge="HISTORY" icon={<SavedHeaderIcon />} showBack onBack={handleSavedBack} />
         <div className="px-4">
-          <Loader card size="md" label="Fetching your saved questions..." />
+          <SmartHistoryLoader variant="saved-questions" />
         </div>
       </div>
     );

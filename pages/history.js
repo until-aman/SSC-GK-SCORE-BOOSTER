@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
 import Loader from '@/components/ui/Loader';
+import SmartHistoryLoader from '@/components/ui/SmartHistoryLoader';
 
 const ORANGE = '#FF6B16';
 const ORANGE_DIM = 'rgba(255,107,22,0.15)';
@@ -591,7 +592,7 @@ export default function HistoryPage() {
         <Head><title>History - SSC GK Score Booster</title></Head>
         <HistoryTopBar title="History" badge="PRACTICE ARCHIVE" icon={<HistoryHeaderIcon />} />
         <main className="px-4 pt-5">
-          <Loader card size="md" label="Loading history..." />
+          <SmartHistoryLoader variant="quiz-history" />
         </main>
       </div>
     );
