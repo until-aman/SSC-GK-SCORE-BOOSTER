@@ -53,9 +53,9 @@ function ChevronSVG() {
 }
 
 function formatDate(value) {
-  if (!value) return 'Recently';
+  if (!value) return 'Not practiced yet';
   const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return 'Recently';
+  if (!Number.isFinite(date.getTime())) return 'Not practiced yet';
   const diff = Date.now() - date.getTime();
   const days = Math.floor(diff / 86400000);
   if (days === 0) return 'Today';
@@ -150,7 +150,7 @@ function AttemptStatsRow({ stats, className = '' }) {
 
 export function ReviewQuestionCard({ item, onView, onToggleSave }) {
   const attemptStats = getAttemptBreakdown(item);
-  const lastPracticed = formatDate(item?.lastAttemptedAt || item?.lastPracticedAt || item?.completedAt);
+  const lastPracticed = formatDate(item?.lastAttemptedAt || item?.lastPracticedAt || item?.attemptedAt || item?.completedAt);
 
   return (
     <article
@@ -210,7 +210,7 @@ export function ReviewQuestionDetailOverlay({ questions, startIndex, onClose, on
 
   const total = questions.length;
   const attemptStats = getAttemptBreakdown(q);
-  const lastPracticed = formatFullDate(q.lastAttemptedAt || q.lastPracticedAt || q.completedAt);
+  const lastPracticed = formatFullDate(q.lastAttemptedAt || q.lastPracticedAt || q.attemptedAt || q.completedAt);
 
   function goNext() {
     if (idx < total - 1) setIdx(current => current + 1);

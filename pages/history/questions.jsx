@@ -25,6 +25,28 @@ const FILTER_LABELS = {
   correct: 'Correct',
   saved: 'Saved',
 };
+const EMPTY_STATE_COPY = {
+  correct: {
+    title: 'No correct questions yet',
+    body: 'You have not answered any question correctly in this filter. Review all questions or practice this set again.',
+  },
+  wrong: {
+    title: 'No wrong questions found',
+    body: 'Good job. You have no wrong answers in this filter. Try another filter to review more questions.',
+  },
+  skipped: {
+    title: 'No skipped questions found',
+    body: 'You did not skip any question in this filter. Try wrong or all questions instead.',
+  },
+  saved: {
+    title: 'No saved questions yet',
+    body: 'Save important questions while reviewing. They will appear here for quick revision.',
+  },
+  all: {
+    title: 'No questions found',
+    body: 'Try another filter or review all questions.',
+  },
+};
 const TONES = {
   red:   ['#B91C1C', 'rgba(239,68,68,0.10)'],
   amber: ['#B45309', 'rgba(245,158,11,0.10)'],
@@ -42,6 +64,43 @@ function BookmarkIcon({ filled }) {
     <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? '#14B8A6' : 'none'} stroke={filled ? '#14B8A6' : '#64748B'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" />
     </svg>
+  );
+}
+
+function EmptyStateIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="M20 20l-3.5-3.5" />
+      <path d="M8.5 11h5" />
+    </svg>
+  );
+}
+
+function FilterEmptyState({ activeFilter, canPractice, onViewAll, onPractice }) {
+  const copy = EMPTY_STATE_COPY[activeFilter] || EMPTY_STATE_COPY.all;
+  const showViewAll = activeFilter !== 'all';
+  const actionClass = showViewAll && canPractice ? 'review-empty-actions two' : 'review-empty-actions';
+  return (
+    <section className="review-empty-state" aria-live="polite">
+      <div className="review-empty-icon"><EmptyStateIcon /></div>
+      <h2 className="review-empty-title font-display">{copy.title}</h2>
+      <p className="review-empty-body">{copy.body}</p>
+      {(showViewAll || canPractice) && (
+        <div className={actionClass}>
+          {showViewAll && (
+            <button type="button" className="review-empty-secondary" onClick={onViewAll}>
+              View All Questions
+            </button>
+          )}
+          {canPractice && (
+            <button type="button" className="review-empty-primary" onClick={onPractice}>
+              Practice Again
+            </button>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -216,12 +275,6 @@ export default function HistoryQuestionsPage() {
       saved: questions.filter(item => item.isSaved).length,
     };
   }, [allQuestions]);
-  const practiceSet = useMemo(() => {
-    if (activeFilter === 'skipped') return allQuestions.filter(item => item.skippedCount > 0);
-    if (activeFilter === 'wrong') return allQuestions.filter(item => item.wrongCount > 0);
-    return allQuestions.filter(item => item.wrongCount > 0 || item.skippedCount > 0);
-  }, [activeFilter, allQuestions]);
-  const practiceSetLabel = activeFilter === 'skipped' ? 'Skipped' : 'Mistakes';
   const reviewNoun = activeFilter === 'all' ? 'questions' : `question${filtered.length !== 1 ? 's' : ''}`;
   const reviewSummary = `Showing ${FILTER_COPY[activeFilter]} ${reviewNoun}`;
   const reviewSummaryLabel = activeFilter === 'wrong' ? 'Wrong Questions'
@@ -317,8 +370,6 @@ export default function HistoryQuestionsPage() {
           .save-icon-btn{height:40px;width:40px;border-radius:999px;border:1px solid var(--ssc-border-soft);background:rgba(248,250,252,1);display:flex;align-items:center;justify-content:center}
           .save-icon-btn:active{transform:scale(.92)}
           .save-icon-btn.saved{border-color:rgba(20,184,166,0.40);background:rgba(20,184,166,0.12)}
-          .bottom-action-card{display:grid;gap:8px;margin:18px 0 8px;padding:8px;border-radius:18px;background:rgba(255,255,255,0.96);border:1px solid var(--ssc-border-soft);box-shadow:0 16px 38px rgba(16,32,51,0.12)}
-          .bottom-action-card .primary-btn{box-shadow:0 4px 14px rgba(255,90,0,0.22)}
           .primary-btn,.secondary-btn{border-radius:14px;font-size:13px;font-weight:800;padding:11px 12px;text-align:center;cursor:pointer;font-family:inherit}
           .primary-btn{border:0;background:linear-gradient(135deg,#FF8A1F,#FF5A00);color:white;box-shadow:0 4px 12px rgba(255,107,22,0.25)}
           .secondary-btn{border:1px solid var(--ssc-border-soft);background:var(--ssc-surface);color:var(--ssc-teal)}
@@ -333,6 +384,15 @@ export default function HistoryQuestionsPage() {
           .review-filter-summary-count{color:var(--ssc-teal);font-family:var(--font-display);font-size:24px;font-weight:1000;line-height:1;margin:0}
           .review-filter-summary-label{color:var(--ssc-text-secondary);font-size:11px;font-weight:800;line-height:1.25;margin:3px 0 0}
           .review-filter-summary-cta{width:50%;max-width:180px;min-width:132px;height:42px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;font-family:inherit;font-size:13px;font-weight:1000;box-shadow:var(--ssc-shadow-cta);cursor:pointer;white-space:nowrap;flex-shrink:0}
+          .review-empty-state{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:22px;box-shadow:var(--ssc-shadow-card);padding:26px 20px;margin:0 0 14px;text-align:center}
+          .review-empty-icon{width:58px;height:58px;border-radius:18px;background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.14);display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+          .review-empty-title{color:var(--ssc-text-primary);font-size:17px;font-weight:1000;line-height:1.2;margin:0 0 9px}
+          .review-empty-body{color:var(--ssc-text-secondary);font-size:13px;font-weight:700;line-height:1.55;margin:0 auto 18px;max-width:310px}
+          .review-empty-actions{display:grid;grid-template-columns:1fr;gap:10px}
+          .review-empty-actions.two{grid-template-columns:1fr 1fr}
+          .review-empty-primary,.review-empty-secondary{height:44px;border-radius:14px;font-family:inherit;font-size:13px;font-weight:1000;cursor:pointer}
+          .review-empty-primary{border:0;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;box-shadow:var(--ssc-shadow-cta)}
+          .review-empty-secondary{border:1px solid rgba(14,165,164,.28);background:var(--ssc-surface-soft);color:var(--ssc-teal)}
           .tone-pill{display:inline-flex;border:1px solid;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900}
           .open-detail-panel{margin-top:14px;padding:12px;border:1px solid var(--ssc-border-soft);border-radius:16px;background:rgba(248,250,252,1)}
           .detail-section{margin-bottom:10px}
@@ -392,21 +452,18 @@ export default function HistoryQuestionsPage() {
                 </div>
               </section>
               {filtered.length ? (
-                <>
-                  <div className="question-review-list">
-                    {filtered.map((item, index) => (
-                      <SharedReviewQuestionCard key={item.questionId} item={item} onView={() => setReviewIndex(index)} onToggleSave={toggleSave} />
-                    ))}
-                  </div>
-                  <section className="bottom-action-card">
-                    <button type="button" className="primary-btn" disabled={!practiceSet.length} onClick={() => startQuestionSet(practiceSet, activeFilter === 'skipped' ? 'reattempt_skipped' : 'reattempt_mistakes', activeFilter === 'skipped' ? 'Skipped Practice' : 'Mistake Practice')}>Practice {practiceSet.length} {practiceSetLabel}</button>
-                  </section>
-                </>
-              ) : (
-                <div className="history-card text-center text-[var(--ssc-text-muted)]">
-                  <p className="font-display font-black text-[var(--ssc-text-primary)] mb-1">No questions found in this filter.</p>
-                  <p>Try another filter.</p>
+                <div className="question-review-list">
+                  {filtered.map((item, index) => (
+                    <SharedReviewQuestionCard key={item.questionId} item={item} onView={() => setReviewIndex(index)} onToggleSave={toggleSave} />
+                  ))}
                 </div>
+              ) : (
+                <FilterEmptyState
+                  activeFilter={activeFilter}
+                  canPractice={allQuestions.length > 0}
+                  onViewAll={() => setActiveFilter('all')}
+                  onPractice={() => startQuestionSet(allQuestions, activeFilter === 'skipped' ? 'reattempt_skipped' : 'reattempt_mistakes', 'Question Practice')}
+                />
               )}
             </>
           )}
