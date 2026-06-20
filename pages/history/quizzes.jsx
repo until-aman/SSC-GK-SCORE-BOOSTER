@@ -13,8 +13,7 @@ import SmartHistoryLoader from '@/components/ui/SmartHistoryLoader';
 
 const MODES = [
   { key: 'quiz', label: 'Quiz-wise', shortLabel: 'Quizzes' },
-  { key: 'subject', label: 'Subject-wise', shortLabel: 'Subjects' },
-  { key: 'topic', label: 'Topic-wise', shortLabel: 'Topics' },
+  { key: 'subject', label: 'Subject/Topic-wise', shortLabel: 'Subjects' },
   { key: 'mistakes', label: 'Mistakes', shortLabel: 'Mistakes' },
 ];
 
@@ -1231,7 +1230,7 @@ export default function HistoryPage() {
     .rm-performance-head{display:flex;align-items:center;justify-content:flex-start;gap:10px;margin-bottom:7px;font-size:11px;font-weight:900;color:var(--ssc-text-muted)}
     @media (max-width:380px){.mistake-summary-card{grid-template-columns:1fr;gap:12px}.mistake-summary-cta{width:100%}.rm-stat-label{font-size:8px}}
 
-    .mode-selector{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:0 0 14px;padding:4px;background:rgba(255,255,255,.72);border:1px solid var(--ssc-border-soft);border-radius:12px;box-shadow:0 6px 18px rgba(16,32,51,.05)}.mode-selector button{min-width:0;border:0;border-radius:9px;background:transparent;color:var(--ssc-text-secondary);font-family:inherit;font-size:10px;font-weight:900;padding:7px 4px;white-space:nowrap;cursor:pointer;text-align:center;overflow:hidden;text-overflow:ellipsis}.mode-selector button.active{background:var(--ssc-teal);color:white;box-shadow:0 6px 14px rgba(14,165,164,.18)}
+    .mode-selector{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 14px;padding:6px;background:rgba(255,255,255,.72);border:1px solid var(--ssc-border-soft);border-radius:12px;box-shadow:0 6px 18px rgba(16,32,51,.05)}.mode-selector button{min-width:0;border:0;border-radius:9px;background:transparent;color:var(--ssc-text-secondary);font-family:inherit;font-size:12px;font-weight:900;padding:8px 10px;white-space:nowrap;cursor:pointer;text-align:center;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.mode-selector button.active{background:var(--ssc-teal);color:white;box-shadow:0 6px 14px rgba(14,165,164,.18)}
 
     .chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin-left:-16px;margin-right:-16px;padding:0 16px 14px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.filter-chip-row{margin-bottom:0;padding-bottom:10px}.history-chip-row,.mistake-chip-row,.quiz-filter-chip-row{margin-left:0;margin-right:0;padding:0 0 2px;flex:none}.sheet-chip-row{margin-left:0;margin-right:0;padding:0 0 4px;flex-wrap:wrap}.chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:7px 12px;white-space:nowrap;text-transform:capitalize;flex:0 0 auto;cursor:pointer;box-shadow:0 5px 12px rgba(16,32,51,.04)}.chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 8px 18px rgba(14,165,164,.16)}
 
@@ -1412,20 +1411,7 @@ export default function HistoryPage() {
                 </section>
               )}
 
-              {activeMode === 'topic' && (
-                <section>
-                  <h2 className="history-filter-title font-display">Select a subject</h2>
-                  <div className="chip-row filter-chip-row history-chip-row">
-                    {(subjects || []).map(item => <button key={item.subject} type="button" className={`chip ${selectedSubject === item.subject ? 'active' : ''}`} onClick={() => setSelectedSubject(item.subject)}>{item.subject}</button>)}
-                  </div>
-                  {!selectedSubject ? <EmptyPanel title="Select a subject to see topics." body="Choose a subject above to see attempted topics." /> : topicsLoading ? <SmartHistoryLoader variant="topic-history" subject={selectedSubject} compact className="py-4" /> : topics.length ? (
-                    <>
-                      <h2 className="history-filter-title topic-result-title font-display">Select a topic</h2>
-                      <div className="history-filter-results">{topics.map(item => <StatEntityCard key={item.topic} item={item} type="topic" onPractice={topic => openPracticeModal({ subject: topic.subject, topic: topic.topic, count: topic.wrongCount + topic.skippedCount })} onReview={topic => router.push(`/history/questions?subject=${encodeURIComponent(topic.subject)}&topic=${encodeURIComponent(topic.topic)}`)} />)}</div>
-                    </>
-                  ) : <EmptyPanel title={`No topics attempted in ${selectedSubject} yet.`} body={`Start a ${selectedSubject} quiz to build topic history.`} action={`Practice ${selectedSubject} →`} onClick={() => router.push('/dashboard')} />}
-                </section>
-              )}
+              
 
               {activeMode === 'mistakes' && (
                 <section>
