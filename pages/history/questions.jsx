@@ -3,7 +3,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
-import Loader from '@/components/ui/Loader';
+import SmartHistoryLoader from '@/components/ui/SmartHistoryLoader';
 import { getUserCacheScope } from '@/lib/userCacheScope';
 import { getHistoryQuestions, normalizeHistoryQuery } from '@/lib/data/historyClientData';
 import { toggleSavedQuestion } from '@/lib/data/savedData';
@@ -422,7 +422,7 @@ export default function HistoryQuestionsPage() {
             <h1 className="font-display text-xl font-black text-[var(--ssc-text-primary)]">{queryTitle}</h1>
             <p className="text-sm text-[var(--ssc-text-muted)]">Attempted questions · {router.query.status || 'All'}</p>
           </header>
-          {status === 'loading' || loading ? <Loader card size="md" label="Loading questions..." /> : status === 'unauthenticated' ? (
+          {status === 'loading' || loading ? <SmartHistoryLoader variant="quiz-history" filter={activeFilter} subject={router.query.subject} topic={router.query.topic} compact /> : status === 'unauthenticated' ? (
             <div className="history-card text-center text-[var(--ssc-text-secondary)]">Sign in to review questions.</div>
           ) : (
             <>
