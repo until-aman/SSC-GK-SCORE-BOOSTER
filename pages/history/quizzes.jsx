@@ -44,6 +44,36 @@ const TONES = {
   grey: ['#5B6B82', 'var(--ssc-surface-soft)'],
 };
 
+const SUBJECT_META = {
+  Polity: { subtitle: 'Constitution • Govt', accent: '#14B8A6', bg: '#E8F8F6', glyph: 'bookmark' },
+  Economics: { subtitle: 'Banking • Budget', accent: '#8B5CF6', bg: '#F3F0FF', glyph: 'chart' },
+  Geography: { subtitle: 'Maps • Climate', accent: '#0EA5E9', bg: '#E8F5FF', glyph: 'globe' },
+  'Current Affairs': { subtitle: 'Latest GK', accent: '#FF5C8A', bg: '#FFF0F4', glyph: 'paper' },
+  'Static GK': { subtitle: 'Awards • Books', accent: '#10B981', bg: '#EAFBF3', glyph: 'book' },
+};
+
+function getSubjectMeta(subject) {
+  return SUBJECT_META[subject] || { subtitle: 'Repeated topics', accent: 'var(--ssc-teal)', bg: 'var(--ssc-teal-soft)', glyph: 'book' };
+}
+
+function SubjectIcon({ subject }) {
+  const meta = getSubjectMeta(subject);
+  const common = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: meta.accent, strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  const paths = {
+    bookmark: <path d="M7 4h10v16l-5-3-5 3V4z" />,
+    chart: <><path d="M4 19V5" /><path d="M4 19h16" /><path d="M8 16v-5" /><path d="M12 16V8" /><path d="M16 16v-3" /></>,
+    globe: <><circle cx="12" cy="12" r="8" /><path d="M4 12h16" /><path d="M12 4c2 2.3 3 5 3 8s-1 5.7-3 8" /><path d="M12 4c-2 2.3-3 5-3 8s1 5.7 3 8" /></>,
+    paper: <><path d="M7 4h8l3 3v13H7z" /><path d="M15 4v4h4" /><path d="M9 12h6" /><path d="M9 16h5" /></>,
+    book: <><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 0-3-3V4z" /><path d="M8 8h6" /><path d="M8 12h5" /></>,
+  };
+
+  return (
+    <span className="rm-subject-icon" style={{ background: meta.bg, borderColor: `${meta.accent}33` }}>
+      <svg {...common}>{paths[meta.glyph] || paths.book}</svg>
+    </span>
+  );
+}
+
 function HistoryHeaderIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -368,12 +398,15 @@ function StatEntityCard({ item, type, onPractice, onReview }) {
   if (type === 'subject') {
     return (
       <article className="history-card entity-card subject-entity-card">
-        <div className="entity-top">
-          <h3 className="entity-title font-display">{title}</h3>
+        <div className="entity-top" style={{ alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <SubjectIcon subject={title} />
+            <h3 className="entity-title font-display">{title}</h3>
+          </div>
           <span className="tone-pill entity-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{revisionLabel}</span>
         </div>
 
-        <p className="subject-meta-line">Last practiced {formatDate(item.lastPracticedAt)}</p>
+        <p className="subject-meta-line">{getSubjectMeta(title).subtitle} &middot; Last practiced {formatDate(item.lastPracticedAt)}</p>
 
         <div className="entity-stat-row subject-stat-row">
           <span className="text-slate-400">{item.questionCount} Qs</span>
@@ -1229,6 +1262,8 @@ export default function HistoryPage() {
     .rm-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:18px;box-shadow:var(--ssc-shadow-card);padding:12px 14px;margin-bottom:12px;cursor:pointer}.rm-card:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}.rm-card.open{cursor:default}.rm-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px}.rm-tags{display:flex;align-items:center;gap:7px;min-width:0;overflow:hidden}.rm-subject-tag,.rm-topic-tag{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;font-size:10px;font-weight:1000;line-height:1.1;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.rm-subject-tag{color:var(--ssc-teal);background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.16)}.rm-topic-tag{color:var(--ssc-orange);background:var(--ssc-orange-soft);border:1px solid rgba(255,106,0,.16)}.rm-card-bookmark-btn{width:26px;height:26px;border:0;border-radius:8px;background:transparent;color:var(--ssc-text-muted);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer}.rm-card-bookmark-btn svg{width:18px;height:18px}.rm-card-bookmark-btn.saved svg{fill:var(--ssc-teal);stroke:var(--ssc-teal)}.rm-question-text{font-size:13px;font-weight:900;color:var(--ssc-text-primary);line-height:1.38;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;margin:0 22px 11px 0}.rm-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}.rm-footer-copy{min-width:0;display:flex;align-items:center;gap:8px}.rm-meta{font-size:11px;font-weight:900;color:var(--ssc-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rm-open-icon{width:24px;height:24px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;color:var(--ssc-text-muted);flex:0 0 auto}.rm-segment-track{height:4px;border-radius:99px;background:var(--ssc-border-soft);overflow:hidden;display:flex;width:100%}.rm-segment-fill{height:100%;display:block}.rm-segment-fill.correct{background:var(--ssc-success)}.rm-segment-fill.wrong{background:var(--ssc-danger)}.rm-segment-fill.skipped{background:var(--ssc-border-soft)}.rm-attempt-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:0;margin-top:7px;font-size:9px;font-weight:900;white-space:nowrap;overflow:hidden;width:100%;border-top:1px solid var(--ssc-border-soft);border-bottom:1px solid var(--ssc-border-soft);padding:7px 0 6px}.rm-stat-block{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;min-width:0;border-left:1px solid var(--ssc-border-soft)}.rm-stat-block:first-child{border-left:0}.rm-stat-value{font-size:14px;font-weight:1000;line-height:1}.rm-stat-label{font-size:9px;font-weight:900;line-height:1.1;color:var(--ssc-text-muted);overflow:hidden;text-overflow:ellipsis;max-width:100%}.rm-stat-correct .rm-stat-value{color:var(--ssc-success)}.rm-stat-wrong .rm-stat-value{color:var(--ssc-danger)}.rm-stat-skipped .rm-stat-value{color:var(--ssc-text-muted)}
     .rm-performance-head{display:flex;align-items:center;justify-content:flex-start;gap:10px;margin-bottom:7px;font-size:11px;font-weight:900;color:var(--ssc-text-muted)}
     @media (max-width:380px){.mistake-summary-card{grid-template-columns:1fr;gap:12px}.mistake-summary-cta{width:100%}.rm-stat-label{font-size:8px}}
+
+    .rm-subject-icon{width:34px;height:34px;border-radius:11px;border:1px solid rgba(14,165,164,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 
     .mode-selector{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 14px;padding:6px;background:rgba(255,255,255,.72);border:1px solid var(--ssc-border-soft);border-radius:12px;box-shadow:0 6px 18px rgba(16,32,51,.05)}.mode-selector button{min-width:0;border:0;border-radius:9px;background:transparent;color:var(--ssc-text-secondary);font-family:inherit;font-size:12px;font-weight:900;padding:8px 10px;white-space:nowrap;cursor:pointer;text-align:center;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.mode-selector button.active{background:var(--ssc-teal);color:white;box-shadow:0 6px 14px rgba(14,165,164,.18)}
 
