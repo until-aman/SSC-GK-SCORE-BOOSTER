@@ -417,7 +417,7 @@ function StatEntityCard({ item, type, onPractice, onReview }) {
         <div className="quiz-stats-row entity-quiz-stats-row">
           <div className="quiz-stat">
             <strong className="font-display quiz-stat-value">{item.questionCount} Qs</strong>
-            <span className="quiz-stat-label">Questions</span>
+            <span className="quiz-stat-label">Unique</span>
           </div>
           <div className="quiz-stat-divider" />
           <div className="quiz-stat">
@@ -467,7 +467,7 @@ function StatEntityCard({ item, type, onPractice, onReview }) {
         <div className="quiz-stats-row entity-quiz-stats-row">
           <div className="quiz-stat">
             <strong className="font-display quiz-stat-value">{item.questionCount} Qs</strong>
-            <span className="quiz-stat-label">Questions</span>
+            <span className="quiz-stat-label">Unique</span>
           </div>
           <div className="quiz-stat-divider" />
           <div className="quiz-stat">
@@ -896,6 +896,7 @@ export default function HistoryPage() {
   const { data: session, status } = useSession();
   const cacheScope = getUserCacheScope(session);
   const router = useRouter();
+  const restoredRouteState = useRef(false);
   const [activeMode, setActiveMode] = useState('quiz');
   const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
@@ -929,6 +930,50 @@ export default function HistoryPage() {
 
   const isGuest = status === 'unauthenticated';
   const allZero = summary && summary.totalQuizzes === 0 && summary.totalQuestions === 0 && summary.savedCount === 0;
+
+  useEffect(() => {
+    if (!router.isReady || restoredRouteState.current) return;
+    restoredRouteState.current = true;
+    const queryMode = String(router.query.mode || '');
+    if (MODES.some(mode => mode.key === queryMode)) setActiveMode(queryMode);
+    const queryPeriod = String(router.query.period || '');
+    if (QUICK_FILTERS.some(filter => filter.key === queryPeriod)) setQuickFilter(queryPeriod);
+    const queryStart = String(router.query.startDate || '');
+    const queryEnd = String(router.query.endDate || '');
+    if (queryPeriod === 'custom' && queryStart && queryEnd) {
+      setAppliedCustomRange({ start: queryStart, end: queryEnd });
+      setCustomStartDate(queryStart);
+      setCustomEndDate(queryEnd);
+    }
+    const querySubjectFilter = String(router.query.subjectFilter || '');
+    if (querySubjectFilter) setSubjectFilter(querySubjectFilter);
+    const querySelectedSubject = String(router.query.selectedSubject || '');
+    if (querySelectedSubject) setSelectedSubject(querySelectedSubject);
+    const queryQuestionType = String(router.query.questionType || '');
+    if (QUESTION_TYPES.some(type => type.key === queryQuestionType)) setQuestionType(queryQuestionType);
+    const queryQuestionSubject = String(router.query.questionSubject || '');
+    if (queryQuestionSubject) setQuestionSubject(queryQuestionSubject);
+  }, [router.isReady, router.query]);
+
+  const historyReturnUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    if (activeMode !== 'quiz') params.set('mode', activeMode);
+    if (activeMode === 'quiz' && quickFilter !== 'all') {
+      params.set('period', quickFilter);
+      if (quickFilter === 'custom' && appliedCustomRange.start && appliedCustomRange.end) {
+        params.set('startDate', appliedCustomRange.start);
+        params.set('endDate', appliedCustomRange.end);
+      }
+    }
+    if (activeMode === 'subject' && subjectFilter) params.set('subjectFilter', subjectFilter);
+    if (activeMode === 'topic' && selectedSubject) params.set('selectedSubject', selectedSubject);
+    if (activeMode === 'mistakes') {
+      if (questionType !== 'wrong') params.set('questionType', questionType);
+      if (questionSubject) params.set('questionSubject', questionSubject);
+    }
+    const query = params.toString();
+    return query ? `/history/quizzes?${query}` : '/history/quizzes';
+  }, [activeMode, appliedCustomRange.end, appliedCustomRange.start, quickFilter, questionSubject, questionType, selectedSubject, subjectFilter]);
 
   // Step 9: summary, default quiz page, and subjects all come from ONE
   // cache-aware GET /api/history/landing. The three loaders share the same
@@ -1168,7 +1213,7 @@ export default function HistoryPage() {
   async function startFilteredPractice(payload = modal) {
     if (!payload) return;
     setStarting(true);
-    const returnUrl = router.asPath || '/history/quizzes';
+    const returnUrl = historyReturnUrl;
     try {
       if (payload.singleQuestion) {
         sessionStorage.setItem('ssc_history_quiz_questions', JSON.stringify({
@@ -1214,7 +1259,7 @@ export default function HistoryPage() {
       openPracticeModal({ subject: session.subject, topic: session.topic, count: session.questionCount, answerStatus: 'all', title: 'Re-attempt this quiz?' });
       return;
     }
-    const returnUrl = router.asPath || '/history/quizzes';
+    const returnUrl = historyReturnUrl;
     setStarting(true);
     try {
       const res = await fetch('/api/history/reattempt', {
@@ -1433,7 +1478,7 @@ export default function HistoryPage() {
                   </div>
                   {quickFilter === 'custom' && customRangeSummary && <p className="custom-range-summary">{customRangeSummary}</p>}
                   {quizLoading ? <Loader card size="sm" label="Loading quizzes..." /> : filteredQuizzes.length ? filteredQuizzes.map(item => (
-                    <QuizCard key={item.sessionId} session={item} onReview={session => router.push(`/history/session/${session.sessionId}`)} onPractice={session => startSessionPractice(session)} />
+                    <QuizCard key={item.sessionId} session={item} onReview={session => router.push(`/history/session/${session.sessionId}?returnUrl=${encodeURIComponent(historyReturnUrl)}`)} onPractice={session => startSessionPractice(session)} />
                   )) : quickFilter === 'custom' ? (
                     <EmptyPanel title="No quizzes in this range." body="Try different dates or reset the filter." action="Reset Date Filter" onClick={resetDateFilter} />
                   ) : (
@@ -1470,7 +1515,7 @@ export default function HistoryPage() {
                       </div>
                       <div className="history-filter-results">
                         {filteredSubjects.length ? filteredSubjects.map(item => (
-                          <StatEntityCard key={item.subject} item={item} type="subject" onPractice={subject => openPracticeModal({ subject: subject.subject, count: subject.wrongCount + subject.skippedCount })} onReview={subject => router.push(`/history/questions?subject=${encodeURIComponent(subject.subject)}`)} />
+                          <StatEntityCard key={item.subject} item={item} type="subject" onPractice={subject => openPracticeModal({ subject: subject.subject, count: subject.wrongCount + subject.skippedCount })} onReview={subject => router.push(`/history/questions?subject=${encodeURIComponent(subject.subject)}&returnUrl=${encodeURIComponent(historyReturnUrl)}`)} />
                         )) : (
                           <EmptyPanel
                             title="No questions found"
@@ -1493,8 +1538,7 @@ export default function HistoryPage() {
                   </div>
                   {!selectedSubject ? <EmptyPanel title="Select a subject to see topics" body="Choose a subject above to see attempted topics." /> : topicsLoading ? <Loader card size="sm" label="Loading topics..." /> : topics.length ? (
                     <>
-                      <h2 className="history-filter-title topic-result-title font-display">Select a topic</h2>
-                      <div className="history-filter-results">{topics.map(item => <StatEntityCard key={item.topic} item={item} type="topic" onPractice={topic => openPracticeModal({ subject: topic.subject, topic: topic.topic, count: topic.wrongCount + topic.skippedCount })} onReview={topic => router.push(`/history/questions?subject=${encodeURIComponent(topic.subject)}&topic=${encodeURIComponent(topic.topic)}`)} />)}</div>
+                      <div className="history-filter-results">{topics.map(item => <StatEntityCard key={item.topic} item={item} type="topic" onPractice={topic => openPracticeModal({ subject: topic.subject, topic: topic.topic, count: topic.wrongCount + topic.skippedCount })} onReview={topic => router.push(`/history/questions?subject=${encodeURIComponent(topic.subject)}&topic=${encodeURIComponent(topic.topic)}&returnUrl=${encodeURIComponent(historyReturnUrl)}`)} />)}</div>
                     </>
                   ) : (
                     <EmptyPanel
