@@ -438,7 +438,7 @@ export default function HistoryQuestionsPage() {
                 <div className="review-filter-summary-row">
                   <div>
                     <p className="review-filter-summary-count">{filtered.length}</p>
-                    <p className="review-filter-summary-label">{reviewSummaryLabel}</p>
+                    <p className="review-filter-summary-label">Questions found</p>
                   </div>
                   {filtered.length > 0 && (
                     <button

@@ -204,12 +204,49 @@ function optionText(question, option) {
   return question[`option${String(option || '').toUpperCase()}`] || '';
 }
 
-function EmptyPanel({ title, body, action, onClick }) {
+function emptyCopyForQuestionFilter(filterKey) {
+  if (filterKey === 'skipped') {
+    return {
+      title: 'No skipped questions found',
+      body: 'You did not skip any question in this filter. Try wrong or all questions instead.',
+    };
+  }
+  if (filterKey === 'saved') {
+    return {
+      title: 'No saved questions yet',
+      body: 'Save important questions while reviewing. They will appear here for quick revision.',
+    };
+  }
+  if (filterKey === 'wrong') {
+    return {
+      title: 'No wrong questions found',
+      body: 'Good job. You have no wrong answers in this filter. Try another filter to review more questions.',
+    };
+  }
+  return {
+    title: 'No questions found',
+    body: 'Try another filter or review all questions.',
+  };
+}
+
+function EmptyPanel({ title, body, action, onClick, secondaryAction, onSecondaryClick }) {
   return (
-    <section className="history-card text-center">
-      <p className="font-display font-black" style={{ color: 'var(--ssc-text-primary)' }}>{title}</p>
-      <p className="text-sm mt-1 mb-4" style={{ color: 'var(--ssc-text-secondary)' }}>{body}</p>
-      {action && <button type="button" className="primary-btn" onClick={onClick}>{action}</button>}
+    <section className="empty-state-card">
+      <div className="empty-state-icon" aria-hidden="true">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-teal)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M20 20l-3.2-3.2" />
+          <path d="M8.5 11h5" />
+        </svg>
+      </div>
+      <p className="empty-state-title font-display">{title}</p>
+      <p className="empty-state-body">{body}</p>
+      {(secondaryAction || action) && (
+        <div className={`empty-state-actions ${secondaryAction && action ? '' : 'single'}`}>
+          {secondaryAction && <button type="button" className="empty-state-secondary" onClick={onSecondaryClick}>{secondaryAction}</button>}
+          {action && <button type="button" className="empty-state-cta" onClick={onClick}>{action}</button>}
+        </div>
+      )}
     </section>
   );
 }
@@ -368,22 +405,38 @@ function StatEntityCard({ item, type, onPractice, onReview }) {
 
   if (type === 'subject') {
     return (
-      <article className="history-card entity-card subject-entity-card">
-        <div className="entity-top">
-          <h3 className="entity-title font-display">{title}</h3>
-          <span className="tone-pill entity-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{revisionLabel}</span>
+      <article className="history-card quiz-card subject-entity-card">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="quiz-title font-display">{title}</h3>
+            <p className="quiz-date">Last practiced {formatDate(item.lastPracticedAt)}</p>
+          </div>
+          <span className="tone-pill quiz-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{revisionLabel}</span>
         </div>
 
-        <p className="subject-meta-line">Last practiced {formatDate(item.lastPracticedAt)}</p>
-
-        <div className="entity-stat-row subject-stat-row">
-          <span className="text-slate-400">{item.questionCount} Qs</span>
-          <span className="text-emerald-300">&#10003; {item.correctCount}</span>
-          <span className="text-red-300">&times; {item.wrongCount}</span>
-          <span className="text-slate-400">&#9675; {item.skippedCount}</span>
+        <div className="quiz-stats-row entity-quiz-stats-row">
+          <div className="quiz-stat">
+            <strong className="font-display quiz-stat-value">{item.questionCount} Qs</strong>
+            <span className="quiz-stat-label">Questions</span>
+          </div>
+          <div className="quiz-stat-divider" />
+          <div className="quiz-stat">
+            <strong className="font-display quiz-stat-value" style={{ color: 'var(--ssc-success)' }}>&#10003; {item.correctCount}</strong>
+            <span className="quiz-stat-label">Correct</span>
+          </div>
+          <div className="quiz-stat-divider" />
+          <div className="quiz-stat">
+            <strong className="font-display quiz-stat-value" style={{ color: 'var(--ssc-danger)' }}>&times; {item.wrongCount}</strong>
+            <span className="quiz-stat-label">Wrong</span>
+          </div>
+          <div className="quiz-stat-divider" />
+          <div className="quiz-stat">
+            <strong className="font-display quiz-stat-value" style={{ color: 'var(--ssc-text-muted)' }}>&#9675; {item.skippedCount}</strong>
+            <span className="quiz-stat-label">Skipped</span>
+          </div>
         </div>
 
-        <div className="subject-action-row">
+        <div className="quiz-action-row subject-action-row">
           {hasMistakes ? (
             <>
               <button type="button" className="primary-btn" onClick={() => onPractice(item)}>Practice Again</button>
@@ -402,23 +455,38 @@ function StatEntityCard({ item, type, onPractice, onReview }) {
 
   if (type === 'topic') {
     return (
-      <article className="history-card entity-card topic-entity-card">
-        <div className="entity-top">
-          <h3 className="entity-title font-display">{title}</h3>
-          <span className="tone-pill entity-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{revisionLabel}</span>
+      <article className="history-card quiz-card topic-entity-card">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="quiz-title font-display">{title}</h3>
+            <p className="quiz-date">{item.subject} &middot; Last practiced {formatDate(item.lastPracticedAt)}</p>
+          </div>
+          <span className="tone-pill quiz-badge" style={{ color: tone[0], background: tone[1], borderColor: `${tone[0]}55` }}>{revisionLabel}</span>
         </div>
 
-        <p className="topic-subject-line">{item.subject}</p>
-        <p className="subject-meta-line">Last practiced {formatDate(item.lastPracticedAt)}</p>
-
-        <div className="entity-stat-row subject-stat-row">
-          <span className="text-slate-400">{item.questionCount} Qs</span>
-          <span className="text-emerald-300">&#10003; {item.correctCount}</span>
-          <span className="text-red-300">&times; {item.wrongCount}</span>
-          <span className="text-slate-400">&#9675; {item.skippedCount}</span>
+        <div className="quiz-stats-row entity-quiz-stats-row">
+          <div className="quiz-stat">
+            <strong className="font-display quiz-stat-value">{item.questionCount} Qs</strong>
+            <span className="quiz-stat-label">Questions</span>
+          </div>
+          <div className="quiz-stat-divider" />
+          <div className="quiz-stat">
+            <strong className="font-display quiz-stat-value" style={{ color: 'var(--ssc-success)' }}>&#10003; {item.correctCount}</strong>
+            <span className="quiz-stat-label">Correct</span>
+          </div>
+          <div className="quiz-stat-divider" />
+          <div className="quiz-stat">
+            <strong className="font-display quiz-stat-value" style={{ color: 'var(--ssc-danger)' }}>&times; {item.wrongCount}</strong>
+            <span className="quiz-stat-label">Wrong</span>
+          </div>
+          <div className="quiz-stat-divider" />
+          <div className="quiz-stat">
+            <strong className="font-display quiz-stat-value" style={{ color: 'var(--ssc-text-muted)' }}>&#9675; {item.skippedCount}</strong>
+            <span className="quiz-stat-label">Skipped</span>
+          </div>
         </div>
 
-        <div className="subject-action-row">
+        <div className="quiz-action-row subject-action-row">
           {hasMistakes ? (
             <>
               <button type="button" className="primary-btn" onClick={() => onPractice(item)}>Practice Again</button>
@@ -1024,7 +1092,6 @@ export default function HistoryPage() {
     saved: 'saved questions',
     never_correct: 'never correct questions',
   }[questionType] || `${activeMistakeLabel.toLowerCase()} questions`;
-  const summaryPhrase = questionType === 'repeated' ? 'repeated questions' : mistakePhrase;
   const activeMistakeSummary = `${mistakePhrase} in ${questionSubject || 'All subjects'}`;
   const customRangeSummary = appliedCustomRange.start && appliedCustomRange.end
     ? `Showing quizzes from ${formatRangeDate(appliedCustomRange.start)} to ${formatRangeDate(appliedCustomRange.end)}`
@@ -1252,11 +1319,15 @@ export default function HistoryPage() {
 
     .quiz-filter-group{margin:0 0 14px}.mistake-filter-group{margin-bottom:16px}.active-filter-summary{margin:-2px 2px 14px;color:var(--ssc-text-secondary);font-size:12px;font-weight:800;line-height:1.4}
 
-    .empty-state-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:20px;padding:32px 24px;text-align:center;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
-    .empty-state-icon{width:64px;height:64px;border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;background:var(--ssc-teal-soft)}
+    .empty-state-card{background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:22px;padding:30px 24px;text-align:center;margin-bottom:12px;box-shadow:var(--ssc-shadow-card)}
+    .empty-state-icon{width:62px;height:62px;border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;background:var(--ssc-teal-soft);border:1px solid rgba(14,165,164,.16)}
     .empty-state-title{color:var(--ssc-text-primary);font-size:17px;font-weight:900;margin:0 0 8px}
     .empty-state-body{color:var(--ssc-text-secondary);font-size:13px;line-height:1.5;margin:0 0 20px}
-    .empty-state-cta{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:14px;padding:13px 22px;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:var(--ssc-shadow-cta)}
+    .empty-state-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .empty-state-actions.single{display:flex;justify-content:center}.empty-state-actions.single .empty-state-cta,.empty-state-actions.single .empty-state-secondary{min-width:180px}
+    .empty-state-cta,.empty-state-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;padding:12px 16px;min-height:42px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit}
+    .empty-state-cta{border:0;background:linear-gradient(135deg,var(--ssc-orange),var(--ssc-orange-deep));color:white;box-shadow:var(--ssc-shadow-cta)}
+    .empty-state-secondary{border:1px solid rgba(14,165,164,.28);background:var(--ssc-surface-soft);color:var(--ssc-teal)}
 
     .filter-trigger-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
     .filter-trigger-btn{display:flex;align-items:center;gap:5px;border:1px solid var(--ssc-border-soft);border-radius:999px;background:rgba(255,255,255,.82);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:6px 11px;cursor:pointer;font-family:inherit;box-shadow:0 4px 10px rgba(16,32,51,.035)}
@@ -1398,9 +1469,16 @@ export default function HistoryPage() {
                         {subjects.map(item => <button key={item.subject} type="button" className={`chip ${subjectFilter === item.subject ? 'active' : ''}`} onClick={() => setSubjectFilter(item.subject)}>{item.subject}</button>)}
                       </div>
                       <div className="history-filter-results">
-                        {filteredSubjects.map(item => (
+                        {filteredSubjects.length ? filteredSubjects.map(item => (
                           <StatEntityCard key={item.subject} item={item} type="subject" onPractice={subject => openPracticeModal({ subject: subject.subject, count: subject.wrongCount + subject.skippedCount })} onReview={subject => router.push(`/history/questions?subject=${encodeURIComponent(subject.subject)}`)} />
-                        ))}
+                        )) : (
+                          <EmptyPanel
+                            title="No questions found"
+                            body="Try another subject or review all questions."
+                            secondaryAction="View All Questions"
+                            onSecondaryClick={() => setSubjectFilter('')}
+                          />
+                        )}
                       </div>
                     </>
                   ) : <EmptyPanel title="No attempted subjects yet." body="Start a quiz to build your subject-wise history." action="Start Practice →" onClick={() => router.push('/dashboard')} />}
@@ -1413,12 +1491,19 @@ export default function HistoryPage() {
                   <div className="chip-row filter-chip-row history-chip-row">
                     {(subjects || []).map(item => <button key={item.subject} type="button" className={`chip ${selectedSubject === item.subject ? 'active' : ''}`} onClick={() => setSelectedSubject(item.subject)}>{item.subject}</button>)}
                   </div>
-                  {!selectedSubject ? <EmptyPanel title="Select a subject to see topics." body="Choose a subject above to see attempted topics." /> : topicsLoading ? <Loader card size="sm" label="Loading topics..." /> : topics.length ? (
+                  {!selectedSubject ? <EmptyPanel title="Select a subject to see topics" body="Choose a subject above to see attempted topics." /> : topicsLoading ? <Loader card size="sm" label="Loading topics..." /> : topics.length ? (
                     <>
                       <h2 className="history-filter-title topic-result-title font-display">Select a topic</h2>
                       <div className="history-filter-results">{topics.map(item => <StatEntityCard key={item.topic} item={item} type="topic" onPractice={topic => openPracticeModal({ subject: topic.subject, topic: topic.topic, count: topic.wrongCount + topic.skippedCount })} onReview={topic => router.push(`/history/questions?subject=${encodeURIComponent(topic.subject)}&topic=${encodeURIComponent(topic.topic)}`)} />)}</div>
                     </>
-                  ) : <EmptyPanel title={`No topics attempted in ${selectedSubject} yet.`} body={`Start a ${selectedSubject} quiz to build topic history.`} action={`Practice ${selectedSubject} →`} onClick={() => router.push('/dashboard')} />}
+                  ) : (
+                    <EmptyPanel
+                      title="No questions found"
+                      body="Try another subject or review all questions."
+                      secondaryAction="View All Questions"
+                      onSecondaryClick={() => setSelectedSubject('')}
+                    />
+                  )}
                 </section>
               )}
 
@@ -1445,13 +1530,21 @@ export default function HistoryPage() {
                           <div className="mistake-summary-copy">
                             <div className="min-w-0">
                               <p className="mistake-summary-count">{practiceCount}</p>
-                              <p className="mistake-summary-label">{summaryPhrase}</p>
+                              <p className="mistake-summary-label">Questions found</p>
                             </div>
                           </div>
                           {practiceCount > 0 && <button type="button" className="mistake-summary-cta" onClick={() => openPracticeModal({ subject: questionSubject, count: practiceCount, answerStatus: questionType === 'repeated' || questionType === 'never_correct' ? 'wrong_skipped' : questionType, questionHistory: questionType === 'repeated' ? 'repeated' : questionType === 'never_correct' ? 'never_correct' : 'all' })}>Practice all {practiceCount}</button>}
                         </div>
                       </div>
-                      {visibleMistakeQuestions.length ? visibleMistakeQuestions.map((item, index) => <QuestionCard key={item.questionId} item={item} isOpen={false} onToggleOpen={() => setReviewIndex(index)} aiCache={aiCache} setAiCache={setAiCache} onToggleSave={toggleSave} />) : <EmptyPanel title={`No ${questionType.replace('_', ' ')} questions found.`} body="Practice more to build this list." action="Practice More →" onClick={() => router.push('/dashboard')} />}
+                      {visibleMistakeQuestions.length ? visibleMistakeQuestions.map((item, index) => <QuestionCard key={item.questionId} item={item} isOpen={false} onToggleOpen={() => setReviewIndex(index)} aiCache={aiCache} setAiCache={setAiCache} onToggleSave={toggleSave} />) : (
+                        <EmptyPanel
+                          {...emptyCopyForQuestionFilter(questionType)}
+                          secondaryAction="View All Questions"
+                          onSecondaryClick={() => { setQuestionSubject(''); setQuestionType('wrong'); }}
+                          action={practiceCount > 0 ? 'Practice Again' : ''}
+                          onClick={practiceCount > 0 ? () => openPracticeModal({ subject: questionSubject, count: practiceCount, answerStatus: questionType === 'repeated' || questionType === 'never_correct' ? 'wrong_skipped' : questionType, questionHistory: questionType === 'repeated' ? 'repeated' : questionType === 'never_correct' ? 'never_correct' : 'all' }) : undefined}
+                        />
+                      )}
                     </>
                   )}
                 </section>
