@@ -3,6 +3,7 @@ import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import WhatsAppBell from '@/components/WhatsAppBell';
+import SmartHistoryLoader from '@/components/ui/SmartHistoryLoader';
 import { getUserCacheScope } from '@/lib/userCacheScope';
 import { getAnalysisActivity, readAnalysisInterest, patchAnalysisInterestState, recordAnalysisInterest } from '@/lib/data/analysisData';
 
@@ -297,9 +298,8 @@ export default function AnalysisPage() {
     return (
       <>
         <Head><title>AI GK Analysis — SSC GK Score Booster</title></Head>
-        <style>{`@keyframes analSpin { to { transform: rotate(360deg); } }`}</style>
-        <div style={{ minHeight: '100vh', background: 'var(--ssc-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ width: 32, height: 32, borderRadius: 99, border: `3px solid ${BORDER}`, borderTopColor: ORANGE, animation: 'analSpin 0.8s linear infinite' }} />
+        <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg,var(--ssc-bg) 0%,var(--ssc-bg-alt) 100%)', padding: '18px 16px calc(112px + env(safe-area-inset-bottom))', boxSizing: 'border-box' }}>
+          <SmartHistoryLoader variant="reports" />
         </div>
       </>
     );

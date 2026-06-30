@@ -17,6 +17,12 @@ const MODES = [
   { key: 'mistakes', label: 'Mistakes', shortLabel: 'Mistakes' },
 ];
 
+const MODE_TABS = [
+  { key: 'quiz', label: 'Quiz-wise' },
+  { key: 'subjectTopic', label: 'Subject/Topic-wise' },
+  { key: 'mistakes', label: 'Mistakes' },
+];
+
 const QUICK_FILTERS = [
   { key: 'all', label: 'All' },
   { key: '7d', label: '7 Days' },
@@ -32,6 +38,65 @@ const QUESTION_TYPES = [
   { key: 'never_correct', label: 'Never Correct' },
 ];
 
+const SUBJECT_META = {
+  Polity: { subtitle: 'Constitution • Govt', accent: '#14B8A6', bg: '#E8F8F6', glyph: 'bookmark' },
+  Economics: { subtitle: 'Banking • Budget', accent: '#8B5CF6', bg: '#F3F0FF', glyph: 'chart' },
+  Geography: { subtitle: 'Maps • Climate', accent: '#0EA5E9', bg: '#E8F5FF', glyph: 'globe' },
+  'Current Affairs': { subtitle: 'Latest GK', accent: '#FF5C8A', bg: '#FFF0F4', glyph: 'paper' },
+  'Static GK': { subtitle: 'Awards • Books', accent: '#10B981', bg: '#EAFBF3', glyph: 'book' },
+  Physics: { subtitle: 'Motion • Energy', accent: '#2563EB', bg: '#EAF1FF', glyph: 'atom' },
+  Chemistry: { subtitle: 'Elements • Reactions', accent: '#14B8A6', bg: '#E8F8F6', glyph: 'flask' },
+  Biology: { subtitle: 'Human Body • Life', accent: '#16A34A', bg: '#EAFBF0', glyph: 'leaf' },
+  'Ancient History': { subtitle: 'Vedic • Empires', accent: '#D97706', bg: '#FFF7E6', glyph: 'pillar' },
+  'Medieval History': { subtitle: 'Sultanate • Mughals', accent: '#DC2626', bg: '#FEECEC', glyph: 'fort' },
+  'Modern History': { subtitle: 'Freedom • Reforms', accent: '#8B5CF6', bg: '#F3F0FF', glyph: 'flag' },
+  Saved: { subtitle: 'Repeated topics', accent: '#14B8A6', bg: '#E8F8F6', glyph: 'book' },
+  Mixed: { subtitle: 'All Subjects', accent: '#9333EA', bg: '#F5F3FF', glyph: 'target' },
+};
+
+function getSubjectMeta(subject) {
+  return SUBJECT_META[subject] || {
+    subtitle: 'Attempted questions',
+    accent: 'var(--ssc-teal)',
+    bg: 'var(--ssc-teal-soft)',
+    glyph: 'book',
+  };
+}
+
+function SubjectIcon({ subject }) {
+  const meta = getSubjectMeta(subject);
+  const common = {
+    width: 18,
+    height: 18,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: meta.accent,
+    strokeWidth: 1.9,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+  };
+  const paths = {
+    bookmark: <path d="M7 4h10v16l-5-3-5 3V4z" />,
+    chart: <><path d="M4 19V5" /><path d="M4 19h16" /><path d="M8 16v-5" /><path d="M12 16V8" /><path d="M16 16v-3" /></>,
+    globe: <><circle cx="12" cy="12" r="8" /><path d="M4 12h16" /><path d="M12 4c2 2.3 3 5 3 8s-1 5.7-3 8" /><path d="M12 4c-2 2.3-3 5-3 8s1 5.7 3 8" /></>,
+    paper: <><path d="M7 4h8l3 3v13H7z" /><path d="M15 4v4h4" /><path d="M9 12h6" /><path d="M9 16h5" /></>,
+    book: <><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 0-3-3V4z" /><path d="M8 8h6" /><path d="M8 12h5" /></>,
+    atom: <><circle cx="12" cy="12" r="1.5" /><path d="M19 12c0 2-3.1 3.6-7 3.6S5 14 5 12s3.1-3.6 7-3.6 7 1.6 7 3.6z" /><path d="M15.5 18c-1.7 1-4.1-1.2-5.4-4.6S9.4 6.7 11.1 6s4.1 1.2 5.4 4.6.7 6.7-1 7.4z" /></>,
+    flask: <><path d="M9 3h6" /><path d="M10 3v5l-5 9a3 3 0 0 0 2.6 4.5h8.8A3 3 0 0 0 19 17l-5-9V3" /><path d="M8 15h8" /></>,
+    leaf: <><path d="M19 5c-8 0-13 5-13 11a4 4 0 0 0 4 4c6 0 9-7 9-15z" /><path d="M6 19c2-5 5-8 10-10" /></>,
+    pillar: <><path d="M5 8h14" /><path d="M7 8v10" /><path d="M11 8v10" /><path d="M15 8v10" /><path d="M5 18h14" /><path d="M6 5h12l-6-3z" /></>,
+    fort: <><path d="M5 20V8h3V5h3v3h2V5h3v3h3v12" /><path d="M4 20h16" /><path d="M10 20v-5a2 2 0 0 1 4 0v5" /></>,
+    flag: <><path d="M6 21V4" /><path d="M6 5h10l-1.5 4L16 13H6" /></>,
+    target: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="1" /></>,
+  };
+
+  return (
+    <span className="history-subject-icon" style={{ background: meta.bg, borderColor: `${meta.accent}33` }}>
+      <svg {...common}>{paths[meta.glyph] || paths.book}</svg>
+    </span>
+  );
+}
+
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 const OPTION_KEYS = ['optionA', 'optionB', 'optionC', 'optionD'];
 
@@ -43,36 +108,6 @@ const TONES = {
   orange: ['#F45100', 'rgba(255,106,0,.10)'],
   grey: ['#5B6B82', 'var(--ssc-surface-soft)'],
 };
-
-const SUBJECT_META = {
-  Polity: { subtitle: 'Constitution • Govt', accent: '#14B8A6', bg: '#E8F8F6', glyph: 'bookmark' },
-  Economics: { subtitle: 'Banking • Budget', accent: '#8B5CF6', bg: '#F3F0FF', glyph: 'chart' },
-  Geography: { subtitle: 'Maps • Climate', accent: '#0EA5E9', bg: '#E8F5FF', glyph: 'globe' },
-  'Current Affairs': { subtitle: 'Latest GK', accent: '#FF5C8A', bg: '#FFF0F4', glyph: 'paper' },
-  'Static GK': { subtitle: 'Awards • Books', accent: '#10B981', bg: '#EAFBF3', glyph: 'book' },
-};
-
-function getSubjectMeta(subject) {
-  return SUBJECT_META[subject] || { subtitle: 'Repeated topics', accent: 'var(--ssc-teal)', bg: 'var(--ssc-teal-soft)', glyph: 'book' };
-}
-
-function SubjectIcon({ subject }) {
-  const meta = getSubjectMeta(subject);
-  const common = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: meta.accent, strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' };
-  const paths = {
-    bookmark: <path d="M7 4h10v16l-5-3-5 3V4z" />,
-    chart: <><path d="M4 19V5" /><path d="M4 19h16" /><path d="M8 16v-5" /><path d="M12 16V8" /><path d="M16 16v-3" /></>,
-    globe: <><circle cx="12" cy="12" r="8" /><path d="M4 12h16" /><path d="M12 4c2 2.3 3 5 3 8s-1 5.7-3 8" /><path d="M12 4c-2 2.3-3 5-3 8s1 5.7 3 8" /></>,
-    paper: <><path d="M7 4h8l3 3v13H7z" /><path d="M15 4v4h4" /><path d="M9 12h6" /><path d="M9 16h5" /></>,
-    book: <><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 0-3-3V4z" /><path d="M8 8h6" /><path d="M8 12h5" /></>,
-  };
-
-  return (
-    <span className="rm-subject-icon" style={{ background: meta.bg, borderColor: `${meta.accent}33` }}>
-      <svg {...common}>{paths[meta.glyph] || paths.book}</svg>
-    </span>
-  );
-}
 
 function HistoryHeaderIcon() {
   return (
@@ -248,6 +283,24 @@ function ChevronSVG() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ssc-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 18l6-6-6-6" />
     </svg>
+  );
+}
+
+function SubjectOverviewRow({ item, onOpen }) {
+  const subject = item.subject || item.name || 'Mixed';
+  const count = Number(item.questionCount || item.count || 0);
+  const meta = getSubjectMeta(subject);
+
+  return (
+    <button type="button" className="history-subject-row" onClick={() => onOpen(item)}>
+      <SubjectIcon subject={subject} />
+      <span className="history-subject-copy">
+        <span className="history-subject-name">{subject}</span>
+        <span className="history-subject-subtitle">{meta.subtitle}</span>
+      </span>
+      <span className="history-subject-count">{count}</span>
+      <ChevronSVG />
+    </button>
   );
 }
 
@@ -1036,11 +1089,6 @@ export default function HistoryPage() {
     return sessions;
   }, [quizData.sessions]);
 
-  const filteredSubjects = useMemo(() => {
-    const items = subjects || [];
-    if (!subjectFilter) return items;
-    return items.filter(item => item.subject === subjectFilter);
-  }, [subjectFilter, subjects]);
   const topics = topicsBySubject[selectedSubject] || [];
   const questionSubjects = subjects || [];
   const practiceCount = questionsData?.total || 0;
@@ -1263,9 +1311,8 @@ export default function HistoryPage() {
     .rm-performance-head{display:flex;align-items:center;justify-content:flex-start;gap:10px;margin-bottom:7px;font-size:11px;font-weight:900;color:var(--ssc-text-muted)}
     @media (max-width:380px){.mistake-summary-card{grid-template-columns:1fr;gap:12px}.mistake-summary-cta{width:100%}.rm-stat-label{font-size:8px}}
 
-    .rm-subject-icon{width:34px;height:34px;border-radius:11px;border:1px solid rgba(14,165,164,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-
-    .mode-selector{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 14px;padding:6px;background:rgba(255,255,255,.72);border:1px solid var(--ssc-border-soft);border-radius:12px;box-shadow:0 6px 18px rgba(16,32,51,.05)}.mode-selector button{min-width:0;border:0;border-radius:9px;background:transparent;color:var(--ssc-text-secondary);font-family:inherit;font-size:12px;font-weight:900;padding:8px 10px;white-space:nowrap;cursor:pointer;text-align:center;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}.mode-selector button.active{background:var(--ssc-teal);color:white;box-shadow:0 6px 14px rgba(14,165,164,.18)}
+    .mode-selector{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:0 0 14px;padding:4px;background:rgba(255,255,255,.72);border:1px solid var(--ssc-border-soft);border-radius:12px;box-shadow:0 6px 18px rgba(16,32,51,.05)}.mode-selector button{min-width:0;border:0;border-radius:9px;background:transparent;color:var(--ssc-text-secondary);font-family:inherit;font-size:10px;font-weight:900;padding:7px 4px;white-space:nowrap;cursor:pointer;text-align:center;overflow:hidden;text-overflow:ellipsis}.mode-selector button.active{background:var(--ssc-teal);color:white;box-shadow:0 6px 14px rgba(14,165,164,.18)}
+    .history-subject-list{padding-top:12px}.history-subject-row{width:100%;display:flex;align-items:center;gap:12px;background:var(--ssc-surface);border:1px solid var(--ssc-border-soft);border-radius:14px;padding:10px 12px;margin:0 0 8px;box-shadow:0 8px 20px rgba(16,32,51,.06);cursor:pointer;text-align:left;font-family:inherit}.history-subject-row:active{transform:scale(.99)}.history-subject-row:focus-visible{outline:3px solid rgba(14,165,164,.22);outline-offset:2px}.history-subject-icon{width:34px;height:34px;border-radius:11px;border:1px solid rgba(14,165,164,.18);display:flex;align-items:center;justify-content:center;flex:0 0 auto}.history-subject-copy{min-width:0;flex:1}.history-subject-name{display:block;font-size:12px;font-weight:1000;color:var(--ssc-text-primary);line-height:1.2}.history-subject-subtitle{display:block;margin-top:3px;font-size:10px;font-weight:800;color:var(--ssc-text-secondary);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-subject-count{font-size:12px;font-weight:1000;color:var(--ssc-teal);margin-right:2px}
 
     .chip-row{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin-left:-16px;margin-right:-16px;padding:0 16px 14px;scrollbar-width:none;-ms-overflow-style:none}.chip-row::-webkit-scrollbar{display:none}.filter-chip-row{margin-bottom:0;padding-bottom:10px}.history-chip-row,.mistake-chip-row,.quiz-filter-chip-row{margin-left:0;margin-right:0;padding:0 0 2px;flex:none}.sheet-chip-row{margin-left:0;margin-right:0;padding:0 0 4px;flex-wrap:wrap}.chip{border:1px solid var(--ssc-border-soft);border-radius:999px;background:var(--ssc-surface);color:var(--ssc-text-secondary);font-size:10px;font-weight:900;padding:7px 12px;white-space:nowrap;text-transform:capitalize;flex:0 0 auto;cursor:pointer;box-shadow:0 5px 12px rgba(16,32,51,.04)}.chip.active{background:var(--ssc-teal);border-color:var(--ssc-teal);color:white;box-shadow:0 8px 18px rgba(14,165,164,.16)}
 
@@ -1382,11 +1429,15 @@ export default function HistoryPage() {
 
               {/* Mode selector as scrollable pill tabs */}
               <section className="mode-selector">
-                {MODES.map(mode => (
-                  <button key={mode.key} type="button" className={activeMode === mode.key ? 'active' : ''} onClick={() => setActiveMode(mode.key)}>
-                    {mode.label}
-                  </button>
-                ))}
+                {MODE_TABS.map(mode => {
+                  const isSubjectTopic = mode.key === 'subjectTopic';
+                  const isActive = isSubjectTopic ? activeMode === 'subject' || activeMode === 'topic' : activeMode === mode.key;
+                  return (
+                    <button key={mode.key} type="button" className={isActive ? 'active' : ''} onClick={() => setActiveMode(isSubjectTopic ? 'subject' : mode.key)}>
+                      {mode.label}
+                    </button>
+                  );
+                })}
               </section>
 
               {activeMode === 'quiz' && (
@@ -1431,22 +1482,20 @@ export default function HistoryPage() {
                 <section>
                   <h2 className="history-filter-title font-display">Select a subject</h2>
                   {subjectsLoading ? <SmartHistoryLoader variant="subject-history" compact className="py-4" /> : subjects?.length ? (
-                    <>
-                      <div className="chip-row filter-chip-row history-chip-row">
-                        <button type="button" className={`chip ${!subjectFilter ? 'active' : ''}`} onClick={() => setSubjectFilter('')}>All</button>
-                        {subjects.map(item => <button key={item.subject} type="button" className={`chip ${subjectFilter === item.subject ? 'active' : ''}`} onClick={() => setSubjectFilter(item.subject)}>{item.subject}</button>)}
-                      </div>
-                      <div className="history-filter-results">
-                        {filteredSubjects.map(item => (
-                          <StatEntityCard key={item.subject} item={item} type="subject" onPractice={subject => openPracticeModal({ subject: subject.subject, count: subject.wrongCount + subject.skippedCount })} onReview={subject => router.push(`/history/questions?subject=${encodeURIComponent(subject.subject)}`)} />
-                        ))}
-                      </div>
-                    </>
+                    <div className="history-subject-list">
+                      {subjects.map(item => (
+                        <SubjectOverviewRow
+                          key={item.subject}
+                          item={item}
+                          onOpen={subject => router.push(`/history/questions?subject=${encodeURIComponent(subject.subject)}&returnUrl=${encodeURIComponent(router.asPath || '/history/quizzes')}`)}
+                        />
+                      ))}
+                    </div>
                   ) : <EmptyPanel title="No attempted subjects yet." body="Start a quiz to build your subject-wise history." action="Start Practice →" onClick={() => router.push('/dashboard')} />}
                 </section>
               )}
 
-              
+
 
               {activeMode === 'mistakes' && (
                 <section>
