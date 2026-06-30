@@ -4,7 +4,7 @@ import Head from 'next/head';
 import GoogleSignInCard from '@/components/GoogleSignInCard';
 import HistoryTopBar from '@/components/HistoryTopBar';
 import SessionRow from '@/components/SessionRow';
-import Loader from '@/components/ui/Loader';
+import SmartHistoryLoader from '@/components/ui/SmartHistoryLoader';
 import { getUserCacheScope } from '@/lib/userCacheScope';
 import { getScoreHistory } from '@/lib/data/historyClientData';
 
@@ -71,7 +71,7 @@ export default function CoinsHistoryPage() {
       <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-24">
         <HistoryTopBar title="Coins History" badge="HISTORY" showBack />
         <div className="px-4 pt-5">
-          <Loader card size="md" label="Fetching your Coins history..." />
+          <SmartHistoryLoader variant="coins-history" />
         </div>
       </div>
     );

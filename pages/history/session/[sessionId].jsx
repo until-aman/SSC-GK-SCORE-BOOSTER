@@ -3,7 +3,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
-import Loader from '@/components/ui/Loader';
+import SmartHistoryLoader from '@/components/ui/SmartHistoryLoader';
 import { getUserCacheScope } from '@/lib/userCacheScope';
 import { getHistorySession } from '@/lib/data/historyClientData';
 import { toggleSavedQuestion } from '@/lib/data/savedData';
@@ -436,7 +436,7 @@ export default function SessionReviewPage() {
         <Head><title>Question Review - SSC GK Score Booster</title></Head>
         <HistoryTopBar title="Question Review" icon={QuizReviewIcon} backHref={backHref} showBack badge="HISTORY" onBack={() => router.push(backHref)} />
         <main className="px-4 pt-5">
-          <Loader card size="md" label="Loading review..." />
+          <SmartHistoryLoader variant="review-session" compact />
         </main>
       </div>
     );

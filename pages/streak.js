@@ -3,6 +3,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import HistoryTopBar from '@/components/HistoryTopBar';
+import SmartHistoryLoader from '@/components/ui/SmartHistoryLoader';
 import { getISTDateString } from '@/lib/streak';
 import { getUserCacheScope } from '@/lib/userCacheScope';
 import { getUserProfile } from '@/lib/data/profileData';
@@ -86,10 +87,10 @@ export default function StreakPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-[linear-gradient(180deg,var(--ssc-bg)_0%,var(--ssc-bg-alt)_100%)] pb-24">
+        <Head><title>Streak History - SSC GK Score Booster</title></Head>
         <HistoryTopBar title="Streak History" badge="HISTORY" showBack />
         <div className="px-4 pt-5">
-          <div className="skeleton h-36 rounded-3xl mb-4" />
-          <div className="skeleton h-52 rounded-3xl" />
+          <SmartHistoryLoader variant="streak-history" />
         </div>
       </div>
     );
